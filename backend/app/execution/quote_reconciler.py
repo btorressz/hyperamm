@@ -25,7 +25,7 @@ def reconcile_quotes(desired: list[QuoteLevel], existing: list[StrategyOrder], p
         if old is None:
             actions.append(ReconcileAction(action=ReconcileActionType.CREATE,desired=q)); continue
         price_diff=abs(q.price-old.price)/q.price*Decimal("10000")
-        size_diff=abs(q.size-old.size)
+        size_diff=abs(q.size-(old.size-old.filled_size))
         if price_diff <= price_tolerance_bps and size_diff <= size_tolerance:
             actions.append(ReconcileAction(action=ReconcileActionType.KEEP,desired=q,existing=old))
         else:

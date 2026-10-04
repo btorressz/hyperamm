@@ -8,12 +8,14 @@ from .models import RiskStatus
 def validate_quotes(quotes: list[QuoteLevel], snapshot: MarketSnapshot, risk: RiskStatus):
     if risk.kill_switch_active:
         raise PermissionError("kill switch is active")
-    if snapshot.stale:
-        raise ValueError("market data is stale")
+    from app.strategy.fair_value import calculate_fair_value
+    calculate_fair_value(snapshot)
     if len(quotes) > risk.max_quote_levels * 2:
         raise ValueError("too many quote levels")
     total = Decimal("0")
     for q in quotes:
+        if not q.price.is_finite() or not q.size.is_finite() or q.price <= 0 or q.size <= 0:
+            raise ValueError("quote price and size must be finite and positive")
         if q.price < risk.min_valid_price:
             raise ValueError("quote below minimum valid price")
         if q.size > risk.max_order_size:

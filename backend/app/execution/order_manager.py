@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import inspect
 from app.amm.models import QuoteLevel
 from .models import OrderRequest
 from .quote_reconciler import reconcile_quotes, ReconcileActionType
 
 
 class OrderManager:
-    def __init__(self, execution):
+    def __init__(self, execution, lock=None, authority=None):
         self.execution=execution
+        self.lock=lock if lock is not None else asyncio.Lock()
+        self.authority=authority or (lambda: None)
         self._nonce=0
 
     def request_for(self, market: str, quote: QuoteLevel) -> OrderRequest:
@@ -18,14 +22,25 @@ class OrderManager:
         return OrderRequest(client_order_id=cid,market=market,side=quote.side,price=quote.price,size=quote.size,level_index=quote.level_index)
 
     async def reconcile(self, market: str, desired, price_tolerance_bps, size_tolerance):
+        async with self.lock:
+            return await self.reconcile_locked(market,desired,price_tolerance_bps,size_tolerance)
+
+    async def reconcile_locked(self, market, desired, price_tolerance_bps, size_tolerance):
+        """Runtime may hold the shared execution lock across generation and reconciliation."""
+        if hasattr(self.execution, "reconcile_venue"):
+            await self.execution.reconcile_venue()
         existing=await self.execution.get_open_orders()
         actions=reconcile_quotes(desired,existing,price_tolerance_bps,size_tolerance)
-        creates=[]; replacements=[]; cancels=[]
-        for a in actions:
-            if a.action==ReconcileActionType.CREATE: creates.append(self.request_for(market,a.desired))
-            elif a.action==ReconcileActionType.REPLACE: replacements.append((a.existing.client_order_id,self.request_for(market,a.desired)))
-            elif a.action==ReconcileActionType.CANCEL: cancels.append(a.existing.client_order_id)
-        if cancels: await self.execution.cancel_orders(cancels)
-        if replacements: await self.execution.replace_orders(replacements)
-        if creates: await self.execution.submit_orders(creates)
+        for action in actions:
+            if action.action in {ReconcileActionType.CANCEL,ReconcileActionType.REPLACE}:
+                await self.execution.cancel_orders([action.existing.client_order_id])
+            if action.action in {ReconcileActionType.CREATE,ReconcileActionType.REPLACE}:
+                check=self.authority()  # Final check immediately before each transmission.
+                if inspect.isawaitable(check):
+                    await check
+                await self.execution.submit_orders([self.request_for(market,action.desired)])
         return actions
+
+    async def cancel_all(self):
+        async with self.lock:
+            return await self.execution.cancel_all()

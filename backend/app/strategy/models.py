@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 from enum import StrEnum
+from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 from app.amm.models import AmmModel
 from app.market_data.models import MarketDataMode
@@ -45,3 +46,4 @@ class StrategyState(BaseModel):
     running: bool = False
     config: StrategyConfig
     last_error: str | None = None
+    quote_health: Literal["NO_QUOTES","HEALTHY","DEGRADED","HALTED"] = "NO_QUOTES"

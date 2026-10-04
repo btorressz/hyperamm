@@ -27,7 +27,9 @@ class CurvePoint(BaseModel):
     side: str
     distance_bps: Decimal = Field(ge=0)
     price: Decimal = Field(gt=0)
-    cumulative_base: Decimal = Field(ge=0)
+    target_base: Decimal = Field(gt=0)
+    incremental_base: Decimal = Field(gt=0)
+    cumulative_base: Decimal = Field(gt=0)
     weight: Decimal = Field(gt=0)
 
 
