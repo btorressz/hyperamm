@@ -32,6 +32,9 @@ def compile_quotes(pool: VirtualPool, fair_value: Decimal, model: AmmModel, leve
         raise ValueError("total_liquidity must be > 0")
     if base_order_size < 0:
         raise ValueError("base_order_size must be >= 0")
+    quantum=Decimal(1).scaleb(-size_precision)
+    # Round the minimum up first, then allocate only the remaining budget.
+    base_order_size=base_order_size.quantize(quantum,rounding=ROUND_UP)
     baseline_total=base_order_size*Decimal(levels_per_side)
     if total_liquidity < baseline_total:
         raise ValueError("total_liquidity must cover base_order_size across all levels")

@@ -59,7 +59,7 @@ class MarketDataService:
             snap = self._snapshot.model_copy(deep=True)
         if snap.latest_valid_update:
             age = (datetime.now(timezone.utc) - snap.latest_valid_update).total_seconds()
-            snap.stale = age > self.stale_after_seconds
+            snap.stale = snap.stale or age < 0 or age > self.stale_after_seconds
         else:
             snap.stale = True
         return snap

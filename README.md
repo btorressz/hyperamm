@@ -165,3 +165,21 @@ Phases 1–4 intentionally omit inventory-aware skew, adaptive volatility/order-
 ## 12-phase roadmap
 
 Phases 1–4 are the implemented foundation. Phase 5 adds inventory-aware quoting; Phase 6 volatility/book imbalance; Phase 7 perpetual vAMM context; Phase 8 oracle protection/risk firewall; Phase 9 AI supervisory agents; Phase 10 optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
+
+## Phase 4.1 acceptance and hardening
+
+Constant-product **incremental reserve movement** now drives quote sizes.
+Concentrated mode modifies that AMM profile; `total_liquidity` remains a per-side
+base-asset budget including baseline sizes. See [AMM math](docs/AMM_MATH.md).
+
+Invalid/stale/degraded feeds and generation/risk failures clear the desired
+ladder and cancel strategy orders. Enabled intent can recover automatically;
+manual kill requires explicit resume and start. Quote health is shown in the
+terminal. Unconfirmed cancellation latches HALTED rather than reporting success.
+
+Execution uses a shared lock and final authority checks. TESTNET reconciles
+tracked orders through WebSocket-triggered and periodic authoritative venue
+queries, including partial fills and uncertain order states. See
+[architecture](docs/ARCHITECTURE.md) and [integration](docs/HYPERLIQUID_INTEGRATION.md).
+Normal acceptance tests use deterministic fixtures and require no live venue or
+wallet. Phases 5–8 remain planned and are not implemented in this change.

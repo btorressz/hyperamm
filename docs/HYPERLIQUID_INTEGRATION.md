@@ -29,3 +29,46 @@ Signing material exists only in backend environment variables. React never recei
 ## Known Phase 1–4 limitations
 
 The project does not implement inventory skew, volatility/book-imbalance adaptation, perp funding-aware vAMM logic, external oracle protection, full institutional risk policy, AI agents, strategy optimization, vault accounting or mainnet execution. Those are roadmap items rather than hidden placeholders.
+
+## Phase 4.1 venue reconciliation
+
+Implementation was checked against installed SDK **0.24.0** and current official
+[`examples/basic_ws.py`](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/examples/basic_ws.py)
+and `Info` source at that revision. Supported calls used are
+`subscribe(subscription, callback)`, `open_orders(address)`,
+`query_order_by_oid(address, oid)`, and `query_order_by_cloid(address, cloid)`.
+
+A separate guarded `Info` client subscribes to `orderUpdates` and `userFills`.
+SDK-thread callbacks only wake an asyncio event; they never mutate order state.
+The runtime queries the authoritative open-order set under the execution lock
+on those notifications, every five seconds, and before quote reconciliation.
+This deliberate event-triggered read avoids double-counting fill snapshots and
+out-of-order events; latency includes the authoritative HTTP read.
+
+For tracked orders present in the open set, remaining `sz` determines
+`filled_size` and OPEN/PARTIALLY_FILLED status. Missing tracked orders require
+an order-status lookup; `filled`, cancellation/expiry and rejection states map
+to local FILLED, CANCELLED and REJECTED. Venue IDs, fill quantities and timestamps
+are updated idempotently. Acknowledged cancellations receive a follow-up status
+check to capture fills that preceded cancellation. Partial orders remain active
+and reconciliation compares desired size with their remaining quantity.
+Unrelated account orders are neither adopted nor cancelled.
+
+An absent order without terminal evidence becomes UNKNOWN, remains cancellable,
+and blocks new quoting. Failed/malformed submissions retain uncertain exposure
+by client ID; cancellation is attempted rather than assuming rejection. Cancel
+responses must acknowledge success or a status query must prove a terminal
+order. All cancellation targets are attempted even if one fails. An unresolved
+failure latches runtime execution HALTED, and cancellation failure is surfaced.
+
+Only `https://api.hyperliquid-testnet.xyz` is accepted by the signing adapter.
+PAPER/DEMO remain defaults. Disabled TESTNET never constructs a signing client.
+Query/event and exchange clients can be injected for deterministic offline tests;
+normal tests need no wallet, credentials, or live Hyperliquid service.
+
+Live signed orders, real WebSocket delivery/reconnect timing, venue rate limits,
+and real fill/cancel races were **not exercised** by this acceptance pass.
+Periodic authoritative polling continues when WebSocket notifications are absent.
+Ownership IDs are still in memory: discovering previous-process strategy orders
+and durable restart recovery are outside this pass. This is a tested Phase 1–4
+foundation, not a claim of production/mainnet readiness.

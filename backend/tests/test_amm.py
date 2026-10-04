@@ -50,3 +50,54 @@ def test_base_order_size_and_total_liquidity_are_enforced():
     bids=[x for x in q if x.side=='BID']
     assert all(x.size >= D('0.2') for x in bids)
     assert sum((x.size for x in bids),D('0')) <= D('2.0')
+
+@pytest.mark.parametrize('side',['BID','ASK'])
+def test_successive_reserve_deltas_drive_weights_and_sizes(side):
+    # Deliberately unrecentered input: origin must still be the fair-value state.
+    fair=D('3200')
+    points=[p for p in sample_curve(pool(),fair,4,D('1000')) if p.side==side]
+    previous=(pool().k/fair).sqrt()
+    cumulative=D('0')
+    for point in points:
+        assert point.target_base==(pool().k/point.price).sqrt()
+        delta=abs(point.target_base-previous)
+        assert point.incremental_base==delta
+        assert delta.is_finite() and delta>0
+        assert point.cumulative_base > cumulative
+        assert point.cumulative_base-cumulative==delta
+        previous=point.target_base; cumulative=point.cumulative_base
+    total=sum(p.incremental_base for p in points)
+    assert all(p.weight==p.incremental_base/total for p in points)
+    assert len({p.weight for p in points})>1
+    quotes=[q for q in compile_quotes(pool(),fair,AmmModel.CONSTANT_PRODUCT,4,D('1000'),D('2'),D('.1'),6,base_order_size=D('.1')) if q.side==side]
+    assert [q.size for q in quotes]==[normalize_size(D('.1')+D('1.6')*p.weight,6) for p in points]
+    assert len({q.size for q in quotes})>1
+
+@pytest.mark.parametrize('side',['BID','ASK'])
+def test_concentration_multiplies_amm_profile(side):
+    def sampled(model,c):
+        return [p for p in sample_curve(pool(),D('3000'),4,D('200'),model,D(c)) if p.side==side]
+    natural=sampled(AmmModel.CONSTANT_PRODUCT,'0')
+    concentrated=sampled(AmmModel.CONCENTRATED,'20')
+    neutral=sampled(AmmModel.CONCENTRATED,'0')
+    factors=concentrated_weights([p.distance_bps for p in natural],D('20'),D('10'),D('200'))
+    raw=[p.incremental_base*f for p,f in zip(natural,factors)]
+    assert [p.weight for p in concentrated]==[v/sum(raw) for v in raw]
+    assert abs(sum(p.weight for p in concentrated)-1)<D('1e-24')
+    assert concentrated[0].weight>natural[0].weight
+    assert concentrated[-1].weight<natural[-1].weight
+    assert all(abs(a.weight-b.weight)<D('1e-24') for a,b in zip(natural,neutral))
+
+@pytest.mark.parametrize('model',list(AmmModel))
+@pytest.mark.parametrize('precision',[2,4,8])
+def test_budget_baseline_finite_and_deterministic_after_rounding(model,precision):
+    args=(pool(),D('3000'),model,6,D('200'),D('2'),D('.1'),precision)
+    quotes=compile_quotes(*args,concentration_factor=D('20'),base_order_size=D('.10001'))
+    assert quotes==compile_quotes(*args,concentration_factor=D('20'),base_order_size=D('.10001'))
+    assert all(q.price.is_finite() and q.price>0 and q.size.is_finite() and q.size>=D('.10001') for q in quotes)
+    for side in ('BID','ASK'):
+        assert sum(q.size for q in quotes if q.side==side)<=D('2')
+
+def test_unrepresentable_baseline_budget_refused():
+    with pytest.raises(ValueError,match='cover'):
+        compile_quotes(pool(),D('3000'),AmmModel.CONSTANT_PRODUCT,4,D('100'),D('.40004'),D('.1'),2,base_order_size=D('.10001'))

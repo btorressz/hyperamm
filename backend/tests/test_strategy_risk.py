@@ -42,3 +42,22 @@ def test_execution_authority_requires_running():
     with pytest.raises(PermissionError):
         validate_execution_authority(risk=risk,execution_mode='PAPER',strategy_running=False)
     validate_execution_authority(risk=risk,execution_mode='PAPER',strategy_running=True)
+
+
+def test_env_example_matches_settings_and_safe_defaults():
+    from pathlib import Path
+    from dotenv import dotenv_values
+    from app.config import Settings
+    values=dotenv_values(Path(__file__).resolve().parents[2]/'.env.example')
+    assert all(name.lower() in Settings.model_fields for name in values)
+    settings=Settings(_env_file=None,**{name.lower():value for name,value in values.items()})
+    assert settings.execution_mode=='PAPER' and settings.market_data_mode=='DEMO'
+    assert not settings.enable_hyperliquid_testnet_orders and not settings.hyperliquid_private_key
+
+
+@pytest.mark.parametrize('field,value',[('price','NaN'),('size','Infinity'),('size','0')])
+def test_risk_rejects_mutated_invalid_quote(field,value):
+    snap=MockMarketDataAdapter().snapshot_for(1)
+    _,_,quotes=QuoteEngine().generate(StrategyConfig(),snap)
+    setattr(quotes[0],field,D(value))
+    with pytest.raises(ValueError,match='finite and positive'): validate_quotes(quotes,snap,RiskStatus())

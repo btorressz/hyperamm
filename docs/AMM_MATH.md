@@ -69,7 +69,37 @@ w_i^{raw}=\frac{1}{1+c z_i^2}
 where `c` is the concentration factor. Final weights are
 
 \[
-w_i=\frac{w_i^{raw}}{\sum_j w_j^{raw}}.
+w_i=\frac{\Delta x_i w_i^{raw}}{\sum_j \Delta x_j w_j^{raw}}.
 \]
 
 Increasing `c` therefore shifts a larger share of fixed total liquidity toward levels nearest fair value. Unit tests assert this behavior and that weights sum to one.
+
+## Phase 4.1: reserve movement determines CLOB size
+
+Each side independently starts at the fair-value reserve `x0 = sqrt(k/f)`.
+For successive target prices, `xi = sqrt(k/pi)`, the typed curve point retains
+`price`, `target_base`, `distance_bps`, `cumulative_base = |xi-x0|`, and
+`incremental_base = cumulative_i - cumulative_(i-1) = |xi-x_(i-1)|`.
+Sampling rejects non-finite, non-positive or non-monotonic movement. Cumulative
+movement increases outward on both sides; incremental sizes need not increase
+on both sides (ask increments decrease for equally spaced prices).
+
+CONSTANT_PRODUCT uses `wi = incremental_i / sum(incremental)` independently
+for bids and asks. CONCENTRATED multiplies each incremental movement by the
+existing concentration factor `1/(1+c*z_i^2)`, then normalizes the products.
+Thus concentration modifies the natural AMM profile instead of replacing it.
+A zero concentration factor recovers the constant-product distribution.
+
+`total_liquidity` remains a **per-side base-asset budget**, including the baseline
+order sizes, not an aggregate bid+ask budget. With `N` levels and normalized
+baseline `b`, each raw order size is `b + (total_liquidity - N*b)*wi`.
+The minimum baseline is rounded **up** to size precision before subtracting its
+allocation; an insufficient budget is rejected. Final sizes round **down**.
+No emitted size is zero, the baseline remains enforced, and neither side
+exceeds its budget; rounding dust is left unallocated. Bids round down and asks
+round up to ticks, preserving an uncrossed ladder.
+
+Changing only `k` may scale every raw reserve delta by the same `sqrt(k)` factor.
+Normalizing to a fixed per-side budget cancels that common factor. Acceptance
+therefore verifies successive reserve deltas and their sizing weights directly,
+not an incorrect requirement that changing `k` must change relative sizes.

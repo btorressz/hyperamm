@@ -7,10 +7,9 @@ async def risk(rt=Depends(runtime)): return rt.risk
 
 @router.post("/risk/kill")
 async def kill(rt=Depends(runtime)):
-    rt.strategy.running=False
-    await rt.kill.activate(rt.execution)
+    await rt.activate_kill()
     return rt.risk
 
 @router.post("/risk/resume")
 async def resume(rt=Depends(runtime)):
-    rt.kill.resume(); return rt.risk
+    return await rt.resume()

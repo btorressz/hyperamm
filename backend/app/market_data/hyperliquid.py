@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from decimal import Decimal
+from datetime import datetime, timezone
 from typing import Any
 
 from .models import MarketConnectionState, MarketDataMode, MarketLevel, MarketSnapshot, OrderBookSnapshot, utcnow
@@ -52,7 +53,7 @@ class HyperliquidMarketDataAdapter:
                     reconnecting.connection_state = MarketConnectionState.RECONNECTING
                     await callback(reconnecting)
 
-                self._info = await asyncio.to_thread(Info, MAINNET_API_URL, False)
+                self._info = await asyncio.to_thread(Info, MAINNET_API_URL, False, timeout=10)
                 loop = asyncio.get_running_loop()
 
                 async def deliver(raw):
@@ -66,7 +67,7 @@ class HyperliquidMarketDataAdapter:
                         self._sequence += 1
                         book = self._normalize_book(self.market, raw, self._sequence)
                         if not book.bids or not book.asks:
-                            return
+                            raise ValueError("missing bid or ask")
                         bid, ask = book.bids[0].price, book.asks[0].price
                         await callback(
                             MarketSnapshot(
@@ -75,15 +76,18 @@ class HyperliquidMarketDataAdapter:
                                 best_ask=ask,
                                 mid_price=(bid + ask) / 2,
                                 book=book,
-                                latest_valid_update=utcnow(),
+                                latest_valid_update=datetime.fromtimestamp(exchange_ms/1000,timezone.utc) if exchange_ms else None,
                                 connection_state=MarketConnectionState.CONNECTED,
                                 mode=MarketDataMode.LIVE,
                                 simulated=False,
                                 stale=False,
                             )
                         )
-                    except Exception:
-                        log.exception("failed to normalize Hyperliquid market update")
+                    except Exception as exc:
+                        log.warning("invalid Hyperliquid market update: %s",exc)
+                        invalid=MarketSnapshot.unavailable(self.market,MarketDataMode.LIVE,f"invalid market update: {exc}")
+                        invalid.connection_state=MarketConnectionState.DEGRADED
+                        await callback(invalid)
 
                 def sdk_callback(raw):
                     asyncio.run_coroutine_threadsafe(deliver(raw), loop)
