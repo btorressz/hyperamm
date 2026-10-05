@@ -24,3 +24,7 @@ async def quotes(rt=Depends(runtime)):return rt.quotes
 @router.get('/market-adaptation')
 async def market_adaptation(rt=Depends(runtime)):
     return await rt.market_adaptation_summary()
+
+@router.get('/perp-context')
+async def perp_context(rt=Depends(runtime)):
+    return await rt.perp_context_summary()

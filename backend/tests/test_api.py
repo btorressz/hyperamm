@@ -65,3 +65,43 @@ def test_invalid_market_adaptation_config_returns_422():
         config['volatility_min_samples']=10
         r=client.put('/api/v1/strategy',json=config)
         assert r.status_code==422
+
+
+def test_perp_context_endpoint_returns_normalized_demo_context():
+    with TestClient(app) as client:
+        r=client.get('/api/v1/perp-context')
+        assert r.status_code==200
+        data=r.json()
+        assert data['market']=='ETH'
+        assert data['source']=='DEMO'
+        assert data['simulated'] is True
+        assert data['stale'] is False
+        assert data['mark_price'] is not None
+        assert data['oracle_price'] is not None
+        assert data['funding_rate'] is not None
+        assert data['open_interest_base'] is not None
+        assert data['open_interest_notional'] is not None
+        assert data['funding_score'] is not None
+        assert data['strategy_reference_price'] is not None
+        assert data['position']['source']=='PAPER'
+        assert data['position']['entry_price'] is None
+        assert data['position']['liquidation_price'] is None
+
+
+def test_terminal_state_includes_perp_context_after_preview_refresh():
+    with TestClient(app) as client:
+        assert client.get('/api/v1/amm/curve').status_code==200
+        with client.websocket_connect('/ws/terminal') as ws:
+            data=ws.receive_json()
+            assert data['perp_context'] is not None
+            assert data['perp_context']['market']=='ETH'
+            assert data['perp_context']['source']=='DEMO'
+
+
+def test_invalid_perp_config_returns_422():
+    with TestClient(app) as client:
+        config=client.get('/api/v1/strategy').json()['config']
+        config['perp_mark_weight']='0.8'
+        config['perp_oracle_weight']='0.3'
+        r=client.put('/api/v1/strategy',json=config)
+        assert r.status_code==422

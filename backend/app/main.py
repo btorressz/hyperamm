@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     await app.state.runtime.stop_services()
 
 
-app = FastAPI(title="HyperAMM API", version="0.6.0", lifespan=lifespan)
+app = FastAPI(title="HyperAMM API", version="0.7.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router):
     app.include_router(router, prefix=settings.api_prefix)
@@ -29,4 +29,4 @@ app.include_router(websocket.router)
 
 @app.get("/")
 async def root():
-    return {"name": "HyperAMM", "phase": "1-6", "docs": "/docs"}
+    return {"name": "HyperAMM", "phase": "1-7", "docs": "/docs"}

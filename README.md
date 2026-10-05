@@ -3,7 +3,7 @@
 
 **HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
 
-Phases 1–6 are implemented as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Phases 1–7 are implemented as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
 
 ## Why a virtual AMM?
 
@@ -31,7 +31,7 @@ Hyperliquid L2 / Demo Feed
  PAPER execution or guarded TESTNET
 ```
 
-## Phase 1–6 capabilities
+## Phase 1–7 capabilities
 
 - **Phase 1 — Market data + paper execution:** normalized L2/BBO state, WebSocket subscription adapter, initial L2 snapshot, monotonic exchange-time handling, reconnection/degraded states, explicit deterministic demo feed, paper orders/fills, optional testnet adapter.
 - **Phase 2 — Virtual constant-product AMM:** invariant, marginal price, reserve initialization/recentering, base→quote and quote→base virtual swaps, curve-state calculations.
@@ -39,6 +39,7 @@ Hyperliquid L2 / Demo Feed
 - **Phase 4 — Concentrated liquidity:** bounded deterministic weighting that shifts more fixed liquidity near fair value as concentration increases.
 - **Phase 5 — Inventory-aware quoting:** normalized PAPER/TESTNET inventory, bounded reservation-price and side-size skew, hard-limit side suppression, inventory freshness/version checks, and terminal controls/visibility.
 - **Phase 6 — Volatility + order-book imbalance adaptation:** bounded rolling mid-price volatility, normalized top-N L2 imbalance, widening-only spread adaptation, conservative size/depth reduction, market-state version binding, and terminal explainability.
+- **Phase 7 — Perpetual vAMM context:** normalized mark/oracle/funding/OI context, bounded perp strategy reference, AMM recentering, shared TESTNET position observability, freshness/version authority, and terminal explainability.
 
 A minimal Phase 1–4 risk authority enforces freshness, level count, per-order size, aggregate notional, minimum price, quote distance, execution state and a kill switch. The kill switch cancels active strategy orders and blocks new quote generation.
 
@@ -127,6 +128,7 @@ GET  /api/v1/amm/curve
 GET  /api/v1/amm/quotes
 GET  /api/v1/positions
 GET  /api/v1/market-adaptation
+GET  /api/v1/perp-context
 GET  /api/v1/orders
 GET  /api/v1/fills
 GET  /api/v1/risk
@@ -157,7 +159,7 @@ Live Hyperliquid integration is intentionally not required by normal unit tests.
 
 ## Limitations
 
-Phase 6 adds deterministic market-state adaptation on top of Phase 5. Perp vAMM/funding context, external oracle protection, full institutional risk firewall, AI agents, optimization/simulation, persistent vault accounting and production mainnet trading remain out of scope.
+Phase 7 adds deterministic Hyperliquid-native perp context and bounded strategy-reference pricing before AMM construction. External oracle protection, full institutional risk firewall, AI agents, optimization/simulation, persistent vault accounting and production mainnet trading remain out of scope.
 
 ## Documentation
 
@@ -168,7 +170,7 @@ Phase 6 adds deterministic market-state adaptation on top of Phase 5. Perp vAMM/
 
 ## 12-phase roadmap
 
-Phases 1–6 are the implemented foundation. Phase 7 adds perpetual vAMM context; Phase 8 oracle protection/risk firewall; Phase 9 AI supervisory agents; Phase 10 optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
+Phases 1–7 are implemented. Phase 8 adds oracle protection/risk firewall; Phase 9 AI supervisory agents; Phase 10 optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
 
 ## Phase 4.1 acceptance and hardening
 
@@ -227,3 +229,12 @@ with a bounded range of `[-1,+1]`. Once volatility is ready, the widening-only s
 clamped to configured limits. Variable liquidity above the existing Phase 5 `base_order_size` floor is reduced by bounded global volatility and conservative side-specific imbalance multipliers. Phase 5 hard-limit suppression remains authoritative and Phase 6 cannot restore a removed side.
 
 See [Market Adaptation](docs/MARKET_ADAPTATION.md).
+
+
+## Phase 7 — Perpetual vAMM Context
+
+Phase 7 keeps raw market fair value separate from a bounded perpetual strategy reference. It normalizes Hyperliquid native `markPx`, `oraclePx`, current `funding`, and `openInterest`; computes signed basis values and OI notional; blends market/mark/oracle prices with configurable weights; applies a bounded funding shift; clamps the total reference move; then recenters the virtual AMM around that strategy reference before Phase 5 inventory and Phase 6 market adaptation.
+
+PAPER mode requires no wallet and exposes null account-only fields. DEMO perp values are deterministic and explicitly labeled simulated. TESTNET reuses the same `user_state()` snapshot for Phase 5 inventory and Phase 7 perp-position observability, with an exact signed-position consistency check.
+
+See [Perpetual Context](docs/PERP_CONTEXT.md).
