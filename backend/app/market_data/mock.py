@@ -4,6 +4,7 @@ import asyncio
 import math
 from decimal import Decimal
 from .models import MarketDataMode, MarketLevel, OrderBookSnapshot, MarketSnapshot, MarketConnectionState, utcnow
+from .perp_context import demo_perp_context
 
 
 class MockMarketDataAdapter:
@@ -16,6 +17,17 @@ class MockMarketDataAdapter:
         self._counter = 0
         self._running = False
         self._callback = None
+        self._perp_listeners: list = []
+
+    def add_perp_listener(self, listener):
+        self._perp_listeners.append(listener)
+
+    async def _emit_perp(self, snapshot: MarketSnapshot):
+        context = demo_perp_context(snapshot)
+        for listener in list(self._perp_listeners):
+            result = listener(context)
+            if asyncio.iscoroutine(result):
+                await result
 
     def snapshot_for(self, counter: int) -> MarketSnapshot:
         wave = Decimal(str(round(math.sin(counter / 6.0) * 4.0 + math.sin(counter / 17.0) * 2.0, 4)))
@@ -43,7 +55,10 @@ class MockMarketDataAdapter:
         self._running = True
         while self._running:
             self._counter += 1
-            await callback(self.snapshot_for(self._counter))
+            snapshot = self.snapshot_for(self._counter)
+            await callback(snapshot)
+            if self._perp_listeners:
+                await self._emit_perp(snapshot)
             await asyncio.sleep(self.interval)
 
     async def stop(self):
