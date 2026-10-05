@@ -239,3 +239,39 @@ size_final =
 ```
 
 A Phase 5 hard-limit-suppressed side has no quotes to transform and remains absent.
+
+
+## Phase 7 perpetual reference math
+
+Phase 7 leaves the constant-product invariant, reserve-delta sizing, concentration, Phase 5 inventory formulas, and Phase 6 adaptation formulas unchanged.
+
+```text
+mid_weight = 1 - mark_weight - oracle_weight
+
+blended_reference =
+      market_fair * mid_weight
+    + mark_price * mark_weight
+    + oracle_price * oracle_weight
+
+funding_score =
+    clamp(funding_rate / funding_reference_abs_rate, -1, +1)
+
+funding_shift_bps =
+    -funding_score * max_funding_reference_shift_bps
+
+candidate_reference =
+    blended_reference * (1 + funding_shift_bps / 10000)
+
+raw_reference_shift_bps =
+    (candidate_reference - market_fair) / market_fair * 10000
+
+final_reference_shift_bps =
+    clamp(raw_reference_shift_bps,
+          -max_perp_reference_shift_bps,
+          +max_perp_reference_shift_bps)
+
+strategy_reference =
+    market_fair * (1 + final_reference_shift_bps / 10000)
+```
+
+The AMM recenters on `strategy_reference`. Raw market fair remains separately available and final quote distance for downstream risk remains measured against raw market fair whenever Phase 7 changes the reference.
