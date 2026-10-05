@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .models import MarketConnectionState, MarketDataMode, MarketLevel, MarketSnapshot, OrderBookSnapshot, utcnow
+from .perp_context import normalize_active_asset_ctx, normalize_meta_and_asset_ctxs
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +22,17 @@ class HyperliquidMarketDataAdapter:
         self._subscription_id = None
         self._sequence = 0
         self._latest_exchange_ms = -1
+        self._perp_subscription_id = None
+        self._perp_listeners: list = []
+
+    def add_perp_listener(self, listener):
+        self._perp_listeners.append(listener)
+
+    async def _emit_perp(self, context):
+        for listener in list(self._perp_listeners):
+            result = listener(context)
+            if asyncio.iscoroutine(result):
+                await result
 
     @staticmethod
     def _normalize_book(market: str, payload: dict[str, Any], fallback_sequence: int) -> OrderBookSnapshot:
@@ -93,6 +105,26 @@ class HyperliquidMarketDataAdapter:
                     asyncio.run_coroutine_threadsafe(deliver(raw), loop)
 
                 self._subscription_id = self._info.subscribe({"type": "l2Book", "coin": self.market}, sdk_callback)
+
+                if self._perp_listeners:
+                    async def deliver_perp(raw):
+                        try:
+                            context = normalize_active_asset_ctx(raw, self.market, updated_at=utcnow())
+                            await self._emit_perp(context)
+                        except Exception as exc:
+                            log.warning("invalid Hyperliquid perp context update: %s", exc)
+
+                    def perp_sdk_callback(raw):
+                        asyncio.run_coroutine_threadsafe(deliver_perp(raw), loop)
+
+                    self._perp_subscription_id = self._info.subscribe(
+                        {"type": "activeAssetCtx", "coin": self.market}, perp_sdk_callback
+                    )
+                    bootstrap = await asyncio.to_thread(self._info.meta_and_asset_ctxs)
+                    await self._emit_perp(
+                        normalize_meta_and_asset_ctxs(bootstrap, self.market, updated_at=utcnow())
+                    )
+
                 raw = await asyncio.to_thread(self._info.l2_snapshot, self.market)
                 await deliver(raw)
                 retry_seconds = 1.0
@@ -123,7 +155,17 @@ class HyperliquidMarketDataAdapter:
                 )
             except Exception:
                 log.warning("Hyperliquid unsubscribe failed", exc_info=True)
+        if self._info is not None and self._perp_subscription_id is not None:
+            try:
+                await asyncio.to_thread(
+                    self._info.unsubscribe,
+                    {"type": "activeAssetCtx", "coin": self.market},
+                    self._perp_subscription_id,
+                )
+            except Exception:
+                log.warning("Hyperliquid perp unsubscribe failed", exc_info=True)
         self._subscription_id = None
+        self._perp_subscription_id = None
         self._info = None
 
     async def stop(self):
