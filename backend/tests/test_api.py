@@ -20,3 +20,15 @@ def test_stopped_strategy_preview_does_not_place_orders():
         client.get('/api/v1/amm/curve')
         orders=client.get('/api/v1/orders').json()
         assert orders == []
+
+
+def test_positions_returns_normalized_paper_inventory():
+    with TestClient(app) as client:
+        r=client.get('/api/v1/positions')
+        assert r.status_code==200
+        data=r.json()
+        assert data['market']=='ETH'
+        assert data['source']=='PAPER'
+        assert data['position_base']=='0'
+        assert data['target_base']=='0'
+        assert data['stale'] is False
