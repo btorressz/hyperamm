@@ -173,3 +173,34 @@ Phase 6 uses the Phase 5 reservation price as its strategy center without overwr
 The runtime binds final quotes to both the Phase 5 inventory version and the Phase 6 market-history version. Final execution authority refreshes the normalized market snapshot and rejects transmission if either material dependency changed after quote generation. The existing shared execution lock remains the serialization boundary.
 
 Startup volatility warmup is not a failure: if fewer than the configured minimum observations exist, realized volatility is `None`, the regime is `WARMING_UP`, and all Phase 6 spread/size multipliers are neutral. Invalid book state or invalid/non-finite Phase 6 math after that point follows the existing invalidation/cancel semantics.
+
+
+## Phase 7 perpetual strategy-reference layer
+
+Phase 7 inserts one deterministic context decision before AMM construction:
+
+```text
+normalized market snapshot
+        ↓
+raw market fair value
+        ↓
+normalized PerpMarketContext
+        ↓
+PerpContextPolicy
+        ↓
+bounded strategy reference
+        ↓
+virtual AMM recenter
+        ↓
+reserve-delta sizing / concentration
+        ↓
+Phase 5 inventory
+        ↓
+Phase 6 market adaptation
+        ↓
+existing deterministic risk/reconciliation/execution
+```
+
+The existing public Hyperliquid `Info` client owns both `l2Book` and `activeAssetCtx` subscriptions. `meta_and_asset_ctxs()` is used for bootstrap and maps by universe name. No second public WebSocket lifecycle is introduced.
+
+Final execution authority binds the generated ladder to inventory, market/adaptation, and perp-context versions. Stale or materially changed perp context cannot transmit an old decision. Phase 7 does not add Phase 8 oracle-firewall authority.
