@@ -66,11 +66,11 @@ async def test_fail_closed_and_recovery(failure,monkeypatch):
     elif failure=='infinity': bad.best_ask=D('Infinity')
     elif failure=='zero': bad.best_bid=D('0')
     elif failure=='risk': rt.risk.max_order_size=D('.0001')
-    original_generate=rt.quote_engine.generate
+    original_generate=rt.quote_engine.generate_at_reference
     original_snapshot=rt.market.snapshot
     def broken(*args): raise ValueError('generation failed')
     async def unavailable(): raise ValueError('snapshot unavailable')
-    if failure=='generation': monkeypatch.setattr(rt.quote_engine,'generate',broken)
+    if failure=='generation': monkeypatch.setattr(rt.quote_engine,'generate_at_reference',broken)
     if failure=='snapshot': monkeypatch.setattr(rt.market,'snapshot',unavailable)
     # Inject provider state without invoking the listener: timer path must cancel too.
     rt.market._snapshot=bad
@@ -80,7 +80,7 @@ async def test_fail_closed_and_recovery(failure,monkeypatch):
     assert rt.quotes==[] and rt.fair_value is None and rt.pool is None
     assert rt.strategy.running and rt.strategy.quote_health=='DEGRADED'
     assert rt.strategy.last_error
-    monkeypatch.setattr(rt.quote_engine,'generate',original_generate)
+    monkeypatch.setattr(rt.quote_engine,'generate_at_reference',original_generate)
     monkeypatch.setattr(rt.market,'snapshot',original_snapshot)
     rt.risk.max_order_size=D('25')
     await rt.market._accept(MockMarketDataAdapter().snapshot_for(2))
