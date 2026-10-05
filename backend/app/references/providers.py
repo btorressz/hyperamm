@@ -47,47 +47,148 @@ def backoff(attempt,rand=None):
 class RedStoneProvider:
     def __init__(self,*,market,enabled,api_key,ws_url,data_service_id,feed_id,stale_after_seconds,on_update=None,websocket_factory=None):
         self.api_key=api_key; self.ws_url=ws_url; self.data_service_id=data_service_id; self.feed_id=feed_id; self.websocket_factory=websocket_factory
-        self.state=EvidenceState(market,ProviderId.REDSTONE,SourceType.ORACLE,feed_id,stale_after_seconds,enabled,on_update); self.task=None; self.closing=False
+        source_id=f"{data_service_id}:{feed_id}" if data_service_id and feed_id else feed_id
+        self.state=EvidenceState(market,ProviderId.REDSTONE,SourceType.ORACLE,source_id,stale_after_seconds,enabled,on_update); self.task=None; self.closing=False
+
+    def subscription(self):
+        return {
+            "op":"subscribe",
+            "items":[{
+                "feedId":self.feed_id,
+                "type":"price",
+                "dataServiceId":self.data_service_id,
+            }],
+        }
+
+    def validate_configuration(self):
+        missing=[]
+        if not self.api_key: missing.append("API key")
+        if not self.ws_url: missing.append("WebSocket URL")
+        if not self.feed_id: missing.append("feed ID")
+        if not self.data_service_id: missing.append("data service ID")
+        if missing:
+            raise ValueError("RedStone configuration missing: "+", ".join(missing))
+
+    @staticmethod
+    def _parse_object(raw):
+        if isinstance(raw,(str,bytes,bytearray)):
+            try: raw=json.loads(raw)
+            except Exception as exc: raise ValueError("malformed RedStone JSON") from exc
+        if not isinstance(raw,dict): raise ValueError("malformed RedStone message: expected JSON object")
+        return raw
+
+    def message_type(self,raw):
+        data=self._parse_object(raw)
+        msg_type=data.get("type")
+        if not isinstance(msg_type,str) or not msg_type:
+            raise ValueError("RedStone message missing type")
+        return msg_type
+
     def normalize(self,raw):
-        if isinstance(raw,str): raw=json.loads(raw)
-        if not isinstance(raw,dict): raise ValueError("malformed RedStone message")
-        data=raw["data"] if isinstance(raw.get("data"),dict) else raw
+        data=self._parse_object(raw)
+        msg_type=data.get("type")
+        if msg_type is None: raise ValueError("RedStone message missing type")
+        if msg_type!="price": raise ValueError(f"wrong RedStone message type: {msg_type}")
         if data.get("dataServiceId")!=self.data_service_id: raise ValueError("wrong RedStone data service")
-        feed=data.get("feedId") or data.get("feed")
-        if self.feed_id and feed!=self.feed_id: raise ValueError("wrong RedStone feed")
-        if "timestamp" not in data: raise ValueError("RedStone missing timestamp")
-        return decimal_price(data.get("value"),"RedStone price"),parse_timestamp(data["timestamp"],"RedStone timestamp"),data.get("dataPackageId") or feed
+        feed=data.get("dataPackageId")
+        if feed!=self.feed_id: raise ValueError("wrong RedStone feed")
+        if "timestamp" not in data: raise ValueError("RedStone price message missing timestamp")
+        if "value" not in data: raise ValueError("RedStone price message missing value")
+        timestamp=parse_timestamp(data["timestamp"],"RedStone timestamp")
+        price=decimal_price(data["value"],"RedStone price")
+        return price,timestamp,self.state.source_id
+
+    def normalize_error(self,raw):
+        data=self._parse_object(raw)
+        if data.get("type")!="error": raise ValueError("wrong RedStone error message type")
+        code=data.get("code"); message=data.get("message")
+        if not isinstance(code,str) or not code: raise ValueError("RedStone error frame missing code")
+        if not isinstance(message,str) or not message: raise ValueError("RedStone error frame missing message")
+        limit=data.get("limit")
+        if limit is not None and (not isinstance(limit,int) or isinstance(limit,bool) or limit<0):
+            raise ValueError("RedStone error frame has invalid limit")
+        return code,self._safe_error(message),limit
+
+    def _safe_error(self,value):
+        text=str(value)
+        if self.api_key:
+            text=text.replace(self.api_key,"[REDACTED]")
+        return text
+
+    def handle_error_frame(self,raw):
+        code,message,limit=self.normalize_error(raw)
+        lower=f"{code} {message}".lower()
+        permanent=(
+            code=="TOPIC_LIMIT_EXCEEDED"
+            or "unauthor" in lower
+            or "forbidden" in lower
+            or ("invalid" in lower and ("subscription" in lower or "feed" in lower))
+        )
+        status=ProviderStatus.ERROR if permanent else ProviderStatus.DEGRADED
+        detail=f"RedStone error {code}: {message}"
+        if limit is not None: detail+=f" (limit={limit})"
+        self.state.set_status(status,self._safe_error(detail))
+        return status
+
     def ingest(self,raw,observed_at=None):
         p,t,s=self.normalize(raw); return self.state.accept(p,t,observed_at,s)
+
     def auth_headers(self):
         return {"x-api-key":self.api_key} if self.api_key else {}
+
     def classify_connection_error(self,exc):
-        text=str(exc)
-        if "401" in text or "403" in text:return ProviderStatus.ERROR
-        if "429" in text:return ProviderStatus.DEGRADED
+        text=self._safe_error(exc); lower=text.lower()
+        if "429" in lower or "rate limit" in lower or "connection limit" in lower:return ProviderStatus.DEGRADED
+        if "401" in lower or "403" in lower or "unauthor" in lower or "forbidden" in lower:return ProviderStatus.ERROR
         return ProviderStatus.DEGRADED
+
     async def start(self):
         if not self.state.enabled or self.task: return
-        if not self.ws_url or not self.api_key or not self.feed_id: self.state.set_status(ProviderStatus.ERROR,"RedStone enabled but URL/API key/feed ID is missing"); return
+        try:self.validate_configuration()
+        except ValueError as exc:
+            self.state.set_status(ProviderStatus.ERROR,self._safe_error(exc)); return
         self.closing=False; self.task=asyncio.create_task(self._run(),name="redstone-live-reference")
+
+    def _connection(self):
+        if self.websocket_factory:
+            return self.websocket_factory(self.ws_url,self.auth_headers())
+        import websockets
+        # websockets>=15 uses additional_headers on the asyncio client API.
+        return websockets.connect(self.ws_url,additional_headers=self.auth_headers(),open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
+
     async def _run(self):
+        try:self.validate_configuration()
+        except ValueError as exc:
+            self.state.set_status(ProviderStatus.ERROR,self._safe_error(exc)); return
         attempt=0
         while not self.closing:
             try:
                 self.state.set_status(ProviderStatus.DEGRADED,"connecting/reconnecting")
-                if self.websocket_factory: conn=self.websocket_factory(self.ws_url,self.api_key)
-                else:
-                    import websockets
-                    try: conn=websockets.connect(self.ws_url,additional_headers=self.auth_headers(),open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
-                    except TypeError: conn=websockets.connect(self.ws_url,extra_headers=self.auth_headers(),open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
+                conn=self._connection()
                 async with conn as ws:
-                    await ws.send(json.dumps({"feedId":self.feed_id,"type":"price","dataServiceId":self.data_service_id})); attempt=0
+                    await ws.send(json.dumps(self.subscription()))
+                    attempt=0
                     async for msg in ws:
-                        try:self.ingest(msg)
-                        except Exception as exc:self.state.set_status(ProviderStatus.DEGRADED,f"invalid RedStone message: {exc}")
+                        try:
+                            msg_type=self.message_type(msg)
+                            if msg_type=="price":
+                                self.ingest(msg)
+                            elif msg_type=="error":
+                                if self.handle_error_frame(msg)==ProviderStatus.ERROR:
+                                    return
+                            else:
+                                self.state.set_status(ProviderStatus.DEGRADED,f"unsupported RedStone message type: {msg_type}")
+                        except Exception as exc:
+                            self.state.set_status(ProviderStatus.DEGRADED,f"invalid RedStone message: {self._safe_error(exc)}")
+                    if not self.closing:
+                        raise ConnectionError("RedStone connection closed")
             except asyncio.CancelledError: break
             except Exception as exc:
-                self.state.set_status(self.classify_connection_error(exc),str(exc)); await asyncio.sleep(backoff(attempt)); attempt+=1
+                status=self.classify_connection_error(exc)
+                self.state.set_status(status,self._safe_error(exc))
+                if self.closing or status==ProviderStatus.ERROR: break
+                await asyncio.sleep(backoff(attempt)); attempt+=1
+
     async def stop(self):
         self.closing=True
         if self.task:
@@ -95,6 +196,7 @@ class RedStoneProvider:
             try: await self.task
             except asyncio.CancelledError: pass
             self.task=None
+
     def snapshot(self): return self.state.snapshot()
 
 class KrakenProvider:
