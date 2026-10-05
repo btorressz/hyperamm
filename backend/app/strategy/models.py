@@ -57,6 +57,14 @@ class StrategyConfig(BaseModel):
     max_spread_multiplier: Decimal = Field(default=Decimal("2.5"), ge=Decimal("1"))
     min_market_size_multiplier: Decimal = Field(default=Decimal("0.35"), gt=0, le=Decimal("1"))
 
+    perp_context_enabled: bool = True
+    perp_context_stale_after_seconds: float = Field(default=10.0, gt=0, le=300)
+    perp_mark_weight: Decimal = Field(default=Decimal("0.25"), ge=0, le=1)
+    perp_oracle_weight: Decimal = Field(default=Decimal("0.25"), ge=0, le=1)
+    funding_reference_abs_rate: Decimal = Field(default=Decimal("0.00025"), gt=0)
+    max_funding_reference_shift_bps: Decimal = Field(default=Decimal("5"), ge=0, le=Decimal("100"))
+    max_perp_reference_shift_bps: Decimal = Field(default=Decimal("50"), ge=0, le=Decimal("1000"))
+
     @model_validator(mode="after")
     def bounds(self):
         if self.concentration_upper_bps <= self.concentration_lower_bps:
@@ -72,6 +80,8 @@ class StrategyConfig(BaseModel):
             "volatility_low_threshold", "volatility_high_threshold", "volatility_spread_strength",
             "volatility_size_strength", "imbalance_spread_strength", "imbalance_size_strength",
             "min_spread_multiplier", "max_spread_multiplier", "min_market_size_multiplier",
+            "perp_mark_weight", "perp_oracle_weight", "funding_reference_abs_rate",
+            "max_funding_reference_shift_bps", "max_perp_reference_shift_bps",
         )
         if any(not getattr(self, name).is_finite() for name in decimal_fields):
             raise ValueError("strategy decimal configuration must be finite")
@@ -89,6 +99,8 @@ class StrategyConfig(BaseModel):
             raise ValueError("max_spread_multiplier must be >= min_spread_multiplier")
         if self.min_spread_multiplier < Decimal("1"):
             raise ValueError("Phase 6 widening-only policy requires min_spread_multiplier >= 1")
+        if self.perp_mark_weight + self.perp_oracle_weight > Decimal("1"):
+            raise ValueError("perp mark + oracle weights must be <= 1")
         return self
 
 
