@@ -102,7 +102,12 @@ class HyperliquidTestnetExecutionAdapter:
             raw=item["position"]
             if raw.get("coin") != market:
                 continue
-            value=Decimal(str(raw.get("szi")))
+            if "szi" not in raw:
+                raise ValueError("Hyperliquid position missing signed base size")
+            try:
+                value=Decimal(str(raw["szi"]))
+            except Exception as exc:
+                raise ValueError("invalid Hyperliquid signed base position") from exc
             if not value.is_finite():
                 raise ValueError("non-finite Hyperliquid position")
             position += value
