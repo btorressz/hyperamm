@@ -291,6 +291,35 @@ class HyperAmmRuntime:
             await self._venue_task
         await self.testnet.close()
 
+    def _pnl_drawdown_locked(self, mark_price):
+        if self.config.execution_mode == ExecutionMode.PAPER:
+            return paper_pnl(self.paper.fills.all(), self.config.market, mark_price)
+        account = self.testnet.account_risk_snapshot()
+        current_equity = account.get("account_value") if account else None
+        if current_equity is not None:
+            if self._session_start_equity is None:
+                self._session_start_equity = current_equity
+            self._peak_equity = current_equity if self._peak_equity is None else max(self._peak_equity, current_equity)
+            session_pnl = current_equity - self._session_start_equity
+            drawdown = (
+                (self._peak_equity - current_equity) / self._peak_equity
+                if self._peak_equity is not None and self._peak_equity > 0
+                else None
+            )
+        else:
+            session_pnl = None
+            drawdown = None
+        return PnlDrawdown(
+            realized_pnl=None,
+            unrealized_pnl=self.perp_position.unrealized_pnl if self.perp_position else None,
+            session_pnl=session_pnl,
+            current_equity=current_equity,
+            peak_equity=self._peak_equity,
+            drawdown_pct=drawdown,
+            source="TESTNET AUTHORITATIVE USER STATE",
+            simulated=False,
+        )
+
     async def refresh_once(self):
         async with self.execution_lock:
             if self.risk.kill_switch_active:
@@ -299,6 +328,7 @@ class HyperAmmRuntime:
             try:
                 snap = await self.market.snapshot()
                 self.market_history.add_snapshot(snap)
+                market_fair = calculate_fair_value(snap)
                 venue_reconciled = False
                 if self.config.execution_mode == ExecutionMode.TESTNET:
                     self.testnet._require_enabled()
@@ -309,48 +339,87 @@ class HyperAmmRuntime:
                     inventory = self._paper_inventory()
                     self.perp_position = self._paper_perp_position(inventory)
 
+                if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
+                    self.perp_context_service.accept(demo_perp_context(snap))
+                perp_context = self.perp_context_service.snapshot(market_fair)
+
                 if self.config.perp_context_enabled:
-                    if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
-                        self.perp_context_service.accept(demo_perp_context(snap))
-                    market_fair = calculate_fair_value(snap)
-                    perp_context = self.perp_context_service.snapshot(market_fair)
-                    fair, pool, quotes, decision, market_decision, perp_decision = (
+                    fair, pool, proposed, inventory_decision, market_decision, perp_decision = (
                         self.quote_engine.generate_perp_market_adaptive(
                             self.config, snap, inventory, self.market_history, perp_context
                         )
                     )
-                    self.perp_context = perp_context
                     self.perp_reference_decision = perp_decision
                 else:
-                    fair, pool, quotes, decision, market_decision = self.quote_engine.generate_market_adaptive(
+                    fair, pool, proposed, inventory_decision, market_decision = self.quote_engine.generate_market_adaptive(
                         self.config, snap, inventory, self.market_history
                     )
                     self.perp_reference_decision = None
-                validate_quotes(quotes, snap, self.risk)
+
+                refs = self.reference_service.snapshot(
+                    snap,
+                    perp_context,
+                    agreement_bps=self.risk_config.source_agreement_bps,
+                    outlier_bps=self.risk_config.source_outlier_bps,
+                )
+                pnl = self._pnl_drawdown_locked(perp_context.mark_price)
+                risk_decision = self.firewall.evaluate(
+                    refs=refs,
+                    quotes=proposed,
+                    current_position=inventory.position_base,
+                    mark=perp_context.mark_price,
+                    liquidation=self.perp_position.liquidation_price if self.perp_position else None,
+                    pnl=pnl,
+                    market_version=market_decision.version,
+                    inventory_version=inventory.version,
+                    perp_version=perp_context.version,
+                    venue_uncertain=self.config.execution_mode == ExecutionMode.TESTNET and self.testnet.has_unknown_exposure(),
+                )
+                authorized = self.firewall.transform(
+                    proposed,
+                    risk_decision,
+                    center=inventory_decision.reservation_price,
+                    tick_size=self.config.tick_size,
+                    size_precision=self.config.size_precision,
+                    base_order_size=self.config.base_order_size,
+                )
+                validate_quotes(authorized, snap, self.risk)
+                authorization = authorize(authorized, refs, risk_decision)
+
                 self.inventory = inventory
-                self.inventory_decision = decision
+                self.inventory_decision = inventory_decision
                 self.market_adaptation_decision = market_decision
+                self.perp_context = perp_context
+                self.references = refs
+                self.risk_decision = risk_decision
+                self.authorization = authorization
+                self.strategy_quotes = proposed
+                self.fair_value, self.pool, self.quotes = fair, pool, authorized
                 self._expected_inventory_version = inventory.version
                 self._expected_market_version = market_decision.version
-                self._expected_perp_version = (
-                    self.perp_context.version if self.config.perp_context_enabled and self.perp_context else None
-                )
+                self._expected_perp_version = perp_context.version
+                self._expected_reference_version = refs.version
+                self._expected_risk_version = risk_decision.version
+
                 if self.strategy.running:
-                    await self._execution_authority()
+                    if authorized:
+                        await self._execution_authority()
                     self.last_actions = await self.orders.reconcile_locked(
                         self.config.market,
-                        quotes,
+                        authorized,
                         self.config.replace_tolerance_bps,
                         self.config.size_tolerance,
                         venue_reconciled=venue_reconciled,
                     )
-                    await self._execution_authority()
-                    self.strategy.quote_health = "HEALTHY"
+                    if authorized:
+                        await self._execution_authority()
+                    self.strategy.quote_health = "HALTED" if risk_decision.state == RiskState.HALT else "HEALTHY"
                 else:
                     self.last_actions = []
                     self.strategy.quote_health = "NO_QUOTES"
-                self.fair_value, self.pool, self.quotes = fair, pool, quotes
-                self.strategy.last_error = None
+                self.strategy.last_error = (
+                    "; ".join(risk_decision.reasons) if risk_decision.state == RiskState.HALT else None
+                )
             except Exception as exc:
                 try:
                     self.inventory = await self._inventory_state_locked(refresh=False)
