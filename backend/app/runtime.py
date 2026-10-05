@@ -372,9 +372,16 @@ class HyperAmmRuntime:
                 self.testnet._require_enabled()
                 await self.testnet.reconcile_venue()
             state = await self._inventory_state_locked(refresh=refresh)
-            snap = await self.market.snapshot()
-            fair = self.fair_value if self.fair_value is not None else calculate_fair_value(snap)
-            decision = InventoryPolicy(self.config).decision(fair, state)
+            decision = None
+            try:
+                snap = await self.market.snapshot()
+                fair = self.fair_value if self.fair_value is not None else calculate_fair_value(snap)
+                decision = InventoryPolicy(self.config).decision(fair, state)
+            except ValueError:
+                # Position observability remains available while market-derived strategy
+                # metrics are temporarily unavailable. Inventory-source failures are
+                # raised before this point and are never converted to zero/default state.
+                pass
             self.inventory = state
             self.inventory_decision = decision
             return self._inventory_payload(state, decision)
