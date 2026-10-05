@@ -12,8 +12,8 @@ export function InventoryPanel({t}:{t:TerminalState}){
       <div><span>Target Position</span><b>{f(i.target_base,4)} {i.market}</b></div>
       <div><span>Inventory Deviation</span><b>{Number(i.deviation_base)>=0?'+':''}{f(i.deviation_base,4)}</b></div>
       <div><span>Inventory Ratio</span><b>{f(Number(i.inventory_ratio)*100,1)}%</b></div>
-      <div><span>Fair Value</span><b>{f(t.fair_value)}</b></div>
-      <div><span>Reservation Price</span><b>{f(i.reservation_price)}</b></div>
+      <div><span>Fair Value</span><b><span className="money">$</span>{f(t.fair_value)}</b></div>
+      <div><span>Reservation Price</span><b><span className="money">$</span>{f(i.reservation_price)}</b></div>
       <div><span>Price Skew</span><b>{f(i.price_skew_bps,2)} bps</b></div>
       <div><span>Bid / Ask Size</span><b>{f(i.bid_size_multiplier,2)}x / {f(i.ask_size_multiplier,2)}x</b></div>
     </div>
