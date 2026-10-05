@@ -22,6 +22,8 @@ def test_repository_contains_no_forbidden_oracle_provider_token():
     for candidate in candidates:
         paths=[candidate] if candidate.is_file() else list(candidate.rglob('*'))
         for path in paths:
+            if path.resolve()==Path(__file__).resolve():
+                continue
             if not path.is_file() or path.suffix.lower() not in {'.py','.md','.toml','.txt','.example',''}:
                 continue
             try:text=path.read_text()
