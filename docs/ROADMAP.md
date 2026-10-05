@@ -9,7 +9,7 @@
 | 4.1 | COMPLETE | Phase 1–4 Acceptance & Hardening: AMM-derived sizes, fail-closed quotes, serialized execution/kill, TESTNET venue reconciliation |
 | 5 | COMPLETE | Inventory-aware quoting with bounded price/size skew, authoritative inventory state, hard-limit side suppression, API/UI visibility, and acceptance coverage |
 | 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; acceptance validation pending |
-| 7 | PLANNED | Perpetual vAMM context |
+| 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; acceptance validation pending |
 | 8 | PLANNED | Oracle protection + institutional risk firewall |
 | 9 | PLANNED | Regime / toxic-flow / execution-quality supervisory agents |
 | 10 | PLANNED | Strategy optimization + simulation |
@@ -52,3 +52,10 @@ Acceptance verified on Python 3.12 / Node 24: full backend suite, FastAPI startu
 Implemented scope includes bounded unique market history, RMS log-return realized volatility, explicit neutral warmup, bounded volatility scoring, top-N base-size L2 imbalance, widening-only spread adaptation around the Phase 5 reservation center, bounded global/side variable-liquidity reduction, market/adaptation version authority, normalized REST/WebSocket state, grouped frontend controls, explainability metadata, and focused Phase 6 tests.
 
 Phase 6 should be promoted to COMPLETE only after the explicit local Python 3.12 backend suite, FastAPI health/API checks, frontend typecheck/build, and `git diff --check` pass. No GitHub Actions workflow is part of Phase 6.
+
+
+## Phase 7 — IN REVIEW
+
+Implemented scope includes normalized Hyperliquid mark/oracle/funding/open-interest context, deterministic DEMO context, signed basis and OI-notional calculations, bounded market/mark/oracle reference weighting, bounded funding bias, total reference-shift clamping, AMM recentering before reserve-delta sizing, Phase 5/6 composition, shared TESTNET user-state position context, perp freshness/version authority, normalized REST/WebSocket state, frontend controls/panels, and focused Phase 7 tests.
+
+Phase 6 remains IN REVIEW because its exact Python 3.12/full frontend acceptance evidence is still outstanding in this environment. Phase 7 must also remain IN REVIEW until the complete Phase 6 prerequisite and Phase 7 acceptance commands pass. No GitHub Actions workflow is part of either phase.
