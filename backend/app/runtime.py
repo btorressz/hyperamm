@@ -11,6 +11,7 @@ from app.market_data.history import MarketPriceHistory
 from app.market_data.perp_context import PerpContextService, PerpPositionContext, demo_perp_context
 from app.strategy.models import StrategyConfig, StrategyState, ExecutionMode
 from app.strategy.quote_engine import QuoteEngine
+from app.strategy.fair_value import calculate_fair_value
 from app.strategy.inventory import InventoryPolicy, InventoryState, build_inventory_state
 from app.strategy.market_adaptation import MarketAdaptationPolicy
 from app.strategy.perp_policy import PerpContextPolicy
@@ -392,9 +393,7 @@ class HyperAmmRuntime:
                 snap = await self.market.snapshot()
                 if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
                     self.perp_context_service.accept(demo_perp_context(snap))
-                self.perp_context = self.perp_context_service.snapshot(
-                    __import__("app.strategy.fair_value", fromlist=["calculate_fair_value"]).calculate_fair_value(snap)
-                )
+                self.perp_context = self.perp_context_service.snapshot(calculate_fair_value(snap))
             self.strategy.running = True
             if not self._strategy_task or self._strategy_task.done():
                 self._strategy_task = asyncio.create_task(self._loop(), name="strategy")
