@@ -20,3 +20,7 @@ async def curve(rt=Depends(runtime)):
     return {'fair_value':rt.fair_value,'quotes':rt.quotes,'inventory':rt._inventory_payload(rt.inventory,rt.inventory_decision) if rt.inventory else None}
 @router.get('/amm/quotes')
 async def quotes(rt=Depends(runtime)):return rt.quotes
+
+@router.get('/market-adaptation')
+async def market_adaptation(rt=Depends(runtime)):
+    return await rt.market_adaptation_summary()

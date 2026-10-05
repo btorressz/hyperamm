@@ -7,9 +7,11 @@ from datetime import datetime, timezone
 from app.config import Settings
 from app.market_data.models import MarketDataMode, utcnow
 from app.market_data.service import MarketDataService
+from app.market_data.history import MarketPriceHistory
 from app.strategy.models import StrategyConfig, StrategyState, ExecutionMode
 from app.strategy.quote_engine import QuoteEngine
 from app.strategy.inventory import InventoryPolicy, InventoryState, build_inventory_state
+from app.strategy.market_adaptation import MarketAdaptationPolicy
 from app.execution.paper import PaperExecutionAdapter
 from app.execution.hyperliquid import HyperliquidTestnetExecutionAdapter
 from app.execution.order_manager import OrderManager
@@ -44,6 +46,7 @@ class HyperAmmRuntime:
         self.execution_lock = asyncio.Lock()
         self.orders = OrderManager(self.execution, self.execution_lock, self._execution_authority)
         self.quote_engine = QuoteEngine()
+        self.market_history = MarketPriceHistory(max_samples=1000)
         self.risk = RiskStatus()
         self.kill = KillSwitch(self.risk, self.execution_lock)
         self.fair_value = None
@@ -52,7 +55,9 @@ class HyperAmmRuntime:
         self.last_actions = []
         self.inventory: InventoryState | None = None
         self.inventory_decision = None
+        self.market_adaptation_decision = None
         self._expected_inventory_version: int | None = None
+        self._expected_market_version: int | None = None
         self._strategy_task = None
         self._venue_task = None
         self._closing = False
@@ -111,7 +116,9 @@ class HyperAmmRuntime:
     async def _execution_authority(self):
         from app.strategy.fair_value import calculate_fair_value
 
-        calculate_fair_value(await self.market.snapshot())
+        current_market = await self.market.snapshot()
+        calculate_fair_value(current_market)
+        self.market_history.add_snapshot(current_market)
         validate_execution_authority(
             risk=self.risk,
             execution_mode=self.config.execution_mode.value,
@@ -122,12 +129,16 @@ class HyperAmmRuntime:
         inventory = await self._inventory_state_locked(refresh=False)
         if self._expected_inventory_version is not None and inventory.version != self._expected_inventory_version:
             raise RuntimeError("inventory changed after quote generation; recompute before transmission")
+        if self._expected_market_version is not None and self.market_history.version != self._expected_market_version:
+            raise RuntimeError("market/adaptation state changed after quote generation; recompute before transmission")
 
     async def _invalidate_locked(self, reason, health="DEGRADED"):
         self.quotes = []
         self.fair_value = None
         self.pool = None
         self.inventory_decision = None
+        self.market_adaptation_decision = None
+        self._expected_market_version = None
         self.last_actions = []
         self.strategy.last_error = reason
         self.strategy.quote_health = "HALTED" if self.risk.kill_switch_active else health
@@ -147,6 +158,7 @@ class HyperAmmRuntime:
             try:
                 snapshot = await self.market.snapshot()
                 calculate_fair_value(snapshot)
+                self.market_history.add_snapshot(snapshot)
             except Exception as exc:
                 await self._invalidate_locked(
                     str(exc), "HALTED" if self.risk.kill_switch_active else "DEGRADED"
@@ -157,7 +169,7 @@ class HyperAmmRuntime:
                 self.paper.update_market(snapshot)
                 if self.paper.inventory_version != before:
                     self.inventory = self._paper_inventory()
-                    self._strategy_wakeup.set()
+            self._strategy_wakeup.set()
 
     async def start_services(self):
         self._closing = False
@@ -202,6 +214,7 @@ class HyperAmmRuntime:
                 return
             try:
                 snap = await self.market.snapshot()
+                self.market_history.add_snapshot(snap)
                 venue_reconciled = False
                 if self.config.execution_mode == ExecutionMode.TESTNET:
                     self.testnet._require_enabled()
@@ -210,13 +223,15 @@ class HyperAmmRuntime:
                     inventory = await self._testnet_inventory_locked(refresh=True)
                 else:
                     inventory = self._paper_inventory()
-                fair, pool, quotes, decision = self.quote_engine.generate_inventory_aware(
-                    self.config, snap, inventory
+                fair, pool, quotes, decision, market_decision = self.quote_engine.generate_market_adaptive(
+                    self.config, snap, inventory, self.market_history
                 )
                 validate_quotes(quotes, snap, self.risk)
                 self.inventory = inventory
                 self.inventory_decision = decision
+                self.market_adaptation_decision = market_decision
                 self._expected_inventory_version = inventory.version
+                self._expected_market_version = market_decision.version
                 if self.strategy.running:
                     await self._execution_authority()
                     self.last_actions = await self.orders.reconcile_locked(
@@ -263,9 +278,19 @@ class HyperAmmRuntime:
                 async with self.execution_lock:
                     try:
                         from app.strategy.fair_value import calculate_fair_value
-                        calculate_fair_value(await self.market.snapshot())
+                        current_market = await self.market.snapshot()
+                        calculate_fair_value(current_market)
+                        self.market_history.add_snapshot(current_market)
                         inventory = await self._inventory_state_locked(refresh=False)
-                        if self._expected_inventory_version is not None and inventory.version != self._expected_inventory_version:
+                        inventory_changed = (
+                            self._expected_inventory_version is not None
+                            and inventory.version != self._expected_inventory_version
+                        )
+                        market_changed = (
+                            self._expected_market_version is not None
+                            and self.market_history.version != self._expected_market_version
+                        )
+                        if inventory_changed or market_changed:
                             self._strategy_wakeup.set()
                             break
                     except Exception as exc:
@@ -344,8 +369,12 @@ class HyperAmmRuntime:
             self.config = new_config
             self.strategy.config = new_config
             self._expected_inventory_version = None
+            self._expected_market_version = None
             self.inventory = None
             self.inventory_decision = None
+            self.market_adaptation_decision = None
+            if mode_changed:
+                self.market_history.clear()
         if old_market:
             await old_market.stop()
             await self.market.start()
@@ -386,6 +415,20 @@ class HyperAmmRuntime:
             self.inventory_decision = decision
             return self._inventory_payload(state, decision)
 
+    def _market_adaptation_payload(self, decision) -> dict | None:
+        return decision.model_dump(mode="json") if decision is not None else None
+
+    async def market_adaptation_summary(self):
+        from app.strategy.fair_value import calculate_fair_value
+
+        async with self.execution_lock:
+            snapshot = await self.market.snapshot()
+            calculate_fair_value(snapshot)
+            self.market_history.add_snapshot(snapshot)
+            decision = MarketAdaptationPolicy(self.config).decision(snapshot, self.market_history)
+            self.market_adaptation_decision = decision
+            return self._market_adaptation_payload(decision)
+
     async def terminal_state(self):
         snap = await self.market.snapshot()
         inventory = None
@@ -398,6 +441,7 @@ class HyperAmmRuntime:
             "pool": self.pool.model_dump(mode="json") if self.pool else None,
             "quotes": [q.model_dump(mode="json") for q in self.quotes],
             "inventory": inventory,
+            "market_adaptation": self._market_adaptation_payload(self.market_adaptation_decision),
             "risk": self.risk.model_dump(mode="json"),
             "orders": [o.model_dump(mode="json") for o in self.paper.all_orders()]
             if self.config.execution_mode == ExecutionMode.PAPER

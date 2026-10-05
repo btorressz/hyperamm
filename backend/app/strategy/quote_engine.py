@@ -4,8 +4,10 @@ from app.amm.discretizer import compile_quotes
 from app.amm.models import QuoteLevel
 from app.amm.virtual_reserves import initialize_virtual_pool, recenter_pool
 from app.market_data.models import MarketSnapshot
+from app.market_data.history import MarketPriceHistory
 from .fair_value import calculate_fair_value
 from .inventory import InventoryDecision, InventoryPolicy, InventoryState
+from .market_adaptation import MarketAdaptationDecision, MarketAdaptationPolicy
 from .models import StrategyConfig
 
 
@@ -30,3 +32,19 @@ class QuoteEngine:
         fair, pool, neutral = self.generate(config, snapshot)
         quotes, decision = InventoryPolicy(config).apply(neutral, fair, inventory)
         return fair, pool, quotes, decision
+
+
+    def generate_market_adaptive(
+        self,
+        config: StrategyConfig,
+        snapshot: MarketSnapshot,
+        inventory: InventoryState,
+        history: MarketPriceHistory,
+    ) -> tuple[object, object, list[QuoteLevel], InventoryDecision, MarketAdaptationDecision]:
+        fair, pool, inventory_quotes, inventory_decision = self.generate_inventory_aware(
+            config, snapshot, inventory
+        )
+        final_quotes, market_decision = MarketAdaptationPolicy(config).apply(
+            inventory_quotes, inventory_decision, snapshot, history
+        )
+        return fair, pool, final_quotes, inventory_decision, market_decision

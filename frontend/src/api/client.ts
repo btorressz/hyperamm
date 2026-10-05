@@ -7,6 +7,7 @@ async function request<T>(path:string,init?:RequestInit):Promise<T>{
 }
 export const api={
   health:()=>request<{status:string;app:string;stale:boolean;mode:string;simulated:boolean}>('/health'),
+  marketAdaptation:()=>request('/market-adaptation'),
   updateStrategy:(config:StrategyConfig)=>request('/strategy',{method:'PUT',body:JSON.stringify(config)}),
   start:()=>request('/strategy/start',{method:'POST'}), stop:()=>request('/strategy/stop',{method:'POST'}),
   kill:()=>request('/risk/kill',{method:'POST'}), resume:()=>request('/risk/resume',{method:'POST'})
