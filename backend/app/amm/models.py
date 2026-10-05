@@ -45,3 +45,9 @@ class QuoteLevel(BaseModel):
     neutral_size: Decimal | None = None
     inventory_intent: str | None = None
     inventory_effect: str | None = None
+    pre_market_adaptation_price: Decimal | None = None
+    pre_market_adaptation_size: Decimal | None = None
+    market_spread_multiplier: Decimal | None = None
+    market_size_multiplier: Decimal | None = None
+    volatility_effect: str | None = None
+    imbalance_effect: str | None = None
