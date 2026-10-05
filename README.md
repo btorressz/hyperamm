@@ -125,6 +125,8 @@ POST /api/v1/strategy/stop
 GET  /api/v1/amm/state
 GET  /api/v1/amm/curve
 GET  /api/v1/amm/quotes
+GET  /api/v1/positions
+GET  /api/v1/market-adaptation
 GET  /api/v1/orders
 GET  /api/v1/fills
 GET  /api/v1/risk
@@ -139,7 +141,7 @@ The terminal uses a dark institutional layout with selected-market/feed/executio
 
 ## Tests
 
-The backend suite covers constant-product invariants, marginal price, both virtual swap directions, invalid reserves, deterministic sampling, concentrated normalization and concentration behavior, bid/ask ordering, no-cross guarantees, price/size normalization, deterministic quote generation, KEEP/CREATE/REPLACE/CANCEL reconciliation, strategy validation, stale feed rejection, risk validation, kill switch, paper lifecycle/fills, API lifecycle, and the disabled-testnet transmission guard.
+The backend suite covers constant-product invariants, marginal price, both virtual swap directions, invalid reserves, deterministic sampling, concentrated normalization and concentration behavior, bid/ask ordering, no-cross guarantees, price/size normalization, deterministic quote generation, inventory policy, rolling volatility history, realized-volatility scoring, top-N L2 imbalance, Phase 6 spread/size adaptation, KEEP/CREATE/REPLACE/CANCEL reconciliation, strategy validation, stale feed rejection, risk validation, kill switch, paper lifecycle/fills, API lifecycle, and the disabled-testnet transmission guard.
 
 Live Hyperliquid integration is intentionally not required by normal unit tests.
 
