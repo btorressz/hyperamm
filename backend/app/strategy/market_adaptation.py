@@ -119,6 +119,10 @@ def calculate_book_imbalance(snapshot: MarketSnapshot, levels: int) -> tuple[Dec
 
 
 def calculate_spread_multiplier(config: StrategyConfig, volatility_score: Decimal, imbalance: Decimal) -> Decimal:
+    _finite(volatility_score, "volatility score")
+    _finite(imbalance, "book imbalance")
+    if volatility_score < 0 or volatility_score > 1 or imbalance < -1 or imbalance > 1:
+        raise ValueError("market adaptation inputs are out of bounds")
     raw = (
         Decimal("1")
         + config.volatility_spread_strength * volatility_score
@@ -130,6 +134,10 @@ def calculate_spread_multiplier(config: StrategyConfig, volatility_score: Decima
 def calculate_size_multipliers(
     config: StrategyConfig, volatility_score: Decimal, imbalance: Decimal
 ) -> tuple[Decimal, Decimal, Decimal]:
+    _finite(volatility_score, "volatility score")
+    _finite(imbalance, "book imbalance")
+    if volatility_score < 0 or volatility_score > 1 or imbalance < -1 or imbalance > 1:
+        raise ValueError("market adaptation inputs are out of bounds")
     global_multiplier = max(
         config.min_market_size_multiplier,
         min(Decimal("1"), Decimal("1") - config.volatility_size_strength * volatility_score),
@@ -199,8 +207,8 @@ class MarketAdaptationPolicy:
             spread = calculate_spread_multiplier(self.config, score, imbalance)
             global_size, bid_imbalance, ask_imbalance = calculate_size_multipliers(self.config, score, imbalance)
 
-        bid_size = global_size * bid_imbalance
-        ask_size = global_size * ask_imbalance
+        bid_size = max(self.config.min_market_size_multiplier, global_size * bid_imbalance)
+        ask_size = max(self.config.min_market_size_multiplier, global_size * ask_imbalance)
         for value, name in (
             (spread, "spread multiplier"),
             (global_size, "global size multiplier"),
