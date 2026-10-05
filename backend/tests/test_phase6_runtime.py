@@ -9,6 +9,7 @@ from app.execution.paper import PaperExecutionAdapter
 from app.market_data.history import MarketPriceHistory
 from app.strategy.inventory import build_inventory_state
 from app.strategy.models import StrategyConfig
+from app.strategy.market_adaptation import MarketAdaptationPolicy
 from app.strategy.quote_engine import QuoteEngine
 from app.market_data.mock import MockMarketDataAdapter
 from app.runtime import HyperAmmRuntime
@@ -68,7 +69,7 @@ async def test_invalid_adaptation_cancels_active_strategy_orders(monkeypatch):
     def fail(*args,**kwargs):
         raise ValueError("invalid Phase 6 math")
 
-    monkeypatch.setattr(rt.quote_engine,"generate_market_adaptive",fail)
+    monkeypatch.setattr(MarketAdaptationPolicy,"apply",fail)
     await rt.refresh_once()
     assert await rt.paper.get_open_orders()==[]
     assert rt.strategy.quote_health=="DEGRADED"

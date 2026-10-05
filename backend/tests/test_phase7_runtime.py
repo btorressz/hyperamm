@@ -141,12 +141,13 @@ async def test_perp_version_change_blocks_transmission():
     rt.strategy.running=True
     rt.inventory=rt._paper_inventory()
     rt.market_history.add_snapshot(snap)
-    rt.perp_context_service.accept(perp(mid=str(snap.mid_price),updated_at=utcnow()))
+    initial_time=utcnow()-timedelta(seconds=1)
+    rt.perp_context_service.accept(perp(mid=str(snap.mid_price),updated_at=initial_time))
     current=rt.perp_context_service.snapshot(snap.mid_price)
     rt._expected_inventory_version=rt.inventory.version
     rt._expected_market_version=rt.market_history.version
     rt._expected_perp_version=current.version
-    rt.perp_context_service.accept(perp(mid=str(snap.mid_price),mark="3001",updated_at=utcnow()+timedelta(milliseconds=1)))
+    rt.perp_context_service.accept(perp(mid=str(snap.mid_price),mark="3001",updated_at=initial_time+timedelta(milliseconds=1)))
     with pytest.raises(RuntimeError,match="perp context changed"):
         await rt._execution_authority()
 
