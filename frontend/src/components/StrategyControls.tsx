@@ -29,6 +29,11 @@ export function StrategyControls({t}:{t:TerminalState}){
       <label>Book levels<input type="number" value={c.book_imbalance_levels} onChange={(e)=>set('book_imbalance_levels',Number(e.target.value))}/></label>
       {input('imbalance_spread_strength','Imbalance spread strength')}{input('imbalance_size_strength','Imbalance size strength')}{input('max_spread_multiplier','Max spread multiplier')}{input('min_market_size_multiplier','Min market size multiplier')}
     </div><small className="controlHint">Phase 6 widens only and reduces variable liquidity; Phase 5 inventory hard limits remain authoritative.</small></div>
+    <div className="controlGroup"><h4>Perpetual Context</h4><div className="formGrid">
+      <label>Perp context<select value={c.perp_context_enabled?'ENABLED':'DISABLED'} onChange={(e)=>set('perp_context_enabled',e.target.value==='ENABLED')}><option>ENABLED</option><option>DISABLED</option></select></label>
+      <label>Perp stale after (s)<input type="number" value={c.perp_context_stale_after_seconds} onChange={(e)=>set('perp_context_stale_after_seconds',Number(e.target.value))}/></label>
+      {input('perp_mark_weight','Mark weight')}{input('perp_oracle_weight','Oracle weight')}{input('funding_reference_abs_rate','Funding normalization reference')}{input('max_funding_reference_shift_bps','Max funding shift (bps)')}{input('max_perp_reference_shift_bps','Max total perp shift (bps)')}
+    </div><small className="controlHint">Phase 7 changes strategy reference only. Native mark/oracle/funding/OI remain context; deterministic risk stays downstream.</small></div>
     <div className="actions"><button className="primary" onClick={update}>Update Strategy</button><button onClick={()=>setC(t.strategy.config)}>Reset</button><button className="goodBtn" onClick={()=>api.start()}>Start</button><button onClick={()=>api.stop()}>Stop</button></div>{msg&&<small className="formMsg">{msg}</small>}
   </section>
 }
