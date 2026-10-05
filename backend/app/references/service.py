@@ -6,7 +6,7 @@ from app.market_data.models import MarketDataMode, MarketSnapshot
 from app.market_data.perp_context import PerpMarketContext
 from .consensus import ReferenceConsensusPolicy
 from .models import (
-    PriceEvidence, ProviderId, ProviderStatus, ReferenceSnapshot, SourceType,
+    PriceEvidence, ProviderId, ProviderStatus, ReferenceSnapshot, SourceType, ReferenceTransport, TransportQuality,
     deviation_bps, utcnow,
 )
 from .providers import CoinGeckoProvider, KrakenProvider, RedStoneProvider
@@ -27,6 +27,12 @@ class ReferenceService:
             api_key=settings.redstone_api_key,ws_url=settings.redstone_live_ws_url,
             data_service_id=settings.redstone_data_service_id,feed_id=settings.redstone_feed_id,
             stale_after_seconds=settings.redstone_stale_after_seconds,on_update=changed,
+            public_http_fallback_enabled=settings.redstone_public_http_fallback_enabled,
+            public_http_url=settings.redstone_public_http_url,
+            public_http_provider=settings.redstone_public_http_provider,
+            public_http_symbol=settings.redstone_public_http_symbol,
+            public_http_poll_interval_seconds=settings.redstone_public_http_poll_interval_seconds,
+            public_http_stale_after_seconds=settings.redstone_public_http_stale_after_seconds,
         )
         self.kraken=KrakenProvider(
             market=market,enabled=live and settings.kraken_reference_enabled,
@@ -53,7 +59,7 @@ class ReferenceService:
     @staticmethod
     def _evidence(*,market,provider,source_type,price,timestamp,version,simulated=False,source_id=None):
         now=utcnow(); age=max(0,int((now-timestamp).total_seconds()*1000))
-        return PriceEvidence(market=market,provider=provider,source_type=source_type,price=price,observed_at=now,source_timestamp=timestamp,age_ms=age,healthy=True,stale=False,status=ProviderStatus.HEALTHY,source_id=source_id,simulated=simulated,version=version)
+        return PriceEvidence(market=market,provider=provider,source_type=source_type,price=price,observed_at=now,source_timestamp=timestamp,age_ms=age,healthy=True,stale=False,status=ProviderStatus.HEALTHY,source_id=source_id,simulated=simulated,version=version,transport=ReferenceTransport.DEMO if simulated else ReferenceTransport.NATIVE,transport_quality=TransportQuality.SIMULATED if simulated else None)
 
     def _native(self,snapshot:MarketSnapshot,perp:PerpMarketContext)->dict[str,PriceEvidence]:
         ts=perp.updated_at
@@ -87,7 +93,7 @@ class ReferenceService:
                 ProviderId.COINGECKO.value:self.coingecko.snapshot(),
             })
         core=(evidence[ProviderId.REDSTONE.value].version,evidence[ProviderId.KRAKEN.value].version,evidence[ProviderId.COINGECKO.value].version,evidence[ProviderId.HYPERLIQUID_ORACLE.value].version,evidence[ProviderId.HYPERLIQUID_MID.value].version,evidence[ProviderId.HYPERLIQUID_MARK.value].version)
-        fp=(core,tuple((k,str(v.price),v.status.value,v.stale) for k,v in sorted(evidence.items())))
+        fp=(core,tuple((k,str(v.price),v.status.value,v.stale,v.transport,v.transport_quality) for k,v in sorted(evidence.items())))
         if fp!=self._fingerprint:self._version+=1;self._fingerprint=fp
         consensus=self.consensus_policy.evaluate(self.market,evidence,agreement_bps=agreement_bps,outlier_bps=outlier_bps,version=self._version)
         ref=consensus.consensus_price

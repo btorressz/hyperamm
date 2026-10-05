@@ -6,7 +6,7 @@ Phase 8 adds a deterministic evidence layer between strategy quotes and executio
 
 | Provider | Role | Authority |
 |---|---|---|
-| RedStone Live | PRIMARY ORACLE | Primary external oracle evidence |
+| RedStone (Live / public HTTP) | PRIMARY ORACLE | One external oracle identity, with primary and fallback transports |
 | Hyperliquid `oraclePx` | NATIVE ORACLE | Native venue oracle evidence |
 | Kraken WebSocket v2 ticker | VENUE REFERENCE | Independent live executable-market reference |
 | CoinGecko simple price | AGGREGATOR REFERENCE | Tertiary sanity/fallback evidence |
@@ -31,6 +31,8 @@ healthy
 stale
 status
 source_id
+transport
+transport_quality
 simulated
 version
 error
@@ -46,7 +48,7 @@ RedStone is implemented server-side in Python with the direct `websockets>=15,<1
 
 Authentication is an `x-api-key` HTTP upgrade header. The key remains in backend settings and is never returned by REST or terminal WebSocket state. The supported websockets version uses `additional_headers` for custom handshake headers.
 
-Before opening a connection, an enabled provider requires all of:
+Before opening a Live connection, the Live transport requires all of:
 
 ```text
 API key
@@ -55,7 +57,7 @@ feed ID
 data service ID
 ```
 
-Incomplete local configuration transitions the provider to `ERROR` and does not start a reconnect loop.
+Incomplete Live configuration transitions only the Live transport to `ERROR` and does not start its reconnect loop. A configured public HTTP fallback can still start and supply effective RedStone evidence without a Live API key or WebSocket URL.
 
 The documented RedStone Live subscription envelope is:
 
@@ -144,6 +146,55 @@ RedStone documents WebSocket protocol ping frames after 120 seconds of inactivit
 The Live WebSocket URL remains configurable. The repository does not embed an unverified service URL; operators set `REDSTONE_LIVE_WS_URL` from the current RedStone Live documentation/account configuration.
 
 Freshness is based on the provider timestamp. A valid newer economically identical tick refreshes source freshness without incrementing the economic price version. Incoming timestamps less than or equal to the last accepted timestamp do not become new economic state.
+
+## Phase 8.2 — RedStone public HTTP fallback
+
+```text
+REDSTONE — PRIMARY EXTERNAL ORACLE (one provider, one consensus vote)
+    ├── Live WebSocket — PRIMARY transport, x-api-key, 5-second stale threshold
+    └── Public HTTP cache — FALLBACK transport, no key, 30-second stale threshold
+```
+
+The official [HTTP API documentation](https://github.com/redstone-finance/redstone-api/blob/main/docs/HTTP_API.md), [cache proxy](https://github.com/redstone-finance/redstone-api/blob/main/src/proxies/cache-proxy.ts), and [types](https://github.com/redstone-finance/redstone-api/blob/main/src/types.ts) were inspected on 2026-10-05. They document the configurable default endpoint `https://api.redstone.finance/prices` and the request:
+
+```text
+GET /prices?symbol=ETH&provider=redstone&limit=1
+```
+
+The response is a non-empty array of price objects with `value` and provider `timestamp` (Unix milliseconds); `symbol`, when supplied, must equal the configured mapping. HyperAMM selects the latest timestamp, normalizes finite positive prices into `Decimal` (including decimal JSON numbers without a float round-trip), and records local receipt time separately. It does not require legacy `signature`, `providerPublicKey`, `permawebTx`, `source`, or `provider` fields, and does not claim signature verification for this HTTP transport.
+
+The server-side Python/httpx transport sends no `x-api-key` or `Authorization` header. It reuses one `AsyncClient`, cancels its polling task and closes owned connections on shutdown. Normal polling defaults to **10 seconds**, with configuration constrained to at least **5 seconds**. Request/payload failures use bounded backoff up to 300 seconds; a valid but stale cache record keeps the ordinary polling schedule. HTTP 400/403 and other non-429 client errors are `ERROR`; 429, server errors, timeouts, connection errors and malformed payloads are `DEGRADED`. Later successful responses can recover all of these states. Future timestamps and regressed/conflicting records are rejected. A repeated still-fresh cache record can restore health after a request failure without resetting its source timestamp; stale responses remain `STALE`.
+
+Configuration:
+
+```text
+REDSTONE_ENABLED=true
+REDSTONE_API_KEY=
+REDSTONE_LIVE_WS_URL=
+REDSTONE_FEED_ID=ETH
+REDSTONE_PUBLIC_HTTP_FALLBACK_ENABLED=true
+REDSTONE_PUBLIC_HTTP_URL=https://api.redstone.finance/prices
+REDSTONE_PUBLIC_HTTP_PROVIDER=redstone
+REDSTONE_PUBLIC_HTTP_SYMBOL=ETH
+REDSTONE_PUBLIC_HTTP_POLL_INTERVAL_SECONDS=10
+REDSTONE_PUBLIC_HTTP_STALE_AFTER_SECONDS=30
+```
+
+`REDSTONE_PUBLIC_HTTP_SYMBOL` is an explicit mapping for the startup `MARKET`; when omitted it uses the explicitly configured `REDSTONE_FEED_ID`. It never infers a mapping from arbitrary Hyperliquid market names. Changing markets in LIVE mode requires restarting with explicit mappings. `REDSTONE_ENABLED=false` disables both transports; DEMO starts neither real transport.
+
+`RedStoneProvider` retains the Phase 8.1 Live subscription, normalization, authentication, error handling and reconnect interface, and orchestrates `RedStonePublicHttpTransport`. At snapshot time it selects fresh `HEALTHY` Live evidence first, otherwise fresh `HEALTHY` HTTP evidence, otherwise actual unavailable/stale evidence. Live recovery automatically restores precedence on the next snapshot without a restart or provider resume action. The existing firewall recovery confirmations still apply to the resulting risk posture.
+
+The effective evidence always has `provider=REDSTONE` and `source_type=ORACLE`. Live exposes `transport=LIVE_WS`, `transport_quality=PRIMARY`; HTTP exposes `PUBLIC_HTTP`, `FALLBACK`, `simulated=false`, and `source_id=redstone-public-http:ETH`. Provider health and transport quality are distinct: fresh HTTP evidence is `HEALTHY` and remains consensus-eligible. The source hierarchy, `CORE=[REDSTONE, HYPERLIQUID_ORACLE, KRAKEN]`, and six provider-level API rows remain unchanged. HTTP never supplies an additional vote. CoinGecko remains tertiary and cannot authorize NORMAL alone.
+
+Live + Kraken agreement can still produce `VERIFIED`. While usable HTTP fallback evidence is active, confidence is capped at `DEGRADED` with reason `RedStone Live unavailable; public HTTP fallback transport active`. Conflicted or insufficient evidence retains its stricter state. The existing Phase 8 firewall applies unchanged; its default degraded-confidence posture is `REDUCE`.
+
+Effective RedStone versions advance on transport/quality/identity/health/economic version changes even at identical prices. `ReferenceService` explicitly fingerprints `transport` and `transport_quality`. Live → HTTP → Live transitions advance reference provenance and invalidate old FinalQuoteAuthorization before transmission. Same-transport, same-price freshness updates do not introduce economic version churn.
+
+`GET /api/v1/references` and terminal WebSocket serialization expose the singular effective evidence, including price, provider timestamp, age, status, source ID, simulation marker, transport and quality. The terminal keeps one RedStone row, appends the transport and visibly marks `FALLBACK`. Credentials and request headers remain backend-only.
+
+DEMO evidence is deterministic, `simulated=true`, `transport=DEMO`, `transport_quality=SIMULATED`. LIVE uses only real Live or HTTP responses, or unavailable evidence; there is no synthetic runtime fallback.
+
+Real public HTTP acceptance on 2026-10-05 is **BLOCKED BY ENVIRONMENT PROXY**: the production Python implementation received an HTTP CONNECT proxy rejection (`403 Forbidden`, `httpx.ProxyError`). No real ETH price/timestamp was received. This is separate from deterministic mocked transport acceptance and does not establish an API failure. Phase 8 remains IN REVIEW; Phase 9 remains PLANNED.
 
 
 ## Kraken WebSocket v2
