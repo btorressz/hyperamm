@@ -9,8 +9,8 @@ from app.market_data.models import MarketDataMode
 
 
 class ExecutionMode(StrEnum):
-    PAPER="PAPER"
-    TESTNET="TESTNET"
+    PAPER = "PAPER"
+    TESTNET = "TESTNET"
 
 
 class StrategyConfig(BaseModel):
@@ -33,12 +33,37 @@ class StrategyConfig(BaseModel):
     tick_size: Decimal = Field(default=Decimal("0.1"), gt=0)
     size_precision: int = Field(default=4, ge=0, le=8)
 
+    inventory_skew_enabled: bool = True
+    target_inventory_base: Decimal = Decimal("0")
+    soft_inventory_limit_base: Decimal = Field(default=Decimal("5"), gt=0)
+    hard_inventory_limit_base: Decimal = Field(default=Decimal("10"), gt=0)
+    max_inventory_price_skew_bps: Decimal = Field(default=Decimal("20"), ge=0, le=Decimal("500"))
+    inventory_size_skew_strength: Decimal = Field(default=Decimal("0.75"), ge=0, le=Decimal("2"))
+    min_inventory_size_multiplier: Decimal = Field(default=Decimal("0.25"), gt=0)
+    max_inventory_size_multiplier: Decimal = Field(default=Decimal("1.75"), ge=Decimal("1"))
+    inventory_stale_after_seconds: float = Field(default=10.0, gt=0, le=300)
+
     @model_validator(mode="after")
     def bounds(self):
         if self.concentration_upper_bps <= self.concentration_lower_bps:
             raise ValueError("concentration_upper_bps must exceed lower bound")
         if self.total_liquidity < self.base_order_size * Decimal(self.levels_per_side):
             raise ValueError("total_liquidity must be at least base_order_size * levels_per_side")
+        decimal_fields = (
+            "virtual_base_reserve", "virtual_quote_reserve", "max_distance_bps", "base_order_size",
+            "total_liquidity", "concentration_factor", "concentration_lower_bps", "concentration_upper_bps",
+            "replace_tolerance_bps", "size_tolerance", "tick_size", "target_inventory_base",
+            "soft_inventory_limit_base", "hard_inventory_limit_base", "max_inventory_price_skew_bps",
+            "inventory_size_skew_strength", "min_inventory_size_multiplier", "max_inventory_size_multiplier",
+        )
+        if any(not getattr(self, name).is_finite() for name in decimal_fields):
+            raise ValueError("strategy decimal configuration must be finite")
+        if self.hard_inventory_limit_base <= self.soft_inventory_limit_base:
+            raise ValueError("hard_inventory_limit_base must exceed soft_inventory_limit_base")
+        if self.min_inventory_size_multiplier > Decimal("1"):
+            raise ValueError("min_inventory_size_multiplier must be <= 1")
+        if self.min_inventory_size_multiplier > self.max_inventory_size_multiplier:
+            raise ValueError("min_inventory_size_multiplier must not exceed max_inventory_size_multiplier")
         return self
 
 
@@ -46,4 +71,4 @@ class StrategyState(BaseModel):
     running: bool = False
     config: StrategyConfig
     last_error: str | None = None
-    quote_health: Literal["NO_QUOTES","HEALTHY","DEGRADED","HALTED"] = "NO_QUOTES"
+    quote_health: Literal["NO_QUOTES", "HEALTHY", "DEGRADED", "HALTED"] = "NO_QUOTES"
