@@ -96,4 +96,13 @@ class QuoteEngine:
         final_quotes, market_decision = MarketAdaptationPolicy(config).apply(
             inventory_quotes, inventory_decision, snapshot, history
         )
+        inventory_by_key = {(q.side, q.level_index): q for q in inventory_quotes}
+        final_quotes = [
+            quote.model_copy(update={
+                "market_fair_value": fair,
+                "perp_reference_price": reference,
+                "inventory_adjusted_price": inventory_by_key[(quote.side, quote.level_index)].price,
+            })
+            for quote in final_quotes
+        ]
         return fair, pool, final_quotes, inventory_decision, market_decision, perp_decision
