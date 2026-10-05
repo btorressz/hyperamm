@@ -151,6 +151,12 @@ m_{bid}=clamp(1-strength\cdot r,m_{min},m_{max})
 m_{ask}=clamp(1+strength\cdot r,m_{min},m_{max}).
 ]
 
-A single multiplier is applied to every level on a side, preserving the AMM-derived within-side relative profile up to configured size normalization. Prices are tick-normalized and constrained so bids remain below fair and asks above fair; final bid/ask ordering must remain uncrossed.
+The multiplier applies to the AMM-derived excess above the existing baseline:
+
+[
+size_{final}=b+(size_{neutral}-b)m_{side}
+]
+
+where (b) is `base_order_size`. This preserves the reserve-delta-derived variable profile while keeping the Phase 4.1 baseline floor, up to deterministic size normalization. Prices are tick-normalized and constrained so bids remain below fair and asks above fair; final bid/ask ordering must remain uncrossed.
 
 Hard inventory limits are separate from the normal skew clamp. At or beyond the long hard bound the desired BID side is absent; at or beyond the short hard bound the desired ASK side is absent. This suppression remains safety-authoritative even if normal inventory skew is disabled.
