@@ -218,3 +218,20 @@ def test_market_adaptation_disabled_preserves_phase5_even_when_ready():
     assert decision.volatility_ready is True
     assert decision.spread_multiplier==1
     assert [(q.price,q.size) for q in final]==[(q.price,q.size) for q in phase5]
+
+
+def test_final_market_size_multiplier_respects_configured_floor():
+    config=StrategyConfig(
+        volatility_size_strength=D("1"),
+        imbalance_size_strength=D("1"),
+        min_market_size_multiplier=D(".35"),
+    )
+    h=history_for(["100","110"])
+    config.volatility_window_samples=2
+    config.volatility_min_samples=2
+    config.volatility_low_threshold=D("0")
+    config.volatility_high_threshold=D(".001")
+    snap=snapshot("110",2,[D("5")]*5,[D("1")]*5)
+    decision=MarketAdaptationPolicy(config).decision(snap,h)
+    assert decision.bid_size_multiplier>=D(".35")
+    assert decision.ask_size_multiplier>=D(".35")
