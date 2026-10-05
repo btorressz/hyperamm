@@ -110,7 +110,7 @@ def test_redstone_wrong_data_package_and_service_are_rejected():
 
 @pytest.mark.parametrize("mutation,match",[
     ({"timestamp":None},""),
-    ({"value":None},"finite and positive"),
+    ({"value":None},"invalid RedStone price"),
     ({"value":"0"},"finite and positive"),
     ({"value":"-1"},"finite and positive"),
     ({"value":"NaN"},"finite and positive"),
