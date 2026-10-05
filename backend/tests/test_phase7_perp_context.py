@@ -184,6 +184,9 @@ def test_perp_context_version_semantics_and_staleness():
     assert service.accept(identical) is False
     assert service.version==1
     assert service.snapshot(D("3002.9"),now=now+timedelta(milliseconds=500)).version==1
+    replayed_changed=context(mark_price=D("3005"),updated_at=now+timedelta(milliseconds=100),version=0)
+    assert service.accept(replayed_changed) is False
+    assert service.version==1
     changed=context(mark_price=D("3005"),updated_at=now+timedelta(milliseconds=200),version=0)
     assert service.accept(changed)
     assert service.version==2
