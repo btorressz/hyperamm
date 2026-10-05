@@ -204,3 +204,53 @@ existing deterministic risk/reconciliation/execution
 The existing public Hyperliquid `Info` client owns both `l2Book` and `activeAssetCtx` subscriptions. `meta_and_asset_ctxs()` is used for bootstrap and maps by universe name. No second public WebSocket lifecycle is introduced.
 
 Final execution authority binds the generated ladder to inventory, market/adaptation, and perp-context versions. Stale or materially changed perp context cannot transmit an old decision. Phase 7 does not add Phase 8 oracle-firewall authority.
+
+
+## Phase 8 reference integrity and final risk authority
+
+Phase 8 is intentionally downstream of all strategy transforms:
+
+```text
+Hyperliquid normalized market/perp state
+        ↓
+Phase 7 strategy reference
+        ↓
+AMM / reserve-delta sizing / concentration
+        ↓
+Phase 5 inventory authority
+        ↓
+Phase 6 market adaptation
+        ↓
+desired strategy quotes
+        ↓
+normalized reference evidence
+        ├── RedStone primary oracle
+        ├── Hyperliquid native oracle
+        ├── Kraken exchange BBO midpoint
+        ├── CoinGecko aggregate reference
+        ├── Hyperliquid L2 midpoint
+        └── Hyperliquid mark
+        ↓
+ReferenceConsensus + signed deviation matrix
+        ↓
+projected exposure / PnL / liquidation evidence
+        ↓
+RiskFirewall
+ NORMAL / WIDEN / REDUCE / HALT
+        ↓
+authorized quote ladder
+        ↓
+existing validate_quotes()
+        ↓
+FinalQuoteAuthorization
+        ↓
+existing reconciliation + execution adapters
+```
+
+Provider networking remains in `references/`. The firewall does not know HTTP/WebSocket payload formats. Raw external payloads are normalized before they can influence risk authority.
+
+Phase 8 uses the existing execution lock; no second lock hierarchy is introduced. Provider tasks only update their own normalized evidence and wake the existing strategy loop on material changes. CREATE/REPLACE actions still pass through `OrderManager` and the same execution adapters.
+
+Automatic risk HALT does not set the manual kill latch. It produces an empty authorized ladder and uses existing reconciliation to cancel resting strategy orders. Recovery requires deterministic hysteresis and consecutive healthy confirmations. Manual kill still disables strategy intent and cannot be cleared by automatic firewall recovery.
+
+Immediately before transmission, authority rechecks market/adaptation, inventory, perp, reference and risk versions plus the current authorized quote fingerprint. Stale authorization is rejected before the execution adapter is allowed to submit an order.
