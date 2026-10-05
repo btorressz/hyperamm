@@ -479,7 +479,17 @@ class HyperAmmRuntime:
                             self._expected_market_version is not None
                             and self.market_history.version != self._expected_market_version
                         )
-                        if inventory_changed or market_changed or perp_changed:
+                        reference_changed = False
+                        if self.risk_config.enabled and self._expected_reference_version is not None:
+                            current_perp = self.perp_context_service.snapshot(calculate_fair_value(current_market))
+                            current_refs = self.reference_service.snapshot(
+                                current_market,
+                                current_perp,
+                                agreement_bps=self.risk_config.source_agreement_bps,
+                                outlier_bps=self.risk_config.source_outlier_bps,
+                            )
+                            reference_changed = current_refs.version != self._expected_reference_version
+                        if inventory_changed or market_changed or perp_changed or reference_changed:
                             self._strategy_wakeup.set()
                             break
                     except Exception as exc:
