@@ -204,7 +204,11 @@ class InventoryPolicy:
                     min_ask = normalize_price(fair_value + self.config.tick_size, self.config.tick_size, "ASK")
                     price = max(price, min_ask)
                     multiplier = decision.ask_size_multiplier
-                raw_size = max(quote.size * multiplier, quantum)
+                # Preserve the Phase 4.1 baseline minimum while applying one bounded
+                # multiplier to the AMM-derived excess above that baseline. Hard-limit
+                # suppression is the only path that removes the side entirely.
+                variable_size = max(Decimal("0"), quote.size - self.config.base_order_size)
+                raw_size = max(self.config.base_order_size + variable_size * multiplier, quantum)
                 size = normalize_size(raw_size, self.config.size_precision)
                 effect = "SKEWED"
 
