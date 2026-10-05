@@ -6,10 +6,11 @@ import httpx
 from .models import *
 
 class EvidenceState:
-    def __init__(self,market,provider,source_type,source_id,stale_after_seconds,enabled,on_update=None,material_change_bps=Decimal("0.25")):
+    def __init__(self,market,provider,source_type,source_id,stale_after_seconds,enabled,on_update=None,material_change_bps=Decimal("0.25"),transport=None,transport_quality=None):
         self.market=market; self.provider=provider; self.source_type=source_type; self.source_id=source_id
         self.stale_after_seconds=stale_after_seconds; self.enabled=enabled; self.on_update=on_update
         self.material_change_bps=material_change_bps; self.latest=None; self.version=0
+        self.provenance={"transport":transport,"transport_quality":transport_quality}
         self.status=ProviderStatus.DISABLED if not enabled else ProviderStatus.DEGRADED; self.error=None
     def _notify(self):
         if self.on_update: self.on_update()
@@ -20,23 +21,28 @@ class EvidenceState:
         if self.latest and self.latest.price is not None:
             d=abs((price-self.latest.price)/self.latest.price*Decimal("10000"))
             if d<self.material_change_bps:
+                recovered=self.status!=ProviderStatus.HEALTHY
+                if recovered: self.version+=1
                 self.latest=self.latest.model_copy(update={"observed_at":observed,"source_timestamp":source_timestamp,"age_ms":max(0,int((observed-source_timestamp).total_seconds()*1000)),"healthy":True,"stale":False,"status":ProviderStatus.HEALTHY,"error":None})
-                self.status=ProviderStatus.HEALTHY; self.error=None; return False
+                self.latest=self.latest.model_copy(update={"version":self.version})
+                self.status=ProviderStatus.HEALTHY; self.error=None
+                if recovered: self._notify()
+                return False
         self.version+=1; self.status=ProviderStatus.HEALTHY; self.error=None
-        self.latest=PriceEvidence(market=self.market,provider=self.provider,source_type=self.source_type,price=price,observed_at=observed,source_timestamp=source_timestamp,age_ms=max(0,int((observed-source_timestamp).total_seconds()*1000)),healthy=True,stale=False,status=ProviderStatus.HEALTHY,source_id=source_id or self.source_id,simulated=simulated,version=self.version)
+        self.latest=PriceEvidence(market=self.market,provider=self.provider,source_type=self.source_type,price=price,observed_at=observed,source_timestamp=source_timestamp,age_ms=max(0,int((observed-source_timestamp).total_seconds()*1000)),healthy=True,stale=False,status=ProviderStatus.HEALTHY,source_id=source_id or self.source_id,simulated=simulated,version=self.version,**self.provenance)
         self._notify(); return True
     def set_status(self,status,error=None):
         if not self.enabled and status!=ProviderStatus.DISABLED: status=ProviderStatus.DISABLED
         if status!=self.status or error!=self.error:
             self.version+=1; self.status=status; self.error=error
-            if self.latest: self.latest=self.latest.model_copy(update={"status":status,"healthy":False,"error":error,"version":self.version})
+            if self.latest: self.latest=self.latest.model_copy(update={"status":status,"healthy":status==ProviderStatus.HEALTHY,"error":error,"version":self.version})
             self._notify()
     def snapshot(self,now=None):
         now=now or utcnow()
         if not self.enabled:
-            return PriceEvidence(market=self.market,provider=self.provider,source_type=self.source_type,observed_at=now,status=ProviderStatus.DISABLED,source_id=self.source_id,version=self.version)
+            return PriceEvidence(market=self.market,provider=self.provider,source_type=self.source_type,observed_at=now,status=ProviderStatus.DISABLED,source_id=self.source_id,version=self.version,**self.provenance)
         if not self.latest:
-            return PriceEvidence(market=self.market,provider=self.provider,source_type=self.source_type,observed_at=now,status=self.status,source_id=self.source_id,version=self.version,error=self.error or "provider has no accepted price")
+            return PriceEvidence(market=self.market,provider=self.provider,source_type=self.source_type,observed_at=now,status=self.status,source_id=self.source_id,version=self.version,error=self.error or "provider has no accepted price",**self.provenance)
         age=max(0,int((now-self.latest.source_timestamp).total_seconds()*1000)) if self.latest.source_timestamp else 0
         stale=age>int(self.stale_after_seconds*1000); status=ProviderStatus.STALE if stale else self.status
         return self.latest.model_copy(update={"age_ms":age,"stale":stale,"healthy":status==ProviderStatus.HEALTHY and not stale,"status":status,"error":"provider price is stale" if stale else self.error})
@@ -44,11 +50,149 @@ class EvidenceState:
 def backoff(attempt,rand=None):
     base=min(30.0,2**max(0,min(attempt,5))); r=random.random() if rand is None else rand; return base*(1+0.2*r)
 
+class RedStonePublicHttpTransport:
+    """No-key public cache transport. It never supplies a separate consensus vote."""
+
+    def __init__(self, *, market, enabled, symbol, url, provider="redstone",
+                 poll_interval_seconds=10, stale_after_seconds=30, on_update=None, client=None):
+        self.symbol=symbol; self.url=url; self.provider=provider
+        self.poll_interval_seconds=poll_interval_seconds
+        self.client=client; self.owns_client=client is None
+        self.task=None; self.closing=False; self.failures=0; self._last_record=None
+        self.state=EvidenceState(
+            market, ProviderId.REDSTONE, SourceType.ORACLE,
+            f"redstone-public-http:{symbol}", stale_after_seconds, enabled, on_update,
+            transport=ReferenceTransport.PUBLIC_HTTP, transport_quality=TransportQuality.FALLBACK,
+        )
+
+    def validate_configuration(self):
+        if not self.symbol or not self.symbol.strip():
+            raise ValueError("RedStone public HTTP symbol mapping missing")
+        if not self.provider or not self.provider.strip():
+            raise ValueError("RedStone public HTTP provider missing")
+        try: url=httpx.URL(self.url or "")
+        except httpx.InvalidURL as exc: raise ValueError("invalid RedStone public HTTP URL") from exc
+        if url.scheme!="https" or not url.host or url.username or url.password:
+            raise ValueError("RedStone public HTTP requires an HTTPS URL without credentials")
+        if not 5<=self.poll_interval_seconds<=3600:
+            raise ValueError("RedStone public HTTP poll interval must be between 5 and 3600 seconds")
+        if not 0<self.state.stale_after_seconds<=3600:
+            raise ValueError("RedStone public HTTP stale threshold must be between 0 and 3600 seconds")
+
+    def normalize(self, payload):
+        if not isinstance(payload,list) or not payload:
+            raise ValueError("RedStone public HTTP expected non-empty price array")
+        records=[]
+        for record in payload:
+            if not isinstance(record,dict):
+                raise ValueError("RedStone public HTTP expected object price record")
+            if "symbol" in record and record["symbol"]!=self.symbol:
+                raise ValueError("wrong RedStone public HTTP symbol")
+            if "value" not in record: raise ValueError("RedStone public HTTP missing value")
+            if "timestamp" not in record: raise ValueError("RedStone public HTTP missing timestamp")
+            # The public cache documents Unix milliseconds, independently of Live's wire format.
+            raw_timestamp=record["timestamp"]
+            if isinstance(raw_timestamp,bool): raise ValueError("invalid RedStone public HTTP timestamp")
+            try:
+                number=Decimal(str(raw_timestamp))
+                if not number.is_finite() or number<=0: raise ValueError("invalid timestamp")
+                timestamp=parse_timestamp(number, "RedStone public HTTP timestamp")
+            except (ValueError, OverflowError, OSError, ArithmeticError) as exc:
+                raise ValueError("invalid RedStone public HTTP timestamp") from exc
+            records.append((decimal_price(record["value"],"RedStone public HTTP price"),timestamp))
+        return max(records,key=lambda item:item[1])
+
+    def ingest(self, payload, observed_at=None):
+        observed=observed_at or utcnow()
+        price,timestamp=self.normalize(payload)
+        if timestamp>observed: raise ValueError("RedStone public HTTP timestamp in future")
+        previous=self.state.latest
+        if previous and timestamp<previous.source_timestamp:
+            raise ValueError("RedStone public HTTP timestamp regressed")
+        if self._last_record and timestamp==self._last_record[1] and price!=self._last_record[0]:
+            raise ValueError("RedStone public HTTP conflicting replay")
+        changed=self.state.accept(price,timestamp,observed)
+        self._last_record=(price,timestamp)
+        stale=(observed-timestamp).total_seconds()>self.state.stale_after_seconds
+        if stale:
+            self.state.set_status(ProviderStatus.STALE,"RedStone public HTTP provider price is stale")
+        elif previous and timestamp==previous.source_timestamp:
+            # A cache may legitimately repeat a still-fresh record after a network error.
+            # Restore health without refreshing its source timestamp or economic version.
+            self.state.latest=self.state.latest.model_copy(update={"observed_at":observed})
+            self.state.set_status(ProviderStatus.HEALTHY)
+        return changed
+
+    async def poll_once(self):
+        if not self.state.enabled: return False
+        valid_response=False
+        try:
+            self.validate_configuration()
+            if self.client is None: self.client=httpx.AsyncClient(timeout=10)
+            response=await self.client.get(self.url,params={"symbol":self.symbol,"provider":self.provider,"limit":1})
+            response.raise_for_status()
+            # Parse decimal JSON numbers directly, without a binary float round-trip.
+            self.ingest(json.loads(response.text,parse_float=Decimal))
+            valid_response=True
+        except httpx.HTTPStatusError as exc:
+            code=exc.response.status_code
+            status=ProviderStatus.ERROR if 400<=code<500 and code!=429 else ProviderStatus.DEGRADED
+            self.state.set_status(status,f"RedStone public HTTP status {code}")
+        except (httpx.RequestError, ValueError, TypeError) as exc:
+            # Do not serialize provider bodies, request headers, URLs or credentials into evidence.
+            self.state.set_status(ProviderStatus.DEGRADED,f"RedStone public HTTP invalid response or request failure ({type(exc).__name__})")
+        success=self.state.snapshot().healthy
+        self.failures=0 if valid_response else min(self.failures+1,8)
+        return success
+
+    def retry_delay(self):
+        return max(self.poll_interval_seconds,min(300.0,self.poll_interval_seconds*2**max(0,self.failures-1)))
+
+    async def start(self):
+        if not self.state.enabled or self.task: return
+        try: self.validate_configuration()
+        except (ValueError,TypeError):
+            self.state.set_status(ProviderStatus.ERROR,"invalid RedStone public HTTP configuration")
+            return
+        self.closing=False
+        self.task=asyncio.create_task(self._run(),name="redstone-public-http-reference")
+
+    async def _run(self):
+        while not self.closing:
+            try:
+                await self.poll_once()
+                await asyncio.sleep(self.retry_delay())
+            except asyncio.CancelledError: break
+
+    async def stop(self):
+        self.closing=True
+        if self.task:
+            self.task.cancel()
+            try: await self.task
+            except asyncio.CancelledError: pass
+            self.task=None
+        if self.client is not None and self.owns_client:
+            await self.client.aclose()
+            self.client=None
+
+    def snapshot(self,now=None): return self.state.snapshot(now)
+
 class RedStoneProvider:
-    def __init__(self,*,market,enabled,api_key,ws_url,data_service_id,feed_id,stale_after_seconds,on_update=None,websocket_factory=None):
+    def __init__(self,*,market,enabled,api_key,ws_url,data_service_id,feed_id,stale_after_seconds,on_update=None,websocket_factory=None,
+                 public_http_fallback_enabled=False,public_http_url="https://api.redstone.finance/prices",
+                 public_http_provider="redstone",public_http_symbol=None,public_http_poll_interval_seconds=10,
+                 public_http_stale_after_seconds=30,public_http_client=None):
         self.api_key=api_key; self.ws_url=ws_url; self.data_service_id=data_service_id; self.feed_id=feed_id; self.websocket_factory=websocket_factory
         source_id=f"{data_service_id}:{feed_id}" if data_service_id and feed_id else feed_id
-        self.state=EvidenceState(market,ProviderId.REDSTONE,SourceType.ORACLE,source_id,stale_after_seconds,enabled,on_update); self.task=None; self.closing=False
+        self.state=EvidenceState(market,ProviderId.REDSTONE,SourceType.ORACLE,source_id,stale_after_seconds,enabled,on_update,
+            transport=ReferenceTransport.LIVE_WS,transport_quality=TransportQuality.PRIMARY)
+        self.task=None; self.closing=False; self.on_update=on_update
+        self.public_http=RedStonePublicHttpTransport(
+            market=market,enabled=enabled and public_http_fallback_enabled,symbol=public_http_symbol or feed_id,
+            url=public_http_url,provider=public_http_provider,poll_interval_seconds=public_http_poll_interval_seconds,
+            stale_after_seconds=public_http_stale_after_seconds,on_update=on_update,client=public_http_client,
+        )
+        self._effective_version=0; self._effective_fingerprint=None
 
     def subscription(self):
         return {
@@ -61,6 +205,14 @@ class RedStoneProvider:
         }
 
     def validate_configuration(self):
+        if self.public_http.state.enabled:
+            try:
+                self.public_http.validate_configuration()
+                return
+            except (ValueError,TypeError): pass
+        self.validate_live_configuration()
+
+    def validate_live_configuration(self):
         missing=[]
         if not self.api_key: missing.append("API key")
         if not self.ws_url: missing.append("WebSocket URL")
@@ -146,7 +298,8 @@ class RedStoneProvider:
 
     async def start(self):
         if not self.state.enabled or self.task: return
-        try:self.validate_configuration()
+        await self.public_http.start()
+        try:self.validate_live_configuration()
         except ValueError as exc:
             self.state.set_status(ProviderStatus.ERROR,self._safe_error(exc)); return
         self.closing=False; self.task=asyncio.create_task(self._run(),name="redstone-live-reference")
@@ -159,7 +312,7 @@ class RedStoneProvider:
         return websockets.connect(self.ws_url,additional_headers=self.auth_headers(),open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
 
     async def _run(self):
-        try:self.validate_configuration()
+        try:self.validate_live_configuration()
         except ValueError as exc:
             self.state.set_status(ProviderStatus.ERROR,self._safe_error(exc)); return
         attempt=0
@@ -198,8 +351,21 @@ class RedStoneProvider:
             try: await self.task
             except asyncio.CancelledError: pass
             self.task=None
+        await self.public_http.stop()
 
-    def snapshot(self): return self.state.snapshot()
+    def snapshot(self,now=None):
+        now=now or utcnow()
+        live=self.state.snapshot(now); http=self.public_http.snapshot(now)
+        if live.healthy: effective=live
+        elif http.healthy: effective=http
+        # Preserve an actual unavailable state, including stale prices, for diagnostics.
+        elif http.status!=ProviderStatus.DISABLED and (http.price is not None or live.status==ProviderStatus.ERROR): effective=http
+        else: effective=live
+        fp=(effective.transport,effective.transport_quality,effective.source_id,effective.version,effective.status,effective.stale)
+        if fp!=self._effective_fingerprint:
+            self._effective_fingerprint=fp; self._effective_version+=1
+            if self.on_update: self.on_update()
+        return effective.model_copy(update={"version":self._effective_version})
 
 class KrakenProvider:
     def __init__(self,*,market,enabled,symbol,stale_after_seconds,on_update=None,ws_url="wss://ws.kraken.com/v2",websocket_factory=None):

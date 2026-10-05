@@ -14,6 +14,12 @@ class SourceType(StrEnum):
 class ProviderStatus(StrEnum):
     HEALTHY="HEALTHY"; DEGRADED="DEGRADED"; STALE="STALE"; ERROR="ERROR"; DISABLED="DISABLED"
 
+class ReferenceTransport(StrEnum):
+    LIVE_WS="LIVE_WS"; PUBLIC_HTTP="PUBLIC_HTTP"; NATIVE="NATIVE"; REST="REST"; DEMO="DEMO"
+
+class TransportQuality(StrEnum):
+    PRIMARY="PRIMARY"; FALLBACK="FALLBACK"; SIMULATED="SIMULATED"
+
 class PriceEvidence(BaseModel):
     market:str
     provider:ProviderId
@@ -26,6 +32,8 @@ class PriceEvidence(BaseModel):
     stale:bool=False
     status:ProviderStatus
     source_id:str|None=None
+    transport:ReferenceTransport|None=None
+    transport_quality:TransportQuality|None=None
     simulated:bool=False
     version:int=Field(default=0,ge=0)
     error:str|None=None

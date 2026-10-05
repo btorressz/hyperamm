@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     redstone_feed_id: str | None = None
     redstone_live_ws_url: str | None = None
     redstone_stale_after_seconds: float = Field(default=5.0, gt=0, le=300)
+    redstone_public_http_fallback_enabled: bool = True
+    redstone_public_http_url: str = "https://api.redstone.finance/prices"
+    redstone_public_http_provider: str = "redstone"
+    redstone_public_http_symbol: str | None = None
+    redstone_public_http_poll_interval_seconds: float = Field(default=10.0, ge=5, le=3600)
+    redstone_public_http_stale_after_seconds: float = Field(default=30.0, gt=0, le=3600)
 
     kraken_reference_enabled: bool = False
     kraken_symbol: str | None = None
