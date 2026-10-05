@@ -66,7 +66,7 @@ def _optional_decimal(value: Any, name: str, *, positive: bool = False) -> Decim
     if value is None or value == "":
         return None
     text = str(value)
-    if text.lower() in {"nan", "none", "null"}:
+    if text.lower() in {"none", "null"}:
         return None
     result = _decimal(value, name)
     if positive and result <= 0:
