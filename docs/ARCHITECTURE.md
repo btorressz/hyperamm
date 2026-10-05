@@ -93,3 +93,41 @@ The terminal displays quote health and the existing strategy error banner.
 TESTNET order history exposes venue status and fill quantities; the terminal
 payload also includes the last venue reconciliation timestamp and error.
 PAPER retains its existing `SIMULATED PAPER FILL` labeling and remains the default.
+
+
+## Phase 5 inventory-aware strategy layer
+
+The accepted Phase 4.1 AMM path remains intact. Phase 5 is a strategy transform:
+
+```text
+normalized market state
+        ↓
+fair value
+        ↓
+virtual x*y=k AMM
+        ↓
+reserve-delta liquidity
+        ↓
+optional concentration
+        ↓
+neutral QuoteLevel ladder
+        ↓
+normalized InventoryState
+        ↓
+InventoryPolicy
+  reservation-price shift
+  side-size multipliers
+  hard-limit suppression
+        ↓
+deterministic risk
+        ↓
+KEEP / CREATE / REPLACE / CANCEL
+        ↓
+PAPER / guarded TESTNET
+```
+
+PAPER position is the signed sum of actual simulated fills: BID fills add base and ASK fills subtract base. Resting, cancelled, rejected, and unknown orders do not create PAPER inventory.
+
+TESTNET position comes from the official Hyperliquid SDK account-state path (`Info.user_state(account_address)`) and normalizes the configured market's signed `assetPositions[].position.szi`. Position refresh occurs before TESTNET quote generation and during venue reconciliation. Missing/stale state, malformed state, reconciliation errors, or UNKNOWN economic exposure invalidate inventory-aware execution instead of assuming zero.
+
+Generated decisions bind to an inventory version. Final transmission authority verifies that the current version still matches the version used to generate the ladder. Fill/venue events wake the existing strategy loop; they do not introduce a second execution lock or reconciliation system.

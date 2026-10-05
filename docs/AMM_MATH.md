@@ -103,3 +103,60 @@ Changing only `k` may scale every raw reserve delta by the same `sqrt(k)` factor
 Normalizing to a fixed per-side budget cancels that common factor. Acceptance
 therefore verifies successive reserve deltas and their sizing weights directly,
 not an incorrect requirement that changing `k` must change relative sizes.
+
+
+## Phase 5 inventory policy
+
+The Phase 4.1 AMM curve remains the neutral mathematical ladder. Phase 5 does not change the constant-product invariant or reserve-delta weights.
+
+Let signed inventory deviation be
+
+[
+d = position_{base} - target_{base}
+]
+
+and define the monitoring ratio
+
+[
+q = d / soft_limit.
+]
+
+Normal skew uses the bounded ratio
+
+[
+r = clamp(q,-1,1).
+]
+
+The bounded reservation-price shift is
+
+[
+shift_{bps} = -r \cdot max_inventory_price_skew_{bps}
+]
+
+and
+
+[
+reservation = fair \cdot (1 + shift_{bps}/10000).
+]
+
+Positive/long inventory therefore lowers the strategy reservation price; negative/short inventory raises it. Fair value remains market state and is never replaced by reservation price.
+
+Side-size scaling is
+
+[
+m_{bid}=clamp(1-strength\cdot r,m_{min},m_{max})
+]
+
+[
+m_{ask}=clamp(1+strength\cdot r,m_{min},m_{max}).
+]
+
+The multiplier applies to the AMM-derived excess above the existing baseline:
+
+[
+size_{final}=b+(size_{neutral}-b)m_{side}
+]
+
+where (b) is `base_order_size`. This preserves the reserve-delta-derived variable profile while keeping the Phase 4.1 baseline floor, up to deterministic size normalization. Prices are tick-normalized and constrained so bids remain below fair and asks above fair; final bid/ask ordering must remain uncrossed.
+
+Hard inventory limits are separate from the normal skew clamp. At or beyond the long hard bound the desired BID side is absent; at or beyond the short hard bound the desired ASK side is absent. This suppression remains safety-authoritative even if normal inventory skew is disabled.

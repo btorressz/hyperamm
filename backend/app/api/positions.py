@@ -1,4 +1,9 @@
-from fastapi import APIRouter
-router=APIRouter(tags=["positions"])
+from fastapi import APIRouter, Depends
+from app.dependencies import runtime
+
+router = APIRouter(tags=["positions"])
+
+
 @router.get("/positions")
-async def positions(): return {"positions":[],"note":"Account positions are not required for Phase 1-4 paper mode."}
+async def positions(rt=Depends(runtime)):
+    return await rt.inventory_summary(refresh=rt.config.execution_mode.value == "TESTNET")

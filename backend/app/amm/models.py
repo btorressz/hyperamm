@@ -41,3 +41,7 @@ class QuoteLevel(BaseModel):
     distance_bps: Decimal = Field(ge=0)
     source_model: AmmModel
     state: str = "DESIRED"
+    neutral_price: Decimal | None = None
+    neutral_size: Decimal | None = None
+    inventory_intent: str | None = None
+    inventory_effect: str | None = None

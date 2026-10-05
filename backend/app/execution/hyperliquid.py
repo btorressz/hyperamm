@@ -24,6 +24,10 @@ class HyperliquidTestnetExecutionAdapter:
         self.last_reconciled_at=None
         self.reconciliation_error=None
         self._orders: dict[str, StrategyOrder]={}
+        self._positions: dict[str, Decimal]={}
+        self._position_updated_at=None
+        self._position_error=None
+        self._position_version=0
 
     def _require_enabled(self):
         if not self.enabled:
@@ -67,7 +71,6 @@ class HyperliquidTestnetExecutionAdapter:
             raise ValueError("price normalizes to non-positive value")
         return price,float(size)
 
-
     @staticmethod
     def _parse_order_response(response) -> tuple[OrderStatus, str | None]:
         if not isinstance(response, dict) or response.get("status") != "ok":
@@ -84,6 +87,58 @@ class HyperliquidTestnetExecutionAdapter:
             return OrderStatus.FILLED, str(status["filled"].get("oid")) if status["filled"].get("oid") is not None else None
         return OrderStatus.UNKNOWN, None
 
+    @staticmethod
+    def normalize_user_position(user_state, market: str) -> Decimal:
+        if not isinstance(user_state, dict):
+            raise ValueError("invalid Hyperliquid user state")
+        positions=user_state.get("assetPositions")
+        if not isinstance(positions,list):
+            raise ValueError("Hyperliquid user state missing assetPositions")
+        position=Decimal("0")
+        matched=0
+        for item in positions:
+            if not isinstance(item,dict) or not isinstance(item.get("position"),dict):
+                raise ValueError("malformed Hyperliquid asset position")
+            raw=item["position"]
+            if raw.get("coin") != market:
+                continue
+            if "szi" not in raw:
+                raise ValueError("Hyperliquid position missing signed base size")
+            try:
+                value=Decimal(str(raw["szi"]))
+            except Exception as exc:
+                raise ValueError("invalid Hyperliquid signed base position") from exc
+            if not value.is_finite():
+                raise ValueError("non-finite Hyperliquid position")
+            position += value
+            matched += 1
+        if matched > 1:
+            raise ValueError("duplicate Hyperliquid positions for configured market")
+        return position
+
+    async def refresh_position(self, market: str) -> Decimal:
+        try:
+            info=await self._venue_client()
+            state=await asyncio.to_thread(info.user_state,self.account_address)
+            position=self.normalize_user_position(state,market)
+            if market not in self._positions or self._positions[market] != position:
+                self._position_version += 1
+            self._positions[market]=position
+            self._position_updated_at=utcnow()
+            self._position_error=None
+            return position
+        except Exception as exc:
+            self._position_error=str(exc)
+            raise
+
+    def position_snapshot(self, market: str):
+        if market not in self._positions or self._position_updated_at is None:
+            return None
+        return self._positions[market],self._position_updated_at,self._position_version,self._position_error
+
+    def has_unknown_exposure(self) -> bool:
+        return any(order.status == OrderStatus.UNKNOWN for order in self._orders.values())
+
     async def _venue_client(self):
         self._require_enabled()
         if self._info is None:
@@ -93,8 +148,6 @@ class HyperliquidTestnetExecutionAdapter:
         if not self._subscriptions:
             loop=asyncio.get_running_loop()
             def changed(_message):
-                # SDK callbacks run on its WS thread. Only wake the serialized
-                # authoritative reader; never mutate orders from that thread.
                 if not loop.is_closed():
                     loop.call_soon_threadsafe(self.venue_changed.set)
             for kind in ("orderUpdates","userFills"):
@@ -136,11 +189,6 @@ class HyperliquidTestnetExecutionAdapter:
             order.updated_at=datetime.fromtimestamp(timestamp/1000,timezone.utc) if timestamp else utcnow()
 
     async def reconcile_venue(self):
-        """Authoritative account snapshot, then status lookup for missing tracked IDs.
-
-        Missing is not synonymous with cancelled. Unknown exposure remains
-        cancellable and blocks new orders until resolved.
-        """
         if not self._orders:
             return
         try:
@@ -176,8 +224,6 @@ class HyperliquidTestnetExecutionAdapter:
 
     @staticmethod
     async def _transmit(method, *args):
-        # Cancelling an asyncio waiter cannot stop a requests/SDK worker thread.
-        # Keep the caller's execution lock held until the signed call finishes.
         task=asyncio.create_task(asyncio.to_thread(method,*args))
         try:
             return await asyncio.shield(task)
@@ -197,7 +243,6 @@ class HyperliquidTestnetExecutionAdapter:
             price,size=self._normalize_for_sdk(exchange,req)
             if self.authority is not None:
                 await self.authority()
-            # Record uncertain exposure BEFORE transmission, including timeouts.
             values=req.model_dump()
             values.update(price=Decimal(str(price)),size=Decimal(str(size)))
             order=StrategyOrder(**values,status=OrderStatus.UNKNOWN)
@@ -207,9 +252,12 @@ class HyperliquidTestnetExecutionAdapter:
                 {"limit":{"tif":"Alo"}}, False, self._cloid(req.client_order_id)
             )
             status,venue_order_id=self._parse_order_response(response)
-            order.status=status; order.venue_order_id=venue_order_id; order.updated_at=utcnow()
+            order.status=status
+            order.venue_order_id=venue_order_id
+            order.updated_at=utcnow()
             if status==OrderStatus.FILLED:
                 order.filled_size=order.size
+                self.venue_changed.set()
             if status in {OrderStatus.REJECTED,OrderStatus.UNKNOWN}:
                 raise RuntimeError(f"Hyperliquid strategy order status: {status}")
             result.append(order)
@@ -227,13 +275,12 @@ class HyperliquidTestnetExecutionAdapter:
                 response=await self._transmit(exchange.cancel_by_cloid,order.market,self._cloid(order.client_order_id))
                 statuses=response.get("response",{}).get("data",{}).get("statuses",[])
                 if response.get("status") != "ok" or statuses != ["success"]:
-                    # A fill may win the cancellation race. Only venue terminal
-                    # evidence makes that cancellation failure safe.
                     await self.reconcile_venue()
                     if self._active(order):
                         raise RuntimeError("venue did not confirm cancellation")
                 else:
-                    order.status=OrderStatus.CANCELLED; order.updated_at=utcnow()
+                    order.status=OrderStatus.CANCELLED
+                    order.updated_at=utcnow()
                     self._needs_verification.add(order.client_order_id)
                 result.append(order)
             except Exception as exc:
@@ -245,12 +292,11 @@ class HyperliquidTestnetExecutionAdapter:
     async def replace_orders(self, replacements):
         out=[]
         for cid, req in replacements:
-            await self.cancel_orders([cid]); out.extend(await self.submit_orders([req]))
+            await self.cancel_orders([cid])
+            out.extend(await self.submit_orders([req]))
         return out
 
     async def get_open_orders(self):
-        # Cache projection only: the manager reconciles before decisions and the
-        # runtime also reconciles on WS events and on a five-second timer.
         return [o for o in self._orders.values() if self._active(o)]
 
     async def cancel_all(self):
