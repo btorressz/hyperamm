@@ -298,6 +298,10 @@ class PerpContextService:
             if context.updated_at < self._context.updated_at:
                 return False
             if fingerprint == current:
+                if context.updated_at > self._context.updated_at:
+                    self._context = self._context.model_copy(
+                        update={"updated_at": context.updated_at, "stale": False}
+                    )
                 return False
         self._version += 1
         self._context = context.model_copy(update={"version": self._version, "stale": False})
