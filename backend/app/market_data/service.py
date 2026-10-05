@@ -21,6 +21,7 @@ class MarketDataService:
         self._task: asyncio.Task | None = None
         self._adapter = MockMarketDataAdapter(market, interval=demo_interval) if mode == MarketDataMode.DEMO else HyperliquidMarketDataAdapter(market)
         self._listeners: list = []
+        self._perp_listeners: list = []
 
     async def _accept(self, snapshot: MarketSnapshot):
         async with self._lock:
@@ -39,6 +40,11 @@ class MarketDataService:
 
     def add_listener(self, listener):
         self._listeners.append(listener)
+
+    def add_perp_listener(self, listener):
+        self._perp_listeners.append(listener)
+        if hasattr(self._adapter, "add_perp_listener"):
+            self._adapter.add_perp_listener(listener)
 
     async def start(self):
         if self._task and not self._task.done():
