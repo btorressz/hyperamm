@@ -4,6 +4,7 @@ from decimal import Decimal as D
 import pytest
 
 from app.config import Settings
+from app.execution.models import OrderRequest
 from app.execution.order_manager import OrderManager
 from app.execution.paper import PaperExecutionAdapter
 from app.market_data.history import MarketPriceHistory
@@ -159,11 +160,18 @@ async def test_stale_perp_context_fails_closed_and_cancels():
     await rt.market._accept(snap)
     rt.perp_context_service.accept(perp(mid=str(snap.mid_price),updated_at=utcnow()-timedelta(seconds=1)))
     rt.paper.update_market(snap)
-    rt.strategy.running=True
-    # Create existing resting orders from the legacy neutral ladder.
-    _,_,quotes=rt.quote_engine.generate(rt.config,snap)
-    await rt.orders.reconcile("ETH",quotes,rt.config.replace_tolerance_bps,rt.config.size_tolerance)
+    await rt.paper.submit_orders([
+        OrderRequest(
+            client_order_id="resting-before-stale-perp",
+            market="ETH",
+            side="BID",
+            price=snap.best_bid-D("100"),
+            size=D(".2"),
+            level_index=0,
+        )
+    ])
     assert await rt.paper.get_open_orders()
+    rt.strategy.running=True
     await rt.refresh_once()
     assert rt.strategy.quote_health=="DEGRADED"
     assert rt.quotes==[]
@@ -208,3 +216,16 @@ async def test_reference_change_reuses_existing_reconciliation_replace():
     )
     actions=await manager.reconcile("ETH",second,config.replace_tolerance_bps,config.size_tolerance)
     assert any(a.action=="REPLACE" for a in actions)
+
+
+def test_same_user_state_feeds_phase5_and_phase7_position_consistently():
+    from app.execution.hyperliquid import HyperliquidTestnetExecutionAdapter
+    from app.market_data.perp_context import normalize_user_position_context
+    state={"assetPositions":[{"position":{
+        "coin":"ETH","szi":"-2.25","entryPx":"3000","leverage":{"type":"cross","value":4},
+        "liquidationPx":"3500","marginUsed":"1000","positionValue":"6750",
+        "unrealizedPnl":"-10","returnOnEquity":"-0.01"
+    }}]}
+    phase5=HyperliquidTestnetExecutionAdapter.normalize_user_position(state,"ETH")
+    phase7=normalize_user_position_context(state,"ETH").signed_position_base
+    assert phase5==phase7==D("-2.25")
