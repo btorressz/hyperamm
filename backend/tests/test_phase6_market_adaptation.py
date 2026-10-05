@@ -260,3 +260,41 @@ def test_non_finite_depth_is_rejected():
     bad_snapshot=s.model_copy(update={"book":bad_book})
     with pytest.raises(ValueError,match="order-book size"):
         calculate_book_imbalance(bad_snapshot,5)
+
+
+def test_phase6_cannot_restore_short_hard_limit_side():
+    config=StrategyConfig(
+        volatility_window_samples=2,volatility_min_samples=2,
+        volatility_low_threshold=D("0"),volatility_high_threshold=D(".001"),
+    )
+    h=history_for(["100","90"])
+    snap=snapshot("90",2,[D("1")]*5,[D("5")]*5)
+    engine=QuoteEngine()
+    _,_,final,inv_decision,_=engine.generate_market_adaptive(config,snap,inventory("-10"),h)
+    assert inv_decision.hard_limit_state=="SHORT_LIMIT"
+    assert any(q.side=="BID" for q in final)
+    assert not any(q.side=="ASK" for q in final)
+
+
+def test_phase6_metadata_proves_inventory_then_market_composition():
+    config=StrategyConfig(
+        volatility_window_samples=2,volatility_min_samples=2,
+        volatility_low_threshold=D("0"),volatility_high_threshold=D(".001"),
+        volatility_spread_strength=D("1"),volatility_size_strength=D(".5"),
+    )
+    h=history_for(["100","105"])
+    snap=snapshot("105",2)
+    engine=QuoteEngine()
+    fair,_,phase5,inventory_decision=engine.generate_inventory_aware(config,snap,inventory("2.5"))
+    fair2,_,final,inventory_decision2,market_decision=engine.generate_market_adaptive(
+        config,snap,inventory("2.5"),h
+    )
+    assert fair2==fair
+    assert inventory_decision2.reservation_price==inventory_decision.reservation_price
+    assert inventory_decision.reservation_price != fair
+    assert market_decision.spread_multiplier>1
+    phase5_by_key={(q.side,q.level_index):q for q in phase5}
+    for quote in final:
+        before=phase5_by_key[(quote.side,quote.level_index)]
+        assert quote.pre_market_adaptation_price==before.price
+        assert quote.pre_market_adaptation_size==before.size
