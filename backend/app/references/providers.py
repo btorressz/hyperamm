@@ -140,6 +140,7 @@ class RedStoneProvider:
     def classify_connection_error(self,exc):
         text=self._safe_error(exc); lower=text.lower()
         if "429" in lower or "rate limit" in lower or "connection limit" in lower:return ProviderStatus.DEGRADED
+        if "403" in lower and ("rate" in lower or "limit" in lower):return ProviderStatus.DEGRADED
         if "401" in lower or "403" in lower or "unauthor" in lower or "forbidden" in lower:return ProviderStatus.ERROR
         return ProviderStatus.DEGRADED
 
