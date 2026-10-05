@@ -26,9 +26,9 @@ The default is PAPER and the guard is checked before a signing client is created
 
 Signing material exists only in backend environment variables. React never receives it. `.env` is ignored. The code never logs the private key. Public LIVE market data requires no wallet.
 
-## Known Phase 1–4 limitations
+## Known limitations
 
-The project does not implement inventory skew, volatility/book-imbalance adaptation, perp funding-aware vAMM logic, external oracle protection, full institutional risk policy, AI agents, strategy optimization, vault accounting or mainnet execution. Those are roadmap items rather than hidden placeholders.
+Phases 5–7 now implement inventory-aware quoting, volatility/book-imbalance adaptation, and Hyperliquid-native perpetual context. External oracle protection, the expanded institutional risk firewall, AI agents, strategy optimization, vault accounting and mainnet execution remain roadmap items rather than hidden placeholders.
 
 ## Phase 4.1 venue reconciliation
 
@@ -72,3 +72,24 @@ Periodic authoritative polling continues when WebSocket notifications are absent
 Ownership IDs are still in memory: discovering previous-process strategy orders
 and durable restart recovery are outside this pass. This is a tested Phase 1–4
 foundation, not a claim of production/mainnet readiness.
+
+
+## Phase 7 perp context
+
+The public adapter reuses its existing official SDK `Info` client and WebSocket manager. Alongside `l2Book`, it subscribes to:
+
+```python
+Info.subscribe({"type": "activeAssetCtx", "coin": market}, callback)
+```
+
+and bootstraps current context with:
+
+```python
+Info.meta_and_asset_ctxs()
+```
+
+The normalized fields used are `funding`, `openInterest`, `oraclePx`, `markPx`, optional `midPx`, and optional `premium`. Market mapping uses the matching `meta["universe"][i]["name"]`; it does not silently assume the configured coin is at a fixed index.
+
+TESTNET `Info.user_state(address)` is parsed once per refresh into both the authoritative Phase 5 signed position and Phase 7 account/perp observability. Phase 7 does not call leverage or isolated-margin mutation APIs.
+
+Live signed TESTNET behavior and real public `activeAssetCtx` delivery are not required by deterministic unit tests and must not be represented as exercised unless explicitly validated against Hyperliquid.
