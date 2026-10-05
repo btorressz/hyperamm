@@ -7,7 +7,7 @@ from app.config import Settings
 from app.market_data.mock import MockMarketDataAdapter
 from app.market_data.perp_context import demo_perp_context
 from app.references.consensus import ReferenceConsensusPolicy
-from app.references.models import PriceEvidence,ProviderId,ProviderStatus,SourceType,utcnow
+from app.references.models import PriceEvidence,ProviderId,ProviderStatus,SourceType,deviation_bps,utcnow
 from app.references.providers import CoinGeckoProvider,KrakenProvider,RedStoneProvider,backoff
 from app.references.service import ReferenceService
 
@@ -121,3 +121,9 @@ def test_kraken_down_with_redstone_and_native_is_degraded_not_normal():
     c=policy.evaluate("ETH",base,agreement_bps=D("30"),outlier_bps=D("75"),version=9)
     assert c.confidence_state=="DEGRADED"
     assert any("Kraken unavailable" in reason for reason in c.reasons)
+
+
+def test_exact_signed_deviation_examples():
+    assert deviation_bps(D("3003"),D("3000"))==D("10")
+    assert deviation_bps(D("2997"),D("3000"))==D("-10")
+    assert deviation_bps(D("3000"),D("3000"))==D("0")
