@@ -534,6 +534,7 @@ class HyperAmmRuntime:
 
     async def update_config(self, new_config: StrategyConfig):
         old_market = None
+        old_references = None
         async with self.execution_lock:
             mode_changed = (
                 new_config.market_data_mode != self.config.market_data_mode
@@ -542,6 +543,7 @@ class HyperAmmRuntime:
             await self._invalidate_locked("configuration changed", "NO_QUOTES")
             if mode_changed:
                 old_market = self.market
+                old_references = self.reference_service
                 self.market = MarketDataService(
                     new_config.market,
                     new_config.market_data_mode,
@@ -557,22 +559,37 @@ class HyperAmmRuntime:
             self._expected_inventory_version = None
             self._expected_market_version = None
             self._expected_perp_version = None
+            self._expected_reference_version = None
+            self._expected_risk_version = None
             self.inventory = None
             self.inventory_decision = None
             self.market_adaptation_decision = None
             self.perp_context = None
             self.perp_reference_decision = None
             self.perp_position = None
+            self.references = None
+            self.risk_decision = None
+            self.authorization = None
+            self.strategy_quotes = []
             if mode_changed:
                 self.market_history.clear()
                 self.perp_context_service = PerpContextService(
                     new_config.market, new_config.perp_context_stale_after_seconds
                 )
+                self.reference_service = ReferenceService(
+                    self.settings,
+                    market=new_config.market,
+                    mode=new_config.market_data_mode,
+                    wakeup=self._strategy_wakeup,
+                )
             else:
                 self.perp_context_service.stale_after_seconds = new_config.perp_context_stale_after_seconds
         if old_market:
             await old_market.stop()
+            if old_references:
+                await old_references.stop()
             await self.market.start()
+            await self.reference_service.start()
         if self.strategy.running:
             await self.refresh_once()
         return self.strategy
