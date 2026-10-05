@@ -157,34 +157,45 @@ class HyperAmmRuntime:
         return await self._testnet_inventory_locked(refresh=refresh)
 
     async def _execution_authority(self):
-        from app.strategy.fair_value import calculate_fair_value
-
         current_market = await self.market.snapshot()
-        calculate_fair_value(current_market)
+        market_fair = calculate_fair_value(current_market)
         self.market_history.add_snapshot(current_market)
         validate_execution_authority(
             risk=self.risk,
             execution_mode=self.config.execution_mode.value,
             strategy_running=self.strategy.running,
         )
+        if self.authorization is None or not self.authorization.authorized:
+            raise PermissionError("current Phase 8 FinalQuoteAuthorization is not authorized")
+        if self.risk_decision is None or self.references is None:
+            raise RuntimeError("Phase 8 risk evidence is unavailable")
         if self.config.execution_mode == ExecutionMode.TESTNET:
             self.testnet._require_enabled()
         inventory = await self._inventory_state_locked(refresh=False)
-        if self.config.perp_context_enabled:
-            if self.fair_value is None:
-                market_fair = calculate_fair_value(current_market)
-            else:
-                market_fair = self.fair_value
-            current_perp = self.perp_context_service.snapshot(market_fair)
-            if self._expected_perp_version is not None and current_perp.version != self._expected_perp_version:
-                raise RuntimeError("perp context changed after quote generation; recompute before transmission")
+        current_perp = self.perp_context_service.snapshot(market_fair)
+        current_refs = self.reference_service.snapshot(
+            current_market,
+            current_perp,
+            agreement_bps=self.risk_config.source_agreement_bps,
+            outlier_bps=self.risk_config.source_outlier_bps,
+        )
+        if self._expected_perp_version is not None and current_perp.version != self._expected_perp_version:
+            raise RuntimeError("perp context changed after quote authorization; recompute before transmission")
         if self._expected_inventory_version is not None and inventory.version != self._expected_inventory_version:
-            raise RuntimeError("inventory changed after quote generation; recompute before transmission")
+            raise RuntimeError("inventory changed after quote authorization; recompute before transmission")
         if self._expected_market_version is not None and self.market_history.version != self._expected_market_version:
-            raise RuntimeError("market/adaptation state changed after quote generation; recompute before transmission")
+            raise RuntimeError("market/adaptation state changed after quote authorization; recompute before transmission")
+        if self._expected_reference_version is not None and current_refs.version != self._expected_reference_version:
+            raise RuntimeError("reference evidence changed after quote authorization; recompute before transmission")
+        if self._expected_risk_version is not None and self.risk_decision.version != self._expected_risk_version:
+            raise RuntimeError("risk decision changed after quote authorization; recompute before transmission")
+        if fingerprint(self.quotes) != self.authorization.quote_fingerprint:
+            raise RuntimeError("authorized quote ladder fingerprint mismatch")
 
     async def _invalidate_locked(self, reason, health="DEGRADED"):
         self.quotes = []
+        self.strategy_quotes = []
+        self.authorization = None
         self.fair_value = None
         self.pool = None
         self.inventory_decision = None
@@ -192,6 +203,8 @@ class HyperAmmRuntime:
         self.perp_reference_decision = None
         self._expected_market_version = None
         self._expected_perp_version = None
+        self._expected_reference_version = None
+        self._expected_risk_version = None
         self.last_actions = []
         self.strategy.last_error = reason
         self.strategy.quote_health = "HALTED" if self.risk.kill_switch_active else health
