@@ -191,6 +191,8 @@ class HyperAmmRuntime:
     async def _on_perp_context(self, context):
         async with self.execution_lock:
             try:
+                if isinstance(context, Exception):
+                    raise ValueError(str(context))
                 changed = self.perp_context_service.accept(context)
                 if changed:
                     self.perp_context = self.perp_context_service._context
