@@ -3,7 +3,7 @@
 
 **HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
 
-Phases 1–4 are implemented as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Phases 1–5 are implemented as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
 
 ## Why a virtual AMM?
 
@@ -31,12 +31,12 @@ Hyperliquid L2 / Demo Feed
  PAPER execution or guarded TESTNET
 ```
 
-## Phase 1–4 capabilities
+## Phase 1–5 capabilities
 
 - **Phase 1 — Market data + paper execution:** normalized L2/BBO state, WebSocket subscription adapter, initial L2 snapshot, monotonic exchange-time handling, reconnection/degraded states, explicit deterministic demo feed, paper orders/fills, optional testnet adapter.
 - **Phase 2 — Virtual constant-product AMM:** invariant, marginal price, reserve initialization/recentering, base→quote and quote→base virtual swaps, curve-state calculations.
 - **Phase 3 — AMM curve → CLOB compiler:** deterministic bid/ask levels, tick and size normalization, stable side ordering, no-cross checks, and stateful quote reconciliation.
-- **Phase 4 — Concentrated liquidity:** bounded deterministic weighting that shifts more fixed liquidity near fair value as concentration increases.
+- **Phase 4 — Concentrated liquidity:** bounded deterministic weighting that shifts more fixed liquidity near fair value as concentration increases.\n- **Phase 5 — Inventory-aware quoting:** normalized PAPER/TESTNET inventory, bounded reservation-price and side-size skew, hard-limit side suppression, inventory freshness/version checks, and terminal controls/visibility.
 
 A minimal Phase 1–4 risk authority enforces freshness, level count, per-order size, aggregate notional, minimum price, quote distance, execution state and a kill switch. The kill switch cancels active strategy orders and blocks new quote generation.
 
@@ -153,7 +153,7 @@ Live Hyperliquid integration is intentionally not required by normal unit tests.
 
 ## Limitations
 
-Phases 1–4 intentionally omit inventory-aware skew, adaptive volatility/order-book imbalance logic, perp vAMM/funding context, external oracle protection, full institutional risk firewall, AI agents, optimization/simulation, persistent vault accounting and production mainnet trading.
+Phase 5 intentionally stops at deterministic inventory-aware quoting. Adaptive volatility/order-book imbalance logic, perp vAMM/funding context, external oracle protection, full institutional risk firewall, AI agents, optimization/simulation, persistent vault accounting and production mainnet trading remain out of scope.
 
 ## Documentation
 
@@ -164,7 +164,7 @@ Phases 1–4 intentionally omit inventory-aware skew, adaptive volatility/order-
 
 ## 12-phase roadmap
 
-Phases 1–4 are the implemented foundation. Phase 5 adds inventory-aware quoting; Phase 6 volatility/book imbalance; Phase 7 perpetual vAMM context; Phase 8 oracle protection/risk firewall; Phase 9 AI supervisory agents; Phase 10 optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
+Phases 1–5 are the implemented foundation. Phase 6 adds volatility/book imbalance; Phase 7 perpetual vAMM context; Phase 8 oracle protection/risk firewall; Phase 9 AI supervisory agents; Phase 10 optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
 
 ## Phase 4.1 acceptance and hardening
 
@@ -183,3 +183,12 @@ queries, including partial fills and uncertain order states. See
 [architecture](docs/ARCHITECTURE.md) and [integration](docs/HYPERLIQUID_INTEGRATION.md).
 Normal acceptance tests use deterministic fixtures and require no live venue or
 wallet. Phases 5–8 remain planned and are not implemented in this change.
+
+
+## Phase 5 — Inventory-Aware Quoting
+
+Phase 5 composes after the accepted neutral AMM/concentration ladder and before deterministic risk/reconciliation. PAPER inventory is derived from economic fills only. TESTNET inventory is normalized from Hyperliquid account state and fails closed when authoritative state is missing, stale, malformed, or economically uncertain.
+
+For deviation `d = position - target`, normal skew uses `r = clamp(d / soft_limit, -1, 1)`. The reservation shift is `-r * max_inventory_price_skew_bps`; bid and ask sizes use bounded `1 - strength*r` and `1 + strength*r` side multipliers. At the long hard limit, inventory-increasing bids are omitted; at the short hard limit, inventory-increasing asks are omitted. Existing reconciliation therefore cancels forbidden resting quotes without a second order-management path.
+
+See [Inventory Skew](docs/INVENTORY_SKEW.md) for formulas, source semantics, failure behavior, and test coverage.
