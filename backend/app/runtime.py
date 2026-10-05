@@ -8,10 +8,12 @@ from app.config import Settings
 from app.market_data.models import MarketDataMode, utcnow
 from app.market_data.service import MarketDataService
 from app.market_data.history import MarketPriceHistory
+from app.market_data.perp_context import PerpContextService, PerpPositionContext, demo_perp_context
 from app.strategy.models import StrategyConfig, StrategyState, ExecutionMode
 from app.strategy.quote_engine import QuoteEngine
 from app.strategy.inventory import InventoryPolicy, InventoryState, build_inventory_state
 from app.strategy.market_adaptation import MarketAdaptationPolicy
+from app.strategy.perp_policy import PerpContextPolicy
 from app.execution.paper import PaperExecutionAdapter
 from app.execution.hyperliquid import HyperliquidTestnetExecutionAdapter
 from app.execution.order_manager import OrderManager
@@ -47,6 +49,9 @@ class HyperAmmRuntime:
         self.orders = OrderManager(self.execution, self.execution_lock, self._execution_authority)
         self.quote_engine = QuoteEngine()
         self.market_history = MarketPriceHistory(max_samples=1000)
+        self.perp_context_service = PerpContextService(
+            settings.market, self.config.perp_context_stale_after_seconds
+        )
         self.risk = RiskStatus()
         self.kill = KillSwitch(self.risk, self.execution_lock)
         self.fair_value = None
@@ -56,8 +61,12 @@ class HyperAmmRuntime:
         self.inventory: InventoryState | None = None
         self.inventory_decision = None
         self.market_adaptation_decision = None
+        self.perp_context = None
+        self.perp_reference_decision = None
+        self.perp_position: PerpPositionContext | None = None
         self._expected_inventory_version: int | None = None
         self._expected_market_version: int | None = None
+        self._expected_perp_version: int | None = None
         self._strategy_task = None
         self._venue_task = None
         self._closing = False
@@ -65,6 +74,17 @@ class HyperAmmRuntime:
         self.testnet.authority = self._execution_authority
         self.paper.on_fill = lambda _fill: self._strategy_wakeup.set()
         self.market.add_listener(self._on_market)
+        self.market.add_perp_listener(self._on_perp_context)
+
+    def _paper_perp_position(self, inventory: InventoryState) -> PerpPositionContext:
+        return PerpPositionContext(
+            market=inventory.market,
+            signed_position_base=inventory.position_base,
+            updated_at=inventory.updated_at,
+            stale=inventory.stale,
+            version=inventory.version,
+            source="PAPER",
+        )
 
     def _paper_inventory(self) -> InventoryState:
         return build_inventory_state(
@@ -106,6 +126,12 @@ class HyperAmmRuntime:
             raise RuntimeError("authoritative TESTNET inventory is stale")
         if state.error:
             raise RuntimeError(state.error)
+        position_context = self.testnet.perp_position_snapshot(self.config.market)
+        if position_context is None:
+            raise RuntimeError("authoritative TESTNET perp position context is unavailable")
+        if position_context.signed_position_base != state.position_base:
+            raise RuntimeError("Phase 5 inventory and Phase 7 perp position disagree")
+        self.perp_position = position_context
         return state
 
     async def _inventory_state_locked(self, *, refresh: bool = False) -> InventoryState:
@@ -127,6 +153,14 @@ class HyperAmmRuntime:
         if self.config.execution_mode == ExecutionMode.TESTNET:
             self.testnet._require_enabled()
         inventory = await self._inventory_state_locked(refresh=False)
+        if self.config.perp_context_enabled:
+            if self.fair_value is None:
+                market_fair = calculate_fair_value(current_market)
+            else:
+                market_fair = self.fair_value
+            current_perp = self.perp_context_service.snapshot(market_fair)
+            if self._expected_perp_version is not None and current_perp.version != self._expected_perp_version:
+                raise RuntimeError("perp context changed after quote generation; recompute before transmission")
         if self._expected_inventory_version is not None and inventory.version != self._expected_inventory_version:
             raise RuntimeError("inventory changed after quote generation; recompute before transmission")
         if self._expected_market_version is not None and self.market_history.version != self._expected_market_version:
@@ -138,7 +172,9 @@ class HyperAmmRuntime:
         self.pool = None
         self.inventory_decision = None
         self.market_adaptation_decision = None
+        self.perp_reference_decision = None
         self._expected_market_version = None
+        self._expected_perp_version = None
         self.last_actions = []
         self.strategy.last_error = reason
         self.strategy.quote_health = "HALTED" if self.risk.kill_switch_active else health
@@ -150,6 +186,20 @@ class HyperAmmRuntime:
             self.risk.kill_switch_active = True
             self.risk.last_reason = self.strategy.last_error
             raise
+
+    async def _on_perp_context(self, context):
+        async with self.execution_lock:
+            try:
+                changed = self.perp_context_service.accept(context)
+                if changed:
+                    self.perp_context = self.perp_context_service._context
+                    self._strategy_wakeup.set()
+            except Exception as exc:
+                if self.config.perp_context_enabled:
+                    try:
+                        await self._invalidate_locked(f"perp context update failed: {exc}")
+                    except Exception:
+                        log.exception("perp context invalidation failed")
 
     async def _on_market(self, snapshot):
         from app.strategy.fair_value import calculate_fair_value
@@ -223,15 +273,34 @@ class HyperAmmRuntime:
                     inventory = await self._testnet_inventory_locked(refresh=True)
                 else:
                     inventory = self._paper_inventory()
-                fair, pool, quotes, decision, market_decision = self.quote_engine.generate_market_adaptive(
-                    self.config, snap, inventory, self.market_history
-                )
+                    self.perp_position = self._paper_perp_position(inventory)
+
+                if self.config.perp_context_enabled:
+                    if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
+                        self.perp_context_service.accept(demo_perp_context(snap))
+                    market_fair = calculate_fair_value(snap)
+                    perp_context = self.perp_context_service.snapshot(market_fair)
+                    fair, pool, quotes, decision, market_decision, perp_decision = (
+                        self.quote_engine.generate_perp_market_adaptive(
+                            self.config, snap, inventory, self.market_history, perp_context
+                        )
+                    )
+                    self.perp_context = perp_context
+                    self.perp_reference_decision = perp_decision
+                else:
+                    fair, pool, quotes, decision, market_decision = self.quote_engine.generate_market_adaptive(
+                        self.config, snap, inventory, self.market_history
+                    )
+                    self.perp_reference_decision = None
                 validate_quotes(quotes, snap, self.risk)
                 self.inventory = inventory
                 self.inventory_decision = decision
                 self.market_adaptation_decision = market_decision
                 self._expected_inventory_version = inventory.version
                 self._expected_market_version = market_decision.version
+                self._expected_perp_version = (
+                    self.perp_context.version if self.config.perp_context_enabled and self.perp_context else None
+                )
                 if self.strategy.running:
                     await self._execution_authority()
                     self.last_actions = await self.orders.reconcile_locked(
@@ -282,6 +351,13 @@ class HyperAmmRuntime:
                         calculate_fair_value(current_market)
                         self.market_history.add_snapshot(current_market)
                         inventory = await self._inventory_state_locked(refresh=False)
+                        perp_changed = False
+                        if self.config.perp_context_enabled:
+                            current_perp = self.perp_context_service.snapshot(calculate_fair_value(current_market))
+                            perp_changed = (
+                                self._expected_perp_version is not None
+                                and current_perp.version != self._expected_perp_version
+                            )
                         inventory_changed = (
                             self._expected_inventory_version is not None
                             and inventory.version != self._expected_inventory_version
@@ -290,7 +366,7 @@ class HyperAmmRuntime:
                             self._expected_market_version is not None
                             and self.market_history.version != self._expected_market_version
                         )
-                        if inventory_changed or market_changed:
+                        if inventory_changed or market_changed or perp_changed:
                             self._strategy_wakeup.set()
                             break
                     except Exception as exc:
@@ -311,6 +387,14 @@ class HyperAmmRuntime:
                 self.inventory = await self._testnet_inventory_locked(refresh=True)
             else:
                 self.inventory = self._paper_inventory()
+                self.perp_position = self._paper_perp_position(self.inventory)
+            if self.config.perp_context_enabled:
+                snap = await self.market.snapshot()
+                if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
+                    self.perp_context_service.accept(demo_perp_context(snap))
+                self.perp_context = self.perp_context_service.snapshot(
+                    __import__("app.strategy.fair_value", fromlist=["calculate_fair_value"]).calculate_fair_value(snap)
+                )
             self.strategy.running = True
             if not self._strategy_task or self._strategy_task.done():
                 self._strategy_task = asyncio.create_task(self._loop(), name="strategy")
@@ -364,17 +448,27 @@ class HyperAmmRuntime:
                     self.settings.demo_update_interval_seconds,
                 )
                 self.market.add_listener(self._on_market)
+                self.market.add_perp_listener(self._on_perp_context)
             self.execution = self.paper if new_config.execution_mode == ExecutionMode.PAPER else self.testnet
             self.orders.execution = self.execution
             self.config = new_config
             self.strategy.config = new_config
             self._expected_inventory_version = None
             self._expected_market_version = None
+            self._expected_perp_version = None
             self.inventory = None
             self.inventory_decision = None
             self.market_adaptation_decision = None
+            self.perp_context = None
+            self.perp_reference_decision = None
+            self.perp_position = None
             if mode_changed:
                 self.market_history.clear()
+                self.perp_context_service = PerpContextService(
+                    new_config.market, new_config.perp_context_stale_after_seconds
+                )
+            else:
+                self.perp_context_service.stale_after_seconds = new_config.perp_context_stale_after_seconds
         if old_market:
             await old_market.stop()
             await self.market.start()
@@ -391,6 +485,8 @@ class HyperAmmRuntime:
             "bid_size_multiplier": str(decision.bid_size_multiplier) if decision else None,
             "ask_size_multiplier": str(decision.ask_size_multiplier) if decision else None,
             "hard_limit_state": decision.hard_limit_state.value if decision else None,
+            "market_fair_value": str(decision.market_fair_value) if decision else None,
+            "reference_price": str(decision.reference_price) if decision else None,
         }
 
     async def inventory_summary(self, *, refresh: bool = False):
@@ -405,7 +501,12 @@ class HyperAmmRuntime:
             try:
                 snap = await self.market.snapshot()
                 fair = self.fair_value if self.fair_value is not None else calculate_fair_value(snap)
-                decision = InventoryPolicy(self.config).decision(fair, state)
+                reference = (
+                    self.perp_reference_decision.final_reference_price
+                    if self.perp_reference_decision is not None
+                    else fair
+                )
+                decision = InventoryPolicy(self.config).decision(fair, state, reference)
             except ValueError:
                 # Position observability remains available while market-derived strategy
                 # metrics are temporarily unavailable. Inventory-source failures are
@@ -414,6 +515,39 @@ class HyperAmmRuntime:
             self.inventory = state
             self.inventory_decision = decision
             return self._inventory_payload(state, decision)
+
+    def _perp_payload(self) -> dict | None:
+        if self.perp_context is None:
+            return None
+        data = self.perp_context.model_dump(mode="json")
+        decision = self.perp_reference_decision
+        data.update({
+            "market_fair_value": str(decision.market_fair_value) if decision else str(self.perp_context.market_mid),
+            "funding_score": str(decision.funding_score) if decision else None,
+            "funding_shift_bps": str(decision.funding_shift_bps) if decision else None,
+            "strategy_reference_price": str(decision.final_reference_price) if decision else None,
+            "reference_shift_bps": str(decision.final_reference_shift_bps) if decision else None,
+            "position": self.perp_position.model_dump(mode="json") if self.perp_position else None,
+        })
+        return data
+
+    async def perp_context_summary(self):
+        from app.strategy.fair_value import calculate_fair_value
+        async with self.execution_lock:
+            snap = await self.market.snapshot()
+            market_fair = calculate_fair_value(snap)
+            if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
+                self.perp_context_service.accept(demo_perp_context(snap))
+            context = self.perp_context_service.snapshot(market_fair)
+            decision = PerpContextPolicy(self.config).decision(market_fair, context)
+            inventory = await self._inventory_state_locked(
+                refresh=self.config.execution_mode == ExecutionMode.TESTNET
+            )
+            self.perp_context = context
+            self.perp_reference_decision = decision
+            if self.config.execution_mode == ExecutionMode.PAPER:
+                self.perp_position = self._paper_perp_position(inventory)
+            return self._perp_payload()
 
     def _market_adaptation_payload(self, decision) -> dict | None:
         return decision.model_dump(mode="json") if decision is not None else None
@@ -442,6 +576,7 @@ class HyperAmmRuntime:
             "quotes": [q.model_dump(mode="json") for q in self.quotes],
             "inventory": inventory,
             "market_adaptation": self._market_adaptation_payload(self.market_adaptation_decision),
+            "perp_context": self._perp_payload(),
             "risk": self.risk.model_dump(mode="json"),
             "orders": [o.model_dump(mode="json") for o in self.paper.all_orders()]
             if self.config.execution_mode == ExecutionMode.PAPER
