@@ -131,3 +131,45 @@ PAPER position is the signed sum of actual simulated fills: BID fills add base a
 TESTNET position comes from the official Hyperliquid SDK account-state path (`Info.user_state(account_address)`) and normalizes the configured market's signed `assetPositions[].position.szi`. Position refresh occurs before TESTNET quote generation and during venue reconciliation. Missing/stale state, malformed state, reconciliation errors, or UNKNOWN economic exposure invalidate inventory-aware execution instead of assuming zero.
 
 Generated decisions bind to an inventory version. Final transmission authority verifies that the current version still matches the version used to generate the ladder. Fill/venue events wake the existing strategy loop; they do not introduce a second execution lock or reconciliation system.
+
+
+## Phase 6 market-adaptation layer
+
+Phase 6 adds one deterministic transform after Phase 5 and before risk:
+
+```text
+normalized market state
+        ↓
+fair value
+        ↓
+virtual x*y=k AMM
+        ↓
+reserve-delta sizing
+        ↓
+optional concentration
+        ↓
+Phase 5 InventoryPolicy
+  reservation center
+  inventory size skew
+  hard-limit suppression
+        ↓
+Phase 6 MarketAdaptationPolicy
+  rolling mid-price volatility
+  top-N L2 imbalance
+  widening-only spread multiplier
+  bounded variable-liquidity reduction
+        ↓
+deterministic risk on FINAL prices/sizes/distance/notional
+        ↓
+KEEP / CREATE / REPLACE / CANCEL
+        ↓
+PAPER / guarded TESTNET
+```
+
+`MarketPriceHistory` is bounded in memory and accepts only fresh normalized snapshots with a positive finite mid price and unique sequence/timestamp identity. Replays do not inflate volatility samples. History is cleared when market/feed mode changes.
+
+Phase 6 uses the Phase 5 reservation price as its strategy center without overwriting either fair value or reservation price. The existing Phase 5 hard-limit side suppression happens first; because Phase 6 only transforms the surviving quote list, it cannot re-enable a forbidden side.
+
+The runtime binds final quotes to both the Phase 5 inventory version and the Phase 6 market-history version. Final execution authority refreshes the normalized market snapshot and rejects transmission if either material dependency changed after quote generation. The existing shared execution lock remains the serialization boundary.
+
+Startup volatility warmup is not a failure: if fewer than the configured minimum observations exist, realized volatility is `None`, the regime is `WARMING_UP`, and all Phase 6 spread/size multipliers are neutral. Invalid book state or invalid/non-finite Phase 6 math after that point follows the existing invalidation/cancel semantics.
