@@ -75,7 +75,7 @@ def test_active_asset_context_normalization_and_exact_basis():
 @pytest.mark.parametrize("mark,oracle,expected",[
     ("3000","3000",D("0")),
     ("3001","3000",D("1")/D("3000")*D("10000")),
-    ("2999","3000"),D("-1")/D("3000")*D("10000"),
+    ("2999","3000",D("-1")/D("3000")*D("10000")),
 ])
 def test_basis_signs(mark,oracle,expected):
     c=normalize_active_asset_ctx(active(mark=mark,oracle=oracle,mid="3000"),"ETH")
