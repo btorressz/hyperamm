@@ -153,7 +153,7 @@ ask_imbalance_multiplier =
     )
 ```
 
-Final market side multipliers are the global multiplier times the side-specific imbalance multiplier.
+Final market side multipliers are the global multiplier times the side-specific imbalance multiplier, then clamped no lower than `min_market_size_multiplier` so combined reductions cannot bypass the configured Phase 6 floor.
 
 Phase 6 preserves the Phase 5 baseline:
 
