@@ -42,27 +42,109 @@ Raw provider payloads terminate inside provider adapters.
 
 ## RedStone Live
 
-RedStone is implemented server-side in Python with the direct `websockets` dependency.
+RedStone is implemented server-side in Python with the direct `websockets>=15,<16` dependency.
 
-Authentication is an `x-api-key` HTTP upgrade header. The key remains in backend settings and is never returned by REST or terminal WebSocket state.
+Authentication is an `x-api-key` HTTP upgrade header. The key remains in backend settings and is never returned by REST or terminal WebSocket state. The supported websockets version uses `additional_headers` for custom handshake headers.
 
-The subscription payload is:
+Before opening a connection, an enabled provider requires all of:
+
+```text
+API key
+WebSocket URL
+feed ID
+data service ID
+```
+
+Incomplete local configuration transitions the provider to `ERROR` and does not start a reconnect loop.
+
+The documented RedStone Live subscription envelope is:
 
 ```json
 {
-  "feedId": "<configured feed>",
-  "type": "price",
-  "dataServiceId": "redstone-primary-prod"
+  "op": "subscribe",
+  "items": [
+    {
+      "feedId": "<configured feed>",
+      "type": "price",
+      "dataServiceId": "redstone-primary-prod"
+    }
+  ]
 }
 ```
 
-The adapter preserves the configured feed ID, data-service ID, provider timestamp, local observed-at timestamp, normalized price, source/package ID, health, freshness and version.
+The provider builds this contract through `RedStoneProvider.subscription()` and sends the same deterministic envelope after every reconnect.
 
-The Live WebSocket URL is deliberately configurable. The repository does not embed an unverified or stale service URL; operators set `REDSTONE_LIVE_WS_URL` from the current RedStone Live documentation/account configuration.
+The lightweight incoming `price` frame is a different wire shape:
 
-The provider rejects wrong feeds/services, missing timestamps, non-positive/non-finite prices, future timestamps beyond tolerance, and replayed/older timestamps. Newer economically identical observations refresh freshness without unnecessary economic-version churn.
+```json
+{
+  "type": "price",
+  "dataServiceId": "redstone-primary-prod",
+  "dataPackageId": "ETH",
+  "timestamp": 1712345678000,
+  "value": 2543.12
+}
+```
 
-Disconnects and long-lived connection closures are normal lifecycle events. The provider reconnects and resubscribes with bounded exponential backoff plus jitter. Authentication errors map to `ERROR`; rate-limit/transient connectivity maps to degraded state and retries.
+For price messages:
+
+```text
+dataPackageId -> configured feed identity
+timestamp     -> provider/source timestamp
+value         -> Decimal normalized price
+```
+
+Incoming `feedId` is not required or used for lightweight price identity. `PriceEvidence.source_id` is the stable configured provider/feed identity `<dataServiceId>:<feedId>`, for example `redstone-primary-prod:ETH`.
+
+The price normalizer requires:
+
+```text
+type == price
+dataServiceId == configured data service
+dataPackageId == configured feed
+timestamp present and valid
+value present, finite and positive
+```
+
+It rejects malformed JSON, non-object messages, wrong/missing message types, wrong service/feed IDs, invalid or implausibly future timestamps, replayed/older timestamps, and zero/negative/NaN/Infinity prices.
+
+RedStone error frames are handled separately from price normalization. The documented minimum error shape is:
+
+```json
+{
+  "type": "error",
+  "code": "TOPIC_LIMIT_EXCEEDED",
+  "message": "Subscribe rejected: exceeds the 50-topic limit for this connection",
+  "limit": 50
+}
+```
+
+`TOPIC_LIMIT_EXCEEDED` is treated as an `ERROR` for this one-topic provider because the requested subscription was rejected and local/operator action is required. Unknown/temporary provider error frames are `DEGRADED` unless their code/message clearly indicates invalid subscription/feed configuration. Malformed price frames are also `DEGRADED`; a later valid price can recover provider health.
+
+Handshake failures are classified separately: authentication/authorization failures become `ERROR`; rate/connection-limit failures are `DEGRADED` and retried. Error text is sanitized so API keys and authentication-header values are never placed in `PriceEvidence.error`.
+
+The provider uses the normal RedStone connection lifecycle:
+
+```text
+CONNECT
+  ↓
+x-api-key handshake authentication
+  ↓
+send { op: subscribe, items: [...] }
+  ↓
+receive price/error frames
+  ↓
+normalize PriceEvidence
+```
+
+No subscription-acknowledgement frame is documented by the current Live API, so HyperAMM does not invent or require one.
+
+RedStone documents WebSocket protocol ping frames after 120 seconds of inactivity; the standards-compliant websockets client handles pong responses automatically. RedStone also documents provider-side connection recycling, including forced closes after eight hours. Normal connection closes therefore transition to `DEGRADED`, use bounded exponential backoff with jitter, reconnect, and re-send the same subscription contract.
+
+The Live WebSocket URL remains configurable. The repository does not embed an unverified service URL; operators set `REDSTONE_LIVE_WS_URL` from the current RedStone Live documentation/account configuration.
+
+Freshness is based on the provider timestamp. A valid newer economically identical tick refreshes source freshness without incrementing the economic price version. Incoming timestamps less than or equal to the last accepted timestamp do not become new economic state.
+
 
 ## Kraken WebSocket v2
 
