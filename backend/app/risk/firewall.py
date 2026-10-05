@@ -197,7 +197,13 @@ class RiskFirewall:
         elif candidate==self.state:
             effective=self.state;self.confirmations=0 if self.state==RiskState.NORMAL else self.confirmations
         else:
-            recovery_ok=maxdev<c.reference_warn_deviation_bps*c.recovery_ratio and refs.consensus.confidence_state in {"VERIFIED","DEGRADED"}
+            recovery_threshold={
+                RiskState.WIDEN:c.reference_warn_deviation_bps*c.recovery_ratio,
+                RiskState.REDUCE:c.reference_reduce_deviation_bps*c.recovery_ratio,
+                RiskState.HALT:c.reference_halt_deviation_bps*c.recovery_ratio,
+                RiskState.NORMAL:Decimal("0"),
+            }[self.state]
+            recovery_ok=maxdev<recovery_threshold and refs.consensus.confidence_state in {"VERIFIED","DEGRADED"}
             if recovery_ok:self.confirmations+=1
             else:self.confirmations=0
             effective=candidate if self.confirmations>=c.risk_recovery_confirmations else self.state
@@ -214,6 +220,8 @@ class RiskFirewall:
         return RiskDecision(state=effective,allow_quotes=effective!=RiskState.HALT,spread_multiplier=spread,size_multiplier=size,max_levels=levels,reasons=reasons or ["risk inputs within configured limits"],reference_version=refs.version,market_version=market_version,inventory_version=inventory_version,perp_version=perp_version,projected_long_base=exp.projected_long_base,projected_short_base=exp.projected_short_base,exposure=exp,liquidation=liq,pnl_drawdown=pnl,healthy_confirmation_count=self.confirmations,version=self.version)
     def transform(self,quotes,decision,*,center,tick_size,size_precision,base_order_size):
         if not decision.allow_quotes:return []
+        if decision.state==RiskState.NORMAL or not self.config.enabled:
+            return [q.model_copy(update={"pre_risk_price":q.price,"pre_risk_size":q.size,"risk_spread_multiplier":Decimal("1"),"risk_size_multiplier":Decimal("1"),"risk_state":RiskState.NORMAL.value}) for q in quotes]
         out=[]
         for q in quotes:
             if q.side=="BID" and not decision.allow_bids:continue
