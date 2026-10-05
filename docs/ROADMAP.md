@@ -7,7 +7,7 @@
 | 3 | COMPLETE | AMM curve sampling → tick/size-normalized CLOB quote compiler + deterministic quote reconciliation |
 | 4 | COMPLETE | Concentrated-liquidity policy with normalized weighting and tested concentration-factor behavior |
 | 4.1 | COMPLETE | Phase 1–4 Acceptance & Hardening: AMM-derived sizes, fail-closed quotes, serialized execution/kill, TESTNET venue reconciliation |
-| 5 | IN REVIEW | Inventory-aware quoting implemented; full Phase 5 acceptance validation pending on the draft PR |
+| 5 | COMPLETE | Inventory-aware quoting with bounded price/size skew, authoritative inventory state, hard-limit side suppression, API/UI visibility, and acceptance coverage |
 | 6 | PLANNED | Volatility + book-imbalance adaptation |
 | 7 | PLANNED | Perpetual vAMM context |
 | 8 | PLANNED | Oracle protection + institutional risk firewall |
@@ -40,8 +40,8 @@ Phases 5–8. None of those phases has started. Live signed Hyperliquid TESTNET
 behavior remains opt-in and was not exercised; see the integration limitations.
 
 
-## Phase 5 — IN REVIEW
+## Phase 5 — COMPLETE
 
 Implemented scope includes normalized PAPER/TESTNET inventory state, configurable target/soft/hard bounds, bounded deterministic reservation-price and side-size skew, hard-limit side suppression, inventory-version authority checks, the positions/terminal API surface, frontend controls/gauge/explainability, and focused Phase 5 acceptance tests.
 
-Phase 5 must not be promoted to COMPLETE until the full backend suite, FastAPI health startup, frontend typecheck/build, and diff/static checks are verified in the required environment. Phase 6 remains unstarted.
+Acceptance verified on Python 3.12 / Node 24: full backend suite, FastAPI startup/health, frontend typecheck/build, and diff/static validation all pass. Phase 6 remains unstarted.
