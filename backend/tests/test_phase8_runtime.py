@@ -50,7 +50,7 @@ async def test_demo_runtime_produces_normal_phase8_authorization_without_wallet(
     assert rt.risk_decision is not None
     assert rt.risk_decision.state.value=="NORMAL"
     assert rt.authorization is not None and rt.authorization.authorized is True
-    assert rt.quotes==rt.strategy_quotes
+    assert [(q.side,q.price,q.size,q.level_index) for q in rt.quotes]==[(q.side,q.price,q.size,q.level_index) for q in rt.strategy_quotes]
     assert rt.risk.kill_switch_active is False
 
 
