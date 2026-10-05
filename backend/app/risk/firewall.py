@@ -51,8 +51,13 @@ class RiskFirewallConfig(BaseModel):
         if self.widen_spread_multiplier<1 or self.reduce_spread_multiplier<self.widen_spread_multiplier:raise ValueError("risk spread multipliers must widen only")
         if not (0<self.reduce_inventory_increasing_multiplier<=self.reduce_size_multiplier<=self.widen_size_multiplier<=1):raise ValueError("risk size multipliers invalid")
         if not (0<self.recovery_ratio<1):raise ValueError("recovery_ratio must be between 0 and 1")
-        for a,b,c in [(self.drawdown_warn_pct,self.drawdown_reduce_pct,self.drawdown_halt_pct)]:
-            if None not in (a,b,c) and not (Decimal("0")<=a<b<c):raise ValueError("drawdown thresholds require warn < reduce < halt")
+        drawdowns=(self.drawdown_warn_pct,self.drawdown_reduce_pct,self.drawdown_halt_pct)
+        if any(value is None for value in drawdowns) and not all(value is None for value in drawdowns):
+            raise ValueError("drawdown thresholds must be all configured or all unavailable")
+        if all(value is not None for value in drawdowns):
+            warn,reduce,halt=drawdowns
+            if not (Decimal("0")<=warn<reduce<halt):
+                raise ValueError("drawdown thresholds require warn < reduce < halt")
         return self
 
 
