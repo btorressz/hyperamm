@@ -681,6 +681,44 @@ class HyperAmmRuntime:
             self.market_adaptation_decision = decision
             return self._market_adaptation_payload(decision)
 
+    async def references_summary(self):
+        async with self.execution_lock:
+            snap=await self.market.snapshot()
+            fair=calculate_fair_value(snap)
+            if self.config.market_data_mode==MarketDataMode.DEMO and self.perp_context_service._context is None:
+                self.perp_context_service.accept(demo_perp_context(snap))
+            perp=self.perp_context_service.snapshot(fair)
+            refs=self.reference_service.snapshot(snap,perp,agreement_bps=self.risk_config.source_agreement_bps,outlier_bps=self.risk_config.source_outlier_bps)
+            self.references=refs
+            return refs.model_dump(mode="json")
+
+    def risk_firewall_payload(self):
+        return {
+            "manual_kill_active":self.risk.kill_switch_active,
+            "manual_kill_reason":self.risk.last_reason,
+            "config":self.risk_config.model_dump(mode="json"),
+            "state":self.risk_decision.state.value if self.risk_decision else self.firewall.state.value,
+            "decision":self.risk_decision.model_dump(mode="json") if self.risk_decision else None,
+        }
+
+    async def risk_evidence_summary(self):
+        if self.references is None or self.risk_decision is None:
+            await self.refresh_once()
+        return {
+            "references":self.references.model_dump(mode="json") if self.references else None,
+            "risk":self.risk_decision.model_dump(mode="json") if self.risk_decision else None,
+        }
+
+    def risk_events_summary(self):
+        return [event.model_dump(mode="json") for event in self.firewall.events]
+
+    def authorization_summary(self):
+        return self.authorization.model_dump(mode="json") if self.authorization else {
+            "authorized":False,
+            "risk_state":self.firewall.state.value,
+            "reasons":["no current FinalQuoteAuthorization"],
+        }
+
     async def terminal_state(self):
         snap = await self.market.snapshot()
         inventory = None
@@ -695,6 +733,13 @@ class HyperAmmRuntime:
             "inventory": inventory,
             "market_adaptation": self._market_adaptation_payload(self.market_adaptation_decision),
             "perp_context": self._perp_payload(),
+            "references": self.references.model_dump(mode="json") if self.references else None,
+            "reference_consensus": self.references.consensus.model_dump(mode="json") if self.references else None,
+            "risk_firewall": self.risk_firewall_payload(),
+            "risk_authorization": self.authorization_summary(),
+            "risk_events": self.risk_events_summary()[-20:],
+            "projected_exposure": self.risk_decision.exposure.model_dump(mode="json") if self.risk_decision else None,
+            "pnl_drawdown": self.risk_decision.pnl_drawdown.model_dump(mode="json") if self.risk_decision else None,
             "risk": self.risk.model_dump(mode="json"),
             "orders": [o.model_dump(mode="json") for o in self.paper.all_orders()]
             if self.config.execution_mode == ExecutionMode.PAPER
