@@ -1,5 +1,5 @@
 from __future__ import annotations
-import asyncio, json, random
+import asyncio, json, random, re
 from datetime import timedelta
 from decimal import Decimal
 import httpx
@@ -113,6 +113,7 @@ class RedStoneProvider:
         text=str(value)
         if self.api_key:
             text=text.replace(self.api_key,"[REDACTED]")
+        text=re.sub(r"(?i)(x-api-key|authorization)[^,}\n]*","[REDACTED HEADER]",text)
         return text
 
     def handle_error_frame(self,raw):
