@@ -42,6 +42,8 @@ class InventoryState(BaseModel):
 
 class InventoryDecision(BaseModel):
     fair_value: Decimal
+    market_fair_value: Decimal
+    reference_price: Decimal
     reservation_price: Decimal
     price_skew_bps: Decimal
     inventory_ratio_effective: Decimal
@@ -146,7 +148,9 @@ class InventoryPolicy:
     def __init__(self, config: StrategyConfig):
         self.config = config
 
-    def decision(self, fair_value: Decimal, state: InventoryState) -> InventoryDecision:
+    def decision(
+        self, fair_value: Decimal, state: InventoryState, reference_price: Decimal | None = None
+    ) -> InventoryDecision:
         if state.market != self.config.market:
             raise ValueError("inventory market does not match strategy market")
         if state.stale or state.error:
@@ -157,8 +161,12 @@ class InventoryPolicy:
         if state.target_base != self.config.target_inventory_base or state.inventory_ratio != expected_ratio:
             raise ValueError("inventory state does not match current strategy configuration")
         effective = clamp_inventory_ratio(expected_ratio) if self.config.inventory_skew_enabled else Decimal("0")
+        reference = fair_value if reference_price is None else reference_price
+        _finite(reference, "strategy reference")
+        if reference <= 0:
+            raise ValueError("strategy reference must be positive")
         reservation, price_skew = calculate_reservation_price(
-            fair_value, effective, self.config.max_inventory_price_skew_bps
+            reference, effective, self.config.max_inventory_price_skew_bps
         )
         bid_multiplier, ask_multiplier = calculate_side_size_multipliers(
             effective,
@@ -168,6 +176,8 @@ class InventoryPolicy:
         )
         return InventoryDecision(
             fair_value=fair_value,
+            market_fair_value=fair_value,
+            reference_price=reference,
             reservation_price=reservation,
             price_skew_bps=price_skew,
             inventory_ratio_effective=effective,
@@ -176,9 +186,15 @@ class InventoryPolicy:
             hard_limit_state=hard_limit_state(state.deviation_base, self.config.hard_inventory_limit_base),
         )
 
-    def apply(self, neutral_quotes: list[QuoteLevel], fair_value: Decimal, state: InventoryState) -> tuple[list[QuoteLevel], InventoryDecision]:
-        decision = self.decision(fair_value, state)
-        price_factor = decision.reservation_price / fair_value
+    def apply(
+        self,
+        neutral_quotes: list[QuoteLevel],
+        fair_value: Decimal,
+        state: InventoryState,
+        reference_price: Decimal | None = None,
+    ) -> tuple[list[QuoteLevel], InventoryDecision]:
+        decision = self.decision(fair_value, state, reference_price)
+        price_factor = decision.reservation_price / decision.reference_price
         quantum = Decimal(1).scaleb(-self.config.size_precision)
         final: list[QuoteLevel] = []
         for quote in neutral_quotes:
@@ -195,13 +211,13 @@ class InventoryPolicy:
                 raw_price = quote.price * price_factor
                 price = normalize_price(raw_price, self.config.tick_size, quote.side)
                 if quote.side == "BID":
-                    max_bid = normalize_price(fair_value - self.config.tick_size, self.config.tick_size, "BID")
+                    max_bid = normalize_price(decision.reference_price - self.config.tick_size, self.config.tick_size, "BID")
                     if max_bid <= 0:
                         raise ValueError("tick size leaves no valid bid below fair value")
                     price = min(price, max_bid)
                     multiplier = decision.bid_size_multiplier
                 else:
-                    min_ask = normalize_price(fair_value + self.config.tick_size, self.config.tick_size, "ASK")
+                    min_ask = normalize_price(decision.reference_price + self.config.tick_size, self.config.tick_size, "ASK")
                     price = max(price, min_ask)
                     multiplier = decision.ask_size_multiplier
                 # Preserve the Phase 4.1 baseline minimum while applying one bounded
@@ -212,7 +228,11 @@ class InventoryPolicy:
                 size = normalize_size(raw_size, self.config.size_precision)
                 effect = "SKEWED"
 
-            distance = quote.distance_bps if effect == "NEUTRAL" else abs(price - fair_value) / fair_value * BPS
+            distance = (
+                quote.distance_bps
+                if effect == "NEUTRAL" and decision.reference_price == fair_value
+                else abs(price - fair_value) / fair_value * BPS
+            )
             final.append(quote.model_copy(update={
                 "price": price,
                 "size": size,
