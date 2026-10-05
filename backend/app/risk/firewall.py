@@ -122,11 +122,20 @@ class RiskEvent(BaseModel):
     risk_version:int
 
 
-def exposure_metrics(quotes,current_position,reference_price,position_limit)->ExposureMetrics:
-    bid_qty=sum((q.size for q in quotes if q.side=="BID"),Decimal("0"))
-    ask_qty=sum((q.size for q in quotes if q.side=="ASK"),Decimal("0"))
-    bid_ntl=sum((q.price*q.size for q in quotes if q.side=="BID"),Decimal("0"))
-    ask_ntl=sum((q.price*q.size for q in quotes if q.side=="ASK"),Decimal("0"))
+def exposure_metrics(quotes,current_position,reference_price,position_limit,existing_orders=None)->ExposureMetrics:
+    effective={(q.side,q.level_index):(q.size,q.price) for q in quotes}
+    for order in existing_orders or []:
+        if getattr(order,"status",None) not in {"OPEN","PARTIALLY_FILLED","UNKNOWN"}:
+            continue
+        remaining=max(Decimal("0"),order.size-order.filled_size)
+        key=(order.side,order.level_index)
+        current=effective.get(key)
+        if current is None or remaining>current[0]:
+            effective[key]=(remaining,order.price)
+    bid_qty=sum((size for (side,_),(size,_) in effective.items() if side=="BID"),Decimal("0"))
+    ask_qty=sum((size for (side,_),(size,_) in effective.items() if side=="ASK"),Decimal("0"))
+    bid_ntl=sum((price*size for (side,_),(size,price) in effective.items() if side=="BID"),Decimal("0"))
+    ask_ntl=sum((price*size for (side,_),(size,price) in effective.items() if side=="ASK"),Decimal("0"))
     long=current_position+bid_qty
     short=current_position-ask_qty
     util=abs(current_position)/position_limit if position_limit>0 else Decimal("1")
@@ -188,9 +197,12 @@ class RiskFirewall:
             elif pnl.drawdown_pct>=c.drawdown_warn_pct:severity=max(severity,1);reasons.append("drawdown warning")
         if venue_uncertain:severity=3;reasons.append("venue exposure is uncertain")
         return [RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT][severity],reasons,maxdev
-    def evaluate(self,*,refs,quotes,current_position,mark,liquidation,pnl,market_version,inventory_version,perp_version,venue_uncertain=False):
-        c=self.config;price=refs.consensus.consensus_price or mark;exp=exposure_metrics(quotes,current_position,price,max(c.max_projected_long_base,c.max_projected_short_base));liq=liquidation_evidence(current_position,mark,liquidation)
-        candidate,reasons,maxdev=self._candidate(refs,exp,liq,pnl,venue_uncertain)
+    def evaluate(self,*,refs,quotes,current_position,mark,liquidation,pnl,market_version,inventory_version,perp_version,venue_uncertain=False,existing_orders=None):
+        c=self.config;price=refs.consensus.consensus_price or mark;exp=exposure_metrics(quotes,current_position,price,max(c.max_projected_long_base,c.max_projected_short_base),existing_orders);liq=liquidation_evidence(current_position,mark,liquidation)
+        if not c.enabled:
+            candidate,reasons,maxdev=RiskState.NORMAL,["reference firewall disabled"],Decimal("0")
+        else:
+            candidate,reasons,maxdev=self._candidate(refs,exp,liq,pnl,venue_uncertain)
         previous=self.state
         if candidate.value==RiskState.HALT.value or [RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT].index(candidate)>[RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT].index(self.state):
             effective=candidate;self.confirmations=0
@@ -232,7 +244,9 @@ class RiskFirewall:
             mult=decision.size_multiplier
             if decision.state==RiskState.REDUCE and q.inventory_intent=="INVENTORY_INCREASING":mult=self.config.reduce_inventory_increasing_multiplier
             size=normalize_size(max(q.size*mult,Decimal(1).scaleb(-size_precision)),size_precision)
-            out.append(q.model_copy(update={"price":price,"size":size,"pre_risk_price":q.price,"pre_risk_size":q.size,"risk_spread_multiplier":decision.spread_multiplier,"risk_size_multiplier":mult,"risk_state":decision.state.value}))
+            fair=q.market_fair_value or center
+            distance_bps=abs(price-fair)/fair*Decimal("10000")
+            out.append(q.model_copy(update={"price":price,"size":size,"distance_bps":distance_bps,"pre_risk_price":q.price,"pre_risk_size":q.size,"risk_spread_multiplier":decision.spread_multiplier,"risk_size_multiplier":mult,"risk_state":decision.state.value}))
         bids=sorted([q for q in out if q.side=="BID"],key=lambda x:x.price,reverse=True);asks=sorted([q for q in out if q.side=="ASK"],key=lambda x:x.price)
         if bids and asks and bids[0].price>=asks[0].price:raise ValueError("risk-authorized quote market is crossed")
         return bids+asks
