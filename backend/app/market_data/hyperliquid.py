@@ -113,6 +113,7 @@ class HyperliquidMarketDataAdapter:
                             await self._emit_perp(context)
                         except Exception as exc:
                             log.warning("invalid Hyperliquid perp context update: %s", exc)
+                            await self._emit_perp(exc)
 
                     def perp_sdk_callback(raw):
                         asyncio.run_coroutine_threadsafe(deliver_perp(raw), loop)
