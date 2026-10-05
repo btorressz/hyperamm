@@ -46,7 +46,7 @@ class MarketPriceHistory:
         sequence = snapshot.book.sequence
         if sequence in self._seen_sequences or timestamp in self._seen_timestamps:
             return False
-        if self._items and timestamp < self._items[-1].timestamp:
+        if self._items and (timestamp < self._items[-1].timestamp or sequence <= self._items[-1].sequence):
             return False
         if len(self._items) == self._items.maxlen:
             dropped = self._items[0]
