@@ -164,7 +164,7 @@ async def test_adaptive_quote_distance_risk_violation_fails_closed():
     rt.config.volatility_high_threshold=D("0.0000001")
     rt.config.volatility_spread_strength=D("2")
     rt.config.imbalance_spread_strength=D("0")
-    rt.risk.max_quote_distance_bps=D("1")
+    rt.risk.max_quote_distance_bps=D("120")
 
     adapter=MockMarketDataAdapter()
     first=adapter.snapshot_for(1)
