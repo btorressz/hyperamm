@@ -291,7 +291,11 @@ class MarketAdaptationPolicy:
             if not price.is_finite() or not size.is_finite() or price <= 0 or size <= 0:
                 raise ValueError("market-adapted quotes must be finite and positive")
 
-            distance_bps = abs(price - fair) / fair * BPS
+            distance_bps = (
+                quote.distance_bps
+                if neutral_adaptation
+                else abs(price - fair) / fair * BPS
+            )
             final.append(
                 quote.model_copy(
                     update={
