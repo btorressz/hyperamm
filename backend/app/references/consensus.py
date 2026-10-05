@@ -31,7 +31,11 @@ class ReferenceConsensusPolicy:
         elif native and kra:conf="DEGRADED";reasons.append("RedStone unavailable; Hyperliquid native oracle + Kraken fallback quorum active")
         elif red and native:conf="DEGRADED";reasons.append("Kraken unavailable; oracle-only degraded quorum active")
         else:conf="INSUFFICIENT";reasons.append("institutional quorum requirements are not satisfied")
-        if out:reasons.append("outlier sources: "+", ".join(sorted(out)))
+        if out:
+            reasons.append("outlier sources: "+", ".join(sorted(out)))
+            if conf=="VERIFIED" and any(provider.value in out for provider in CORE):
+                conf="DEGRADED"
+                reasons.append("core-source outlier prevents fully verified reference state")
         cg=_price(evidence,ProviderId.COINGECKO)
         if cg is not None and len(eligible)<2:reasons.append("CoinGecko is tertiary evidence and cannot authorize NORMAL quoting")
         return ReferenceConsensus(market=market,primary_oracle_price=_price(evidence,ProviderId.REDSTONE),native_oracle_price=_price(evidence,ProviderId.HYPERLIQUID_ORACLE),exchange_reference_price=_price(evidence,ProviderId.KRAKEN),aggregate_reference_price=cg,consensus_price=consensus,healthy_sources=sum(1 for x in evidence.values() if x.status==ProviderStatus.HEALTHY),healthy_core_sources=len(eligible),confidence_state=conf,max_source_deviation_bps=maxdev,source_statuses={k:v.status.value for k,v in evidence.items()},outliers=sorted(out),eligible_providers=[p.value for p in eligible],reasons=reasons,version=version,updated_at=utcnow())
