@@ -4,6 +4,7 @@ import asyncio
 from decimal import Decimal
 from datetime import datetime, timezone
 from app.market_data.models import utcnow
+from app.market_data.perp_context import PerpPositionContext, normalize_user_position_context
 from .models import OrderRequest, StrategyOrder, OrderStatus
 
 
@@ -28,6 +29,7 @@ class HyperliquidTestnetExecutionAdapter:
         self._position_updated_at=None
         self._position_error=None
         self._position_version=0
+        self._perp_position: PerpPositionContext | None = None
 
     def _require_enabled(self):
         if not self.enabled:
@@ -94,42 +96,39 @@ class HyperliquidTestnetExecutionAdapter:
         positions=user_state.get("assetPositions")
         if not isinstance(positions,list):
             raise ValueError("Hyperliquid user state missing assetPositions")
-        position=Decimal("0")
-        matched=0
-        for item in positions:
-            if not isinstance(item,dict) or not isinstance(item.get("position"),dict):
-                raise ValueError("malformed Hyperliquid asset position")
-            raw=item["position"]
-            if raw.get("coin") != market:
-                continue
-            if "szi" not in raw:
-                raise ValueError("Hyperliquid position missing signed base size")
-            try:
-                value=Decimal(str(raw["szi"]))
-            except Exception as exc:
-                raise ValueError("invalid Hyperliquid signed base position") from exc
-            if not value.is_finite():
-                raise ValueError("non-finite Hyperliquid position")
-            position += value
-            matched += 1
-        if matched > 1:
-            raise ValueError("duplicate Hyperliquid positions for configured market")
-        return position
+        return normalize_user_position_context(user_state, market).signed_position_base
 
     async def refresh_position(self, market: str) -> Decimal:
         try:
             info=await self._venue_client()
             state=await asyncio.to_thread(info.user_state,self.account_address)
-            position=self.normalize_user_position(state,market)
-            if market not in self._positions or self._positions[market] != position:
+            updated_at=utcnow()
+            parsed=normalize_user_position_context(
+                state, market, updated_at=updated_at, version=self._position_version
+            )
+            position=parsed.signed_position_base
+            previous=self._perp_position
+            material_changed = (
+                market not in self._positions
+                or self._positions[market] != position
+                or previous is None
+                or previous.model_dump(exclude={"updated_at","version","stale"}) != parsed.model_dump(exclude={"updated_at","version","stale"})
+            )
+            if material_changed:
                 self._position_version += 1
             self._positions[market]=position
-            self._position_updated_at=utcnow()
+            self._position_updated_at=updated_at
+            self._perp_position=parsed.model_copy(update={"version":self._position_version})
             self._position_error=None
             return position
         except Exception as exc:
             self._position_error=str(exc)
             raise
+
+    def perp_position_snapshot(self, market: str):
+        if self._perp_position is None or self._perp_position.market != market:
+            return None
+        return self._perp_position.model_copy(deep=True)
 
     def position_snapshot(self, market: str):
         if market not in self._positions or self._position_updated_at is None:
