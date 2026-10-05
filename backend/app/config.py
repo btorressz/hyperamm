@@ -19,6 +19,27 @@ class Settings(BaseSettings):
     hyperliquid_private_key: str | None = Field(default=None, repr=False)
     hyperliquid_account_address: str | None = None
     hyperliquid_testnet_url: str = "https://api.hyperliquid-testnet.xyz"
+
+    reference_firewall_enabled: bool = True
+    redstone_enabled: bool = False
+    redstone_api_key: str | None = Field(default=None, repr=False)
+    redstone_data_service_id: str = "redstone-primary-prod"
+    redstone_feed_id: str | None = None
+    redstone_live_ws_url: str | None = None
+    redstone_stale_after_seconds: float = Field(default=5.0, gt=0, le=300)
+
+    kraken_reference_enabled: bool = False
+    kraken_symbol: str | None = None
+    kraken_ws_url: str = "wss://ws.kraken.com/v2"
+    kraken_stale_after_seconds: float = Field(default=5.0, gt=0, le=300)
+
+    coingecko_reference_enabled: bool = False
+    coingecko_api_key: str | None = Field(default=None, repr=False)
+    coingecko_coin_id: str | None = None
+    coingecko_api_base_url: str = "https://api.coingecko.com/api/v3"
+    coingecko_poll_interval_seconds: float = Field(default=20.0, gt=0, le=3600)
+    coingecko_stale_after_seconds: float = Field(default=90.0, gt=0, le=3600)
+
     cors_origins: str = "http://localhost:5173"
 
     @property

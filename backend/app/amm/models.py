@@ -54,3 +54,9 @@ class QuoteLevel(BaseModel):
     market_fair_value: Decimal | None = None
     perp_reference_price: Decimal | None = None
     inventory_adjusted_price: Decimal | None = None
+    pre_risk_price: Decimal | None = None
+    pre_risk_size: Decimal | None = None
+    risk_spread_multiplier: Decimal | None = None
+    risk_size_multiplier: Decimal | None = None
+    risk_state: str | None = None
+    authorization_fingerprint: str | None = None

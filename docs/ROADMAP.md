@@ -10,7 +10,7 @@
 | 5 | COMPLETE | Inventory-aware quoting with bounded price/size skew, authoritative inventory state, hard-limit side suppression, API/UI visibility, and acceptance coverage |
 | 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; acceptance validation pending |
 | 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; acceptance validation pending |
-| 8 | PLANNED | Oracle protection + institutional risk firewall |
+| 8 | IN REVIEW | Multi-source reference integrity + deterministic institutional risk firewall implemented; acceptance validation pending |
 | 9 | PLANNED | Regime / toxic-flow / execution-quality supervisory agents |
 | 10 | PLANNED | Strategy optimization + simulation |
 | 11 | PLANNED | Vault/accounting |
@@ -59,3 +59,10 @@ Phase 6 should be promoted to COMPLETE only after the explicit local Python 3.12
 Implemented scope includes normalized Hyperliquid mark/oracle/funding/open-interest context, deterministic DEMO context, signed basis and OI-notional calculations, bounded market/mark/oracle reference weighting, bounded funding bias, total reference-shift clamping, AMM recentering before reserve-delta sizing, Phase 5/6 composition, shared TESTNET user-state position context, perp freshness/version authority, normalized REST/WebSocket state, frontend controls/panels, and focused Phase 7 tests.
 
 Phase 6 remains IN REVIEW because its exact Python 3.12/full frontend acceptance evidence is still outstanding in this environment. Phase 7 must also remain IN REVIEW until the complete Phase 6 prerequisite and Phase 7 acceptance commands pass. No GitHub Actions workflow is part of either phase.
+
+
+## Phase 8 — IN REVIEW
+
+Implemented scope includes provider-independent price evidence; RedStone primary external oracle support; Hyperliquid native oracle/mark/mid reuse; Kraken WebSocket v2 BBO exchange reference; CoinGecko REST aggregate reference; provider health/freshness/versioning; deterministic quorum, outlier handling and signed deviation matrix; projected resting/desired exposure; liquidation distance; fill-derived PAPER PnL; TESTNET equity/drawdown when authoritative account values exist; NORMAL/WIDEN/REDUCE/HALT risk states; hysteresis and recovery confirmations; bounded event logging; deterministic SHA-256 evidence/quote/risk fingerprints; FinalQuoteAuthorization; pre-transmission version/fingerprint checks; REST/WebSocket observability; and focused Phase 8 adversarial tests.
+
+Phase 6 and Phase 7 remain IN REVIEW because their exact full acceptance evidence is still outstanding. Phase 8 must also remain IN REVIEW until the complete Python 3.12 backend suite, FastAPI endpoint checks, frontend typecheck/build, and repository diff/static validation pass. Validation is local/manual; no repository workflow is introduced.

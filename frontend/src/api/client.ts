@@ -9,6 +9,7 @@ export const api={
   health:()=>request<{status:string;app:string;stale:boolean;mode:string;simulated:boolean}>('/health'),
   marketAdaptation:()=>request('/market-adaptation'),
   perpContext:()=>request('/perp-context'),
+  references:()=>request('/references'), riskEvidence:()=>request('/risk/evidence'), riskEvents:()=>request('/risk/events'), riskAuthorization:()=>request('/risk/authorization'),
   updateStrategy:(config:StrategyConfig)=>request('/strategy',{method:'PUT',body:JSON.stringify(config)}),
   start:()=>request('/strategy/start',{method:'POST'}), stop:()=>request('/strategy/stop',{method:'POST'}),
   kill:()=>request('/risk/kill',{method:'POST'}), resume:()=>request('/risk/resume',{method:'POST'})

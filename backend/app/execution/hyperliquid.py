@@ -30,6 +30,9 @@ class HyperliquidTestnetExecutionAdapter:
         self._position_error=None
         self._position_version=0
         self._perp_position: PerpPositionContext | None = None
+        self._account_value: Decimal | None = None
+        self._total_margin_used: Decimal | None = None
+        self._withdrawable: Decimal | None = None
 
     def _require_enabled(self):
         if not self.enabled:
@@ -107,6 +110,17 @@ class HyperliquidTestnetExecutionAdapter:
                 state, market, updated_at=updated_at, version=self._position_version
             )
             position=parsed.signed_position_base
+            summary=state.get("marginSummary") or state.get("crossMarginSummary")
+            if summary is not None and not isinstance(summary,dict):
+                raise ValueError("invalid Hyperliquid margin summary")
+            def optional_decimal(value,name):
+                if value is None:return None
+                result=Decimal(str(value))
+                if not result.is_finite():raise ValueError(f"non-finite Hyperliquid {name}")
+                return result
+            self._account_value=optional_decimal(summary.get("accountValue") if summary else None,"account value")
+            self._total_margin_used=optional_decimal(summary.get("totalMarginUsed") if summary else None,"total margin used")
+            self._withdrawable=optional_decimal(state.get("withdrawable"),"withdrawable")
             previous=self._perp_position
             material_changed = (
                 market not in self._positions
@@ -129,6 +143,17 @@ class HyperliquidTestnetExecutionAdapter:
         if self._perp_position is None or self._perp_position.market != market:
             return None
         return self._perp_position.model_copy(deep=True)
+
+    def account_risk_snapshot(self):
+        if self._position_updated_at is None:
+            return None
+        return {
+            "account_value":self._account_value,
+            "total_margin_used":self._total_margin_used,
+            "withdrawable":self._withdrawable,
+            "updated_at":self._position_updated_at,
+            "version":self._position_version,
+        }
 
     def position_snapshot(self, market: str):
         if market not in self._positions or self._position_updated_at is None:
