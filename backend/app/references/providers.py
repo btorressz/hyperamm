@@ -54,11 +54,18 @@ class RedStoneProvider:
         data=raw["data"] if isinstance(raw.get("data"),dict) else raw
         if data.get("dataServiceId")!=self.data_service_id: raise ValueError("wrong RedStone data service")
         feed=data.get("feedId") or data.get("feed")
-        if self.feed_id and feed and feed!=self.feed_id: raise ValueError("wrong RedStone feed")
+        if self.feed_id and feed!=self.feed_id: raise ValueError("wrong RedStone feed")
         if "timestamp" not in data: raise ValueError("RedStone missing timestamp")
         return decimal_price(data.get("value"),"RedStone price"),parse_timestamp(data["timestamp"],"RedStone timestamp"),data.get("dataPackageId") or feed
     def ingest(self,raw,observed_at=None):
         p,t,s=self.normalize(raw); return self.state.accept(p,t,observed_at,s)
+    def auth_headers(self):
+        return {"x-api-key":self.api_key} if self.api_key else {}
+    def classify_connection_error(self,exc):
+        text=str(exc)
+        if "401" in text or "403" in text:return ProviderStatus.ERROR
+        if "429" in text:return ProviderStatus.DEGRADED
+        return ProviderStatus.DEGRADED
     async def start(self):
         if not self.state.enabled or self.task: return
         if not self.ws_url or not self.api_key or not self.feed_id: self.state.set_status(ProviderStatus.ERROR,"RedStone enabled but URL/API key/feed ID is missing"); return
@@ -71,8 +78,8 @@ class RedStoneProvider:
                 if self.websocket_factory: conn=self.websocket_factory(self.ws_url,self.api_key)
                 else:
                     import websockets
-                    try: conn=websockets.connect(self.ws_url,additional_headers={"x-api-key":self.api_key},open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
-                    except TypeError: conn=websockets.connect(self.ws_url,extra_headers={"x-api-key":self.api_key},open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
+                    try: conn=websockets.connect(self.ws_url,additional_headers=self.auth_headers(),open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
+                    except TypeError: conn=websockets.connect(self.ws_url,extra_headers=self.auth_headers(),open_timeout=10,ping_interval=20,ping_timeout=20,close_timeout=5)
                 async with conn as ws:
                     await ws.send(json.dumps({"feedId":self.feed_id,"type":"price","dataServiceId":self.data_service_id})); attempt=0
                     async for msg in ws:
@@ -80,8 +87,7 @@ class RedStoneProvider:
                         except Exception as exc:self.state.set_status(ProviderStatus.DEGRADED,f"invalid RedStone message: {exc}")
             except asyncio.CancelledError: break
             except Exception as exc:
-                s=ProviderStatus.ERROR if "401" in str(exc) or "403" in str(exc) else ProviderStatus.DEGRADED
-                self.state.set_status(s,str(exc)); await asyncio.sleep(backoff(attempt)); attempt+=1
+                self.state.set_status(self.classify_connection_error(exc),str(exc)); await asyncio.sleep(backoff(attempt)); attempt+=1
     async def stop(self):
         self.closing=True
         if self.task:
