@@ -51,3 +51,6 @@ class QuoteLevel(BaseModel):
     market_size_multiplier: Decimal | None = None
     volatility_effect: str | None = None
     imbalance_effect: str | None = None
+    market_fair_value: Decimal | None = None
+    perp_reference_price: Decimal | None = None
+    inventory_adjusted_price: Decimal | None = None
