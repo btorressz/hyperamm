@@ -41,7 +41,10 @@ def test_redstone_backoff_is_bounded_and_auth_errors_map_to_error():
     assert backoff(0,0)==1
     assert backoff(99,0)==30
     p=RedStoneProvider(market="ETH",enabled=True,api_key="x",ws_url="wss://x",data_service_id="redstone-primary-prod",feed_id="ETH",stale_after_seconds=1)
-    assert "x-api-key" not in p.state.model_dump() if hasattr(p.state,"model_dump") else True
+    assert p.auth_headers()=={"x-api-key":"x"}
+    assert p.classify_connection_error(RuntimeError("HTTP 401"))==ProviderStatus.ERROR
+    assert p.classify_connection_error(RuntimeError("HTTP 403"))==ProviderStatus.ERROR
+    assert p.classify_connection_error(RuntimeError("HTTP 429"))==ProviderStatus.DEGRADED
 
 
 def test_kraken_ticker_bbo_midpoint_and_invalid_book():
@@ -105,3 +108,16 @@ def test_demo_reference_service_labels_all_external_sources_simulated():
     assert refs.consensus.confidence_state=="VERIFIED"
     for provider in ("REDSTONE","KRAKEN","COINGECKO"):
         assert refs.evidence[provider].simulated is True
+
+
+def test_kraken_down_with_redstone_and_native_is_degraded_not_normal():
+    policy=ReferenceConsensusPolicy()
+    base={
+        ProviderId.REDSTONE.value:evidence(ProviderId.REDSTONE,"3000"),
+        ProviderId.HYPERLIQUID_ORACLE.value:evidence(ProviderId.HYPERLIQUID_ORACLE,"3001",source_type=SourceType.NATIVE_ORACLE),
+        ProviderId.KRAKEN.value:evidence(ProviderId.KRAKEN,None,ProviderStatus.ERROR,SourceType.VENUE_REFERENCE),
+        ProviderId.COINGECKO.value:evidence(ProviderId.COINGECKO,"3000",source_type=SourceType.AGGREGATOR_REFERENCE),
+    }
+    c=policy.evaluate("ETH",base,agreement_bps=D("30"),outlier_bps=D("75"),version=9)
+    assert c.confidence_state=="DEGRADED"
+    assert any("Kraken unavailable" in reason for reason in c.reasons)
