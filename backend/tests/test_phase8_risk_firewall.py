@@ -114,3 +114,23 @@ def test_manual_kill_state_is_not_part_of_automatic_firewall_state():
     fw=RiskFirewall(RiskFirewallConfig(max_projected_long_base=D("20"),max_projected_short_base=D("20")))
     assert evaluate(fw,refs("85")).state==RiskState.HALT
     assert fw.state==RiskState.HALT
+
+
+def test_session_loss_and_drawdown_guards():
+    cfg=RiskFirewallConfig(max_projected_long_base=D("20"),max_projected_short_base=D("20"),max_session_loss_quote=D("100"))
+    fw=RiskFirewall(cfg)
+    loss=PnlDrawdown(realized_pnl=D("-120"),unrealized_pnl=D("0"),session_pnl=D("-120"),source="TEST")
+    d=fw.evaluate(refs=refs("0"),quotes=[quote("BID","2990","1")],current_position=D("0"),mark=D("3000"),liquidation=None,pnl=loss,market_version=1,inventory_version=1,perp_version=1)
+    assert d.state==RiskState.HALT
+    fw=RiskFirewall(cfg)
+    drawdown=PnlDrawdown(session_pnl=D("0"),current_equity=D("850"),peak_equity=D("1000"),drawdown_pct=D(".15"),source="TEST")
+    d=fw.evaluate(refs=refs("0"),quotes=[quote("BID","2990","1")],current_position=D("0"),mark=D("3000"),liquidation=None,pnl=drawdown,market_version=1,inventory_version=1,perp_version=1)
+    assert d.state==RiskState.HALT
+
+
+def test_phase8_never_restores_phase5_suppressed_side():
+    fw=RiskFirewall(RiskFirewallConfig(max_projected_long_base=D("20"),max_projected_short_base=D("20")))
+    surviving=[quote("ASK","3010","1",0,"INVENTORY_REDUCING")]
+    d=evaluate(fw,refs("45"),quotes=surviving,position=D("10"))
+    transformed=fw.transform(surviving,d,center=D("3000"),tick_size=D(".1"),size_precision=4,base_order_size=D(".1"))
+    assert transformed and all(q.side=="ASK" for q in transformed)
