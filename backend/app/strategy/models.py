@@ -43,6 +43,20 @@ class StrategyConfig(BaseModel):
     max_inventory_size_multiplier: Decimal = Field(default=Decimal("1.75"), ge=Decimal("1"))
     inventory_stale_after_seconds: float = Field(default=10.0, gt=0, le=300)
 
+    market_adaptation_enabled: bool = True
+    volatility_window_samples: int = Field(default=60, ge=2, le=1000)
+    volatility_min_samples: int = Field(default=10, ge=2, le=1000)
+    volatility_low_threshold: Decimal = Field(default=Decimal("0.0002"), ge=0)
+    volatility_high_threshold: Decimal = Field(default=Decimal("0.0020"), gt=0)
+    volatility_spread_strength: Decimal = Field(default=Decimal("1.0"), ge=0)
+    volatility_size_strength: Decimal = Field(default=Decimal("0.50"), ge=0, le=Decimal("1"))
+    book_imbalance_levels: int = Field(default=5, ge=1, le=50)
+    imbalance_spread_strength: Decimal = Field(default=Decimal("0.25"), ge=0)
+    imbalance_size_strength: Decimal = Field(default=Decimal("0.25"), ge=0, le=Decimal("1"))
+    min_spread_multiplier: Decimal = Field(default=Decimal("1.0"), gt=0)
+    max_spread_multiplier: Decimal = Field(default=Decimal("2.5"), ge=Decimal("1"))
+    min_market_size_multiplier: Decimal = Field(default=Decimal("0.35"), gt=0, le=Decimal("1"))
+
     @model_validator(mode="after")
     def bounds(self):
         if self.concentration_upper_bps <= self.concentration_lower_bps:
@@ -55,6 +69,9 @@ class StrategyConfig(BaseModel):
             "replace_tolerance_bps", "size_tolerance", "tick_size", "target_inventory_base",
             "soft_inventory_limit_base", "hard_inventory_limit_base", "max_inventory_price_skew_bps",
             "inventory_size_skew_strength", "min_inventory_size_multiplier", "max_inventory_size_multiplier",
+            "volatility_low_threshold", "volatility_high_threshold", "volatility_spread_strength",
+            "volatility_size_strength", "imbalance_spread_strength", "imbalance_size_strength",
+            "min_spread_multiplier", "max_spread_multiplier", "min_market_size_multiplier",
         )
         if any(not getattr(self, name).is_finite() for name in decimal_fields):
             raise ValueError("strategy decimal configuration must be finite")
@@ -64,6 +81,14 @@ class StrategyConfig(BaseModel):
             raise ValueError("min_inventory_size_multiplier must be <= 1")
         if self.min_inventory_size_multiplier > self.max_inventory_size_multiplier:
             raise ValueError("min_inventory_size_multiplier must not exceed max_inventory_size_multiplier")
+        if self.volatility_window_samples < self.volatility_min_samples:
+            raise ValueError("volatility_window_samples must be >= volatility_min_samples")
+        if self.volatility_high_threshold <= self.volatility_low_threshold:
+            raise ValueError("volatility_high_threshold must exceed volatility_low_threshold")
+        if self.max_spread_multiplier < self.min_spread_multiplier:
+            raise ValueError("max_spread_multiplier must be >= min_spread_multiplier")
+        if self.min_spread_multiplier < Decimal("1"):
+            raise ValueError("Phase 6 widening-only policy requires min_spread_multiplier >= 1")
         return self
 
 
