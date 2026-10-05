@@ -226,8 +226,8 @@ ask_imbalance_multiplier =
         1,
     )
 
-bid_market_multiplier = global_size_multiplier * bid_imbalance_multiplier
-ask_market_multiplier = global_size_multiplier * ask_imbalance_multiplier
+bid_market_multiplier = max(min_market_size_multiplier, global_size_multiplier * bid_imbalance_multiplier)
+ask_market_multiplier = max(min_market_size_multiplier, global_size_multiplier * ask_imbalance_multiplier)
 ```
 
 As in Phase 5, `base_order_size` remains the baseline floor:
