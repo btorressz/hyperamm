@@ -28,7 +28,7 @@ Signing material exists only in backend environment variables. React never recei
 
 ## Known limitations
 
-Phases 5–7 now implement inventory-aware quoting, volatility/book-imbalance adaptation, and Hyperliquid-native perpetual context. External oracle protection, the expanded institutional risk firewall, AI agents, strategy optimization, vault accounting and mainnet execution remain roadmap items rather than hidden placeholders.
+Phases 5–8 now implement inventory-aware quoting, volatility/book-imbalance adaptation, Hyperliquid-native perpetual context, multi-source reference integrity, and the deterministic institutional risk firewall. Supervisory agents, strategy optimization, vault accounting and mainnet execution remain roadmap items rather than hidden placeholders.
 
 ## Phase 4.1 venue reconciliation
 
@@ -93,3 +93,18 @@ The normalized fields used are `funding`, `openInterest`, `oraclePx`, `markPx`, 
 TESTNET `Info.user_state(address)` is parsed once per refresh into both the authoritative Phase 5 signed position and Phase 7 account/perp observability. Phase 7 does not call leverage or isolated-margin mutation APIs.
 
 Live signed TESTNET behavior and real public `activeAssetCtx` delivery are not required by deterministic unit tests and must not be represented as exercised unless explicitly validated against Hyperliquid.
+
+
+## Phase 8 native evidence reuse
+
+Phase 8 does not create another Hyperliquid market-data client. It reuses the normalized Phase 7/market state:
+
+```text
+oraclePx -> native oracle evidence
+markPx   -> perpetual mark evidence
+L2 mid   -> execution-venue evidence
+```
+
+The TESTNET user-state refresh also retains currently available authoritative account-value context for Phase 8 session equity/drawdown observability. Missing values remain unavailable; Phase 8 does not fabricate them or call leverage/margin mutation methods.
+
+External reference networking is independent of the signed execution adapter. LIVE market/reference data can therefore run with PAPER execution and no trading wallet. Final TESTNET order transmission remains guarded by the existing explicit testnet opt-in and now additionally requires a current Phase 8 FinalQuoteAuthorization.
