@@ -363,6 +363,7 @@ class HyperAmmRuntime:
                     outlier_bps=self.risk_config.source_outlier_bps,
                 )
                 pnl = self._pnl_drawdown_locked(perp_context.mark_price)
+                existing_orders = await self.execution.get_open_orders()
                 risk_decision = self.firewall.evaluate(
                     refs=refs,
                     quotes=proposed,
@@ -374,6 +375,7 @@ class HyperAmmRuntime:
                     inventory_version=inventory.version,
                     perp_version=perp_context.version,
                     venue_uncertain=self.config.execution_mode == ExecutionMode.TESTNET and self.testnet.has_unknown_exposure(),
+                    existing_orders=existing_orders,
                 )
                 authorized = self.firewall.transform(
                     proposed,
