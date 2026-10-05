@@ -105,3 +105,44 @@ def test_invalid_perp_config_returns_422():
         config['perp_oracle_weight']='0.3'
         r=client.put('/api/v1/strategy',json=config)
         assert r.status_code==422
+
+
+def test_phase8_reference_and_risk_endpoints_in_demo():
+    with TestClient(app) as client:
+        assert client.get('/api/v1/amm/curve').status_code==200
+        refs=client.get('/api/v1/references')
+        assert refs.status_code==200
+        data=refs.json()
+        assert data['consensus']['confidence_state']=='VERIFIED'
+        assert data['evidence']['REDSTONE']['simulated'] is True
+        assert data['evidence']['KRAKEN']['source_type']=='VENUE_REFERENCE'
+        assert data['evidence']['COINGECKO']['source_type']=='AGGREGATOR_REFERENCE'
+
+        risk=client.get('/api/v1/risk')
+        assert risk.status_code==200
+        assert 'firewall' in risk.json()
+
+        evidence=client.get('/api/v1/risk/evidence')
+        assert evidence.status_code==200
+        assert evidence.json()['references'] is not None
+        assert evidence.json()['risk'] is not None
+
+        events=client.get('/api/v1/risk/events')
+        assert events.status_code==200 and isinstance(events.json(),list)
+
+        auth=client.get('/api/v1/risk/authorization')
+        assert auth.status_code==200
+        assert 'authorized' in auth.json()
+
+
+def test_phase8_terminal_serialization_and_secrets_absent():
+    with TestClient(app) as client:
+        assert client.get('/api/v1/amm/curve').status_code==200
+        with client.websocket_connect('/ws/terminal') as ws:
+            data=ws.receive_json()
+            for key in ('references','reference_consensus','risk_firewall','risk_authorization','risk_events','projected_exposure','pnl_drawdown'):
+                assert key in data
+            raw=str(data).lower()
+            assert 'hyperliquid_private_key' not in raw
+            assert 'redstone_api_key' not in raw
+            assert 'coingecko_api_key' not in raw
