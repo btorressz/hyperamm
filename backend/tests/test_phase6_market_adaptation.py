@@ -235,3 +235,28 @@ def test_final_market_size_multiplier_respects_configured_floor():
     decision=MarketAdaptationPolicy(config).decision(snap,h)
     assert decision.bid_size_multiplier>=D(".35")
     assert decision.ask_size_multiplier>=D(".35")
+
+
+def test_duplicate_sequence_or_timestamp_does_not_inflate_history():
+    h=MarketPriceHistory(max_samples=10)
+    first=snapshot("100",1)
+    assert h.add_snapshot(first)
+    duplicate_sequence=snapshot("101",1)
+    assert not h.add_snapshot(duplicate_sequence)
+
+    second=snapshot("102",2)
+    second=second.model_copy(update={
+        "latest_valid_update": first.latest_valid_update,
+        "book": second.book.model_copy(update={"timestamp": first.book.timestamp}),
+    })
+    assert not h.add_snapshot(second)
+    assert len(h)==1
+
+
+def test_non_finite_depth_is_rejected():
+    s=snapshot("100",1)
+    bad_level=MarketLevel.model_construct(price=D("99.5"),size=D("NaN"),order_count=1)
+    bad_book=s.book.model_copy(update={"bids":[bad_level]})
+    bad_snapshot=s.model_copy(update={"book":bad_book})
+    with pytest.raises(ValueError,match="order-book size"):
+        calculate_book_imbalance(bad_snapshot,5)
