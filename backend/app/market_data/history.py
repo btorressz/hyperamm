@@ -22,7 +22,8 @@ class MarketPriceHistory:
         if max_samples < 2:
             raise ValueError("max_samples must be >= 2")
         self._items: deque[MarketObservation] = deque(maxlen=max_samples)
-        self._seen: set[tuple[datetime, int]] = set()
+        self._seen_sequences: set[int] = set()
+        self._seen_timestamps: set[datetime] = set()
         self._version = 0
 
     @property
@@ -31,7 +32,8 @@ class MarketPriceHistory:
 
     def clear(self) -> None:
         self._items.clear()
-        self._seen.clear()
+        self._seen_sequences.clear()
+        self._seen_timestamps.clear()
         self._version += 1
 
     def add_snapshot(self, snapshot: MarketSnapshot) -> bool:
@@ -41,16 +43,18 @@ class MarketPriceHistory:
         if not price.is_finite() or price <= 0:
             return False
         timestamp = snapshot.latest_valid_update or snapshot.book.timestamp
-        key = (timestamp, snapshot.book.sequence)
-        if key in self._seen:
+        sequence = snapshot.book.sequence
+        if sequence in self._seen_sequences or timestamp in self._seen_timestamps:
             return False
         if self._items and timestamp < self._items[-1].timestamp:
             return False
         if len(self._items) == self._items.maxlen:
             dropped = self._items[0]
-            self._seen.discard((dropped.timestamp, dropped.sequence))
-        self._items.append(MarketObservation(timestamp=timestamp, sequence=snapshot.book.sequence, mid_price=price))
-        self._seen.add(key)
+            self._seen_sequences.discard(dropped.sequence)
+            self._seen_timestamps.discard(dropped.timestamp)
+        self._items.append(MarketObservation(timestamp=timestamp, sequence=sequence, mid_price=price))
+        self._seen_sequences.add(sequence)
+        self._seen_timestamps.add(timestamp)
         self._version += 1
         return True
 
