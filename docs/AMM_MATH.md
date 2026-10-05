@@ -160,3 +160,92 @@ size_{final}=b+(size_{neutral}-b)m_{side}
 where (b) is `base_order_size`. This preserves the reserve-delta-derived variable profile while keeping the Phase 4.1 baseline floor, up to deterministic size normalization. Prices are tick-normalized and constrained so bids remain below fair and asks above fair; final bid/ask ordering must remain uncrossed.
 
 Hard inventory limits are separate from the normal skew clamp. At or beyond the long hard bound the desired BID side is absent; at or beyond the short hard bound the desired ASK side is absent. This suppression remains safety-authoritative even if normal inventory skew is disabled.
+
+
+## Phase 6 market adaptation math
+
+Phase 6 does not change the constant-product invariant, reserve-delta liquidity, concentration policy, or Phase 5 inventory formulas.
+
+### Realized volatility
+
+The input is the normalized mid price only. For the last `N` accepted unique observations:
+
+[
+r_t = ln(P_t/P_{t-1})
+]
+
+and HyperAMM uses per-observation RMS log-return volatility:
+
+[
+sigma = sqrt{rac{1}{n}sum_{t=1}^{n}r_t^2}.
+]
+
+Prices enter as validated positive finite `Decimal` values. The logarithm is isolated through Python floating-point `math.log`; the finite result is converted back with `Decimal(str(value))`. The statistic is not annualized. Therefore the configured default thresholds are per-observation log-return units: `0.0002` (0.02%) low and `0.0020` (0.20%) high.
+
+For (sigma) between configured `low` and `high`:
+
+[
+volatilityScore = rac{sigma-low}{high-low}
+]
+
+with values below/above the thresholds clamped to 0/1.
+
+### L2 imbalance
+
+Using the top configured (N) normalized levels, or all available valid levels if fewer exist:
+
+[
+bidDepth=sum size_{bid}
+]
+
+[
+askDepth=sum size_{ask}
+]
+
+[
+imbalance=rac{bidDepth-askDepth}{bidDepth+askDepth}.
+]
+
+Depth is base-asset size, not price/notional weighted. Empty/crossed/invalid books and zero selected depth are invalid state.
+
+### Spread multiplier
+
+Phase 6 is widening-only:
+
+[
+m_{spread}=clamp(
+1+s_v,volatilityScore+s_i,|imbalance|,
+m_{spread,min},
+m_{spread,max}
+).
+]
+
+The default minimum is 1.0. Final distances are expanded around the Phase 5 reservation center, then price tick normalization is reapplied. Quote `distance_bps` is recomputed from the actual final price versus market fair value so downstream risk sees the true exposure.
+
+### Size/depth multipliers
+
+Global volatility reduction is:
+
+[
+m_{global}=clamp(1-z_v,volatilityScore,m_{size,min},1).
+]
+
+Conservative side imbalance reductions are:
+
+[
+m_{bid,imb}=clamp(1-z_imax(imbalance,0),m_{size,min},1)
+]
+
+[
+m_{ask,imb}=clamp(1-z_imax(-imbalance,0),m_{size,min},1).
+]
+
+The final side market multipliers are (m_{global}m_{side,imb}).
+
+As in Phase 5, `base_order_size` remains the baseline floor. Phase 6 scales only variable liquidity above it:
+
+[
+size_{final}=b+(size_{phase5}-b)m_{market}.
+]
+
+A Phase 5 hard-limit-suppressed side has no quotes to transform and remains absent.
