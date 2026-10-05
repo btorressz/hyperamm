@@ -165,26 +165,34 @@ class HyperAmmRuntime:
             execution_mode=self.config.execution_mode.value,
             strategy_running=self.strategy.running,
         )
+        if self.config.execution_mode == ExecutionMode.TESTNET:
+            self.testnet._require_enabled()
+
+        inventory = await self._inventory_state_locked(refresh=False)
+        if self._expected_inventory_version is not None and inventory.version != self._expected_inventory_version:
+            raise RuntimeError("inventory changed after quote authorization; recompute before transmission")
+        if self._expected_market_version is not None and self.market_history.version != self._expected_market_version:
+            raise RuntimeError("market/adaptation state changed after quote authorization; recompute before transmission")
+
+        current_perp = None
+        if self.config.perp_context_enabled or self.risk_config.enabled:
+            current_perp = self.perp_context_service.snapshot(market_fair)
+            if self._expected_perp_version is not None and current_perp.version != self._expected_perp_version:
+                raise RuntimeError("perp context changed after quote authorization; recompute before transmission")
+
         if self.authorization is None or not self.authorization.authorized:
             raise PermissionError("current Phase 8 FinalQuoteAuthorization is not authorized")
         if self.risk_decision is None or self.references is None:
             raise RuntimeError("Phase 8 risk evidence is unavailable")
-        if self.config.execution_mode == ExecutionMode.TESTNET:
-            self.testnet._require_enabled()
-        inventory = await self._inventory_state_locked(refresh=False)
-        current_perp = self.perp_context_service.snapshot(market_fair)
+        if current_perp is None:
+            current_perp = self.perp_context_service.snapshot(market_fair)
+
         current_refs = self.reference_service.snapshot(
             current_market,
             current_perp,
             agreement_bps=self.risk_config.source_agreement_bps,
             outlier_bps=self.risk_config.source_outlier_bps,
         )
-        if self._expected_perp_version is not None and current_perp.version != self._expected_perp_version:
-            raise RuntimeError("perp context changed after quote authorization; recompute before transmission")
-        if self._expected_inventory_version is not None and inventory.version != self._expected_inventory_version:
-            raise RuntimeError("inventory changed after quote authorization; recompute before transmission")
-        if self._expected_market_version is not None and self.market_history.version != self._expected_market_version:
-            raise RuntimeError("market/adaptation state changed after quote authorization; recompute before transmission")
         if self._expected_reference_version is not None and current_refs.version != self._expected_reference_version:
             raise RuntimeError("reference evidence changed after quote authorization; recompute before transmission")
         if self._expected_risk_version is not None and self.risk_decision.version != self._expected_risk_version:
@@ -227,7 +235,7 @@ class HyperAmmRuntime:
                     self.perp_context = self.perp_context_service._context
                     self._strategy_wakeup.set()
             except Exception as exc:
-                if self.config.perp_context_enabled:
+                if self.config.perp_context_enabled or self.risk_config.enabled:
                     try:
                         await self._invalidate_locked(f"perp context update failed: {exc}")
                     except Exception:
@@ -493,7 +501,7 @@ class HyperAmmRuntime:
             else:
                 self.inventory = self._paper_inventory()
                 self.perp_position = self._paper_perp_position(self.inventory)
-            if self.config.perp_context_enabled:
+            if self.config.perp_context_enabled or self.risk_config.enabled:
                 snap = await self.market.snapshot()
                 if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
                     self.perp_context_service.accept(demo_perp_context(snap))
