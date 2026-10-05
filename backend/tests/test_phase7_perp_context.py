@@ -216,3 +216,13 @@ def test_user_position_context_long_short_flat_and_fields():
     assert short.signed_position_base==D("-1") and short.liquidation_price is None
     flat=normalize_user_position_context({"assetPositions":[]},"ETH")
     assert flat.signed_position_base==0 and flat.entry_price is None
+
+
+def test_nan_optional_position_value_is_rejected_not_treated_as_missing():
+    state={"assetPositions":[{"position":{
+        "coin":"ETH","szi":"1","entryPx":"NaN","leverage":{"type":"cross","value":2},
+        "liquidationPx":None,"marginUsed":"1","positionValue":"2",
+        "unrealizedPnl":"0","returnOnEquity":"0"
+    }}]}
+    with pytest.raises(ValueError,match="entry price"):
+        normalize_user_position_context(state,"ETH")
