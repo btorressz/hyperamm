@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 
@@ -47,7 +48,7 @@ class MarketAdaptationDecision(BaseModel):
     ask_size_multiplier: Decimal = Field(gt=0)
     regime: VolatilityRegime
     imbalance_state: ImbalanceState
-    updated_at: object
+    updated_at: datetime
     stale: bool = False
     source: str = "NORMALIZED_MID_L2"
     version: int = Field(ge=0)
