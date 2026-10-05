@@ -15,6 +15,10 @@ from .providers import CoinGeckoProvider, KrakenProvider, RedStoneProvider
 class ReferenceService:
     def __init__(self, settings, *, market: str, mode: MarketDataMode, wakeup=None):
         self.settings=settings; self.market=market; self.mode=mode; self.wakeup=wakeup
+        if mode==MarketDataMode.LIVE and market!=settings.market and (
+            settings.redstone_enabled or settings.kraken_reference_enabled or settings.coingecko_reference_enabled
+        ):
+            raise ValueError("LIVE reference mappings are bound to the configured startup MARKET; restart with explicit mappings for the new market")
         def changed():
             if self.wakeup is not None: self.wakeup.set()
         live=mode==MarketDataMode.LIVE
