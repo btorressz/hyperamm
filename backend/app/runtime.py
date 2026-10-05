@@ -9,6 +9,7 @@ from app.market_data.models import MarketDataMode, utcnow
 from app.market_data.service import MarketDataService
 from app.market_data.history import MarketPriceHistory
 from app.market_data.perp_context import PerpContextService, PerpPositionContext, demo_perp_context
+from app.references.service import ReferenceService
 from app.strategy.models import StrategyConfig, StrategyState, ExecutionMode
 from app.strategy.quote_engine import QuoteEngine
 from app.strategy.fair_value import calculate_fair_value
@@ -21,6 +22,8 @@ from app.execution.order_manager import OrderManager
 from app.risk.models import RiskStatus
 from app.risk.kill_switch import KillSwitch
 from app.risk.limits import validate_quotes, validate_execution_authority
+from app.risk.firewall import PnlDrawdown, RiskFirewall, RiskFirewallConfig, RiskState, paper_pnl
+from app.risk.authorization import authorize, fingerprint
 
 log = logging.getLogger(__name__)
 
@@ -47,18 +50,30 @@ class HyperAmmRuntime:
         )
         self.execution = self.paper if self.config.execution_mode == ExecutionMode.PAPER else self.testnet
         self.execution_lock = asyncio.Lock()
+        self._strategy_wakeup = asyncio.Event()
         self.orders = OrderManager(self.execution, self.execution_lock, self._execution_authority)
         self.quote_engine = QuoteEngine()
         self.market_history = MarketPriceHistory(max_samples=1000)
         self.perp_context_service = PerpContextService(
             settings.market, self.config.perp_context_stale_after_seconds
         )
+        self.reference_service = ReferenceService(
+            settings, market=settings.market, mode=mode, wakeup=self._strategy_wakeup
+        )
         self.risk = RiskStatus()
+        self.risk_config = RiskFirewallConfig(enabled=settings.reference_firewall_enabled)
+        self.firewall = RiskFirewall(self.risk_config)
         self.kill = KillSwitch(self.risk, self.execution_lock)
         self.fair_value = None
         self.pool = None
         self.quotes = []
+        self.strategy_quotes = []
         self.last_actions = []
+        self.references = None
+        self.risk_decision = None
+        self.authorization = None
+        self._session_start_equity = None
+        self._peak_equity = None
         self.inventory: InventoryState | None = None
         self.inventory_decision = None
         self.market_adaptation_decision = None
@@ -68,10 +83,11 @@ class HyperAmmRuntime:
         self._expected_inventory_version: int | None = None
         self._expected_market_version: int | None = None
         self._expected_perp_version: int | None = None
+        self._expected_reference_version: int | None = None
+        self._expected_risk_version: int | None = None
         self._strategy_task = None
         self._venue_task = None
         self._closing = False
-        self._strategy_wakeup = asyncio.Event()
         self.testnet.authority = self._execution_authority
         self.paper.on_fill = lambda _fill: self._strategy_wakeup.set()
         self.market.add_listener(self._on_market)
@@ -227,6 +243,7 @@ class HyperAmmRuntime:
     async def start_services(self):
         self._closing = False
         await self.market.start()
+        await self.reference_service.start()
         self._venue_task = asyncio.create_task(self._venue_loop(), name="venue-reconciliation")
 
     async def _venue_loop(self):
@@ -254,6 +271,7 @@ class HyperAmmRuntime:
     async def stop_services(self):
         await self.stop_strategy()
         await self.market.stop()
+        await self.reference_service.stop()
         self._closing = True
         self.testnet.venue_changed.set()
         if self._venue_task:
