@@ -153,3 +153,27 @@ async def test_neutral_phase6_output_can_keep_existing_quotes():
     await manager.reconcile("ETH",quotes,config.replace_tolerance_bps,config.size_tolerance)
     actions=await manager.reconcile("ETH",quotes,config.replace_tolerance_bps,config.size_tolerance)
     assert actions and all(action.action=="KEEP" for action in actions)
+
+
+@pytest.mark.asyncio
+async def test_adaptive_quote_distance_risk_violation_fails_closed():
+    rt=HyperAmmRuntime(Settings())
+    rt.config.volatility_window_samples=2
+    rt.config.volatility_min_samples=2
+    rt.config.volatility_low_threshold=D("0")
+    rt.config.volatility_high_threshold=D("0.0000001")
+    rt.config.volatility_spread_strength=D("2")
+    rt.config.imbalance_spread_strength=D("0")
+    rt.risk.max_quote_distance_bps=D("1")
+
+    adapter=MockMarketDataAdapter()
+    first=adapter.snapshot_for(1)
+    second=adapter.snapshot_for(2)
+    await rt.market._accept(first)
+    await rt.market._accept(second)
+    rt.strategy.running=True
+    await rt.refresh_once()
+
+    assert rt.strategy.quote_health=="DEGRADED"
+    assert rt.quotes==[]
+    assert "quote distance exceeds limit" in rt.strategy.last_error
