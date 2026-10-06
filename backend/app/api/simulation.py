@@ -19,6 +19,12 @@ class SimulationRunRequest(BaseModel):
     frames:int=Field(default=120,ge=2,le=5000)
     simulation:SimulationConfig=Field(default_factory=SimulationConfig)
 
+    @model_validator(mode="after")
+    def frame_bound(self):
+        if self.frames>self.simulation.max_frames:
+            raise ValueError(f"frames {self.frames} exceeds simulation max_frames {self.simulation.max_frames}")
+        return self
+
 
 class OptimizationRequest(BaseModel):
     strategy_grid:dict[str,list[Any]]
@@ -35,6 +41,8 @@ class OptimizationRequest(BaseModel):
     def grid_present(self):
         if not self.strategy_grid and not self.agent_grid:
             raise ValueError("optimization requires at least one strategy or agent parameter grid")
+        if self.frames>self.simulation.max_frames:
+            raise ValueError(f"frames {self.frames} exceeds simulation max_frames {self.simulation.max_frames}")
         return self
 
 
