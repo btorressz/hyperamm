@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 import hashlib,json
 
-from pydantic import BaseModel,Field,model_validator
+from pydantic import BaseModel,ConfigDict,Field,model_validator
 
 from app.market_data.models import MarketSnapshot
 from app.market_data.perp_context import PerpMarketContext
@@ -27,6 +27,7 @@ def stable_fingerprint(value)->str:
 
 
 class SimulationReferencePrices(BaseModel):
+    model_config=ConfigDict(frozen=True)
     redstone:Decimal|None=None
     kraken:Decimal|None=None
     coingecko:Decimal|None=None
@@ -41,6 +42,7 @@ class SimulationReferencePrices(BaseModel):
 
 
 class SimulationFrame(BaseModel):
+    model_config=ConfigDict(frozen=True)
     sequence:int=Field(ge=0)
     timestamp:datetime
     market:MarketSnapshot
@@ -79,6 +81,7 @@ class SimulationFrame(BaseModel):
 
 
 class SimulationDataset(BaseModel):
+    model_config=ConfigDict(frozen=True)
     market:str
     frames:list[SimulationFrame]
     source:str
@@ -102,7 +105,7 @@ class SimulationDataset(BaseModel):
         expected=stable_fingerprint(semantic)
         if self.fingerprint and self.fingerprint!=expected:
             raise ValueError("simulation dataset fingerprint mismatch")
-        self.fingerprint=expected
+        object.__setattr__(self,"fingerprint",expected)
         return self
 
 
@@ -199,7 +202,9 @@ class CandidateEvaluation(BaseModel):
     training:list[ScenarioEvaluation]
     validation:list[ScenarioEvaluation]=Field(default_factory=list)
     training_score:Decimal
+    training_aggregate:dict[str,Decimal|None]=Field(default_factory=dict)
     validation_score:Decimal|None=None
+    validation_aggregate:dict[str,Decimal|None]=Field(default_factory=dict)
     score_delta:Decimal|None=None
     baseline_delta:dict[str,Decimal|None]=Field(default_factory=dict)
 
