@@ -194,7 +194,7 @@ def build_agent_evidence(
         history_sample_count=len(selected),
         momentum_bps=momentum,
         inventory_position_base=inventory.position_base,
-        inventory_ratio=inventory.inventory_ratio_effective,
+        inventory_ratio=inventory.inventory_ratio,
         mark_price=perp_context.mark_price,
         oracle_price=perp_context.oracle_price,
         funding_rate=perp_context.funding_rate,
