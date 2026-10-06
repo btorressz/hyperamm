@@ -189,8 +189,6 @@ class StrategyOptimizer:
 
         ranked=sorted(candidates,key=candidate_ranking_key)
         baseline_summary=_candidate_summary(baseline.training)
-        for candidate in ranked:
-
         selected=ranked[:max(1,min(top_n,len(ranked)))]
         baseline_validation=[]
         for name in validation_scenarios:
