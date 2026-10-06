@@ -48,12 +48,16 @@ async def test_paper_crossing_clock_bid_and_ask_semantics():
     clock.set(dataset.frames[1].timestamp)
     paper.update_market(crossed_snapshot(dataset.frames[1],bid="99",ask="100"))
     assert [f.client_order_id for f in paper.fills.all()]==["bid"]
+    assert paper.fills.all()[0].price==D("100")
     assert paper.fills.all()[0].timestamp==dataset.frames[1].timestamp
 
     clock.set(dataset.frames[2].timestamp)
     paper.update_market(crossed_snapshot(dataset.frames[2],bid="102",ask="103"))
     assert [f.client_order_id for f in paper.fills.all()]==["bid","ask"]
+    assert paper.fills.all()[1].price==D("102")
     assert paper.fills.all()[1].timestamp==dataset.frames[2].timestamp
+    paper.update_market(crossed_snapshot(dataset.frames[2],bid="102",ask="103"))
+    assert len(paper.fills.all())==2
 
 
 @pytest.mark.asyncio
