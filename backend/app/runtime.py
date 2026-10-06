@@ -24,6 +24,7 @@ from app.risk.kill_switch import KillSwitch
 from app.risk.limits import validate_quotes, validate_execution_authority
 from app.risk.firewall import PnlDrawdown, RiskFirewall, RiskFirewallConfig, RiskState, paper_pnl
 from app.risk.authorization import authorize, fingerprint
+from app.agents import AgentConfig,AgentSupervisor,AgentTelemetryStore,build_agent_evidence,transform_quotes
 
 log = logging.getLogger(__name__)
 
@@ -63,11 +64,17 @@ class HyperAmmRuntime:
         self.risk = RiskStatus()
         self.risk_config = RiskFirewallConfig(enabled=settings.reference_firewall_enabled)
         self.firewall = RiskFirewall(self.risk_config)
+        self.agent_config = AgentConfig()
+        self.agent_telemetry = AgentTelemetryStore()
+        self.agent_supervisor = AgentSupervisor(self.agent_config)
         self.kill = KillSwitch(self.risk, self.execution_lock)
         self.fair_value = None
         self.pool = None
         self.quotes = []
         self.strategy_quotes = []
+        self.agent_quotes = []
+        self.agent_evidence = None
+        self.agent_decision = None
         self.last_actions = []
         self.references = None
         self.risk_decision = None
@@ -84,14 +91,23 @@ class HyperAmmRuntime:
         self._expected_market_version: int | None = None
         self._expected_perp_version: int | None = None
         self._expected_reference_version: int | None = None
+        self._expected_agent_version: int | None = None
+        self._expected_agent_fingerprint: str | None = None
         self._expected_risk_version: int | None = None
         self._strategy_task = None
         self._venue_task = None
         self._closing = False
         self.testnet.authority = self._execution_authority
-        self.paper.on_fill = lambda _fill: self._strategy_wakeup.set()
+        self.paper.on_fill = self._on_paper_fill
         self.market.add_listener(self._on_market)
         self.market.add_perp_listener(self._on_perp_context)
+
+    def _on_paper_fill(self, fill):
+        reference_price=None
+        if self.references is not None:
+            reference_price=self.references.consensus.consensus_price
+        self.agent_telemetry.observe_fill(fill,reference_price)
+        self._strategy_wakeup.set()
 
     def _paper_perp_position(self, inventory: InventoryState) -> PerpPositionContext:
         return PerpPositionContext(
@@ -195,6 +211,21 @@ class HyperAmmRuntime:
         )
         if self._expected_reference_version is not None and current_refs.version != self._expected_reference_version:
             raise RuntimeError("reference evidence changed after quote authorization; recompute before transmission")
+        if self.agent_decision is None:
+            raise RuntimeError("Phase 9 agent authority is unavailable")
+        if self._expected_agent_version is not None and (
+            self.agent_supervisor.version != self._expected_agent_version
+            or self.agent_decision.version != self._expected_agent_version
+        ):
+            raise RuntimeError("agent decision changed after quote authorization; recompute before transmission")
+        if self._expected_agent_fingerprint is not None and (
+            self.agent_supervisor.fingerprint != self._expected_agent_fingerprint
+            or self.agent_decision.fingerprint != self._expected_agent_fingerprint
+            or self.authorization.agent_fingerprint != self._expected_agent_fingerprint
+        ):
+            raise RuntimeError("agent fingerprint changed after quote authorization; recompute before transmission")
+        if self.authorization.agent_version != self.agent_decision.version:
+            raise RuntimeError("authorized agent version is stale")
         if self._expected_risk_version is not None and self.risk_decision.version != self._expected_risk_version:
             raise RuntimeError("risk decision changed after quote authorization; recompute before transmission")
         if fingerprint(self.quotes) != self.authorization.quote_fingerprint:
@@ -203,6 +234,9 @@ class HyperAmmRuntime:
     async def _invalidate_locked(self, reason, health="DEGRADED"):
         self.quotes = []
         self.strategy_quotes = []
+        self.agent_quotes = []
+        self.agent_evidence = None
+        self.agent_decision = None
         self.authorization = None
         self.fair_value = None
         self.pool = None
@@ -212,6 +246,8 @@ class HyperAmmRuntime:
         self._expected_market_version = None
         self._expected_perp_version = None
         self._expected_reference_version = None
+        self._expected_agent_version = None
+        self._expected_agent_fingerprint = None
         self._expected_risk_version = None
         self.last_actions = []
         self.strategy.last_error = reason
@@ -281,8 +317,10 @@ class HyperAmmRuntime:
                     continue
                 try:
                     await self.testnet.reconcile_venue()
+                    changed=self.agent_telemetry.observe_orders(self.testnet.all_orders())
                     self.inventory = await self._testnet_inventory_locked(refresh=True)
-                    self._strategy_wakeup.set()
+                    if changed or self.inventory is not None:
+                        self._strategy_wakeup.set()
                 except Exception as exc:
                     try:
                         await self._invalidate_locked(f"venue reconciliation/inventory refresh failed: {exc}")
@@ -370,11 +408,33 @@ class HyperAmmRuntime:
                     agreement_bps=self.risk_config.source_agreement_bps,
                     outlier_bps=self.risk_config.source_outlier_bps,
                 )
+                self.agent_telemetry.observe_orders(self.execution.all_orders())
+                agent_evidence = build_agent_evidence(
+                    market_decision=market_decision,
+                    inventory=inventory,
+                    perp_context=perp_context,
+                    refs=refs,
+                    history=self.market_history,
+                    momentum_window=self.agent_config.regime_momentum_window_samples,
+                )
+                agent_decision = self.agent_supervisor.evaluate(
+                    evidence=agent_evidence,
+                    telemetry=self.agent_telemetry,
+                    history=self.market_history,
+                    execution_mode=self.config.execution_mode.value,
+                )
+                agent_candidate = transform_quotes(
+                    proposed,
+                    agent_decision,
+                    center=inventory_decision.reservation_price,
+                    tick_size=self.config.tick_size,
+                    size_precision=self.config.size_precision,
+                )
                 pnl = self._pnl_drawdown_locked(perp_context.mark_price)
                 existing_orders = await self.execution.get_open_orders()
                 risk_decision = self.firewall.evaluate(
                     refs=refs,
-                    quotes=proposed,
+                    quotes=agent_candidate,
                     current_position=inventory.position_base,
                     mark=perp_context.mark_price,
                     liquidation=self.perp_position.liquidation_price if self.perp_position else None,
@@ -386,7 +446,7 @@ class HyperAmmRuntime:
                     existing_orders=existing_orders,
                 )
                 authorized = self.firewall.transform(
-                    proposed,
+                    agent_candidate,
                     risk_decision,
                     center=inventory_decision.reservation_price,
                     tick_size=self.config.tick_size,
@@ -394,13 +454,16 @@ class HyperAmmRuntime:
                     base_order_size=self.config.base_order_size,
                 )
                 validate_quotes(authorized, snap, self.risk)
-                authorization = authorize(authorized, refs, risk_decision)
+                authorization = authorize(authorized, refs, risk_decision, agent_decision)
 
                 self.inventory = inventory
                 self.inventory_decision = inventory_decision
                 self.market_adaptation_decision = market_decision
                 self.perp_context = perp_context
                 self.references = refs
+                self.agent_evidence = agent_evidence
+                self.agent_decision = agent_decision
+                self.agent_quotes = agent_candidate
                 self.risk_decision = risk_decision
                 self.authorization = authorization
                 self.strategy_quotes = proposed
@@ -409,6 +472,8 @@ class HyperAmmRuntime:
                 self._expected_market_version = market_decision.version
                 self._expected_perp_version = perp_context.version
                 self._expected_reference_version = refs.version
+                self._expected_agent_version = agent_decision.version
+                self._expected_agent_fingerprint = agent_decision.fingerprint
                 self._expected_risk_version = risk_decision.version
 
                 if self.strategy.running:
@@ -421,6 +486,7 @@ class HyperAmmRuntime:
                         self.config.size_tolerance,
                         venue_reconciled=venue_reconciled,
                     )
+                    self.agent_telemetry.observe_reconcile(self.last_actions,self.execution.all_orders())
                     if authorized:
                         await self._execution_authority()
                     self.strategy.quote_health = "HALTED" if risk_decision.state == RiskState.HALT else "HEALTHY"
@@ -560,6 +626,7 @@ class HyperAmmRuntime:
                 new_config.market_data_mode != self.config.market_data_mode
                 or new_config.market != self.config.market
             )
+            agent_context_changed = mode_changed or new_config.execution_mode != self.config.execution_mode
             await self._invalidate_locked("configuration changed", "NO_QUOTES")
             if mode_changed:
                 old_market = self.market
@@ -580,6 +647,8 @@ class HyperAmmRuntime:
             self._expected_market_version = None
             self._expected_perp_version = None
             self._expected_reference_version = None
+            self._expected_agent_version = None
+            self._expected_agent_fingerprint = None
             self._expected_risk_version = None
             self.inventory = None
             self.inventory_decision = None
@@ -591,6 +660,12 @@ class HyperAmmRuntime:
             self.risk_decision = None
             self.authorization = None
             self.strategy_quotes = []
+            self.agent_quotes = []
+            self.agent_evidence = None
+            self.agent_decision = None
+            if agent_context_changed:
+                self.agent_telemetry = AgentTelemetryStore()
+                self.agent_supervisor = AgentSupervisor(self.agent_config)
             if mode_changed:
                 self.market_history.clear()
                 self.perp_context_service = PerpContextService(
@@ -712,6 +787,27 @@ class HyperAmmRuntime:
             self.references=refs
             return refs.model_dump(mode="json")
 
+    def agents_payload(self):
+        return {
+            "config":self.agent_config.model_dump(mode="json"),
+            "evidence":self.agent_evidence.model_dump(mode="json") if self.agent_evidence else None,
+            "regime":self.agent_decision.regime.model_dump(mode="json") if self.agent_decision else None,
+            "toxic_flow":self.agent_decision.toxic_flow.model_dump(mode="json") if self.agent_decision else None,
+            "execution_quality":self.agent_decision.execution_quality.model_dump(mode="json") if self.agent_decision else None,
+            "supervisor":self.agent_decision.model_dump(mode="json") if self.agent_decision else None,
+            "agent_version":self.agent_decision.version if self.agent_decision else self.agent_supervisor.version,
+            "agent_fingerprint":self.agent_decision.fingerprint if self.agent_decision else self.agent_supervisor.fingerprint,
+            "telemetry":self.agent_telemetry.summary(),
+        }
+
+    async def agents_summary(self):
+        if self.agent_decision is None:
+            await self.refresh_once()
+        return self.agents_payload()
+
+    def agent_events_summary(self):
+        return self.agent_supervisor.event_payload()
+
     def risk_firewall_payload(self):
         return {
             "manual_kill_active":self.risk.kill_switch_active,
@@ -755,6 +851,9 @@ class HyperAmmRuntime:
             "perp_context": self._perp_payload(),
             "references": self.references.model_dump(mode="json") if self.references else None,
             "reference_consensus": self.references.consensus.model_dump(mode="json") if self.references else None,
+            "agents": self.agents_payload(),
+            "agent_events": self.agent_events_summary()[-20:],
+            "agent_quotes": [q.model_dump(mode="json") for q in self.agent_quotes],
             "risk_firewall": self.risk_firewall_payload(),
             "risk_authorization": self.authorization_summary(),
             "risk_events": self.risk_events_summary()[-20:],

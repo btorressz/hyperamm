@@ -54,6 +54,14 @@ class QuoteLevel(BaseModel):
     market_fair_value: Decimal | None = None
     perp_reference_price: Decimal | None = None
     inventory_adjusted_price: Decimal | None = None
+    pre_agent_price: Decimal | None = None
+    pre_agent_size: Decimal | None = None
+    agent_spread_multiplier: Decimal | None = None
+    agent_size_multiplier: Decimal | None = None
+    agent_regime: str | None = None
+    agent_toxic_flow_state: str | None = None
+    agent_execution_quality_state: str | None = None
+    agent_version: int | None = None
     pre_risk_price: Decimal | None = None
     pre_risk_size: Decimal | None = None
     risk_spread_multiplier: Decimal | None = None
