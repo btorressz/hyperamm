@@ -317,8 +317,10 @@ class HyperAmmRuntime:
                     continue
                 try:
                     await self.testnet.reconcile_venue()
+                    changed=self.agent_telemetry.observe_orders(self.testnet.all_orders())
                     self.inventory = await self._testnet_inventory_locked(refresh=True)
-                    self._strategy_wakeup.set()
+                    if changed or self.inventory is not None:
+                        self._strategy_wakeup.set()
                 except Exception as exc:
                     try:
                         await self._invalidate_locked(f"venue reconciliation/inventory refresh failed: {exc}")
@@ -785,6 +787,27 @@ class HyperAmmRuntime:
             self.references=refs
             return refs.model_dump(mode="json")
 
+    def agents_payload(self):
+        return {
+            "config":self.agent_config.model_dump(mode="json"),
+            "evidence":self.agent_evidence.model_dump(mode="json") if self.agent_evidence else None,
+            "regime":self.agent_decision.regime.model_dump(mode="json") if self.agent_decision else None,
+            "toxic_flow":self.agent_decision.toxic_flow.model_dump(mode="json") if self.agent_decision else None,
+            "execution_quality":self.agent_decision.execution_quality.model_dump(mode="json") if self.agent_decision else None,
+            "supervisor":self.agent_decision.model_dump(mode="json") if self.agent_decision else None,
+            "agent_version":self.agent_decision.version if self.agent_decision else self.agent_supervisor.version,
+            "agent_fingerprint":self.agent_decision.fingerprint if self.agent_decision else self.agent_supervisor.fingerprint,
+            "telemetry":self.agent_telemetry.summary(),
+        }
+
+    async def agents_summary(self):
+        if self.agent_decision is None:
+            await self.refresh_once()
+        return self.agents_payload()
+
+    def agent_events_summary(self):
+        return self.agent_supervisor.event_payload()
+
     def risk_firewall_payload(self):
         return {
             "manual_kill_active":self.risk.kill_switch_active,
@@ -828,6 +851,9 @@ class HyperAmmRuntime:
             "perp_context": self._perp_payload(),
             "references": self.references.model_dump(mode="json") if self.references else None,
             "reference_consensus": self.references.consensus.model_dump(mode="json") if self.references else None,
+            "agents": self.agents_payload(),
+            "agent_events": self.agent_events_summary()[-20:],
+            "agent_quotes": [q.model_dump(mode="json") for q in self.agent_quotes],
             "risk_firewall": self.risk_firewall_payload(),
             "risk_authorization": self.authorization_summary(),
             "risk_events": self.risk_events_summary()[-20:],
