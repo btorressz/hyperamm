@@ -11,8 +11,8 @@
 | 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; acceptance validation pending |
 | 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; acceptance validation pending |
 | 8 | IN REVIEW | Multi-source reference integrity + deterministic institutional risk firewall implemented; acceptance validation pending |
-| 9 | IN DEVELOPMENT | Deterministic regime / toxic-flow / execution-quality supervisory agents implemented on branch; acceptance pending |
-| 10 | PLANNED | Strategy optimization + simulation |
+| 9 | IMPLEMENTED / IN REVIEW | Deterministic regime / toxic-flow / execution-quality supervisory agents merged; separate acceptance remains pending |
+| 10 | IN DEVELOPMENT | Deterministic production-stack simulation + bounded grid optimization implemented on branch; acceptance pending |
 | 11 | PLANNED | Vault/accounting |
 | 12 | PLANNED | Expanded production-grade React terminal |
 
@@ -76,7 +76,7 @@ On 2026-10-05, the production public HTTP attempt was blocked by the execution e
 Offline acceptance on Python 3.12.14: **287 passed, 1 warning in 2.38s**, preserving all 223 existing tests and adding 64 transport/provenance cases. Uvicorn startup and graceful shutdown passed; `/api/v1/health`, `/api/v1/references`, `/api/v1/risk`, `/api/v1/risk/evidence`, and `/api/v1/risk/authorization` each returned HTTP 200 in DEMO/PAPER mode. A deterministic FastAPI test separately verifies PUBLIC_HTTP serialization. Frontend `npm run typecheck` and `npm run build` exited 0 (109 modules, 2.25s); `git diff --check` passed. The backend warning is upstream Starlette/httpx deprecation; the frontend reports non-failing TanStack Query `use client` directive warnings. No real orders were transmitted.
 
 
-## Phase 9 — IN DEVELOPMENT
+## Phase 9 — IMPLEMENTED / IN REVIEW
 
 Phase 9 implementation adds deterministic Regime, Toxic-Flow and Execution-Quality agents plus a conservative AgentSupervisor between Phase 6 strategy quotes and the Phase 8 firewall. Agents can only widen, reduce size or trim existing levels; they cannot execute, restore Phase 5-suppressed sides, clear the manual kill switch or weaken Phase 8.
 
@@ -85,3 +85,27 @@ The runtime uses one reference snapshot for agent evidence and the downstream Ph
 Phase 9 also adds bounded fill/reconciliation telemetry, simulated PAPER markouts, explicit TESTNET fill-data limitations, read-only agent APIs, terminal/frontend explainability and focused regression/static tests.
 
 Phase 8 remains IN REVIEW. Phase 9 must not be promoted to COMPLETE until the full Python 3.12 backend suite, FastAPI/API/WebSocket checks, frontend typecheck/build and repository static acceptance pass. No GitHub Actions workflow is introduced.
+
+
+## Phase 10 — IN DEVELOPMENT
+
+Phase 10 adds an offline deterministic research framework around the actual HyperAMM strategy instead of a parallel toy strategy.
+
+Implemented scope on this branch includes:
+
+- dedicated `app/simulation/` package
+- validated immutable scenario/replay frames and datasets
+- deterministic scenario clock
+- backward-compatible clock injection for PAPER order/fill timestamps
+- built-in deterministic market/perp/reference scenarios
+- simulated RedStone / Hyperliquid oracle / Kraken / CoinGecko / HL mid / HL mark evidence through the existing `ReferenceConsensusPolicy`
+- frame-by-frame reuse of `MarketPriceHistory`, `QuoteEngine`, Phase 5 inventory, Phase 6 adaptation, Phase 7 perp policy, Phase 9 `AgentSupervisor`, Phase 8 `RiskFirewall`, `authorize()`, `OrderManager`, `reconcile_quotes()` and `PaperExecutionAdapter`
+- Decimal PnL/equity/drawdown/inventory/execution/risk/agent metrics
+- bounded trace and deterministic run fingerprint
+- deterministic grid search with explicit strategy/agent allowlists and immutable safety settings
+- BASELINE, training/validation separation, transparent objective components and stable tie-breaking
+- bounded offline simulation APIs
+- focused Simulation & Optimization frontend with no auto-apply/deploy action
+- Phase 10 scenario/engine/optimizer/API/static tests
+
+Phase 10 remains IN DEVELOPMENT until the complete Python 3.12 backend suite, FastAPI checks, frontend typecheck/build and repository static acceptance pass. Phase 8 remains IN REVIEW. Phase 9 remains IMPLEMENTED / IN REVIEW. Phase 11 remains PLANNED.
