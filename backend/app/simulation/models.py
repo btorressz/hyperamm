@@ -83,7 +83,7 @@ class SimulationFrame(BaseModel):
 class SimulationDataset(BaseModel):
     model_config=ConfigDict(frozen=True)
     market:str
-    frames:list[SimulationFrame]
+    frames:tuple[SimulationFrame,...]
     source:str
     simulated:bool=True
     fingerprint:str=""
