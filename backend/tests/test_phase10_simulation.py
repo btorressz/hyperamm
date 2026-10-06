@@ -169,7 +169,10 @@ def test_exact_pnl_equity_and_drawdown_math():
     assert pnl.unrealized_pnl==D("0")
 
     acc=MetricsAccumulator(D("1000"))
-    risk=SimpleNamespace(state=SimpleNamespace(value="NORMAL"))
+    risk=SimpleNamespace(
+        state=SimpleNamespace(value="NORMAL"),
+        exposure=SimpleNamespace(inventory_utilization=D("0")),
+    )
     agent=SimpleNamespace(
         regime=SimpleNamespace(state=SimpleNamespace(value="NORMAL")),
         toxic_flow=SimpleNamespace(state=SimpleNamespace(value="NORMAL")),
