@@ -57,6 +57,18 @@ class SimulationFrame(BaseModel):
             raise ValueError("simulation frame/book sequence mismatch")
         if self.market.book.timestamp!=self.timestamp:
             raise ValueError("simulation frame/book timestamp mismatch")
+        for name,value in (("best bid",self.market.best_bid),("best ask",self.market.best_ask),("mid",self.market.mid_price)):
+            if not value.is_finite() or value<=0:
+                raise ValueError(f"simulation {name} must be finite and positive")
+        if self.market.best_bid>=self.market.best_ask:
+            raise ValueError("simulation BBO is crossed")
+        if self.market.best_bid!=self.market.book.bids[0].price or self.market.best_ask!=self.market.book.asks[0].price:
+            raise ValueError("simulation BBO must match top order-book levels")
+        expected_mid=(self.market.best_bid+self.market.best_ask)/Decimal("2")
+        if self.market.mid_price!=expected_mid:
+            raise ValueError("simulation mid must equal BBO midpoint")
+        if self.timestamp.tzinfo is None:
+            raise ValueError("simulation timestamp must be timezone-aware")
         if self.market.stale:
             raise ValueError("simulation market snapshot cannot be stale")
         if self.perp_context.stale:
