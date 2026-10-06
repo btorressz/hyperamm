@@ -4,16 +4,21 @@ from types import SimpleNamespace
 import pytest
 
 import app.simulation.engine as engine_module
+from app.agents import AgentSupervisor,AgentTelemetryStore,build_agent_evidence,transform_quotes
 from app.agents.config import AgentConfig
 from app.execution.models import Fill,OrderRequest
 from app.execution.paper import PaperExecutionAdapter
+from app.market_data.history import MarketPriceHistory
 from app.market_data.models import MarketConnectionState,MarketDataMode,MarketLevel,MarketSnapshot,OrderBookSnapshot
-from app.risk.firewall import RiskFirewallConfig,paper_pnl
+from app.risk.firewall import PnlDrawdown,RiskFirewall,RiskFirewallConfig,RiskState,paper_pnl
+from app.strategy.inventory import build_inventory_state
 from app.strategy.models import StrategyConfig
+from app.strategy.quote_engine import QuoteEngine
 from app.simulation.config import SimulationConfig
 from app.simulation.engine import SimulationClock,SimulationEngine
 from app.simulation.metrics import MetricsAccumulator
 from app.simulation.models import SimulationDataset,SimulationReferencePrices
+from app.simulation.references import build_simulated_references
 from app.simulation.scenarios import generate_scenario
 
 
@@ -187,3 +192,126 @@ def test_exact_pnl_equity_and_drawdown_math():
     acc.record(authorized_quotes=[],inventory=inventory,risk_decision=risk,agent_decision=agent,equity=D("990"),drawdown_pct=D(".1"),actions=[])
     assert acc.peak_equity==D("1100")
     assert acc.max_drawdown_pct==D(".1")
+
+
+def _pipeline_candidate_with_position(position:D):
+    dataset=generate_scenario("QUIET",frames=2)
+    frame=dataset.frames[0]
+    config=StrategyConfig(soft_inventory_limit_base=D(".5"),hard_inventory_limit_base=D("1"))
+    history=MarketPriceHistory()
+    history.add_snapshot(frame.market)
+    inventory=build_inventory_state(
+        market="ETH",position=position,target=D("0"),soft_limit=config.soft_inventory_limit_base,
+        source="PAPER",updated_at=frame.timestamp,version=0,
+    )
+    _,_,proposed,inventory_decision,market_decision,_=QuoteEngine().generate_perp_market_adaptive(
+        config,frame.market,inventory,history,frame.perp_context
+    )
+    refs=build_simulated_references(frame,agreement_bps=D("30"),outlier_bps=D("75"),version=1)
+    agents=AgentConfig()
+    evidence=build_agent_evidence(
+        market_decision=market_decision,inventory=inventory,perp_context=frame.perp_context,
+        refs=refs,history=history,momentum_window=agents.regime_momentum_window_samples,
+    )
+    decision=AgentSupervisor(agents).evaluate(
+        evidence=evidence,telemetry=AgentTelemetryStore(),history=history,execution_mode="PAPER"
+    )
+    agent_quotes=transform_quotes(
+        proposed,decision,center=inventory_decision.reservation_price,
+        tick_size=config.tick_size,size_precision=config.size_precision,
+    )
+    firewall=RiskFirewall(RiskFirewallConfig())
+    risk=firewall.evaluate(
+        refs=refs,quotes=agent_quotes,current_position=position,mark=frame.perp_context.mark_price,
+        liquidation=None,pnl=PnlDrawdown(session_pnl=D("0"),source="TEST",simulated=True),
+        market_version=market_decision.version,inventory_version=inventory.version,
+        perp_version=frame.perp_context.version,
+    )
+    final=firewall.transform(
+        agent_quotes,risk,center=inventory_decision.reservation_price,
+        tick_size=config.tick_size,size_precision=config.size_precision,base_order_size=config.base_order_size,
+    )
+    return proposed,agent_quotes,final,risk
+
+
+def test_phase5_suppressed_sides_remain_absent_through_agents_and_phase8():
+    long_base,long_agent,long_final,_=_pipeline_candidate_with_position(D("1"))
+    short_base,short_agent,short_final,_=_pipeline_candidate_with_position(D("-1"))
+    assert long_base and all(q.side=="ASK" for q in long_base)
+    assert long_agent and all(q.side=="ASK" for q in long_agent)
+    assert long_final and all(q.side=="ASK" for q in long_final)
+    assert short_base and all(q.side=="BID" for q in short_base)
+    assert short_agent and all(q.side=="BID" for q in short_agent)
+    assert short_final and all(q.side=="BID" for q in short_final)
+
+
+def test_agent_widening_survives_phase8_normal_and_phase8_reduce_remains_more_conservative():
+    dataset=generate_scenario("TREND_UP",frames=10)
+    frame=dataset.frames[-1]
+    config=StrategyConfig(volatility_min_samples=2,volatility_window_samples=10)
+    history=MarketPriceHistory()
+    for item in dataset.frames:
+        history.add_snapshot(item.market)
+    inventory=build_inventory_state(
+        market="ETH",position=D("0"),target=D("0"),soft_limit=config.soft_inventory_limit_base,
+        source="PAPER",updated_at=frame.timestamp,version=0,
+    )
+    _,_,proposed,inventory_decision,market_decision,_=QuoteEngine().generate_perp_market_adaptive(
+        config,frame.market,inventory,history,frame.perp_context
+    )
+    refs=build_simulated_references(frame,agreement_bps=D("30"),outlier_bps=D("75"),version=frame.sequence)
+    agent_cfg=AgentConfig(regime_min_samples=2,regime_momentum_window_samples=10,regime_trend_threshold_bps=D("1"),regime_spread_strength=D(".5"))
+    evidence=build_agent_evidence(
+        market_decision=market_decision,inventory=inventory,perp_context=frame.perp_context,
+        refs=refs,history=history,momentum_window=agent_cfg.regime_momentum_window_samples,
+    )
+    agent_decision=AgentSupervisor(agent_cfg).evaluate(
+        evidence=evidence,telemetry=AgentTelemetryStore(),history=history,execution_mode="PAPER"
+    )
+    agent_quotes=transform_quotes(
+        proposed,agent_decision,center=inventory_decision.reservation_price,
+        tick_size=config.tick_size,size_precision=config.size_precision,
+    )
+    assert any(q.pre_agent_price is not None and (
+        (q.side=="BID" and q.price<=q.pre_agent_price) or (q.side=="ASK" and q.price>=q.pre_agent_price)
+    ) for q in agent_quotes)
+
+    normal_fw=RiskFirewall(RiskFirewallConfig())
+    normal=normal_fw.evaluate(
+        refs=refs,quotes=agent_quotes,current_position=D("0"),mark=frame.perp_context.mark_price,
+        liquidation=None,pnl=PnlDrawdown(session_pnl=D("0"),source="TEST",simulated=True),
+        market_version=market_decision.version,inventory_version=0,perp_version=frame.perp_context.version,
+    )
+    assert normal.state==RiskState.NORMAL
+    normal_quotes=normal_fw.transform(
+        agent_quotes,normal,center=inventory_decision.reservation_price,tick_size=config.tick_size,
+        size_precision=config.size_precision,base_order_size=config.base_order_size,
+    )
+    assert [(q.side,q.price,q.size) for q in normal_quotes]==[(q.side,q.price,q.size) for q in agent_quotes]
+
+    reduce_fw=RiskFirewall(RiskFirewallConfig(reference_reduce_deviation_bps=D("1"),reference_halt_deviation_bps=D("100")))
+    reduce=reduce_fw.evaluate(
+        refs=refs,quotes=agent_quotes,current_position=D("0"),mark=frame.perp_context.mark_price*D("1.001"),
+        liquidation=None,pnl=PnlDrawdown(session_pnl=D("0"),source="TEST",simulated=True),
+        market_version=market_decision.version,inventory_version=0,perp_version=frame.perp_context.version,
+    )
+    assert reduce.state in {RiskState.REDUCE,RiskState.HALT}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("scenario",["FLASH_MOVE","ORACLE_DISLOCATION","REFERENCE_DEGRADATION","HIGH_VOLATILITY"])
+async def test_stress_scenarios_are_finite_and_preserve_risk_authority(scenario):
+    result=await SimulationEngine().run(
+        dataset=generate_scenario(scenario,frames=24),
+        strategy_config=StrategyConfig(),agent_config=AgentConfig(),risk_config=RiskFirewallConfig(),
+        simulation_config=SimulationConfig(max_frames=24,trace_max_points=24),scenario=scenario,
+    )
+    financial=[
+        result.metrics.starting_equity,result.metrics.ending_equity,result.metrics.session_pnl,
+        result.metrics.return_pct,result.metrics.max_drawdown_pct,result.metrics.max_abs_inventory_base,
+        result.metrics.max_inventory_utilization,result.metrics.reconciliation_churn_ratio,
+    ]
+    assert all(value.is_finite() for value in financial)
+    assert result.metrics.risk_state_counts
+    assert all(point.equity.is_finite() and point.drawdown_pct.is_finite() for point in result.trace)
+    assert all(order["size"]>0 and order["price"]>0 for order in result.orders)
