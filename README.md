@@ -3,7 +3,7 @@
 
 **HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
 
-Phases 1–8 are implemented as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Phases 1–8 are implemented and Phase 9 supervisory agents are in development as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
 
 ## Why a virtual AMM?
 
@@ -31,7 +31,7 @@ Hyperliquid L2 / Demo Feed
  PAPER execution or guarded TESTNET
 ```
 
-## Phase 1–8 capabilities
+## Phase 1–9 capabilities
 
 - **Phase 1 — Market data + paper execution:** normalized L2/BBO state, WebSocket subscription adapter, initial L2 snapshot, monotonic exchange-time handling, reconnection/degraded states, explicit deterministic demo feed, paper orders/fills, optional testnet adapter.
 - **Phase 2 — Virtual constant-product AMM:** invariant, marginal price, reserve initialization/recentering, base→quote and quote→base virtual swaps, curve-state calculations.
@@ -40,7 +40,7 @@ Hyperliquid L2 / Demo Feed
 - **Phase 5 — Inventory-aware quoting:** normalized PAPER/TESTNET inventory, bounded reservation-price and side-size skew, hard-limit side suppression, inventory freshness/version checks, and terminal controls/visibility.
 - **Phase 6 — Volatility + order-book imbalance adaptation:** bounded rolling mid-price volatility, normalized top-N L2 imbalance, widening-only spread adaptation, conservative size/depth reduction, market-state version binding, and terminal explainability.
 - **Phase 7 — Perpetual vAMM context:** normalized mark/oracle/funding/OI context, bounded perp strategy reference, AMM recentering, shared TESTNET position observability, freshness/version authority, and terminal explainability.
-- **Phase 8 — Reference integrity + institutional risk firewall:** normalized multi-source price evidence, deterministic quorum/consensus, source health and freshness, signed deviation matrix, projected exposure, liquidation/PnL guards, NORMAL/WIDEN/REDUCE/HALT postures, hysteresis/recovery, SHA-256 authorization fingerprints, and final pre-transmission authority binding.
+- **Phase 8 — Reference integrity + institutional risk firewall:** normalized multi-source price evidence, deterministic quorum/consensus, source health and freshness, signed deviation matrix, projected exposure, liquidation/PnL guards, NORMAL/WIDEN/REDUCE/HALT postures, hysteresis/recovery, SHA-256 authorization fingerprints, and final pre-transmission authority binding.\n- **Phase 9 — Supervisory agents (IN DEVELOPMENT):** deterministic regime, adverse-selection markout and execution-quality analysis; conservative supervisor composition; bounded quote widening/size/level reduction; agent provenance bound into final authorization.
 
 A minimal Phase 1–4 risk authority enforces freshness, level count, per-order size, aggregate notional, minimum price, quote distance, execution state and a kill switch. The kill switch cancels active strategy orders and blocks new quote generation.
 
@@ -173,11 +173,11 @@ Phase 8 adds deterministic multi-source reference integrity and institutional ri
 - `docs/HYPERLIQUID_INTEGRATION.md`
 - `docs/ROADMAP.md`
 - `docs/REFERENCE_INTEGRITY.md`
-- `docs/RISK_FIREWALL.md`
+- `docs/RISK_FIREWALL.md`\n- `docs/AGENTS.md`
 
 ## 12-phase roadmap
 
-Phases 1–8 are implemented. Phase 9 adds supervisory agents; Phase 10 optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
+Phases 1–8 are implemented. Phase 9 supervisory agents are IN DEVELOPMENT; Phase 10 remains optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
 
 ## Phase 4.1 acceptance and hardening
 
@@ -256,3 +256,14 @@ Only the authorized ladder continues to the existing structural `validate_quotes
 DEMO/PAPER generates deterministic simulated external-reference evidence. LIVE/PAPER can run public reference infrastructure without a trading wallet. Provider credentials remain backend-only.
 
 See [Reference Integrity](docs/REFERENCE_INTEGRITY.md) and [Risk Firewall](docs/RISK_FIREWALL.md).
+
+
+## Phase 9 — Deterministic Supervisory Agents
+
+Phase 9 inserts a bounded, deterministic supervisory layer after Phase 6 strategy adaptation and before the Phase 8 firewall. The Regime, Toxic-Flow and Execution-Quality agents consume normalized existing evidence only. Their supervisor can widen spreads, reduce side sizes or trim existing levels; it cannot execute orders, restore suppressed liquidity, clear the manual kill switch or override Phase 8.
+
+FinalQuoteAuthorization now binds agent version and fingerprint in addition to the existing market, inventory, perp, reference and risk authority.
+
+PAPER fill telemetry is explicitly simulated. TESTNET fill-quality metrics remain unavailable where authoritative fill detail does not exist; no slippage or markout is fabricated.
+
+See [Supervisory Agents](docs/AGENTS.md).
