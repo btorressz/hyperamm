@@ -41,3 +41,11 @@ def test_phase9_does_not_create_github_actions_or_forbidden_oracle():
             except UnicodeDecodeError:continue
             if forbidden.search(text):hits.append(str(path.relative_to(ROOT)))
     assert hits==[]
+
+
+def test_agent_package_contains_no_mainnet_or_secret_configuration():
+    for path in AGENTS.glob("*.py"):
+        text=path.read_text().lower()
+        assert "mainnet" not in text
+        for token in ("private_key","api_key","password","secret"):
+            assert token not in text
