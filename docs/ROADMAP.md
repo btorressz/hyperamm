@@ -11,7 +11,7 @@
 | 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; acceptance validation pending |
 | 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; acceptance validation pending |
 | 8 | IN REVIEW | Multi-source reference integrity + deterministic institutional risk firewall implemented; acceptance validation pending |
-| 9 | PLANNED | Regime / toxic-flow / execution-quality supervisory agents |
+| 9 | IN DEVELOPMENT | Deterministic regime / toxic-flow / execution-quality supervisory agents implemented on branch; acceptance pending |
 | 10 | PLANNED | Strategy optimization + simulation |
 | 11 | PLANNED | Vault/accounting |
 | 12 | PLANNED | Expanded production-grade React terminal |
@@ -71,6 +71,17 @@ Phase 6 and Phase 7 remain IN REVIEW because their exact full acceptance evidenc
 
 RedStone retains one provider identity and one consensus vote. Authenticated Live WebSocket remains primary; a no-key Python/httpx public cache transport polls every 10 seconds with a separate 30-second freshness threshold. Fresh HTTP evidence remains usable but caps confidence at DEGRADED, preserving the existing firewall's REDUCE posture. Transport failover/recovery advances reference and FinalQuoteAuthorization provenance even at the same price. The API and existing terminal row expose effective transport and FALLBACK quality.
 
-On 2026-10-05, the production public HTTP attempt was blocked by the execution environment's HTTP CONNECT proxy (`403 Forbidden` / `httpx.ProxyError`); no real ETH observation was received. Offline deterministic acceptance does not satisfy external-provider acceptance. Phase 8 remains IN REVIEW and Phase 9 remains PLANNED pending the requested live-provider gate.
+On 2026-10-05, the production public HTTP attempt was blocked by the execution environment's HTTP CONNECT proxy (`403 Forbidden` / `httpx.ProxyError`); no real ETH observation was received. Offline deterministic acceptance does not satisfy external-provider acceptance. Phase 8 remains IN REVIEW because external-provider acceptance is still outstanding. That upstream acceptance does not block Phase 9 implementation; Phase 9 is IN DEVELOPMENT and remains subordinate to Phase 8 authority.
 
 Offline acceptance on Python 3.12.14: **287 passed, 1 warning in 2.38s**, preserving all 223 existing tests and adding 64 transport/provenance cases. Uvicorn startup and graceful shutdown passed; `/api/v1/health`, `/api/v1/references`, `/api/v1/risk`, `/api/v1/risk/evidence`, and `/api/v1/risk/authorization` each returned HTTP 200 in DEMO/PAPER mode. A deterministic FastAPI test separately verifies PUBLIC_HTTP serialization. Frontend `npm run typecheck` and `npm run build` exited 0 (109 modules, 2.25s); `git diff --check` passed. The backend warning is upstream Starlette/httpx deprecation; the frontend reports non-failing TanStack Query `use client` directive warnings. No real orders were transmitted.
+
+
+## Phase 9 — IN DEVELOPMENT
+
+Phase 9 implementation adds deterministic Regime, Toxic-Flow and Execution-Quality agents plus a conservative AgentSupervisor between Phase 6 strategy quotes and the Phase 8 firewall. Agents can only widen, reduce size or trim existing levels; they cannot execute, restore Phase 5-suppressed sides, clear the manual kill switch or weaken Phase 8.
+
+The runtime uses one reference snapshot for agent evidence and the downstream Phase 8 firewall. Post-agent candidate quotes are the quotes used for Phase 8 projected-exposure evaluation. FinalQuoteAuthorization binds the agent version and material fingerprint, and stale agent authority rejects CREATE/REPLACE before transmission.
+
+Phase 9 also adds bounded fill/reconciliation telemetry, simulated PAPER markouts, explicit TESTNET fill-data limitations, read-only agent APIs, terminal/frontend explainability and focused regression/static tests.
+
+Phase 8 remains IN REVIEW. Phase 9 must not be promoted to COMPLETE until the full Python 3.12 backend suite, FastAPI/API/WebSocket checks, frontend typecheck/build and repository static acceptance pass. No GitHub Actions workflow is introduced.
