@@ -70,3 +70,12 @@ def test_phase10_api_rejects_unbounded_and_safety_parameter_requests():
             "frames":6,
         })
         assert safety.status_code==422
+
+
+def test_phase10_api_requires_frame_count_within_simulation_bound():
+    with TestClient(app) as client:
+        response=client.post("/api/v1/simulation/run",json={
+            "scenario":"QUIET","frames":300,
+            "simulation":{"max_frames":250},
+        })
+        assert response.status_code==422
