@@ -79,3 +79,32 @@ def test_phase10_api_requires_frame_count_within_simulation_bound():
             "simulation":{"max_frames":250},
         })
         assert response.status_code==422
+
+
+def test_phase10_service_does_not_mutate_any_live_authority_state():
+    with TestClient(app) as client:
+        rt=app.state.runtime
+        before={
+            "config":rt.config.model_dump(mode="json"),
+            "agents":rt.agent_config.model_dump(mode="json"),
+            "risk_config":rt.risk_config.model_dump(mode="json"),
+            "running":rt.strategy.running,
+            "kill":rt.risk.kill_switch_active,
+            "execution_id":id(rt.execution),
+            "paper_orders":[o.model_dump(mode="json") for o in rt.paper.all_orders()],
+        }
+        response=client.post("/api/v1/simulation/run",json={
+            "scenario":"FLASH_MOVE","frames":8,
+            "simulation":{"max_frames":8,"record_trace":False},
+        })
+        assert response.status_code==200,response.text
+        after={
+            "config":rt.config.model_dump(mode="json"),
+            "agents":rt.agent_config.model_dump(mode="json"),
+            "risk_config":rt.risk_config.model_dump(mode="json"),
+            "running":rt.strategy.running,
+            "kill":rt.risk.kill_switch_active,
+            "execution_id":id(rt.execution),
+            "paper_orders":[o.model_dump(mode="json") for o in rt.paper.all_orders()],
+        }
+        assert after==before
