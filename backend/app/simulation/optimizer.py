@@ -34,7 +34,11 @@ FORBIDDEN_PARAMETERS={
     "max_projected_long_base","max_projected_short_base","max_gross_quote_notional",
     "max_projected_position_notional","liquidation_halt_distance_bps","drawdown_halt_pct",
     "enable_hyperliquid_testnet_orders","hyperliquid_private_key","redstone_api_key",
-    "coingecko_api_key","redstone_live_ws_url","hyperliquid_testnet_url",
+    "coingecko_api_key","redstone_live_ws_url","redstone_public_http_url","kraken_ws_url",
+    "coingecko_api_base_url","hyperliquid_testnet_url","max_session_loss_quote",
+    "source_agreement_bps","source_outlier_bps","liquidation_warn_distance_bps",
+    "liquidation_reduce_distance_bps","drawdown_warn_pct","drawdown_reduce_pct",
+    "risk_recovery_confirmations",
 }
 HARD_MAX_CANDIDATES=128
 
