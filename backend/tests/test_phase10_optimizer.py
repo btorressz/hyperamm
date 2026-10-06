@@ -6,7 +6,8 @@ from app.agents.config import AgentConfig
 from app.risk.firewall import RiskFirewallConfig
 from app.strategy.models import StrategyConfig
 from app.simulation.config import OptimizationObjectiveConfig,SimulationConfig
-from app.simulation.optimizer import StrategyOptimizer,score_metrics
+from app.simulation.models import CandidateEvaluation
+from app.simulation.optimizer import StrategyOptimizer,candidate_ranking_key,score_metrics
 
 
 def test_grid_enumeration_exact_and_bounded():
@@ -129,3 +130,52 @@ async def test_invalid_strategy_and_agent_candidates_are_reported():
     assert result.baseline.label=="BASELINE"
     assert result.rejected_candidates
     assert result.candidate_count==0
+
+
+def test_stable_tie_breaking_uses_drawdown_inventory_churn_then_fingerprint():
+    common=dict(
+        label="X",strategy_updates={},agent_updates={},training=[],validation=[],
+        training_score=D("10"),validation_score=None,score_delta=None,baseline_delta={},
+        validation_aggregate={},
+    )
+    a=CandidateEvaluation(
+        **common,configuration_fingerprint="b",
+        training_aggregate={"worst_drawdown_pct":D(".02"),"max_inventory_utilization":D(".3"),"mean_churn_ratio":D(".2")},
+    )
+    b=CandidateEvaluation(
+        **common,configuration_fingerprint="a",
+        training_aggregate={"worst_drawdown_pct":D(".01"),"max_inventory_utilization":D(".9"),"mean_churn_ratio":D(".9")},
+    )
+    assert sorted([a,b],key=candidate_ranking_key)[0] is b
+
+    c=CandidateEvaluation(
+        **common,configuration_fingerprint="a",
+        training_aggregate={"worst_drawdown_pct":D(".02"),"max_inventory_utilization":D(".3"),"mean_churn_ratio":D(".2")},
+    )
+    assert sorted([a,c],key=candidate_ranking_key)[0] is c
+
+
+@pytest.mark.asyncio
+async def test_invalid_strategy_candidate_is_reported_separately():
+    result=await StrategyOptimizer().optimize(
+        baseline_strategy=StrategyConfig(),baseline_agents=AgentConfig(),risk_config=RiskFirewallConfig(),
+        simulation_config=SimulationConfig(max_frames=6,record_trace=False),
+        strategy_grid={"concentration_lower_bps":["300"]},agent_grid={},
+        training_scenarios=["QUIET"],validation_scenarios=["TREND_UP"],
+        objective=OptimizationObjectiveConfig(),max_candidates=2,frames=6,top_n=1,
+    )
+    assert result.candidate_count==0
+    assert result.rejected_candidates
+
+
+@pytest.mark.asyncio
+async def test_invalid_agent_candidate_is_reported_separately():
+    result=await StrategyOptimizer().optimize(
+        baseline_strategy=StrategyConfig(),baseline_agents=AgentConfig(),risk_config=RiskFirewallConfig(),
+        simulation_config=SimulationConfig(max_frames=6,record_trace=False),
+        strategy_grid={},agent_grid={"regime_spread_strength":["2"]},
+        training_scenarios=["QUIET"],validation_scenarios=["TREND_UP"],
+        objective=OptimizationObjectiveConfig(),max_candidates=2,frames=6,top_n=1,
+    )
+    assert result.candidate_count==0
+    assert result.rejected_candidates
