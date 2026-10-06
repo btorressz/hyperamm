@@ -289,13 +289,21 @@ def test_agent_widening_survives_phase8_normal_and_phase8_reduce_remains_more_co
     )
     assert [(q.side,q.price,q.size) for q in normal_quotes]==[(q.side,q.price,q.size) for q in agent_quotes]
 
-    reduce_fw=RiskFirewall(RiskFirewallConfig(reference_reduce_deviation_bps=D("1"),reference_halt_deviation_bps=D("100")))
+    reduce_fw=RiskFirewall(RiskFirewallConfig())
     reduce=reduce_fw.evaluate(
-        refs=refs,quotes=agent_quotes,current_position=D("0"),mark=frame.perp_context.mark_price*D("1.001"),
-        liquidation=None,pnl=PnlDrawdown(session_pnl=D("0"),source="TEST",simulated=True),
+        refs=refs,quotes=agent_quotes,current_position=D("0"),mark=frame.perp_context.mark_price,
+        liquidation=None,pnl=PnlDrawdown(
+            session_pnl=D("0"),current_equity=D("890"),peak_equity=D("1000"),
+            drawdown_pct=D(".11"),source="TEST",simulated=True,
+        ),
         market_version=market_decision.version,inventory_version=0,perp_version=frame.perp_context.version,
     )
-    assert reduce.state in {RiskState.REDUCE,RiskState.HALT}
+    assert reduce.state==RiskState.REDUCE
+    reduced=reduce_fw.transform(
+        agent_quotes,reduce,center=inventory_decision.reservation_price,tick_size=config.tick_size,
+        size_precision=config.size_precision,base_order_size=config.base_order_size,
+    )
+    assert all(q.size<=next(a.size for a in agent_quotes if a.side==q.side and a.level_index==q.level_index) for q in reduced)
 
 
 @pytest.mark.asyncio
@@ -314,4 +322,4 @@ async def test_stress_scenarios_are_finite_and_preserve_risk_authority(scenario)
     assert all(value.is_finite() for value in financial)
     assert result.metrics.risk_state_counts
     assert all(point.equity.is_finite() and point.drawdown_pct.is_finite() for point in result.trace)
-    assert all(order["size"]>0 and order["price"]>0 for order in result.orders)
+    assert all(D(str(order["size"]))>0 and D(str(order["price"]))>0 for order in result.orders)
