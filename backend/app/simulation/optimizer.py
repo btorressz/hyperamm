@@ -88,6 +88,17 @@ def _candidate_summary(evaluations:list[ScenarioEvaluation])->dict[str,Decimal|N
     }
 
 
+def candidate_ranking_key(item:CandidateEvaluation):
+    summary=item.training_aggregate or _candidate_summary(item.training)
+    return (
+        -item.training_score,
+        summary["worst_drawdown_pct"],
+        summary["max_inventory_utilization"],
+        summary["mean_churn_ratio"],
+        item.configuration_fingerprint,
+    )
+
+
 class StrategyOptimizer:
     def __init__(self,engine:SimulationEngine|None=None):
         self.engine=engine or SimulationEngine()
@@ -176,16 +187,7 @@ class StrategyOptimizer:
             except Exception as exc:
                 rejected.append({"strategy_updates":strategy_updates,"agent_updates":agent_updates,"reason":str(exc)})
 
-        def key(item:CandidateEvaluation):
-            summary=_candidate_summary(item.training)
-            return (
-                -item.training_score,
-                summary["worst_drawdown_pct"],
-                summary["max_inventory_utilization"],
-                summary["mean_churn_ratio"],
-                item.configuration_fingerprint,
-            )
-        ranked=sorted(candidates,key=key)
+        ranked=sorted(candidates,key=candidate_ranking_key)
         selected=ranked[:max(1,min(top_n,len(ranked)))]
         baseline_validation=[]
         for name in validation_scenarios:
