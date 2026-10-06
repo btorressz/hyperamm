@@ -3,7 +3,7 @@ from decimal import Decimal as D
 import pytest
 
 from app.strategy.market_adaptation import calculate_book_imbalance,calculate_realized_volatility
-from app.simulation.models import SimulationDataset
+from app.simulation.models import SimulationDataset,SimulationFrame
 from app.simulation.references import build_simulated_references
 from app.simulation.scenarios import ScenarioName,generate_scenario
 
@@ -66,4 +66,4 @@ def test_dataset_rejects_duplicate_or_regressed_sequence_and_timestamp():
 def test_frame_rejects_mid_bbo_mismatch():
     frame=generate_scenario("QUIET",frames=2).frames[0]
     with pytest.raises(ValueError,match="mid"):
-        frame.model_validate({**frame.model_dump(),"market":{**frame.market.model_dump(),"mid_price":D("2999")}})
+        SimulationFrame.model_validate({**frame.model_dump(),"market":{**frame.market.model_dump(),"mid_price":D("2999")}})
