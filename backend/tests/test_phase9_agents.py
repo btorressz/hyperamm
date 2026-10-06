@@ -288,3 +288,55 @@ def test_nonfinite_agent_recommendation_is_rejected():
             evidence_version=ev.version,version=1,state=MarketRegime.NORMAL,direction=RegimeDirection.NEUTRAL,
             momentum_bps=D("0"),realized_volatility=D("0"),volatility_score=D("0"),book_imbalance=D("0"),
         )
+
+
+def test_bounded_fill_history_evicts_oldest_deterministically():
+    telemetry=AgentTelemetryStore(max_fills=2)
+    t0=utcnow()
+    for i in range(3):
+        telemetry.observe_fill(Fill(client_order_id=str(i),market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0+timedelta(seconds=i)),D("3000"))
+    fills=telemetry.fills(10)
+    assert len(fills)==2
+    assert [fill.client_order_id for fill in fills]==["1","2"]
+
+
+def test_execution_quality_unknown_reject_and_churn_degrade_quality():
+    c=AgentConfig(execution_quality_min_fills=1,execution_quality_max_churn_ratio=D(".4"))
+    telemetry=AgentTelemetryStore()
+    t0=utcnow()
+    telemetry.observe_fill(Fill(client_order_id="f",market="ETH",side="BID",price=D("2999"),size=D("1"),timestamp=t0),D("3000"))
+    from app.execution.models import StrategyOrder,OrderStatus
+    telemetry.observe_orders([
+        StrategyOrder(client_order_id="u",market="ETH",side="BID",price=D("2990"),size=D("1"),status=OrderStatus.UNKNOWN),
+        StrategyOrder(client_order_id="r",market="ETH",side="ASK",price=D("3010"),size=D("1"),status=OrderStatus.REJECTED),
+    ])
+    from app.execution.quote_reconciler import ReconcileAction,ReconcileActionType
+    telemetry.observe_reconcile([
+        ReconcileAction(action=ReconcileActionType.REPLACE,desired=quote("BID","2990"),existing=StrategyOrder(client_order_id="old",market="ETH",side="BID",price=D("2980"),size=D("1"))),
+        ReconcileAction(action=ReconcileActionType.CANCEL,existing=StrategyOrder(client_order_id="cancel",market="ETH",side="ASK",price=D("3020"),size=D("1"))),
+    ],[])
+    out=ExecutionQualityAgent(c).evaluate(evidence(),telemetry,history(["3000","3000"],start=t0,step=5),execution_mode="PAPER")
+    assert out.state==ExecutionQualityState.POOR
+    assert out.metrics.unknown_order_count>=1
+    assert out.metrics.reject_count>=1
+    assert out.metrics.reconciliation_churn_ratio>D(".4")
+    assert out.spread_multiplier>=1
+    assert out.bid_size_multiplier<=1
+
+
+def test_execution_quality_healthy_evidence_can_be_good():
+    c=AgentConfig(execution_quality_min_fills=1,execution_quality_max_churn_ratio=D(".8"),toxic_flow_markout_horizon_seconds=5)
+    telemetry=AgentTelemetryStore();t0=utcnow()
+    telemetry.observe_fill(Fill(client_order_id="g",market="ETH",side="BID",price=D("2999"),size=D("1"),timestamp=t0),D("3000"))
+    out=ExecutionQualityAgent(c).evaluate(evidence(),telemetry,history(["3000","3001"],start=t0,step=5),execution_mode="PAPER")
+    assert out.state in {ExecutionQualityState.GOOD,ExecutionQualityState.NORMAL}
+    assert out.metrics.average_spread_capture_bps is not None
+    assert out.metrics.average_mature_markout_bps is not None
+
+
+def test_missing_fill_reference_remains_unavailable_not_fabricated():
+    c=AgentConfig(execution_quality_min_fills=1)
+    telemetry=AgentTelemetryStore();t0=utcnow()
+    telemetry.observe_fill(Fill(client_order_id="noref",market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0),None)
+    out=ExecutionQualityAgent(c).evaluate(evidence(),telemetry,history(["3000","3001"],start=t0,step=5),execution_mode="PAPER")
+    assert out.metrics.average_spread_capture_bps is None
