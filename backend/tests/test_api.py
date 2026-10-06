@@ -146,3 +146,40 @@ def test_phase8_terminal_serialization_and_secrets_absent():
             assert 'hyperliquid_private_key' not in raw
             assert 'redstone_api_key' not in raw
             assert 'coingecko_api_key' not in raw
+
+
+def test_phase9_agents_api_and_terminal_state():
+    with TestClient(app) as client:
+        assert client.get('/api/v1/amm/curve').status_code==200
+        agents=client.get('/api/v1/agents')
+        assert agents.status_code==200
+        data=agents.json()
+        for key in ('config','regime','toxic_flow','execution_quality','supervisor','agent_version','agent_fingerprint','telemetry'):
+            assert key in data
+        assert data['supervisor'] is not None
+        assert data['supervisor']['enabled'] is True
+        assert data['supervisor']['simulated'] is True
+
+        events=client.get('/api/v1/agents/events')
+        assert events.status_code==200
+        assert isinstance(events.json(),list)
+
+        assert client.post('/api/v1/agents/trade').status_code==404
+        assert client.post('/api/v1/agents/execute').status_code==404
+        assert client.post('/api/v1/agents/order').status_code==404
+
+        with client.websocket_connect('/ws/terminal') as ws:
+            terminal=ws.receive_json()
+            assert terminal['agents']['supervisor'] is not None
+            assert 'agent_events' in terminal
+            assert 'agent_quotes' in terminal
+            assert terminal['risk_authorization']['agent_version']==terminal['agents']['agent_version']
+            assert terminal['risk_authorization']['agent_fingerprint']==terminal['agents']['agent_fingerprint']
+
+
+def test_phase9_agent_api_exposes_no_secrets_or_execution_actions():
+    with TestClient(app) as client:
+        assert client.get('/api/v1/amm/curve').status_code==200
+        raw=str(client.get('/api/v1/agents').json()).lower()
+        for token in ('private_key','redstone_api_key','coingecko_api_key','submit_orders','cancel_orders','replace_orders'):
+            assert token not in raw
