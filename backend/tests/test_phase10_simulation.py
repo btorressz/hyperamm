@@ -323,3 +323,16 @@ async def test_stress_scenarios_are_finite_and_preserve_risk_authority(scenario)
     assert result.metrics.risk_state_counts
     assert all(point.equity.is_finite() and point.drawdown_pct.is_finite() for point in result.trace)
     assert all(D(str(order["size"]))>0 and D(str(order["price"]))>0 for order in result.orders)
+
+
+@pytest.mark.asyncio
+async def test_simulation_does_not_start_reference_service_or_network_transport(monkeypatch):
+    async def forbidden(*args,**kwargs):
+        raise AssertionError("network/provider service must not be used by simulation")
+    monkeypatch.setattr("app.references.service.ReferenceService.start",forbidden)
+    dataset=generate_scenario("QUIET",frames=4)
+    result=await SimulationEngine().run(
+        dataset=dataset,strategy_config=StrategyConfig(),agent_config=AgentConfig(),
+        risk_config=RiskFirewallConfig(),simulation_config=SimulationConfig(max_frames=4,record_trace=False),
+    )
+    assert result.metrics.frame_count==4
