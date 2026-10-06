@@ -700,7 +700,7 @@ Phase 10 remains IN DEVELOPMENT until:
 - frontend typecheck passes
 - frontend build passes
 - `git diff --check` passes
-- no Pyth/GitHub Actions/LLM/ML/Phase 11 work is introduced
+- no additional oracle provider, GitHub Actions, LLM/ML optimizer, or Phase 11 work is introduced
 
 Phase 8 remains IN REVIEW.
 
