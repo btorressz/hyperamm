@@ -141,3 +141,18 @@ async def test_manual_kill_remains_absolute_with_agents_enabled():
     assert rt.risk.kill_switch_active is True
     assert rt.strategy.running is False
     assert rt.quotes==[]
+
+
+@pytest.mark.asyncio
+async def test_agent_software_error_remains_neutral_while_phase8_still_halts(monkeypatch):
+    rt=HyperAmmRuntime(Settings(_env_file=None))
+    snap=MockMarketDataAdapter().snapshot_for(1)
+    await rt.market._accept(snap)
+    monkeypatch.setattr(rt.reference_service,"snapshot",lambda *args,**kwargs:insufficient_refs())
+    monkeypatch.setattr(rt.agent_supervisor.regime,"evaluate",lambda _ev:(_ for _ in ()).throw(RuntimeError("agent failure")))
+    await rt.refresh_once()
+    assert rt.agent_decision.regime.health.value=="ERROR"
+    assert rt.agent_decision.regime.spread_multiplier==1
+    assert rt.risk_decision.state.value=="HALT"
+    assert rt.authorization.authorized is False
+    assert rt.quotes==[]
