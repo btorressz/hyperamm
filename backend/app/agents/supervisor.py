@@ -96,21 +96,6 @@ class AgentSupervisor:
             f"TOXIC_FLOW: {'; '.join(toxic.reasons)}",
             f"EXECUTION_QUALITY: {'; '.join(execution.reasons)}",
         ]
-        semantic={
-            "enabled":enabled,
-            "regime":recommendation_signature(regime),
-            "toxic_flow":recommendation_signature(toxic),
-            "execution_quality":recommendation_signature(execution),
-            "spread_multiplier":spread,
-            "bid_size_multiplier":bid,
-            "ask_size_multiplier":ask,
-            "max_levels":max_levels,
-            "market_version":evidence.market_version,
-            "inventory_version":evidence.inventory_version,
-            "perp_version":evidence.perp_version,
-            "reference_version":evidence.reference_version,
-        }
-        fingerprint=semantic_fingerprint(semantic)
         decision_material={
             "enabled":enabled,
             "regime":recommendation_signature(regime),
@@ -122,6 +107,7 @@ class AgentSupervisor:
             "max_levels":max_levels,
         }
         signature=semantic_fingerprint(decision_material)
+        fingerprint=signature
         if signature!=self._signature:
             self.version+=1
             self._signature=signature
