@@ -6,6 +6,8 @@ import pytest
 from app.agents.config import AgentConfig
 from app.agents.evidence import AgentTelemetryStore
 from app.agents.execution_quality import ExecutionQualityAgent,churn_ratio,spread_capture_bps
+from pydantic import ValidationError
+
 from app.agents.models import (
     AgentEvidenceSnapshot,AgentHealth,AgentSupervisorDecision,
     ExecutionQualityAgentOutput,ExecutionQualityMetrics,ExecutionQualityState,
@@ -19,6 +21,7 @@ from app.amm.models import AmmModel,QuoteLevel
 from app.execution.models import Fill
 from app.market_data.history import MarketPriceHistory
 from app.market_data.models import MarketConnectionState,MarketDataMode,MarketLevel,MarketSnapshot,OrderBookSnapshot,utcnow
+from app.risk.firewall import ExposureMetrics,LiquidationEvidence,PnlDrawdown,RiskDecision,RiskFirewall,RiskFirewallConfig,RiskState
 
 
 def evidence(**updates):
@@ -217,3 +220,71 @@ def test_agent_events_are_bounded():
     for i in range(400):
         s.events.append(__import__("app.agents.models",fromlist=["AgentEvent"]).AgentEvent(agent="X",new_state=str(i),version=i))
     assert len(s.events)==250
+
+
+def test_phase5_long_and_short_suppression_survive_agent_transform():
+    ev=evidence()
+    cautious=decision(ev,spread="1.4",bid=".6",ask=".6")
+    long_ladder=[quote("ASK","3010","1",0),quote("ASK","3020","1",1)]
+    short_ladder=[quote("BID","2990","1",0),quote("BID","2980","1",1)]
+    long_out=transform_quotes(long_ladder,cautious,center=D("3000"),tick_size=D(".1"),size_precision=4)
+    short_out=transform_quotes(short_ladder,cautious,center=D("3000"),tick_size=D(".1"),size_precision=4)
+    assert long_out and all(q.side=="ASK" for q in long_out)
+    assert short_out and all(q.side=="BID" for q in short_out)
+
+
+def test_phase6_widened_quote_is_preserved_or_widened_never_tightened():
+    ev=evidence()
+    phase6=[quote("BID","2985","1",0),quote("ASK","3015","1",0)]
+    neutral=transform_quotes(phase6,decision(ev),center=D("3000"),tick_size=D(".1"),size_precision=4)
+    assert [(q.price,q.size) for q in neutral]==[(q.price,q.size) for q in phase6]
+    wider=transform_quotes(phase6,decision(ev,spread="1.5"),center=D("3000"),tick_size=D(".1"),size_precision=4)
+    assert next(q for q in wider if q.side=="BID").price<=D("2985")
+    assert next(q for q in wider if q.side=="ASK").price>=D("3015")
+
+
+def test_phase8_transform_remains_more_conservative_than_agent_candidate():
+    ev=evidence()
+    base=[quote("BID","2990","1",0),quote("ASK","3010","1",0)]
+    agent=transform_quotes(base,decision(ev,spread="1.5",bid=".7",ask=".7"),center=D("3000"),tick_size=D(".1"),size_precision=4)
+    exposure=ExposureMetrics(
+        current_position=D("0"),current_position_notional=D("0"),
+        bid_quote_notional=D("0"),ask_quote_notional=D("0"),gross_quote_notional=D("0"),
+        bid_quantity=D("0"),ask_quantity=D("0"),projected_long_base=D("0"),projected_short_base=D("0"),
+        projected_long_notional=D("0"),projected_short_notional=D("0"),inventory_utilization=D("0"),
+    )
+    risk=RiskDecision(
+        state=RiskState.REDUCE,allow_quotes=True,spread_multiplier=D("1.8"),size_multiplier=D(".5"),
+        max_levels=None,reasons=["fixture"],reference_version=1,market_version=1,inventory_version=1,perp_version=1,
+        projected_long_base=D("0"),projected_short_base=D("0"),exposure=exposure,
+        liquidation=LiquidationEvidence(status="FLAT",position_base=D("0"),mark_price=D("3000")),
+        pnl_drawdown=PnlDrawdown(source="TEST"),version=1,
+    )
+    firewall=RiskFirewall(RiskFirewallConfig(max_projected_long_base=D("20"),max_projected_short_base=D("20")))
+    final=firewall.transform(agent,risk,center=D("3000"),tick_size=D(".1"),size_precision=4,base_order_size=D(".1"))
+    agent_bid=next(q for q in agent if q.side=="BID");final_bid=next(q for q in final if q.side=="BID")
+    agent_ask=next(q for q in agent if q.side=="ASK");final_ask=next(q for q in final if q.side=="ASK")
+    assert final_bid.price<=agent_bid.price and final_ask.price>=agent_ask.price
+    assert final_bid.size<=agent_bid.size and final_ask.size<=agent_ask.size
+
+
+def test_agent_exception_becomes_error_neutral_recommendation(monkeypatch):
+    ev=evidence()
+    supervisor=AgentSupervisor(AgentConfig())
+    monkeypatch.setattr(supervisor.regime,"evaluate",lambda _ev:(_ for _ in ()).throw(RuntimeError("boom")))
+    out=supervisor.evaluate(evidence=ev,telemetry=AgentTelemetryStore(),history=history(["3000","3000"]),execution_mode="PAPER")
+    assert out.regime.health==AgentHealth.ERROR
+    assert out.regime.spread_multiplier==1
+    assert out.regime.bid_size_multiplier==1
+    assert out.regime.ask_size_multiplier==1
+
+
+def test_nonfinite_agent_recommendation_is_rejected():
+    ev=evidence()
+    with pytest.raises(ValidationError):
+        RegimeAgentOutput(
+            agent="REGIME",health=AgentHealth.READY,confidence=D("1"),spread_multiplier=D("NaN"),
+            bid_size_multiplier=D("1"),ask_size_multiplier=D("1"),reasons=[],simulated=True,
+            evidence_version=ev.version,version=1,state=MarketRegime.NORMAL,direction=RegimeDirection.NEUTRAL,
+            momentum_bps=D("0"),realized_volatility=D("0"),volatility_score=D("0"),book_imbalance=D("0"),
+        )
