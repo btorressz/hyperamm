@@ -9,7 +9,7 @@ export function Simulation(){
  const scenarios=useQuery({queryKey:['simulation-scenarios'],queryFn:api.simulationScenarios})
  const[scenario,setScenario]=useState('QUIET'),[frames,setFrames]=useState(120),[preset,setPreset]=useState<keyof typeof presets>('Balanced')
  const[result,setResult]=useState<SimulationResult|null>(null),[opt,setOpt]=useState<OptimizationResult|null>(null),[busy,setBusy]=useState(''),[error,setError]=useState('')
- const run=async()=>{setBusy('run');setError('');try{setResult(await api.runSimulation({scenario,frames,simulation:{record_trace:true,trace_max_points:250}}))}catch(e){setError(String(e))}finally{setBusy('')}}
+ const run=async()=>{setBusy('run');setError('');try{setResult(await api.runSimulation({scenario,frames,simulation:{max_frames:frames,record_trace:true,trace_max_points:250}}))}catch(e){setError(String(e))}finally{setBusy('')}}
  const optimize=async()=>{setBusy('opt');setError('');try{const p=presets[preset];setOpt(await api.optimizeSimulation({...p,training_scenarios:['TREND_UP','TREND_DOWN','HIGH_VOLATILITY'],validation_scenarios:['MEAN_REVERTING','FLASH_MOVE'],frames:Math.min(frames,250),max_candidates:32,top_n:5}))}catch(e){setError(String(e))}finally{setBusy('')}}
  return <><section className="panel pagePanel simControls"><div className="panelHead"><b>Simulation & Optimization</b><span>SIMULATED · PAPER · OFFLINE</span></div><div className="formGrid">
  <label>Scenario<select value={scenario} onChange={e=>setScenario(e.target.value)}>{(scenarios.data?.scenarios??[]).map(s=><option key={s.name} value={s.name}>{s.name}</option>)}</select></label>
