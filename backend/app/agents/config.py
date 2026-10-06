@@ -68,6 +68,8 @@ class AgentConfig(BaseModel):
             raise ValueError("regime_min_samples cannot exceed regime_momentum_window_samples")
         if self.toxic_flow_min_matured_fills > self.toxic_flow_window_fills:
             raise ValueError("toxic_flow_min_matured_fills cannot exceed toxic_flow_window_fills")
+        if self.execution_quality_min_fills > self.execution_quality_window:
+            raise ValueError("execution_quality_min_fills cannot exceed execution_quality_window")
         for name in (
             "regime_trend_threshold_bps",
             "regime_dislocation_bps",
