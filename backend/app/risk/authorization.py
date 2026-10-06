@@ -31,7 +31,7 @@ class FinalQuoteAuthorization(BaseModel):
     perp_version:int
     reference_version:int
     agent_version:int=0
-    agent_fingerprint:str
+    agent_fingerprint:str=Field(default_factory=lambda:fingerprint({"phase9":"not-bound"}))
     risk_version:int
     authorized_quote_count:int
     bid_authorized:bool
