@@ -24,6 +24,7 @@ from app.risk.kill_switch import KillSwitch
 from app.risk.limits import validate_quotes, validate_execution_authority
 from app.risk.firewall import PnlDrawdown, RiskFirewall, RiskFirewallConfig, RiskState, paper_pnl
 from app.risk.authorization import authorize, fingerprint
+from app.agents import AgentConfig,AgentSupervisor,AgentTelemetryStore,build_agent_evidence,transform_quotes
 
 log = logging.getLogger(__name__)
 
@@ -63,11 +64,17 @@ class HyperAmmRuntime:
         self.risk = RiskStatus()
         self.risk_config = RiskFirewallConfig(enabled=settings.reference_firewall_enabled)
         self.firewall = RiskFirewall(self.risk_config)
+        self.agent_config = AgentConfig()
+        self.agent_telemetry = AgentTelemetryStore()
+        self.agent_supervisor = AgentSupervisor(self.agent_config)
         self.kill = KillSwitch(self.risk, self.execution_lock)
         self.fair_value = None
         self.pool = None
         self.quotes = []
         self.strategy_quotes = []
+        self.agent_quotes = []
+        self.agent_evidence = None
+        self.agent_decision = None
         self.last_actions = []
         self.references = None
         self.risk_decision = None
@@ -84,14 +91,23 @@ class HyperAmmRuntime:
         self._expected_market_version: int | None = None
         self._expected_perp_version: int | None = None
         self._expected_reference_version: int | None = None
+        self._expected_agent_version: int | None = None
+        self._expected_agent_fingerprint: str | None = None
         self._expected_risk_version: int | None = None
         self._strategy_task = None
         self._venue_task = None
         self._closing = False
         self.testnet.authority = self._execution_authority
-        self.paper.on_fill = lambda _fill: self._strategy_wakeup.set()
+        self.paper.on_fill = self._on_paper_fill
         self.market.add_listener(self._on_market)
         self.market.add_perp_listener(self._on_perp_context)
+
+    def _on_paper_fill(self, fill):
+        reference_price=None
+        if self.references is not None:
+            reference_price=self.references.consensus.consensus_price
+        self.agent_telemetry.observe_fill(fill,reference_price)
+        self._strategy_wakeup.set()
 
     def _paper_perp_position(self, inventory: InventoryState) -> PerpPositionContext:
         return PerpPositionContext(
