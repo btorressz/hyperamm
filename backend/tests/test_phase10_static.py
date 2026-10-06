@@ -32,7 +32,7 @@ def test_simulation_package_has_no_external_optimizer_or_llm_imports():
 
 def test_no_github_actions_or_forbidden_oracle_added():
     assert not (ROOT/'.github').exists()
-    forbidden=re.compile(r'\\bpyth\\b',re.IGNORECASE)
+    forbidden=re.compile(r'\bpyth\b',re.IGNORECASE)
     hits=[]
     for base in (ROOT/'backend'/'app',ROOT/'backend'/'tests',ROOT/'docs',ROOT/'README.md'):
         paths=[base] if base.is_file() else base.rglob('*')
@@ -54,6 +54,11 @@ def test_simulation_frontend_has_no_auto_apply_or_deploy_action():
     text=(ROOT/'frontend'/'src'/'pages'/'Simulation.tsx').read_text().lower()
     for token in ('apply best','deploy strategy','trade best','activate optimized'):
         assert token not in text
+
+
+def test_simulation_package_contains_no_mainnet_execution_path():
+    for path in SIM.glob('*.py'):
+        assert 'mainnet' not in path.read_text().lower()
 
 
 def test_phase10_does_not_start_phase11_vault_work():
