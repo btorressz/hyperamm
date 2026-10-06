@@ -73,6 +73,9 @@ async def test_optimizer_baseline_validation_isolation_and_reproducibility():
     ]
     assert first.baseline.training_score==second.baseline.training_score
     assert all(item.score_delta==item.training_score-first.baseline.training_score for item in first.ranked_candidates)
+    assert all(item.baseline_delta.get("objective_score")==item.score_delta for item in first.ranked_candidates)
+    assert all("worst_objective_score" in item.training_aggregate for item in first.ranked_candidates)
+    assert all("worst_drawdown_pct" in item.training_aggregate for item in first.ranked_candidates)
 
 
 @pytest.mark.asyncio
