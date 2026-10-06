@@ -76,6 +76,17 @@ class ExecutionQualityAgent:
             ))
 
         if execution_mode!="PAPER":
+            order_risk=Decimal("1") if rejected or unknown else _clamp(churn/c.execution_quality_max_churn_ratio)
+            if order_risk>0:
+                spread=_clamp(Decimal("1")+c.execution_quality_spread_strength*order_risk,Decimal("1"),c.agent_max_spread_multiplier)
+                size=_clamp(Decimal("1")-c.execution_quality_size_strength*order_risk,c.agent_min_size_multiplier,Decimal("1"))
+                return self._versioned(ExecutionQualityAgentOutput(
+                    **base,health=AgentHealth.DEGRADED,confidence=Decimal("1"),
+                    spread_multiplier=spread,bid_size_multiplier=size,ask_size_multiplier=size,
+                    reasons=["TESTNET fill-quality unavailable; authoritative order/reconciliation evidence is degraded",
+                             f"reconciliation churn {churn}; rejects {rejected}; unknown {unknown}"],
+                    state=ExecutionQualityState.POOR,metrics=metrics,
+                ))
             return self._versioned(ExecutionQualityAgentOutput(
                 **base,health=AgentHealth.INSUFFICIENT_DATA,confidence=Decimal("0"),
                 spread_multiplier=Decimal("1"),bid_size_multiplier=Decimal("1"),ask_size_multiplier=Decimal("1"),
