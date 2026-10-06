@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
@@ -20,7 +20,7 @@ class FillObservation(BaseModel):
     side: str
     price: Decimal = Field(gt=0)
     size: Decimal = Field(gt=0)
-    timestamp: object
+    timestamp: datetime
     reference_price: Decimal | None = Field(default=None, gt=0)
     source: str
     simulated: bool
@@ -40,7 +40,7 @@ class ReconcileObservation(BaseModel):
     create_count: int = 0
     replace_count: int = 0
     cancel_count: int = 0
-    timestamp: object
+    timestamp: datetime
 
 
 class AgentTelemetryStore:
@@ -81,6 +81,20 @@ class AgentTelemetryStore:
         self.version+=1
         return True
 
+    def observe_orders(self, orders) -> bool:
+        changed=False
+        for order in orders:
+            previous=self._order_statuses.get(order.client_order_id)
+            if order.client_order_id not in self._order_statuses:
+                if len(self._order_order)>=self.max_orders:
+                    old=self._order_order.popleft()
+                    self._order_statuses.pop(old,None)
+                self._order_order.append(order.client_order_id)
+            self._order_statuses[order.client_order_id]=order.status
+            changed=changed or previous!=order.status
+        if changed:self.version+=1
+        return changed
+
     def observe_reconcile(self, actions, orders) -> None:
         counts={kind:0 for kind in ReconcileActionType}
         for action in actions:
@@ -92,13 +106,7 @@ class AgentTelemetryStore:
             cancel_count=counts[ReconcileActionType.CANCEL],
             timestamp=utcnow(),
         ))
-        for order in orders:
-            if order.client_order_id not in self._order_statuses:
-                if len(self._order_order)>=self.max_orders:
-                    old=self._order_order.popleft()
-                    self._order_statuses.pop(old,None)
-                self._order_order.append(order.client_order_id)
-            self._order_statuses[order.client_order_id]=order.status
+        self.observe_orders(orders)
         self.version+=1
 
     def fills(self, window: int) -> list[FillObservation]:
@@ -195,7 +203,7 @@ def build_agent_evidence(
         mark_mid_basis_bps=perp_context.mark_mid_basis_bps,
         reference_confidence=refs.consensus.confidence_state,
         max_reference_deviation_bps=max_dev,
-        simulated=bool(perp_context.simulated or all(item.simulated for item in refs.evidence.values())),
+        simulated=bool(perp_context.simulated or any(item.simulated for item in refs.evidence.values())),
         updated_at=utcnow(),
         version=_evidence_version(versions),
     )
