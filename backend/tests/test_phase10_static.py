@@ -8,7 +8,7 @@ SIM=ROOT/'backend'/'app'/'simulation'
 def test_simulation_package_has_no_network_provider_or_private_key_access():
     forbidden=(
         'httpx','websockets','ReferenceService','app.references.providers',
-        'HyperliquidTestnetExecutionAdapter','hyperliquid_private_key','api_key',
+        'HyperliquidTestnetExecutionAdapter','os.environ','getenv(',
     )
     hits=[]
     for path in SIM.glob('*.py'):
@@ -54,6 +54,19 @@ def test_simulation_frontend_has_no_auto_apply_or_deploy_action():
     text=(ROOT/'frontend'/'src'/'pages'/'Simulation.tsx').read_text().lower()
     for token in ('apply best','deploy strategy','trade best','activate optimized'):
         assert token not in text
+
+
+def test_credential_names_only_appear_as_optimizer_rejections_not_secret_access():
+    optimizer=(SIM/'optimizer.py').read_text()
+    assert '"hyperliquid_private_key"' in optimizer
+    assert '"redstone_api_key"' in optimizer
+    assert '"coingecko_api_key"' in optimizer
+    for path in SIM.glob('*.py'):
+        text=path.read_text()
+        assert 'Settings(' not in text
+        assert '.hyperliquid_private_key' not in text
+        assert '.redstone_api_key' not in text
+        assert '.coingecko_api_key' not in text
 
 
 def test_simulation_package_contains_no_mainnet_execution_path():
