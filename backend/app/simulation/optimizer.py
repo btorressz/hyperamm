@@ -188,6 +188,9 @@ class StrategyOptimizer:
                 rejected.append({"strategy_updates":strategy_updates,"agent_updates":agent_updates,"reason":str(exc)})
 
         ranked=sorted(candidates,key=candidate_ranking_key)
+        baseline_summary=_candidate_summary(baseline.training)
+        for candidate in ranked:
+
         selected=ranked[:max(1,min(top_n,len(ranked)))]
         baseline_validation=[]
         for name in validation_scenarios:
@@ -208,7 +211,6 @@ class StrategyOptimizer:
         baseline.baseline_delta={k:Decimal("0") if v is not None else None for k,v in _candidate_summary(baseline.training).items()}
         baseline.baseline_delta["objective_score"]=Decimal("0")
 
-        baseline_summary=_candidate_summary(baseline.training)
         for candidate in selected:
             strategy=StrategyConfig.model_validate({**baseline_strategy.model_dump(),**candidate.strategy_updates})
             agents=AgentConfig.model_validate({**baseline_agents.model_dump(),**candidate.agent_updates})
