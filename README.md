@@ -3,7 +3,7 @@
 
 **HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
 
-Phases 1–8 are implemented and Phase 9 supervisory agents are in development as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Phases 1–8 are implemented, Phase 9 supervisory agents are implemented / in review, and Phase 10 deterministic simulation + bounded optimization is in development as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
 
 ## Why a virtual AMM?
 
@@ -31,7 +31,7 @@ Hyperliquid L2 / Demo Feed
  PAPER execution or guarded TESTNET
 ```
 
-## Phase 1–9 capabilities
+## Phase 1–10 capabilities
 
 - **Phase 1 — Market data + paper execution:** normalized L2/BBO state, WebSocket subscription adapter, initial L2 snapshot, monotonic exchange-time handling, reconnection/degraded states, explicit deterministic demo feed, paper orders/fills, optional testnet adapter.
 - **Phase 2 — Virtual constant-product AMM:** invariant, marginal price, reserve initialization/recentering, base→quote and quote→base virtual swaps, curve-state calculations.
@@ -40,7 +40,9 @@ Hyperliquid L2 / Demo Feed
 - **Phase 5 — Inventory-aware quoting:** normalized PAPER/TESTNET inventory, bounded reservation-price and side-size skew, hard-limit side suppression, inventory freshness/version checks, and terminal controls/visibility.
 - **Phase 6 — Volatility + order-book imbalance adaptation:** bounded rolling mid-price volatility, normalized top-N L2 imbalance, widening-only spread adaptation, conservative size/depth reduction, market-state version binding, and terminal explainability.
 - **Phase 7 — Perpetual vAMM context:** normalized mark/oracle/funding/OI context, bounded perp strategy reference, AMM recentering, shared TESTNET position observability, freshness/version authority, and terminal explainability.
-- **Phase 8 — Reference integrity + institutional risk firewall:** normalized multi-source price evidence, deterministic quorum/consensus, source health and freshness, signed deviation matrix, projected exposure, liquidation/PnL guards, NORMAL/WIDEN/REDUCE/HALT postures, hysteresis/recovery, SHA-256 authorization fingerprints, and final pre-transmission authority binding.\n- **Phase 9 — Supervisory agents (IN DEVELOPMENT):** deterministic regime, adverse-selection markout and execution-quality analysis; conservative supervisor composition; bounded quote widening/size/level reduction; agent provenance bound into final authorization.
+- **Phase 8 — Reference integrity + institutional risk firewall:** normalized multi-source price evidence, deterministic quorum/consensus, source health and freshness, signed deviation matrix, projected exposure, liquidation/PnL guards, NORMAL/WIDEN/REDUCE/HALT postures, hysteresis/recovery, SHA-256 authorization fingerprints, and final pre-transmission authority binding.
+- **Phase 9 — Supervisory agents (IMPLEMENTED / IN REVIEW):** deterministic regime, adverse-selection markout and execution-quality analysis; conservative supervisor composition; bounded quote widening/size/level reduction; agent provenance bound into final authorization.
+- **Phase 10 — Strategy simulation + bounded optimization (IN DEVELOPMENT):** deterministic scenario/replay datasets, scenario-time PAPER execution, production-stack simulation, research metrics, reproducible fingerprints, and deterministic grid search across an explicit strategy/agent allowlist.
 
 A minimal Phase 1–4 risk authority enforces freshness, level count, per-order size, aggregate notional, minimum price, quote distance, execution state and a kill switch. The kill switch cancels active strategy orders and blocks new quote generation.
 
@@ -137,6 +139,11 @@ GET  /api/v1/risk
 GET  /api/v1/risk/evidence
 GET  /api/v1/risk/events
 GET  /api/v1/risk/authorization
+GET  /api/v1/agents
+GET  /api/v1/agents/events
+GET  /api/v1/simulation/scenarios
+POST /api/v1/simulation/run
+POST /api/v1/simulation/optimize
 POST /api/v1/risk/kill
 POST /api/v1/risk/resume
 WS   /ws/terminal
@@ -144,7 +151,7 @@ WS   /ws/terminal
 
 ## Frontend
 
-The terminal uses a dark institutional layout with selected-market/feed/execution/risk state in the header, rolling market + fair-value charting, Hyperliquid L2, an AMM liquidity view, quote ladder, strategy controls, metric cards, kill-switch controls and roadmap status. AI Agents, Vault, Analytics, Backtesting, Logs and expanded Settings are visibly marked planned/not enabled; no fake confidence, PnL, win rate, vault balances or model outputs are displayed.
+The terminal uses a dark institutional layout with selected-market/feed/execution/risk state in the header, rolling market + fair-value charting, Hyperliquid L2, an AMM liquidity view, quote ladder, strategy controls, metric cards, kill-switch controls, supervisory-agent observability, and a focused Simulation & Optimization research page. Vault, expanded Analytics, Logs and expanded Settings remain planned; simulation is visibly labeled SIMULATED / NO LIVE ORDERS and has no auto-deploy action.
 
 ## Tests
 
@@ -164,7 +171,7 @@ Live Hyperliquid integration is intentionally not required by normal unit tests.
 
 ## Limitations
 
-Phase 8 adds deterministic multi-source reference integrity and institutional risk authorization after the strategy pipeline. Supervisory agents, optimization/simulation, persistent vault accounting and production mainnet trading remain out of scope.
+Phase 8 adds deterministic multi-source reference integrity and institutional risk authorization. Phase 9 supervisory agents are implemented / in review. Phase 10 simulation is offline PAPER research with deterministic crossing-only fills and does not model fees, funding cash flows, exchange latency, queue priority, hidden liquidity, or stochastic fill probability. Persistent vault accounting and production mainnet trading remain out of scope.
 
 ## Documentation
 
@@ -173,11 +180,13 @@ Phase 8 adds deterministic multi-source reference integrity and institutional ri
 - `docs/HYPERLIQUID_INTEGRATION.md`
 - `docs/ROADMAP.md`
 - `docs/REFERENCE_INTEGRITY.md`
-- `docs/RISK_FIREWALL.md`\n- `docs/AGENTS.md`
+- `docs/RISK_FIREWALL.md`
+- `docs/AGENTS.md`
+- `docs/SIMULATION.md`
 
 ## 12-phase roadmap
 
-Phases 1–8 are implemented. Phase 9 supervisory agents are IN DEVELOPMENT; Phase 10 remains optimization/simulation; Phase 11 vault/accounting; Phase 12 the expanded production trading terminal.
+Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IN DEVELOPMENT. Phase 11 vault/accounting and Phase 12 expanded production trading terminal remain planned.
 
 ## Phase 4.1 acceptance and hardening
 
@@ -267,3 +276,14 @@ FinalQuoteAuthorization now binds agent version and fingerprint in addition to t
 PAPER fill telemetry is explicitly simulated. TESTNET fill-quality metrics remain unavailable where authoritative fill detail does not exist; no slippage or markout is fabricated.
 
 See [Supervisory Agents](docs/AGENTS.md).
+
+
+## Phase 10 — Strategy Optimization + Deterministic Simulation
+
+Phase 10 is offline research tooling around the actual HyperAMM strategy stack. It does not contain a second simplified strategy. Each simulation run creates fresh MarketPriceHistory, PAPER execution, Phase 9 telemetry/supervisor, Phase 8 firewall, reconciliation and accounting state, then reuses the existing QuoteEngine → inventory → market adaptation → perp policy → agents → risk → FinalQuoteAuthorization → OrderManager path frame by frame.
+
+Built-in deterministic scenarios cover quiet/trending/mean-reverting/high-volatility markets, book imbalance, flash moves, oracle dislocation, reference degradation, funding stress and liquidity shock. Synthetic references preserve the existing provider identities but are explicitly labeled DEMO / SIMULATED.
+
+The v1 optimizer is deterministic grid search only. It supports an explicit allowlist of strategy/agent research parameters, rejects safety/runtime fields, evaluates an unchanged BASELINE, ranks on training scenarios, evaluates top candidates on separate validation scenarios, and exposes every numeric score component. Results are research rankings under the selected scenarios/objective—not claims of optimality or future profitability.
+
+See [Simulation](docs/SIMULATION.md).

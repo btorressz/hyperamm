@@ -7,7 +7,8 @@ from .fills import FillStore
 
 
 class PaperExecutionAdapter:
-    def __init__(self):
+    def __init__(self, clock=utcnow):
+        self.clock = clock
         self.orders: dict[str, StrategyOrder] = {}
         self.fills = FillStore()
         self._market: MarketSnapshot | None = None
@@ -32,11 +33,11 @@ class PaperExecutionAdapter:
             return
         order.filled_size = order.size
         order.status = OrderStatus.FILLED
-        order.updated_at = utcnow()
+        order.updated_at = self.clock()
         order.fill_source = "SIMULATED PAPER FILL"
         fill = Fill(
             client_order_id=order.client_order_id, market=order.market, side=order.side,
-            price=order.price, size=fill_size,
+            price=order.price, size=fill_size, timestamp=self.clock(),
         )
         self.fills.add(fill)
         if self.on_fill is not None:
@@ -67,7 +68,8 @@ class PaperExecutionAdapter:
     async def submit_orders(self, orders: list[OrderRequest]) -> list[StrategyOrder]:
         result = []
         for req in orders:
-            order = StrategyOrder(**req.model_dump())
+            now=self.clock()
+            order = StrategyOrder(**req.model_dump(),created_at=now,updated_at=now)
             self.orders[order.client_order_id] = order
             if self._crosses(order):
                 self._fill(order)
@@ -80,7 +82,7 @@ class PaperExecutionAdapter:
             order = self.orders.get(cid)
             if order and order.status == OrderStatus.OPEN:
                 order.status = OrderStatus.CANCELLED
-                order.updated_at = utcnow()
+                order.updated_at = self.clock()
                 changed.append(order)
         return changed
 
@@ -90,7 +92,7 @@ class PaperExecutionAdapter:
             old = self.orders.get(old_id)
             if old and old.status == OrderStatus.OPEN:
                 old.status = OrderStatus.REPLACED
-                old.updated_at = utcnow()
+                old.updated_at = self.clock()
             result.extend(await self.submit_orders([new_req]))
         return result
 
