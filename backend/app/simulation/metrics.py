@@ -28,7 +28,7 @@ class MetricsAccumulator:
         self.peak_equity=max(self.peak_equity,equity)
         self.max_drawdown_pct=max(self.max_drawdown_pct,drawdown_pct)
         self.max_abs_inventory=max(self.max_abs_inventory,abs(inventory.position_base))
-        self.max_inventory_utilization=max(self.max_inventory_utilization,abs(inventory.inventory_ratio))
+        self.max_inventory_utilization=max(self.max_inventory_utilization,risk_decision.exposure.inventory_utilization)
         self.quoted_notional+=sum((q.price*q.size for q in authorized_quotes),Decimal("0"))
         for action in actions:
             value=action.action.value
