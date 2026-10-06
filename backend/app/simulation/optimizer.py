@@ -63,9 +63,17 @@ def _mean(values:list[Decimal])->Decimal:
 
 
 def _candidate_summary(evaluations:list[ScenarioEvaluation])->dict[str,Decimal|None]:
+    frame_total=sum((e.metrics.frame_count for e in evaluations),0)
+    def risk_fraction(state):
+        count=sum((e.metrics.risk_state_counts.get(state,0) for e in evaluations),0)
+        return Decimal(count)/Decimal(frame_total) if frame_total else Decimal("0")
     return {
+        "mean_objective_score":_mean([e.score.final_score for e in evaluations]),
+        "worst_objective_score":min((e.score.final_score for e in evaluations),default=Decimal("0")),
         "mean_session_pnl":_mean([e.metrics.session_pnl for e in evaluations]),
+        "mean_return_pct":_mean([e.metrics.return_pct for e in evaluations]),
         "mean_max_drawdown_pct":_mean([e.metrics.max_drawdown_pct for e in evaluations]),
+        "worst_drawdown_pct":max((e.metrics.max_drawdown_pct for e in evaluations),default=Decimal("0")),
         "max_inventory_utilization":max((e.metrics.max_inventory_utilization for e in evaluations),default=Decimal("0")),
         "mean_markout_bps":(
             _mean([e.metrics.mean_mature_markout_bps for e in evaluations if e.metrics.mean_mature_markout_bps is not None])
@@ -73,6 +81,10 @@ def _candidate_summary(evaluations:list[ScenarioEvaluation])->dict[str,Decimal|N
         ),
         "mean_churn_ratio":_mean([e.metrics.reconciliation_churn_ratio for e in evaluations]),
         "mean_halt_fraction":_mean([e.metrics.risk_halt_fraction for e in evaluations]),
+        "risk_normal_fraction":risk_fraction("NORMAL"),
+        "risk_widen_fraction":risk_fraction("WIDEN"),
+        "risk_reduce_fraction":risk_fraction("REDUCE"),
+        "risk_halt_fraction":risk_fraction("HALT"),
     }
 
 
@@ -133,6 +145,7 @@ class StrategyOptimizer:
         return CandidateEvaluation(
             label=label,strategy_updates=strategy_updates,agent_updates=agent_updates,
             configuration_fingerprint=config_fp,training=evaluations,training_score=score,
+            training_aggregate=_candidate_summary(evaluations),
         )
 
     async def optimize(
@@ -167,7 +180,7 @@ class StrategyOptimizer:
             summary=_candidate_summary(item.training)
             return (
                 -item.training_score,
-                summary["mean_max_drawdown_pct"],
+                summary["worst_drawdown_pct"],
                 summary["max_inventory_utilization"],
                 summary["mean_churn_ratio"],
                 item.configuration_fingerprint,
@@ -188,6 +201,7 @@ class StrategyOptimizer:
             ))
         baseline.validation=baseline_validation
         baseline.validation_score=_mean([x.score.final_score for x in baseline_validation])
+        baseline.validation_aggregate=_candidate_summary(baseline_validation)
         baseline.score_delta=Decimal("0")
         baseline.baseline_delta={k:Decimal("0") if v is not None else None for k,v in _candidate_summary(baseline.training).items()}
         baseline.baseline_delta["objective_score"]=Decimal("0")
@@ -209,23 +223,19 @@ class StrategyOptimizer:
                 ))
             candidate.validation=validation
             candidate.validation_score=_mean([x.score.final_score for x in validation])
+            candidate.validation_aggregate=_candidate_summary(validation)
             candidate.score_delta=candidate.training_score-baseline.training_score
             summary=_candidate_summary(candidate.training)
-            candidate.baseline_delta={
-                "mean_session_pnl":summary["mean_session_pnl"]-baseline_summary["mean_session_pnl"],
-                "mean_max_drawdown_pct":summary["mean_max_drawdown_pct"]-baseline_summary["mean_max_drawdown_pct"],
-                "max_inventory_utilization":summary["max_inventory_utilization"]-baseline_summary["max_inventory_utilization"],
-                "mean_markout_bps":(
-                    summary["mean_markout_bps"]-baseline_summary["mean_markout_bps"]
-                    if summary["mean_markout_bps"] is not None and baseline_summary["mean_markout_bps"] is not None else None
-                ),
-                "mean_churn_ratio":summary["mean_churn_ratio"]-baseline_summary["mean_churn_ratio"],
-                "mean_halt_fraction":summary["mean_halt_fraction"]-baseline_summary["mean_halt_fraction"],
-                "objective_score":candidate.training_score-baseline.training_score,
-            }
+            candidate.baseline_delta={}
+            for name,value in summary.items():
+                base_value=baseline_summary.get(name)
+                candidate.baseline_delta[name]=(
+                    value-base_value if value is not None and base_value is not None else None
+                )
+            candidate.baseline_delta["objective_score"]=candidate.training_score-baseline.training_score
 
         return OptimizationResult(
             baseline=baseline,requested_candidate_count=requested,candidate_count=len(candidates),
-            rejected_candidates=rejected,ranked_candidates=selected,training_scenarios=training_scenarios,
+            rejected_candidates=rejected,ranked_candidates=ranked,training_scenarios=training_scenarios,
             validation_scenarios=validation_scenarios,objective=objective.model_dump(mode="json"),simulated=True,
         )
