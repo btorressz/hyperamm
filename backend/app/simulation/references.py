@@ -44,7 +44,7 @@ def build_simulated_references(frame,*,agreement_bps:Decimal,outlier_bps:Decimal
         )
     consensus=ReferenceConsensusPolicy().evaluate(
         market,evidence,agreement_bps=agreement_bps,outlier_bps=outlier_bps,version=version
-    )
+    ).model_copy(update={"updated_at":ts})
     ref=consensus.consensus_price
     def dev(provider):
         item=evidence[provider.value]
