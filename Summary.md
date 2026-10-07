@@ -1,5 +1,5 @@
 # HyperAMM — Project Summary
- 
+  
 > Adaptive virtual AMM, market-making, risk, simulation, accounting, and operator-terminal research system for Hyperliquid.
 
 ---
