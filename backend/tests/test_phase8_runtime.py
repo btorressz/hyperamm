@@ -288,3 +288,71 @@ async def test_ask_normalization_increase_cannot_escape_final_limits(monkeypatch
     assert rt.authorization is None
     assert ('aggregate' if gate == 'aggregate' else 'exposure' if gate == 'exposure' else 'capital reservation') in rt.strategy.last_error
     assert venue.transmissions == 0 and not adapter._orders
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('change',['bbo','depth','deep_level'])
+async def test_equal_time_changed_material_revokes_phase8_and_rebinds_phase9(change):
+    rt=HyperAmmRuntime(Settings(_env_file=None))
+    initial=MockMarketDataAdapter().snapshot_for(1)
+    await rt.market._accept(initial)
+    await rt.refresh_once()
+    rt.strategy.running=True
+    before=rt.authorization.model_copy(deep=True)
+    before_evidence=rt.agent_evidence.model_copy(deep=True)
+    req=rt.orders.request_for('ETH',rt.quotes[0])
+    changed=initial.model_copy(deep=True)
+    if change=='bbo':
+        changed.book.bids[0].price-=D('.1')
+        changed.best_bid=changed.book.bids[0].price
+        changed.mid_price=(changed.best_bid+changed.best_ask)/2
+    elif change=='depth':
+        changed.book.bids[0].size=D('100')
+        changed.book.asks[0].size=D('.01')
+    else:
+        changed.book.bids[-1].size+=D('10')
+    # Avoid waking recomputation: the last transmission check itself must detect it.
+    rt.market._listeners=[]
+    await rt.market._accept(changed)
+    with pytest.raises(RuntimeError,match='market/adaptation state changed'):
+        await rt._execution_authority(req)
+    assert not await rt.paper.get_open_orders()
+    assert rt.authorization.authorization_fingerprint==before.authorization_fingerprint
+    rt.strategy.running=False
+    await rt.refresh_once()
+    assert rt.authorization.authorized
+    assert rt.authorization.market_version>before.market_version
+    assert rt.authorization.authorization_fingerprint!=before.authorization_fingerprint
+    assert rt.market_adaptation_decision.version==rt.market_history.version
+    assert rt.agent_evidence.market_version==rt.authorization.market_version
+    assert rt.agent_evidence.market_version>before_evidence.market_version
+
+
+@pytest.mark.asyncio
+async def test_identical_equal_time_replay_preserves_final_execution_authority():
+    rt=HyperAmmRuntime(Settings(_env_file=None))
+    snap=MockMarketDataAdapter().snapshot_for(1)
+    await rt.market._accept(snap)
+    await rt.refresh_once()
+    rt.strategy.running=True
+    version=rt.market_history.version
+    authorization=rt.authorization.authorization_fingerprint
+    rt.market._listeners=[]
+    await rt.market._accept(snap.model_copy(deep=True))
+    await rt._execution_authority(rt.orders.request_for('ETH',rt.quotes[0]))
+    assert rt.market_history.version==version
+    assert rt.authorization.authorization_fingerprint==authorization
+
+
+@pytest.mark.asyncio
+async def test_changed_equal_time_l2_never_reaches_testnet_wire(monkeypatch):
+    rt,adapter,venue,snap=await normalized_testnet_runtime(monkeypatch)
+    req=rt.orders.request_for('ETH',rt.quotes[0])
+    changed=snap.model_copy(deep=True)
+    changed.book.bids[0].size=D('100')
+    changed.book.asks[0].size=D('.01')
+    rt.market._listeners=[]
+    await rt.market._accept(changed)
+    with pytest.raises(RuntimeError,match='market/adaptation state changed'):
+        await adapter.submit_orders([req])
+    assert venue.transmissions==0 and not adapter._orders

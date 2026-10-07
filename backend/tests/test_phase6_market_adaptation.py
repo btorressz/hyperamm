@@ -298,3 +298,22 @@ def test_phase6_metadata_proves_inventory_then_market_composition():
         before=phase5_by_key[(quote.side,quote.level_index)]
         assert quote.pre_market_adaptation_price==before.price
         assert quote.pre_market_adaptation_size==before.size
+
+
+def test_changed_same_identity_depth_advances_authority_without_duplicate_price_sample():
+    h=MarketPriceHistory()
+    initial=snapshot('100',1)
+    assert h.add_snapshot(initial)
+    version=h.version
+    changed=initial.model_copy(deep=True)
+    changed.book.bids[0].size=D('100')
+    assert not h.add_snapshot(changed)
+    assert len(h)==1 and h.version==version+1
+    assert not h.add_snapshot(changed.model_copy(deep=True))
+    assert h.version==version+1
+    # An old observation cannot roll back the material authority watermark.
+    old=initial.model_copy(deep=True)
+    from datetime import timedelta
+    old.latest_valid_update-=timedelta(milliseconds=1)
+    assert not h.add_snapshot(old)
+    assert h.version==version+1
