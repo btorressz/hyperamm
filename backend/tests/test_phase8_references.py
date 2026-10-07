@@ -12,7 +12,7 @@ from app.market_data.models import MarketDataMode
 from app.market_data.perp_context import build_perp_market_context, demo_perp_context
 from app.references.consensus import ReferenceConsensusPolicy
 from app.references.models import PriceEvidence,ProviderId,ProviderStatus,SourceType,deviation_bps,utcnow
-from app.references.providers import CoinGeckoProvider,KrakenProvider,RedStoneProvider,backoff
+from app.references.providers import CoinGeckoProvider,EvidenceState,KrakenProvider,RedStoneProvider,backoff
 from app.references.service import ReferenceService
 
 
@@ -167,6 +167,44 @@ def test_redstone_identical_newer_tick_refreshes_freshness_without_version_churn
     assert snap.source_timestamp==t1
     assert snap.status==ProviderStatus.HEALTHY
     assert snap.healthy is True
+
+
+@pytest.mark.parametrize("provider",[ProviderId.REDSTONE,ProviderId.KRAKEN,ProviderId.COINGECKO])
+@pytest.mark.parametrize("recovering",[False,True])
+def test_deadband_retains_exact_price_timestamp_and_cannot_restore_freshness(provider,recovering):
+    updates=[]
+    state=EvidenceState("ETH",provider,SourceType.ORACLE,"source",2,True,lambda:updates.append(1))
+    t0=utcnow().replace(microsecond=0)
+    assert state.accept("3000",t0,t0)
+    if recovering:
+        state.set_status(ProviderStatus.DEGRADED,"disconnected")
+    version=state.version
+    notifications=len(updates)
+    # 0.033 bps is below the 0.25 bps deadband, but is a different price.
+    t1=t0+timedelta(seconds=3)
+    assert not state.accept("3000.01",t1,t1)
+    snap=state.snapshot(t1)
+    assert snap.price==D("3000") and snap.source_timestamp==t0
+    assert snap.observed_at==t1 and snap.age_ms==3000
+    assert snap.stale and not snap.healthy and snap.status==ProviderStatus.STALE
+    assert state.version==version+int(recovering)
+    assert len(updates)==notifications+int(recovering)
+    # A suppressed observation still advances the replay high-water mark.
+    assert not state.accept("3100",t0+timedelta(seconds=1),t1)
+    assert not state.accept("3100",t1,t1)
+    assert state.snapshot(t1).source_timestamp==t0
+    for seconds in (4,5,6):
+        tick=t0+timedelta(seconds=seconds)
+        assert not state.accept("3000.02",tick,tick)
+        retained=state.snapshot(tick)
+        assert retained.price==D("3000") and retained.source_timestamp==t0
+        assert retained.observed_at==tick and retained.age_ms==seconds*1000
+        assert retained.stale and not retained.healthy
+        assert state.version==version+int(recovering)
+    t2=t0+timedelta(seconds=7)
+    assert state.accept("3100",t2,t2)
+    snap=state.snapshot(t2)
+    assert snap.price==D("3100") and snap.source_timestamp==t2 and snap.healthy
 
 
 def test_redstone_staleness_transitions_healthy_to_stale_without_disconnect():

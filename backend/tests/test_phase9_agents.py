@@ -158,6 +158,105 @@ def test_toxic_flow_ask_adverse_sign():
     assert out.ask_size_multiplier<1
 
 
+@pytest.mark.parametrize("side,expected",[("BID",D("-10")),("ASK",D("10"))])
+def test_matured_markout_is_frozen_and_survives_history_eviction_and_clear(side,expected):
+    t0=utcnow()
+    telemetry=AgentTelemetryStore()
+    fill=Fill(client_order_id="immutable",market="ETH",side=side,price=D("3000"),size=D("1"),timestamp=t0)
+    telemetry.observe_fill(fill,D("3000"))
+    h=MarketPriceHistory(max_samples=2)
+    h.add_snapshot(snapshot("3000",1,t0))
+    # First valid observation may be after, rather than exactly at, the target.
+    selected_at=t0+timedelta(seconds=6)
+    h.add_snapshot(snapshot("2997",2,selected_at))
+    first,pending=telemetry.markouts(h,horizon_seconds=5,window=10)
+    assert pending==0 and len(first)==1
+    markout=first[0]
+    assert markout.fill_identity==telemetry.fill_identity(fill)
+    assert markout.target_maturity_time==t0+timedelta(seconds=5)
+    assert markout.selected_observation_sequence==2
+    assert markout.selected_observation_timestamp==selected_at
+    assert markout.future_reference_price==D("2997")
+    assert markout.signed_markout_bps==expected
+    with pytest.raises(ValidationError,match="frozen"):
+        markout.future_reference_price=D("3100")
+    h.add_snapshot(snapshot("3100",3,t0+timedelta(seconds=7)))
+    h.add_snapshot(snapshot("3200",4,t0+timedelta(seconds=8)))
+    assert all(obs.sequence!=2 for obs in h.observations(2))
+    for _ in range(3):
+        again,pending=telemetry.markouts(h,horizon_seconds=5,window=10)
+        assert pending==0 and again==first and again[0] is markout
+    c=AgentConfig(toxic_flow_min_matured_fills=1,execution_quality_min_fills=1)
+    assert ToxicFlowAgent(c).evaluate(evidence(),telemetry,h).metrics.mean_signed_markout_bps==expected
+    assert ExecutionQualityAgent(c).evaluate(evidence(),telemetry,h,execution_mode="PAPER").metrics.average_mature_markout_bps==expected
+    h.clear()
+    assert telemetry.markouts(h,horizon_seconds=5,window=10)==(first,0)
+
+
+def test_missed_evicted_maturity_is_terminal_unavailable_instead_of_newer_substitution():
+    t0=utcnow()
+    telemetry=AgentTelemetryStore()
+    telemetry.observe_fill(Fill(client_order_id="missed",market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0),D("3000"))
+    h=MarketPriceHistory(max_samples=2)
+    h.add_snapshot(snapshot("3000",1,t0))
+    assert telemetry.markouts(h,horizon_seconds=5,window=10)==([],1)
+    # The first eligible sample arrives and is evicted before telemetry evaluates.
+    for seq,seconds,price in [(2,5,"2997"),(3,6,"3100"),(4,7,"3200")]:
+        h.add_snapshot(snapshot(price,seq,t0+timedelta(seconds=seconds)))
+    for _ in range(3):
+        assert telemetry.markouts(h,horizon_seconds=5,window=10)==([],0)
+        assert telemetry.summary()["unavailable_markouts"]==1
+    h.clear()
+    h.add_snapshot(snapshot("3300",5,t0+timedelta(seconds=8)))
+    assert telemetry.markouts(h,horizon_seconds=5,window=10)==([],0)
+    assert telemetry.summary()["unavailable_markouts"]==1
+
+
+def test_eviction_before_target_does_not_prevent_maturity_and_cache_is_horizon_scoped():
+    t0=utcnow()
+    telemetry=AgentTelemetryStore(max_fills=1)
+    telemetry.observe_fill(Fill(client_order_id="bounded",market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0),D("3000"))
+    h=MarketPriceHistory(max_samples=2)
+    for seq,seconds,price in [(1,0,"3000"),(2,1,"3000"),(3,5,"2997")]:
+        h.add_snapshot(snapshot(price,seq,t0+timedelta(seconds=seconds)))
+    first,_=telemetry.markouts(h,horizon_seconds=5,window=1)
+    assert first[0].selected_observation_sequence==3
+    assert telemetry.markouts(h,horizon_seconds=10,window=1)==([],1)
+    h.add_snapshot(snapshot("3010",4,t0+timedelta(seconds=10)))
+    later,_=telemetry.markouts(h,horizon_seconds=10,window=1)
+    assert later[0].selected_observation_sequence==4
+    assert telemetry.markouts(h,horizon_seconds=5,window=1)==(first,0)
+    telemetry.observe_fill(Fill(client_order_id="replacement",market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0+timedelta(seconds=11)),D("3000"))
+    assert not telemetry._markouts
+
+
+def test_clear_before_maturity_selection_marks_discarded_evidence_unavailable():
+    t0=utcnow()
+    telemetry=AgentTelemetryStore()
+    telemetry.observe_fill(Fill(client_order_id="cleared",market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0),D("3000"))
+    h=history(["3000","2997"],start=t0,step=5)
+    h.clear()
+    assert telemetry.markouts(h,horizon_seconds=5,window=10)==([],0)
+    assert telemetry.summary()["unavailable_markouts"]==1
+
+
+def test_small_consumer_window_preserves_maturity_for_other_retained_fills():
+    t0=utcnow()
+    telemetry=AgentTelemetryStore()
+    for identity in ("older","newer"):
+        telemetry.observe_fill(Fill(client_order_id=identity,market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0),D("3000"))
+    h=MarketPriceHistory(max_samples=2)
+    h.add_snapshot(snapshot("3000",1,t0))
+    h.add_snapshot(snapshot("2997",2,t0+timedelta(seconds=5)))
+    small,pending=telemetry.markouts(h,horizon_seconds=5,window=1)
+    assert len(small)==1 and pending==0
+    h.add_snapshot(snapshot("3100",3,t0+timedelta(seconds=6)))
+    h.add_snapshot(snapshot("3200",4,t0+timedelta(seconds=7)))
+    expanded,pending=telemetry.markouts(h,horizon_seconds=5,window=2)
+    assert len(expanded)==2 and pending==0
+    assert all(m.selected_observation_sequence==2 and m.signed_markout_bps==D("-10") for m in expanded)
+
+
 def test_spread_capture_signs_and_churn():
     assert spread_capture_bps("BID",D("2997"),D("3000"))==D("10")
     assert spread_capture_bps("ASK",D("3003"),D("3000"))==D("10")

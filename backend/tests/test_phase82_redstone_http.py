@@ -53,6 +53,21 @@ def test_http_normalizes_minimal_documented_record_and_provider_age():
     assert e.healthy and e.status==ProviderStatus.HEALTHY and not e.simulated
 
 
+def test_http_deadband_polling_cannot_refresh_retained_price_or_hide_regression():
+    p=transport(stale_after_seconds=2)
+    t0=utcnow().replace(microsecond=0)
+    p.ingest(record(t0,value="3000"),observed_at=t0)
+    t1=t0+timedelta(seconds=3)
+    assert not p.ingest(record(t1,value="3000.01"),observed_at=t1)
+    snap=p.snapshot(t1)
+    assert snap.price==D("3000") and snap.source_timestamp==t0
+    assert snap.stale and not snap.healthy and snap.age_ms==3000
+    assert not p.ingest(record(t1,value="3000.01"),observed_at=t1)
+    assert p.snapshot(t1).source_timestamp==t0
+    with pytest.raises(ValueError,match="regressed"):
+        p.ingest(record(t0+timedelta(seconds=1),value="3100"),observed_at=t1)
+
+
 @pytest.mark.parametrize("payload",[
     [], {}, [None], ["price"], [{"symbol":"BTC","value":3000,"timestamp":1712345678000}],
     [{"timestamp":1712345678000}], [{"value":3000}],
@@ -107,7 +122,9 @@ def test_http_repeated_submaterial_record_is_valid_without_economic_churn():
     p.ingest(record(newer,value="3000.01"),observed_at=newer)
     p.ingest(record(newer,value="3000.01"),observed_at=newer+timedelta(seconds=1))
     assert p.snapshot(newer+timedelta(seconds=1)).healthy
-    assert p.state.version==version and p.state.latest.source_timestamp==newer
+    assert p.state.version==version and p.state.latest.source_timestamp==now
+    assert p.state.latest.price==D("3000")
+    assert p.state.latest.observed_at==newer
 
 
 def test_http_retry_delay_preserves_configured_slow_polling():

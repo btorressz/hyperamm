@@ -38,12 +38,23 @@ class MarketPriceHistory:
         self._material_identity = None
         self._latest_timestamp = None
         self._latest_sequence = -1
+        self._evicted_through_timestamp: datetime | None = None
+
+    @property
+    def evicted_through_timestamp(self) -> datetime | None:
+        """Latest discarded sample; horizons at/before it cannot be reconstructed."""
+        return self._evicted_through_timestamp
 
     @property
     def version(self) -> int:
         return self._version
 
     def clear(self) -> None:
+        if self._items:
+            self._evicted_through_timestamp = max(
+                self._evicted_through_timestamp or self._items[-1].timestamp,
+                self._items[-1].timestamp,
+            )
         self._items.clear()
         self._seen_sequences.clear()
         self._seen_timestamps.clear()
@@ -78,6 +89,9 @@ class MarketPriceHistory:
             return False
         if len(self._items) == self._items.maxlen:
             dropped = self._items[0]
+            self._evicted_through_timestamp = max(
+                self._evicted_through_timestamp or dropped.timestamp, dropped.timestamp,
+            )
             self._seen_sequences.discard(dropped.sequence)
             self._seen_timestamps.discard(dropped.timestamp)
         self._items.append(MarketObservation(timestamp=timestamp, sequence=sequence, mid_price=price))

@@ -10,6 +10,7 @@ class EvidenceState:
         self.market=market; self.provider=provider; self.source_type=source_type; self.source_id=source_id
         self.stale_after_seconds=stale_after_seconds; self.enabled=enabled; self.on_update=on_update
         self.material_change_bps=material_change_bps; self.latest=None; self.version=0
+        self._last_source_timestamp=None
         self.provenance={"transport":transport,"transport_quality":transport_quality}
         self.status=ProviderStatus.DISABLED if not enabled else ProviderStatus.DEGRADED; self.error=None
     def _notify(self):
@@ -17,13 +18,17 @@ class EvidenceState:
     def accept(self,price,source_timestamp,observed_at=None,source_id=None,simulated=False):
         observed=observed_at or utcnow(); price=decimal_price(price)
         if source_timestamp>observed+timedelta(seconds=5): raise ValueError("provider timestamp too far in future")
-        if self.latest and self.latest.source_timestamp and source_timestamp<=self.latest.source_timestamp: return False
+        if self._last_source_timestamp and source_timestamp<=self._last_source_timestamp: return False
+        self._last_source_timestamp=source_timestamp
         if self.latest and self.latest.price is not None:
             d=abs((price-self.latest.price)/self.latest.price*Decimal("10000"))
             if d<self.material_change_bps:
                 recovered=self.status!=ProviderStatus.HEALTHY
                 if recovered: self.version+=1
-                self.latest=self.latest.model_copy(update={"observed_at":observed,"source_timestamp":source_timestamp,"age_ms":max(0,int((observed-source_timestamp).total_seconds()*1000)),"healthy":True,"stale":False,"status":ProviderStatus.HEALTHY,"error":None})
+                # An identical price is a new observation of that exact price. A
+                # suppressed different price cannot lend its timestamp to the old one.
+                retained_timestamp=source_timestamp if price==self.latest.price else self.latest.source_timestamp
+                self.latest=self.latest.model_copy(update={"observed_at":observed,"source_timestamp":retained_timestamp,"age_ms":max(0,int((observed-retained_timestamp).total_seconds()*1000)),"healthy":True,"stale":False,"status":ProviderStatus.HEALTHY,"error":None})
                 self.latest=self.latest.model_copy(update={"version":self.version})
                 self.status=ProviderStatus.HEALTHY; self.error=None
                 if recovered: self._notify()
@@ -107,7 +112,7 @@ class RedStonePublicHttpTransport:
         price,timestamp=self.normalize(payload)
         if timestamp>observed: raise ValueError("RedStone public HTTP timestamp in future")
         previous=self.state.latest
-        if previous and timestamp<previous.source_timestamp:
+        if self._last_record and timestamp<self._last_record[1]:
             raise ValueError("RedStone public HTTP timestamp regressed")
         if self._last_record and timestamp==self._last_record[1] and price!=self._last_record[0]:
             raise ValueError("RedStone public HTTP conflicting replay")

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal as D
 from types import SimpleNamespace
 
@@ -20,6 +21,35 @@ from app.simulation.metrics import MetricsAccumulator
 from app.simulation.models import SimulationDataset,SimulationReferencePrices
 from app.simulation.references import build_simulated_references
 from app.simulation.scenarios import generate_scenario
+
+
+@pytest.mark.parametrize("select_before_eviction",[True,False])
+def test_final_simulation_markout_preserves_selected_or_unavailable_evidence(select_before_eviction):
+    from test_phase9_agents import snapshot
+
+    t0=generate_scenario("QUIET",frames=2).frames[0].timestamp
+    fill=Fill(client_order_id="maturity",market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0)
+    telemetry=AgentTelemetryStore()
+    telemetry.observe_fill(fill,D("3000"))
+    history=MarketPriceHistory(max_samples=2)
+    history.add_snapshot(snapshot("3000",1,t0))
+    history.add_snapshot(snapshot("2997",2,t0+timedelta(seconds=5)))
+    agents=AgentConfig(toxic_flow_markout_horizon_seconds=5)
+    acc=MetricsAccumulator(D("1000"))
+    kwargs=dict(
+        paper=SimpleNamespace(fills=SimpleNamespace(all=lambda:[fill])),market="ETH",
+        vault=SimpleNamespace(net_pnl_quote=D("0"),equity_quote=D("1000"),realized_pnl_quote=D("0"),unrealized_pnl_quote=D("0"),position_base=D("0")),
+        telemetry=telemetry,history=history,agent_config=agents,frame_count=4,
+    )
+    if select_before_eviction:
+        assert acc.finalize(**kwargs).mean_mature_markout_bps==D("-10")
+    history.add_snapshot(snapshot("3100",3,t0+timedelta(seconds=6)))
+    history.add_snapshot(snapshot("3200",4,t0+timedelta(seconds=7)))
+    expected=D("-10") if select_before_eviction else None
+    for _ in range(3):
+        metrics=acc.finalize(**kwargs)
+        assert metrics.mean_mature_markout_bps==expected
+        assert metrics.adverse_fill_rate==(D("1") if select_before_eviction else None)
 
 
 @pytest.mark.asyncio
