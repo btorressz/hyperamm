@@ -5,7 +5,7 @@ from app.market_data.models import MarketSnapshot
 from .models import RiskStatus
 
 
-def validate_quotes(quotes: list[QuoteLevel], snapshot: MarketSnapshot, risk: RiskStatus):
+def validate_quotes(quotes: list[QuoteLevel], snapshot: MarketSnapshot, risk: RiskStatus, *, final_venue=False):
     if risk.kill_switch_active:
         raise PermissionError("kill switch is active")
     from app.strategy.fair_value import calculate_fair_value
@@ -14,6 +14,8 @@ def validate_quotes(quotes: list[QuoteLevel], snapshot: MarketSnapshot, risk: Ri
         raise ValueError("too many quote levels")
     total = Decimal("0")
     for q in quotes:
+        if final_venue and q.side not in {"BID", "ASK"}:
+            raise ValueError("invalid final quote side")
         if not q.price.is_finite() or not q.size.is_finite() or q.price <= 0 or q.size <= 0:
             raise ValueError("quote price and size must be finite and positive")
         if q.price < risk.min_valid_price:
@@ -25,6 +27,11 @@ def validate_quotes(quotes: list[QuoteLevel], snapshot: MarketSnapshot, risk: Ri
         total += q.price * q.size
     if total > risk.max_aggregate_notional:
         raise ValueError("aggregate quote notional exceeds limit")
+    if final_venue:
+        bids=[q.price for q in quotes if q.side == "BID"]
+        asks=[q.price for q in quotes if q.side == "ASK"]
+        if bids and asks and max(bids) >= min(asks):
+            raise ValueError("final venue quote ladder is crossed")
 
 
 def validate_execution_authority(*, risk: RiskStatus, execution_mode: str, strategy_running: bool):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from decimal import Decimal
+from decimal import Decimal, ROUND_FLOOR, ROUND_CEILING, ROUND_DOWN, localcontext
 from datetime import datetime, timezone
 from app.market_data.models import utcnow
 from app.market_data.perp_context import PerpPositionContext, normalize_user_position_context
@@ -61,20 +61,64 @@ class HyperliquidTestnetExecutionAdapter:
         return Cloid.from_str(raw)
 
     @staticmethod
-    def _normalize_for_sdk(exchange, req: OrderRequest) -> tuple[float, float]:
+    def normalize_order_request(exchange, req: OrderRequest) -> OrderRequest:
+        """Pure Decimal normalization; never move a quote toward the market.
+
+        Hyperliquid: five significant figures for non-integer prices, at most
+        (6 perps / 8 spot) - szDecimals fractional places; integer prices are
+        permitted regardless of significant figures. Sizes use szDecimals.
+        """
+        if req.side not in {"BID", "ASK"}:
+            raise ValueError("invalid Hyperliquid order side")
+        if any(not v.is_finite() or v <= 0 for v in (req.price, req.size)):
+            raise ValueError("Hyperliquid economics must be finite and positive")
         asset=exchange.info.name_to_asset(req.market)
-        sz_decimals=int(exchange.info.asset_to_sz_decimals[asset])
-        size_quantum=Decimal(1).scaleb(-sz_decimals)
-        size=req.size.quantize(size_quantum, rounding="ROUND_DOWN")
+        sz_decimals=exchange.info.asset_to_sz_decimals[asset]
+        max_decimals=8 if asset >= 10_000 else 6
+        if type(sz_decimals) is not int or not 0 <= sz_decimals <= max_decimals:
+            raise ValueError("unsupported Hyperliquid asset precision")
+        with localcontext() as ctx:
+            ctx.prec=max(28, *(len(v.as_tuple().digits) + max(0, v.adjusted()) + 10
+                               for v in (req.price, req.size)))
+            size=req.size.quantize(Decimal(1).scaleb(-sz_decimals), rounding=ROUND_DOWN)
+            price=req.price
+            if price != price.to_integral_value():
+                exponent=max(-(max_decimals-sz_decimals), min(0, price.adjusted()-4))
+                price=price.quantize(Decimal(1).scaleb(exponent),
+                                     rounding=ROUND_FLOOR if req.side == "BID" else ROUND_CEILING)
         if size <= 0:
             raise ValueError("size normalizes to zero for Hyperliquid asset precision")
-        is_spot=asset >= 10_000
-        max_px_decimals=(8 if is_spot else 6)-sz_decimals
-        sig=float(f"{float(req.price):.5g}")
-        price=round(sig, max_px_decimals)
         if price <= 0:
             raise ValueError("price normalizes to non-positive value")
-        return price,float(size)
+        return req.model_copy(update={"price":req.price if price == req.price else price,
+                                      "size":req.size if size == req.size else size})
+
+    async def normalize_quotes(self, market, quotes, *, center):
+        exchange=await asyncio.to_thread(self._exchange_client)
+        out=[]
+        for quote in quotes:
+            req=OrderRequest(client_order_id="normalization-only", market=market,
+                             side=quote.side, level_index=quote.level_index,
+                             price=quote.price, size=quote.size)
+            normalized=self.normalize_order_request(exchange, req)
+            fair=quote.market_fair_value or center
+            out.append(quote.model_copy(update={"price":normalized.price, "size":normalized.size,
+                "distance_bps":abs(normalized.price-fair)/fair*Decimal("10000")}))
+        return out
+
+    @staticmethod
+    def _normalize_for_sdk(exchange, req: OrderRequest) -> tuple[float, float]:
+        """Conversion only: an unauthorized normalization is an error."""
+        from hyperliquid.utils.signing import float_to_wire
+        normalized=HyperliquidTestnetExecutionAdapter.normalize_order_request(exchange, req)
+        if (normalized.price, normalized.size) != (req.price, req.size):
+            raise ValueError("request is not already venue-normalized")
+        price, size=float(req.price), float(req.size)
+        if (Decimal(str(price)) != req.price or Decimal(str(size)) != req.size
+                or Decimal(float_to_wire(price)) != req.price
+                or Decimal(float_to_wire(size)) != req.size):
+            raise ValueError("SDK serialization changes authorized economics")
+        return price, size
 
     @staticmethod
     def _parse_order_response(response) -> tuple[OrderStatus, str | None]:
@@ -260,20 +304,29 @@ class HyperliquidTestnetExecutionAdapter:
 
     async def submit_orders(self, orders: list[OrderRequest]) -> list[StrategyOrder]:
         self._require_enabled()
+        if self.authority is None:
+            raise PermissionError("concrete request authority is required for TESTNET submission")
         exchange=await asyncio.to_thread(self._exchange_client)
         await self._venue_client()
         result=[]
         for req in orders:
+            # Isolate caller mutation across the authority await. The callback
+            # receives its own copy; only the checked snapshot is serialized.
+            req=req.model_copy(deep=True)
+            normalized=self.normalize_order_request(exchange, req)
+            if (normalized.price, normalized.size) != (req.price, req.size):
+                raise ValueError("request is not already venue-normalized")
+            checked=req.model_copy(deep=True)
+            await self.authority(checked)
+            if checked != req:
+                raise ValueError("request changed during final authority check")
             price,size=self._normalize_for_sdk(exchange,req)
-            if self.authority is not None:
-                await self.authority()
-            values=req.model_dump()
-            values.update(price=Decimal(str(price)),size=Decimal(str(size)))
-            order=StrategyOrder(**values,status=OrderStatus.UNKNOWN)
+            cloid=self._cloid(req.client_order_id)
+            order=StrategyOrder(**req.model_dump(),status=OrderStatus.UNKNOWN)
             self._orders[req.client_order_id]=order
             response=await self._transmit(
                 exchange.order, req.market, req.side=="BID", size, price,
-                {"limit":{"tif":"Alo"}}, False, self._cloid(req.client_order_id)
+                {"limit":{"tif":"Alo"}}, False, cloid
             )
             status,venue_order_id=self._parse_order_response(response)
             order.status=status

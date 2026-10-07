@@ -160,7 +160,11 @@ async def test_testnet_equity_change_at_same_position_version_blocks_transmissio
     rt.testnet._position_updated_at = snap.latest_valid_update
     rt.testnet._perp_position = PerpPositionContext(market="ETH", signed_position_base=D("0"),
                      source="TESTNET", updated_at=snap.latest_valid_update, version=0)
-    rt.testnet._account_value = D("10000")
+    rt.testnet._account_value = D("100000")
+    rt.testnet._total_margin_used = D("0")
+    from types import SimpleNamespace
+    info=SimpleNamespace(name_to_asset=lambda market:0, asset_to_sz_decimals={0:4})
+    monkeypatch.setattr(rt.testnet, "_exchange_client", lambda:SimpleNamespace(info=info))
     monkeypatch.setattr(rt.testnet, "_require_enabled", lambda: None)
     async def reconcile(): pass
     async def refresh(market): return D("0")
@@ -170,7 +174,7 @@ async def test_testnet_equity_change_at_same_position_version_blocks_transmissio
     assert rt.authorization.authorized
     rt.strategy.running = True
     await rt._execution_authority()
-    rt.testnet._account_value = D("9000")
+    rt.testnet._account_value = D("90000")
     with pytest.raises(RuntimeError, match="accounting changed after quote authorization"):
         await rt._execution_authority()
 

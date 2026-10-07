@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from decimal import Decimal
 from datetime import datetime, timezone
 
 from app.config import Settings
@@ -19,10 +20,11 @@ from app.strategy.perp_policy import PerpContextPolicy
 from app.execution.paper import PaperExecutionAdapter
 from app.execution.hyperliquid import HyperliquidTestnetExecutionAdapter
 from app.execution.order_manager import OrderManager
+from app.execution.models import OrderRequest
 from app.risk.models import RiskStatus
 from app.risk.kill_switch import KillSwitch
 from app.risk.limits import validate_quotes, validate_execution_authority
-from app.risk.firewall import RiskFirewall, RiskFirewallConfig, RiskState
+from app.risk.firewall import RiskFirewall, RiskFirewallConfig, RiskState, exposure_metrics
 from app.risk.authorization import authorize, fingerprint
 from app.agents import AgentConfig,AgentSupervisor,AgentTelemetryStore,build_agent_evidence,transform_quotes
 from app.accounting import AccountingConfig, AccountingService
@@ -189,7 +191,34 @@ class HyperAmmRuntime:
             return self._paper_inventory()
         return await self._testnet_inventory_locked(refresh=refresh)
 
-    async def _execution_authority(self):
+    def _validate_final_testnet(self, quotes, snapshot, inventory, perp, refs, existing, vault):
+        """Check actual final economics without advancing firewall hysteresis.
+
+        TESTNET has partial accounting: full-notional research reservation is
+        bounded by authoritative account equity, without assuming leverage.
+        Existing account margin is also reserved conservatively.
+        """
+        validate_quotes(quotes, snapshot, self.risk, final_venue=True)
+        c=self.risk_config
+        exp=exposure_metrics(quotes, inventory.position_base, refs.consensus.consensus_price or perp.mark_price,
+                             max(c.max_projected_long_base,c.max_projected_short_base), existing)
+        if (exp.projected_long_base > c.max_projected_long_base
+                or exp.projected_short_base < -c.max_projected_short_base
+                or exp.gross_quote_notional > c.max_gross_quote_notional
+                or max(exp.projected_long_notional,exp.projected_short_notional) > c.max_projected_position_notional):
+            raise ValueError("final venue-normalized exposure exceeds risk limit")
+        if vault.stale or vault.error or vault.accounting_complete == "UNAVAILABLE":
+            raise RuntimeError("final TESTNET accounting authority unavailable")
+        equity=vault.equity_quote
+        margin=vault.margin_used_quote
+        if equity is None or margin is None or not equity.is_finite() or not margin.is_finite() or margin < 0:
+            raise RuntimeError("final TESTNET capital evidence unavailable")
+        required=reserved_capital(inventory.position_base, perp.mark_price, quotes, existing)+margin
+        if required > max(Decimal("0"),equity)*self.accounting_config.max_capital_utilization:
+            raise ValueError("final TESTNET capital reservation exceeds equity limit")
+        return exp
+
+    async def _execution_authority(self, request: OrderRequest | None = None):
         if self.config.execution_mode == ExecutionMode.PAPER:
             self.accounting_service.observe_execution_fills(self.paper.fills.all())
         current_market = await self.market.snapshot()
@@ -249,6 +278,11 @@ class HyperAmmRuntime:
             raise RuntimeError("risk decision changed after quote authorization; recompute before transmission")
         if fingerprint(self.quotes) != self.authorization.quote_fingerprint:
             raise RuntimeError("authorized quote ladder fingerprint mismatch")
+        if request is not None and self.config.execution_mode == ExecutionMode.TESTNET:
+            matches=[q for q in self.quotes if q.side == request.side and q.level_index == request.level_index]
+            if (request.market != self.config.market or len(matches) != 1
+                    or (request.price,request.size) != (matches[0].price,matches[0].size)):
+                raise PermissionError("concrete request does not match exactly one authorized quote")
         if self.config.execution_mode == ExecutionMode.TESTNET:
             # Account value can change without the market position version changing.
             self.accounting_service.observe_testnet(self.perp_position, self.testnet.account_risk_snapshot(),
@@ -268,6 +302,9 @@ class HyperAmmRuntime:
                                       await self.execution.get_open_orders())
             if vault.reserved_capital_quote is None or actual > vault.reserved_capital_quote:
                 raise RuntimeError("accounting order reservation changed after authorization")
+        else:
+            self._validate_final_testnet(self.quotes, current_market, inventory, current_perp, current_refs,
+                                         await self.execution.get_open_orders(), vault)
 
     async def _invalidate_locked(self, reason, health="DEGRADED"):
         self.quotes = []
@@ -530,6 +567,15 @@ class HyperAmmRuntime:
                     size_precision=self.config.size_precision,
                     base_order_size=self.config.base_order_size,
                 )
+                if self.config.execution_mode == ExecutionMode.TESTNET:
+                    authorized = await self.testnet.normalize_quotes(self.config.market, authorized,
+                                                                    center=inventory_decision.reservation_price)
+                    final_exposure=self._validate_final_testnet(
+                        authorized, snap, inventory, perp_context, refs, existing_orders,
+                        self.accounting_service.require_fresh())
+                    risk_decision=risk_decision.model_copy(update={"exposure":final_exposure,
+                        "projected_long_base":final_exposure.projected_long_base,
+                        "projected_short_base":final_exposure.projected_short_base})
                 validate_quotes(authorized, snap, self.risk)
                 if self.config.execution_mode == ExecutionMode.PAPER:
                     self.accounting_service.reserve(authorized, existing_orders)
