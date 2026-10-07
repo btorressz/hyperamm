@@ -4,6 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.deployment import LocalOnlyBoundary, validate_local_deployment
 from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
@@ -15,6 +16,7 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_local_deployment()
     app.state.runtime = HyperAmmRuntime(settings)
     app.state.simulation_executor = SimulationExecutor()
     try:
@@ -29,6 +31,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="HyperAMM API", version="0.12.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(LocalOnlyBoundary)
 for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)

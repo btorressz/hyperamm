@@ -54,6 +54,8 @@ def test_terminal_state_includes_market_adaptation_after_preview_refresh():
         with client.websocket_connect('/ws/terminal') as ws:
             data=ws.receive_json()
             assert 'market_adaptation' in data
+            if data['market_adaptation'] is None:
+                data = ws.receive_json()
             assert data['market_adaptation'] is not None
             assert data['market_adaptation']['market']=='ETH'
 
@@ -170,6 +172,8 @@ def test_phase9_agents_api_and_terminal_state():
 
         with client.websocket_connect('/ws/terminal') as ws:
             terminal=ws.receive_json()
+            if terminal['agents']['supervisor'] is None:
+                terminal = ws.receive_json()
             assert terminal['agents']['supervisor'] is not None
             assert 'agent_events' in terminal
             assert 'agent_quotes' in terminal

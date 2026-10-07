@@ -20,7 +20,7 @@ async def frame():
     )
     await rt.market._accept(MockMarketDataAdapter().snapshot_for(2))
     await rt.refresh_once()
-    data = await rt.terminal_state()
+    data = await rt._publish_terminal_snapshot()
     return rt, data
 
 
@@ -52,7 +52,7 @@ async def test_schema_stage_exposure_decimal_metadata_and_existing_provenance():
 @pytest.mark.asyncio
 async def test_sequence_is_monotonic_across_calls_and_history_is_throttled():
     rt, s = await frame()
-    a, b = await rt.terminal_state(), await rt.terminal_state()
+    a, b = await rt._publish_terminal_snapshot(), await rt._publish_terminal_snapshot()
     assert s["sequence"] < a["sequence"] < b["sequence"]
     assert s["process_id"] == a["process_id"] == b["process_id"]
     assert len(rt.terminal_service.history.query()) == 1
@@ -68,7 +68,7 @@ async def test_observation_does_not_mutate_authorities():
         rt.agent_decision.fingerprint,
         list(rt.paper.all_orders()),
     )
-    await rt.terminal_state()
+    await rt._publish_terminal_snapshot()
     after = (
         rt.authorization.model_dump(),
         rt.accounting_service.fingerprint,
@@ -175,7 +175,7 @@ async def test_testnet_truth_has_no_synthetic_fill_economics_or_consistency():
     rt.config = rt.config.model_copy(update={"execution_mode": ExecutionMode.TESTNET})
     rt.strategy.config = rt.config
     rt.accounting_service = AccountingService("ETH", "TESTNET")
-    s = await rt.terminal_state()
+    s = await rt._publish_terminal_snapshot()
     assert s["fills"] == []
     assert s["execution_summary"]["fill_count"] is None
     assert s["execution_summary"]["filled_notional"] is None
