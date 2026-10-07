@@ -110,6 +110,8 @@ class HyperAmmRuntime:
         self._terminal_task = None
         self.testnet.authority = self._execution_authority
         self.paper.on_fill = self._on_paper_fill
+        self.paper.orders.observer = self.agent_telemetry.observe_orders
+        self.testnet._orders.observer = self.agent_telemetry.observe_orders
         self.market.add_listener(self._on_market)
         self.market.add_perp_listener(self._on_perp_context)
 
@@ -123,7 +125,9 @@ class HyperAmmRuntime:
         except Exception as exc:
             # Execution already happened; retain it and fail new authority closed.
             self.accounting_service.fail(exc)
-        self.accounting_service.observe_execution_fills(self.paper.fills.all())
+        self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
+                                                         duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
+        self.paper.fills.acknowledge(fill, self.accounting_service, agent_consumed=True)
         self.vault_snapshot = self.accounting_service.snapshot()
         self._strategy_wakeup.set()
 
@@ -220,7 +224,8 @@ class HyperAmmRuntime:
 
     async def _execution_authority(self, request: OrderRequest | None = None):
         if self.config.execution_mode == ExecutionMode.PAPER:
-            self.accounting_service.observe_execution_fills(self.paper.fills.all())
+            self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
+                                                         duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
         current_market = await self.market.snapshot()
         market_fair = calculate_fair_value(current_market)
         self.market_history.add_snapshot(current_market)
@@ -426,7 +431,7 @@ class HyperAmmRuntime:
                     continue
                 try:
                     await self.testnet.reconcile_venue()
-                    changed=self.agent_telemetry.observe_orders(self.testnet.all_orders())
+                    changed=self.agent_telemetry.observe_orders(await self.testnet.get_open_orders())
                     self.inventory = await self._testnet_inventory_locked(refresh=True)
                     if changed or self.inventory is not None:
                         self._strategy_wakeup.set()
@@ -457,10 +462,16 @@ class HyperAmmRuntime:
 
     def _sync_paper_fills_locked(self):
         # No cursor can advance past failed evidence. Never clear a latched error.
-        fills = self.paper.fills.all()
         if self.accounting_service.config != self.accounting_config:
             self.accounting_service.fail("accounting configuration changed; internal context rebind required")
-        self.accounting_service.reconcile_paper_fills(fills)
+        if self.paper.fills.pending():
+            self.accounting_service.reconcile_paper_fills(self.paper.fills.pending())
+        for fill in self.paper.fills.pending():
+            self.agent_telemetry.observe_fill(fill, None)
+            self.paper.fills.acknowledge(fill, self.accounting_service, agent_consumed=True)
+        self.paper.orders.prune()
+        self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
+                                                         duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
 
     def _mark_accounting_locked(self, context):
         if self.config.execution_mode == ExecutionMode.PAPER:
@@ -470,6 +481,8 @@ class HyperAmmRuntime:
         else:
             self.accounting_service.observe_testnet(self.perp_position, self.testnet.account_risk_snapshot(),
                                                    mark=context.mark_price)
+            if not self.accounting_service.error:
+                self.testnet.acknowledge_accounting(self.perp_position, self.testnet.account_risk_snapshot())
         self.vault_snapshot = self.accounting_service.snapshot()
 
     async def refresh_once(self):
@@ -518,7 +531,7 @@ class HyperAmmRuntime:
                     agreement_bps=self.risk_config.source_agreement_bps,
                     outlier_bps=self.risk_config.source_outlier_bps,
                 )
-                self.agent_telemetry.observe_orders(self.execution.all_orders())
+                self.agent_telemetry.observe_orders(await self.execution.get_open_orders())
                 agent_evidence = build_agent_evidence(
                     market_decision=market_decision,
                     inventory=inventory,
@@ -614,7 +627,7 @@ class HyperAmmRuntime:
                         self.config.size_tolerance,
                         venue_reconciled=venue_reconciled,
                     )
-                    self.agent_telemetry.observe_reconcile(self.last_actions,self.execution.all_orders())
+                    self.agent_telemetry.observe_reconcile(self.last_actions,await self.execution.get_open_orders())
                     if authorized:
                         await self._execution_authority()
                     if self.config.execution_mode == ExecutionMode.PAPER:
@@ -803,6 +816,8 @@ class HyperAmmRuntime:
                 # must never seed TESTNET or a different market/session.
                 self.paper = PaperExecutionAdapter()
                 self.paper.on_fill = self._on_paper_fill
+                self.paper.orders.observer = self.agent_telemetry.observe_orders
+                self.testnet._orders.observer = self.agent_telemetry.observe_orders
                 self.execution = self.paper if new_config.execution_mode == ExecutionMode.PAPER else self.testnet
                 self.orders.execution = self.execution
                 self.accounting_service = AccountingService(new_config.market, new_config.execution_mode.value,
@@ -981,7 +996,8 @@ class HyperAmmRuntime:
 
     def accounting_payload(self):
         if self.config.execution_mode == ExecutionMode.PAPER:
-            self.accounting_service.observe_execution_fills(self.paper.fills.all())
+            self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
+                                                         duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
         vault = self.accounting_service.snapshot()
         return {
             "config": self.accounting_config.model_dump(mode="json"),
@@ -1019,7 +1035,8 @@ class HyperAmmRuntime:
 
     async def terminal_state(self):
         if self.config.execution_mode == ExecutionMode.PAPER:
-            self.accounting_service.observe_execution_fills(self.paper.fills.all())
+            self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
+                                                         duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
         snap = await self.market.snapshot()
         inventory = None
         if self.inventory is not None:
@@ -1047,12 +1064,14 @@ class HyperAmmRuntime:
             "vault": self.accounting_service.snapshot().model_dump(mode="json"),
             "accounting": self.accounting_payload(),
             "risk": self.risk.model_dump(mode="json"),
-            "orders": [o.model_dump(mode="json") for o in self.paper.all_orders()]
+            "orders": [o.model_dump(mode="json") for o in self.paper.recent_orders()]
             if self.config.execution_mode == ExecutionMode.PAPER
-            else [o.model_dump(mode="json") for o in self.testnet.all_orders()],
-            "fills": [f.model_dump(mode="json") for f in self.paper.fills.all()]
+            else [o.model_dump(mode="json") for o in self.testnet.recent_orders()],
+            "fills": [f.model_dump(mode="json") for f in self.paper.fills.recent()]
             if self.config.execution_mode == ExecutionMode.PAPER
             else [],
+            "execution_totals": {"fill_count": self.paper.fills.version,
+                                 "filled_notional": str(self.paper.fills.filled_notional)},
             "venue_reconciliation": {
                 "last_reconciled_at": self.testnet.last_reconciled_at.isoformat()
                 if self.testnet.last_reconciled_at

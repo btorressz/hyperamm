@@ -393,3 +393,115 @@ async def test_runtime_conflicting_identity_remains_diverged_with_equal_fill_cou
     await rt.refresh_once()
     assert rt.authorization is None or not rt.authorization.authorized
     assert rt.accounting_service.ledger.version == 2
+
+
+@pytest.mark.asyncio
+async def test_execution_retention_keeps_ledger_truth_and_unconsumed_evidence(monkeypatch):
+    from app.execution.fills import FILL_HISTORY_LIMIT
+    rt, snap = await runtime()
+    rt.paper.fills.limit = 5
+    rt.paper.orders.limit = 5
+    first = None
+    for index in range(18):
+        await rt.paper.submit_orders([OrderRequest(client_order_id=f'fill-{index}', market='ETH', side='BID',
+                                                   price=snap.best_ask, size=D('.01'))])
+        if index == 0:
+            first = rt.paper.fills.all()[0]
+    assert FILL_HISTORY_LIMIT == 1000
+    assert len(rt.paper.fills.all()) == len(rt.paper.fills.recent()) == 5
+    assert rt.paper.fills.retired_count == 13
+    assert not rt.paper.fills.pending()
+    assert len(rt.paper.orders) == 5
+    assert rt.paper.inventory_version == 18
+    assert rt.paper.position_base('ETH') == rt.accounting_service.position.position_base == D('.18')
+    assert rt.accounting_service.ledger.version == 36
+    assert 'fill:'+rt.accounting_service.fill_identity(first) in rt.accounting_service.ledger.fill_evidence()
+    rt._sync_paper_fills_locked()
+    before = rt.accounting_service.snapshot()
+    assert before.execution_accounting.execution_fill_count == before.execution_accounting.accounted_fill_count == 18
+    rt._sync_paper_fills_locked()
+    assert rt.accounting_service.snapshot() == before
+    class NoLedgerIteration(list):
+        def __iter__(self): raise AssertionError('full ledger scan')
+    rt.accounting_service.ledger._entries = NoLedgerIteration(rt.accounting_service.ledger._entries)
+    monkeypatch.setattr(rt.paper, 'all_orders', lambda: pytest.fail('full order history observation'))
+    terminal = await rt.terminal_state()
+    assert len(terminal['fills']) == 5 and len(terminal['orders']) == 5
+    assert terminal['execution_summary']['fill_count'] == 18
+    assert D(terminal['execution_summary']['filled_notional']) == rt.paper.fills.filled_notional
+    assert rt.accounting_payload()['execution_accounting']['accounted_fill_count'] == 18
+    rt.paper.on_fill = None
+    await rt.paper.submit_orders([OrderRequest(client_order_id='unaccounted', market='ETH', side='BID',
+                                               price=snap.best_ask, size=D('.01'))])
+    pending = rt.paper.fills.pending()[0]
+    assert not rt.paper.fills.acknowledge(pending, rt.accounting_service, agent_consumed=True)
+    for index in range(20):
+        await rt.paper.submit_orders([OrderRequest(client_order_id=f'cancel-{index}', market='ETH', side='BID',
+                                                   price=snap.best_bid-D('10'), size=D('.01'))])
+        await rt.paper.cancel_orders([f'cancel-{index}'])
+    assert 'unaccounted' in rt.paper.orders
+    state = rt.accounting_service.observe_execution_fills(rt.paper.fills.all(), retired_count=rt.paper.fills.retired_count)
+    assert state.unaccounted_fill_count == 1 and state.accounted_fill_count == 18
+    assert pending in rt.paper.fills.all() and rt.paper.fills.pending() == [pending]
+    with pytest.raises(ValueError, match='conflicting'):
+        rt.accounting_service.ingest_fill(first.model_copy(update={'price': first.price+D('1')}))
+    assert rt.accounting_service.error and rt.accounting_service.ledger.version == 36
+
+
+@pytest.mark.asyncio
+async def test_fill_capacity_blocks_new_orders_without_losing_pending_or_cancellation():
+    rt, snap = await runtime()
+    rt.paper.fills.limit = 2
+    rt.paper.on_fill = None
+    await rt.paper.submit_orders([OrderRequest(client_order_id='rest', market='ETH', side='BID',
+                                               price=snap.best_bid-D('10'), size=D('.01'))])
+    for index in range(2):
+        await rt.paper.submit_orders([OrderRequest(client_order_id=f'pending-{index}', market='ETH', side='BID',
+                                                   price=snap.best_ask, size=D('.01'))])
+    with pytest.raises(RuntimeError, match='capacity'):
+        await rt.paper.submit_orders([OrderRequest(client_order_id='forbidden', market='ETH', side='BID',
+                                                   price=snap.best_ask, size=D('.01'))])
+    assert len(rt.paper.fills.pending()) == 2 and rt.accounting_service.ledger.version == 0
+    await rt.paper.cancel_all()
+    assert not await rt.paper.get_open_orders() and len(rt.paper.fills.all()) == 2
+
+
+@pytest.mark.asyncio
+async def test_fill_retention_requires_agent_and_matching_accounting_consumption():
+    from app.execution.models import Fill
+    rt, snap = await runtime()
+    rt.paper.fills.limit = 1
+    rt.paper.on_fill = None
+    for cid in ['one', 'two']:
+        rt.paper.fills.add(Fill(client_order_id=cid, market='ETH', side='BID', price=snap.best_ask, size=D('.01')))
+    first, second = rt.paper.fills.all()
+    rt.accounting_service.ingest_fill(first)
+    assert not rt.paper.fills.acknowledge(first, rt.accounting_service, agent_consumed=False)
+    assert len(rt.paper.fills.pending()) == 2
+    assert rt.paper.fills.acknowledge(first, rt.accounting_service, agent_consumed=True)
+    assert rt.paper.fills.pending() == [second]
+    assert first in rt.paper.fills.all() and second in rt.paper.fills.all()
+    rt.accounting_service.ingest_fill(second)
+    assert rt.paper.fills.acknowledge(second, rt.accounting_service, agent_consumed=True)
+    assert rt.paper.fills.all() == [second] and rt.paper.fills.retired_count == 1
+
+
+@pytest.mark.asyncio
+async def test_evicted_fill_identity_cannot_be_executed_twice():
+    rt, snap = await runtime()
+    rt.paper.fills.limit = 1
+    for cid in ['first', 'second']:
+        await rt.paper.submit_orders([OrderRequest(client_order_id=cid, market='ETH', side='BID',
+                                                   price=snap.best_ask, size=D('.01'))])
+        if cid == 'first':
+            first = rt.paper.fills.all()[0]
+    assert first not in rt.paper.fills.all()
+    replay = first.model_copy(deep=True)
+    rt.paper.fills.add(replay)
+    rt._on_paper_fill(replay)
+    assert 'duplicate execution fill identity' in rt.accounting_service.error
+    assert replay in rt.paper.fills.pending()
+    rt._sync_paper_fills_locked()
+    state = rt.accounting_service.snapshot().execution_accounting
+    assert state.unaccounted_fill_count == 1 and state.status == 'DIVERGED'
+    assert rt.accounting_service.ledger.version == 4

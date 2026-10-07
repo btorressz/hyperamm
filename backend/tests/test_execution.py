@@ -101,7 +101,8 @@ async def test_venue_missing_open_order_gets_authoritative_terminal_status(statu
     assert order.status==expected and order.venue_order_id=='123'
     assert order.filled_size==(D('1') if status=='filled' else D('0'))
     assert int(order.updated_at.timestamp())==1700000000
-    assert not await adapter.get_open_orders()
+    assert not adapter._orders.active()
+    assert adapter.has_unknown_exposure() == bool(adapter._needs_verification)
     before=order.model_copy(deep=True)
     await adapter.reconcile_venue()
     assert order==before
@@ -239,7 +240,8 @@ async def test_absence_without_terminal_evidence_is_unknown_and_blocks_reconcile
     assert venue.transmissions==0 and adapter.reconciliation_error
     assert await adapter.get_open_orders()==[order]
     await adapter.cancel_all()
-    assert not await adapter.get_open_orders()
+    assert not adapter._orders.active()
+    assert adapter.has_unknown_exposure() == bool(adapter._needs_verification)
 
 
 @pytest.mark.asyncio
@@ -293,7 +295,8 @@ async def test_submission_timeout_retains_cancellable_unknown_order():
     with pytest.raises(TimeoutError): await adapter.submit_orders([request])
     assert adapter._orders['new'].status==OrderStatus.UNKNOWN
     await adapter.cancel_all()
-    assert not await adapter.get_open_orders()
+    assert not adapter._orders.active()
+    assert adapter.has_unknown_exposure() == bool(adapter._needs_verification)
 
 
 @pytest.mark.asyncio
@@ -370,4 +373,195 @@ async def test_cancelled_sdk_waiter_cannot_outlive_kill_barrier():
         release.set()
     with pytest.raises(asyncio.CancelledError): await task
     await asyncio.wait_for(kill,1)
-    assert not await adapter.get_open_orders()
+    assert not adapter._orders.active()
+    assert adapter.has_unknown_exposure() == bool(adapter._needs_verification)
+
+
+@pytest.mark.parametrize('side', ['BID', 'ASK'])
+@pytest.mark.parametrize('filled', ['0', '.25'])
+@pytest.mark.parametrize('prices', [('100', '100'), ('100', '120')])
+def test_duplicate_slot_exposure_and_capital_sum_every_remaining_order(side, filled, prices):
+    from app.risk.firewall import exposure_metrics
+    from app.accounting.vault import reserved_capital
+    rows = [o(side=side, price=price, cid=str(index)) for index, price in enumerate(prices)]
+    for row in rows:
+        row.filled_size = D(filled)
+        row.status = OrderStatus.PARTIALLY_FILLED if filled != '0' else OrderStatus.OPEN
+    desired = [q(side=side, price='105')]
+    exp = exposure_metrics(desired, D('0'), D('100'), D('10'), rows)
+    quantity = D('2') * (D('1')-D(filled))
+    notional = sum(D(price)*(D('1')-D(filled)) for price in prices)
+    assert (exp.bid_quantity if side == 'BID' else exp.ask_quantity) == quantity
+    assert (exp.bid_quote_notional if side == 'BID' else exp.ask_quote_notional) == notional
+    assert exp.gross_quote_notional == notional
+    assert reserved_capital(D('0'), D('100'), desired, rows) == notional
+
+
+@pytest.mark.parametrize('side', ['BID', 'ASK'])
+def test_reconciler_prefers_matching_keeper_and_cancels_every_surplus(side):
+    valid = o(side=side, cid='valid', size='2')
+    valid.filled_size = D('1')
+    valid.status = OrderStatus.PARTIALLY_FILLED
+    rows = [o(side=side, cid='bad', price='2500'), valid, o(side=side, cid='surplus')]
+    actions = reconcile_quotes([q(side=side)], rows, D('1'), D('.01'))
+    assert [(a.action, a.existing.client_order_id) for a in actions] == [
+        (ReconcileActionType.CANCEL, 'bad'), (ReconcileActionType.CANCEL, 'surplus'),
+        (ReconcileActionType.KEEP, 'valid')]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('level', [None, -1, 0])
+async def test_unknown_surplus_blocks_create_and_replace_and_remains_cancellable(level):
+    adapter = PaperExecutionAdapter()
+    keeper = o(cid='keeper')
+    unknown = o(cid='unknown', level=level)
+    unknown.status = OrderStatus.UNKNOWN
+    adapter.orders[keeper.client_order_id] = keeper
+    adapter.orders[unknown.client_order_id] = unknown
+    with pytest.raises(RuntimeError, match='unresolved'):
+        await OrderManager(adapter).reconcile('ETH', [q(price='2900'), q(level=1)], D('1'), D('.01'))
+    assert adapter.orders['unknown'].status == OrderStatus.UNKNOWN
+    assert not any(row.level_index == 1 for row in await adapter.get_open_orders())
+    await adapter.cancel_all()
+    assert all(row.status == OrderStatus.UNKNOWN for row in await adapter.get_open_orders())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('level', [None, -1])
+async def test_unmanaged_order_is_counted_and_cancelled_before_creation(level):
+    from app.risk.firewall import exposure_metrics
+    adapter = PaperExecutionAdapter()
+    unmanaged = o(cid='unmanaged', level=level)
+    adapter.orders[unmanaged.client_order_id] = unmanaged
+    exp = exposure_metrics([q()], D('0'), D('3000'), D('10'), [unmanaged])
+    assert exp.bid_quantity == D('2')
+    actions = await OrderManager(adapter).reconcile('ETH', [q()], D('1'), D('.01'))
+    assert actions[0].action == ReconcileActionType.CANCEL
+    assert unmanaged.status == OrderStatus.CANCELLED
+    assert len(await adapter.get_open_orders()) == 1
+
+
+@pytest.mark.asyncio
+async def test_single_slot_keep_replace_preserve_overlap_and_cancellation():
+    from app.risk.firewall import exposure_metrics
+    from app.accounting.vault import reserved_capital
+    adapter = PaperExecutionAdapter()
+    original = o(cid='original', price='100')
+    adapter.orders[original.client_order_id] = original
+    assert (await OrderManager(adapter).reconcile('ETH', [q(price='100')], D('1'), D('.01')))[0].action == ReconcileActionType.KEEP
+    exp = exposure_metrics([q(price='110')], D('0'), D('100'), D('10'), [original])
+    assert exp.bid_quantity == D('1') and exp.bid_quote_notional == D('110')
+    assert reserved_capital(D('0'), D('100'), [q(price='110')], [original]) == D('110')
+    assert (await OrderManager(adapter).reconcile('ETH', [q(price='110')], D('1'), D('.01')))[0].action == ReconcileActionType.REPLACE
+    assert original.status == OrderStatus.CANCELLED
+    assert len(await adapter.get_open_orders()) == 1
+
+
+@pytest.mark.asyncio
+async def test_unconfirmed_surplus_cancellation_blocks_creation():
+    adapter = PaperExecutionAdapter()
+    adapter.orders['a'] = o(cid='a')
+    adapter.orders['b'] = o(cid='b')
+    async def no_confirmation(_ids): return []
+    adapter.cancel_orders = no_confirmation
+    with pytest.raises(RuntimeError, match='unconfirmed'):
+        await OrderManager(adapter).reconcile('ETH', [q(), q(level=1)], D('1'), D('.01'))
+    assert set(adapter.orders) == {'a', 'b'}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('mode', ['PAPER', 'TESTNET'])
+async def test_closed_history_limit_never_evicts_active_unknown_or_verification(mode):
+    from app.execution.fills import CLOSED_ORDER_LIMIT
+    if mode == 'PAPER':
+        adapter = PaperExecutionAdapter()
+        history = adapter.orders
+    else:
+        adapter, _, _ = venue_adapter()
+        history = adapter._orders
+    active = []
+    for index, status in enumerate((OrderStatus.OPEN, OrderStatus.PARTIALLY_FILLED, OrderStatus.UNKNOWN)):
+        order = o(cid='active'+str(index)); order.status = status
+        history[order.client_order_id] = order
+        active.append(order)
+    if mode == 'TESTNET':
+        adapter._needs_verification.add('verification')
+        pinned = o(cid='verification'); pinned.status = OrderStatus.CANCELLED
+        history[pinned.client_order_id] = pinned
+    for index in range(CLOSED_ORDER_LIMIT+250):
+        order = o(cid='closed'+str(index)); order.status = OrderStatus.CANCELLED
+        history[order.client_order_id] = order
+    assert all(history[order.client_order_id] is order for order in active)
+    closed = [order for order in history.values() if order.status == OrderStatus.CANCELLED]
+    assert len(closed) == CLOSED_ORDER_LIMIT + (mode == 'TESTNET')
+    assert 'closed0' not in history and 'closed1249' in history
+    recent = adapter.recent_orders(7)
+    assert all(order in recent for order in active)
+    assert len([order for order in recent if order.client_order_id.startswith('closed')]) == 7
+    if mode == 'TESTNET':
+        assert history['verification'] is pinned
+        exposure = await adapter.get_open_orders()
+        assert next(order for order in exposure if order.client_order_id == 'verification').status == OrderStatus.UNKNOWN
+        adapter._needs_verification.clear(); history.prune()
+        assert 'verification' not in history
+
+
+@pytest.mark.asyncio
+async def test_testnet_duplicate_unknown_cannot_transmit_and_surplus_is_cancelled():
+    adapter, venue, keeper = venue_adapter()
+    venue.opened=[{'oid':123, 'coin':'ETH', 'sz':'1', 'origSz':'1'}]
+    duplicate=o(cid='surplus'); duplicate.venue_order_id='456'
+    duplicate.status=OrderStatus.UNKNOWN
+    adapter._orders[duplicate.client_order_id]=duplicate
+    with pytest.raises(RuntimeError, match='unknown'):
+        await OrderManager(adapter).reconcile('ETH', [q(level=1)], D('1'), D('.01'))
+    assert adapter._orders['surplus'] is duplicate and venue.transmissions == 0
+    with pytest.raises(RuntimeError, match='unresolved'):
+        await adapter.submit_orders([OrderRequest(client_order_id='forbidden', market='ETH', side='BID', price=D('2999'), size=D('1'))])
+    await adapter.cancel_all()
+    assert keeper.status == duplicate.status == OrderStatus.CANCELLED
+    assert adapter._needs_verification == {'tracked', 'surplus'}
+    venue.opened=[]
+    venue.results['123']=venue_update('canceled', remaining='1')
+    venue.results['456']=venue_update('canceled', remaining='1', oid=456)
+    await adapter.reconcile_venue()
+    assert not adapter.has_unknown_exposure() and not await adapter.get_open_orders()
+    await adapter.submit_orders([OrderRequest(client_order_id='resolved', market='ETH', side='BID', price=D('2999'), size=D('1'))])
+    assert venue.transmissions == 1
+
+
+@pytest.mark.asyncio
+async def test_active_order_identity_cannot_be_overwritten():
+    adapter=PaperExecutionAdapter()
+    old=o(cid='same-id'); adapter.orders[old.client_order_id]=old
+    with pytest.raises(ValueError, match='identity'):
+        await adapter.submit_orders([OrderRequest(client_order_id=old.client_order_id, market='ETH', side='ASK', price=D('3100'), size=D('2'))])
+    assert adapter.orders[old.client_order_id] is old and old.status == OrderStatus.OPEN
+
+
+@pytest.mark.asyncio
+async def test_testnet_closed_fill_evidence_waits_for_accounting_consumption():
+    from datetime import timedelta
+    from app.market_data.perp_context import PerpPositionContext
+    adapter, venue, _ = venue_adapter()
+    adapter._orders.clear()
+    adapter._orders.limit = 2
+    venue.order_response={'status':'ok','response':{'data':{'statuses':[{'filled':{'oid':123}}]}}}
+    await adapter.submit_orders([OrderRequest(client_order_id='filled', market='ETH', side='BID', price=D('2999'), size=D('1'))])
+    filled=adapter._orders['filled']
+    assert filled.status == OrderStatus.FILLED and adapter._pending_accounting == {'filled'}
+    for index in range(8):
+        closed=o(cid=f'closed-{index}');closed.status=OrderStatus.CANCELLED
+        adapter._orders[closed.client_order_id]=closed
+    assert adapter._orders['filled'] is filled and len(adapter._orders) == 3
+    with pytest.raises(RuntimeError, match='accounting'):
+        await adapter.submit_orders([OrderRequest(client_order_id='blocked', market='ETH', side='BID', price=D('2999'), size=D('1'))])
+    old=filled.updated_at-timedelta(seconds=1)
+    position=PerpPositionContext(market='ETH', signed_position_base=D('1'), source='TESTNET', updated_at=old, version=1)
+    account={'account_value':D('100000'), 'updated_at':old}
+    adapter.acknowledge_accounting(position, account)
+    assert 'filled' in adapter._pending_accounting
+    fresh=filled.updated_at+timedelta(seconds=1)
+    adapter.acknowledge_accounting(position.model_copy(update={'updated_at':fresh}), {**account,'updated_at':fresh})
+    assert not adapter._pending_accounting and 'filled' not in adapter._orders
+    assert len(adapter._orders) == 2

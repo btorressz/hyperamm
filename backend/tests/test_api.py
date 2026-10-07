@@ -183,3 +183,31 @@ def test_phase9_agent_api_exposes_no_secrets_or_execution_actions():
         raw=str(client.get('/api/v1/agents').json()).lower()
         for token in ('private_key','redstone_api_key','coingecko_api_key','submit_orders','cancel_orders','replace_orders'):
             assert token not in raw
+
+
+def test_execution_api_uses_recent_views_and_validates_limits(monkeypatch):
+    from app.execution.models import Fill, OrderStatus
+    from test_execution import o
+    from decimal import Decimal
+    with TestClient(app) as client:
+        rt = app.state.runtime
+        rt.paper.orders.limit = 120
+        for index in range(150):
+            order = o(cid=f'closed-{index}')
+            order.status = OrderStatus.CANCELLED
+            rt.paper.orders[order.client_order_id] = order
+        active = o(cid='active'); rt.paper.orders[active.client_order_id] = active
+        for index in range(150):
+            rt.paper.fills.add(Fill(client_order_id=f'fill-{index}', market='ETH', side='BID',
+                                   price=Decimal('3000'), size=Decimal('.01')))
+        monkeypatch.setattr(rt.paper, 'all_orders', lambda: (_ for _ in ()).throw(AssertionError('full order scan')))
+        monkeypatch.setattr(rt.paper.fills, 'all', lambda: (_ for _ in ()).throw(AssertionError('full fill scan')))
+        rows = client.get('/api/v1/orders').json()
+        assert len(rows) == 101 and rows[0]['client_order_id'] == 'active'
+        assert rows[1]['client_order_id'] == 'closed-50'
+        assert len(client.get('/api/v1/orders?limit=7').json()) == 8
+        rows = client.get('/api/v1/fills?limit=7').json()
+        assert len(rows) == 7 and rows[0]['client_order_id'] == 'fill-143'
+        for endpoint in ['/orders', '/fills']:
+            for limit in [0, 1001]:
+                assert client.get(f'/api/v1{endpoint}?limit={limit}').status_code == 422

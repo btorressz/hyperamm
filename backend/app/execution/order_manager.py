@@ -31,10 +31,20 @@ class OrderManager:
             await self.execution.reconcile_venue()
         existing = await self.execution.get_open_orders()
         actions = reconcile_quotes(desired, existing, price_tolerance_bps, size_tolerance)
+        uncertain = any(o.status == "UNKNOWN" for o in existing)
+        cancelled_ids = set()
         for action in actions:
             if action.action in {ReconcileActionType.CANCEL, ReconcileActionType.REPLACE}:
                 await self.execution.cancel_orders([action.existing.client_order_id])
+                cancelled_ids.add(action.existing.client_order_id)
             if action.action in {ReconcileActionType.CREATE, ReconcileActionType.REPLACE}:
+                if getattr(self.execution, "_needs_verification", set()):
+                    await self.execution.reconcile_venue()
+                remaining = await self.execution.get_open_orders()
+                if uncertain or any(o.status == "UNKNOWN" for o in remaining) or getattr(self.execution, "_needs_verification", set()):
+                    raise RuntimeError("unresolved execution exposure prevents CREATE/REPLACE")
+                if any(o.client_order_id in cancelled_ids for o in remaining):
+                    raise RuntimeError("replacement cancellation unconfirmed")
                 request = self.request_for(market, action.desired)
                 # Preserve legacy zero-argument PAPER/research callbacks.
                 try:

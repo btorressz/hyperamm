@@ -174,7 +174,8 @@ async def test_normalized_runtime_ladder_binds_fingerprint_risk_capital_and_wire
     assert venue.transmissions == 2
     assert len(adapter._orders) == 2
     await adapter.cancel_all()
-    assert not await adapter.get_open_orders()
+    assert not adapter._orders.active()
+    assert adapter.has_unknown_exposure() and adapter._needs_verification
 
 
 @pytest.mark.asyncio
@@ -232,6 +233,15 @@ async def test_exact_normalized_replace_and_truthful_cancellation(monkeypatch,re
     adapter._orders['old']=old
     venue.opened=[{'oid':123,'coin':'ETH','sz':'.1234','origSz':'.1234'}]
     desired=[rt.quotes[0]]
+    # Successful wire cancellation must also resolve its independent venue
+    # verification before a replacement is admitted.
+    def confirmed_cancel(*args):
+        venue.opened=[]
+        result=venue_update('canceled', remaining='.1234')
+        result['order']['order']['origSz']='.1234'
+        venue.results['123']=result
+        return venue.cancel_response
+    venue.cancel_by_cloid=confirmed_cancel
     if reject:
         # Inject drift after quote -> request construction, before authority.
         original=rt.orders.request_for

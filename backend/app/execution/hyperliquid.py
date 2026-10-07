@@ -5,6 +5,7 @@ from decimal import Decimal, ROUND_FLOOR, ROUND_CEILING, ROUND_DOWN, localcontex
 from datetime import datetime, timezone
 from app.market_data.models import utcnow
 from app.market_data.perp_context import PerpPositionContext, normalize_user_position_context
+from .fills import OrderHistory
 from .models import OrderRequest, StrategyOrder, OrderStatus
 
 
@@ -21,10 +22,11 @@ class HyperliquidTestnetExecutionAdapter:
         self._info=venue_info
         self._subscriptions=[]
         self._needs_verification=set()
+        self._pending_accounting = set()
         self.venue_changed=asyncio.Event()
         self.last_reconciled_at=None
         self.reconciliation_error=None
-        self._orders: dict[str, StrategyOrder]={}
+        self._orders = OrderHistory(pinned=lambda cid: cid in self._needs_verification or cid in self._pending_accounting)
         self._positions: dict[str, Decimal]={}
         self._position_updated_at=None
         self._position_error=None
@@ -205,7 +207,7 @@ class HyperliquidTestnetExecutionAdapter:
         return self._positions[market],self._position_updated_at,self._position_version,self._position_error
 
     def has_unknown_exposure(self) -> bool:
-        return any(order.status == OrderStatus.UNKNOWN for order in self._orders.values())
+        return bool(self._needs_verification) or any(order.status == OrderStatus.UNKNOWN for order in self._orders.values())
 
     async def _venue_client(self):
         self._require_enabled()
@@ -255,6 +257,9 @@ class HyperliquidTestnetExecutionAdapter:
             order.filled_size=filled
             order.venue_order_id=oid
             order.updated_at=datetime.fromtimestamp(timestamp/1000,timezone.utc) if timestamp else utcnow()
+            if filled > 0:
+                self._pending_accounting.add(order.client_order_id)
+                self.venue_changed.set()
 
     async def reconcile_venue(self):
         if not self._orders:
@@ -265,12 +270,14 @@ class HyperliquidTestnetExecutionAdapter:
             if not isinstance(opened,list):
                 raise ValueError("invalid venue open-order response")
             by_oid={str(item["oid"]):item for item in opened}
-            for order in self._orders.values():
+            for order in list(self._orders.values()):
                 if not self._active(order) and order.client_order_id not in self._needs_verification:
                     continue
                 data=by_oid.get(order.venue_order_id)
                 if data is not None:
                     self._apply_venue_order(order,data,"open")
+                    self._needs_verification.discard(order.client_order_id)
+                    self._orders.record(order)
                     continue
                 if order.venue_order_id:
                     result=await asyncio.to_thread(info.query_order_by_oid,self.account_address,int(order.venue_order_id))
@@ -284,6 +291,8 @@ class HyperliquidTestnetExecutionAdapter:
                 update=result["order"]
                 self._apply_venue_order(order,update["order"],update["status"],update.get("statusTimestamp"))
                 self._needs_verification.discard(order.client_order_id)
+                self._orders.record(order)
+            self._orders.prune()
             self.last_reconciled_at=utcnow()
             self.reconciliation_error=None
         except Exception as exc:
@@ -304,12 +313,18 @@ class HyperliquidTestnetExecutionAdapter:
 
     async def submit_orders(self, orders: list[OrderRequest]) -> list[StrategyOrder]:
         self._require_enabled()
+        if self.has_unknown_exposure() or self._pending_accounting:
+            raise RuntimeError("unresolved venue/accounting exposure prevents submission")
         if self.authority is None:
             raise PermissionError("concrete request authority is required for TESTNET submission")
         exchange=await asyncio.to_thread(self._exchange_client)
         await self._venue_client()
         result=[]
         for req in orders:
+            if self._pending_accounting:
+                raise RuntimeError("unconsumed venue accounting evidence prevents submission")
+            if req.client_order_id in self._orders:
+                raise ValueError("execution client order identity already retained")
             # Isolate caller mutation across the authority await. The callback
             # receives its own copy; only the checked snapshot is serialized.
             req=req.model_copy(deep=True)
@@ -334,7 +349,9 @@ class HyperliquidTestnetExecutionAdapter:
             order.updated_at=utcnow()
             if status==OrderStatus.FILLED:
                 order.filled_size=order.size
+                self._pending_accounting.add(order.client_order_id)
                 self.venue_changed.set()
+            self._orders.record(order)
             if status in {OrderStatus.REJECTED,OrderStatus.UNKNOWN}:
                 raise RuntimeError(f"Hyperliquid strategy order status: {status}")
             result.append(order)
@@ -359,6 +376,7 @@ class HyperliquidTestnetExecutionAdapter:
                     order.status=OrderStatus.CANCELLED
                     order.updated_at=utcnow()
                     self._needs_verification.add(order.client_order_id)
+                self._orders.record(order)
                 result.append(order)
             except Exception as exc:
                 failures.append(str(exc))
@@ -370,17 +388,44 @@ class HyperliquidTestnetExecutionAdapter:
         out=[]
         for cid, req in replacements:
             await self.cancel_orders([cid])
+            await self.reconcile_venue()
+            if any(o.client_order_id == cid for o in await self.get_open_orders()):
+                raise RuntimeError("replacement cancellation unconfirmed")
             out.extend(await self.submit_orders([req]))
         return out
 
     async def get_open_orders(self):
-        return [o for o in self._orders.values() if self._active(o)]
+        return [o if self._active(o) else o.model_copy(update={"status": OrderStatus.UNKNOWN})
+                for o in self._orders.values() if self._active(o) or o.client_order_id in self._needs_verification]
 
     async def cancel_all(self):
         return await self.cancel_orders([o.client_order_id for o in await self.get_open_orders()])
 
     def all_orders(self):
         return list(self._orders.values())
+
+    def acknowledge_accounting(self, position, account):
+        """Release only after Phase 11 consumed fresh authoritative account state.
+
+        TESTNET has partial accounting, not a normalized trade ledger. Closed
+        fill/order evidence therefore waits for independent position/account
+        observation; active and verification state remains independently pinned.
+        """
+        if position is None or account is None or position.stale:
+            return
+        if account.get("account_value") is None or account.get("updated_at") is None:
+            return
+        for cid in tuple(self._pending_accounting):
+            order = self._orders[cid]
+            if (order.market == position.market and position.updated_at >= order.updated_at
+                    and account["updated_at"] >= order.updated_at):
+                self._pending_accounting.discard(cid)
+        self._orders.prune()
+
+    def recent_orders(self, limit=100):
+        return [o if self._active(o) or o.client_order_id not in self._needs_verification
+                else o.model_copy(update={"status": OrderStatus.UNKNOWN})
+                for o in self._orders.recent(limit)]
 
     async def close(self):
         if self._info is not None and self._subscriptions:
