@@ -28,7 +28,7 @@ Signing material exists only in backend environment variables. React never recei
 
 ## Known limitations
 
-Phases 5–8 now implement inventory-aware quoting, volatility/book-imbalance adaptation, Hyperliquid-native perpetual context, multi-source reference integrity, and the deterministic institutional risk firewall. Supervisory agents, strategy optimization, vault accounting and mainnet execution remain roadmap items rather than hidden placeholders.
+Phases 5–8 now implement inventory-aware quoting, volatility/book-imbalance adaptation, Hyperliquid-native perpetual context, multi-source reference integrity, and the deterministic institutional risk firewall. Phases 9–12 supervisory agents, offline optimization, research vault accounting and the 12-page terminal are implemented / in review. Mainnet execution remains out of scope. Local fixture acceptance does not establish real provider or signed TESTNET acceptance; see [Audit 1.0](../AUDIT_REPORT_1.0.md) for current authority/provider/operational limitations.
 
 ## Phase 4.1 venue reconciliation
 
@@ -66,8 +66,9 @@ PAPER/DEMO remain defaults. Disabled TESTNET never constructs a signing client.
 Query/event and exchange clients can be injected for deterministic offline tests;
 normal tests need no wallet, credentials, or live Hyperliquid service.
 
-Live signed orders, real WebSocket delivery/reconnect timing, venue rate limits,
-and real fill/cancel races were **not exercised** by this acceptance pass.
+Historical Phase 4.1 acceptance: live signed orders, real WebSocket delivery/reconnect timing, venue rate limits,
+and real fill/cancel races were **not exercised**. Later fake-SDK thread/reconnect
+regressions remain local fixture evidence, not live provider acceptance.
 Periodic authoritative polling continues when WebSocket notifications are absent.
 Ownership IDs are still in memory: discovering previous-process strategy orders
 and durable restart recovery are outside this pass. This is a tested Phase 1–4
@@ -108,3 +109,50 @@ L2 mid   -> execution-venue evidence
 The TESTNET user-state refresh also retains currently available authoritative account-value context for Phase 8 session equity/drawdown observability. Missing values remain unavailable; Phase 8 does not fabricate them or call leverage/margin mutation methods.
 
 External reference networking is independent of the signed execution adapter. LIVE market/reference data can therefore run with PAPER execution and no trading wallet. Final TESTNET order transmission remains guarded by the existing explicit testnet opt-in and now additionally requires a current Phase 8 FinalQuoteAuthorization.
+
+## A1-019 serialized configuration lifecycle
+
+`HyperAmmRuntime.update_config()` holds a dedicated `lifecycle_lock` for the
+entire transition. The deterministic order is lifecycle lock, then execution
+lock; callbacks, quote refresh and emergency controls acquire only execution.
+Runtime start/stop share lifecycle serialization. Transport stop/start awaits do
+not hold the execution lock, so callback drain and cancellation can proceed.
+
+The configuration sequence is:
+
+```text
+invalidate quote authority / cancel strategy orders
+→ capture exact old market/reference identities
+→ stage replacement market, perp and reference services and session objects
+→ stop captured old transports
+→ start staged replacement transports
+→ publish config/service graph and reset dependent evidence under execution lock
+→ wake ordinary strategy recovery through normal authority checks
+```
+
+Replacement listeners are registered before startup and bind their source market
+identity. They ignore callbacks while transitioning/failed and from retired
+markets. Reference wakeups are detached during transition and retirement; only
+the published replacement can wake recovery. Market/feed or PAPER↔TESTNET context
+changes create fresh PAPER, telemetry/supervisor and research accounting sessions.
+
+Publication/reset has no awaits; it is atomic relative to this asyncio runtime's
+execution-lock users, not a distributed transport transaction. `start()` completion
+means transport startup was scheduled/completed by its service, not proof of fresh
+LIVE data or external provider health. Strategy intent may stay enabled, but
+refresh, periodic authority checks, venue refresh and CREATE/REPLACE are gated
+while the lifecycle is incomplete. Success only wakes the ordinary quote loop;
+market/perp/reference evidence, Phase 8 final authorization and Phase 11 accounting
+must independently pass before reconciliation can transmit.
+
+Constructor failure, old-service stop failure, either replacement start failure,
+partial startup and request cancellation all latch `FAILED`. The old published
+config/references remain visible but are explicitly unavailable for quoting;
+desired/authorized ladders stay invalidated and strategy health/error reports the
+failure. Every constructed staged transport gets a stop attempt, including one
+that started before its peer failed. Cleanup failures are reported and ownership
+is retained for shutdown retry. No automatic rollback is claimed: uncertain old
+shutdown cannot support safe recovery. Further config/start requests require a
+runtime restart; resume clears only the manual kill latch and never the lifecycle
+failure. Cancellation, strategy stop and manual kill remain available. The initial
+runtime service startup also fails closed if a transport start raises.

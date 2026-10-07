@@ -1,9 +1,22 @@
 #  HyperAMM
 ## Adaptive Virtual AMM & Market-Making Engine for Hyperliquid
 
+## Current review status (2026-10-07)
+
+Phases 1–12 are implemented, including all 12 active terminal pages. Implementation,
+local fixture acceptance and live/external-provider acceptance are separate gates.
+Historical acceptance counts below describe their merge milestones, not the current
+suite. Phase 6–12 review status is not promoted by local tests; external provider,
+authority and operational limitations remain tracked in
+[Audit 1.0](AUDIT_REPORT_1.0.md). This change addresses A1-019 and A1-018 only.
+PAPER remains deterministic and crossing-only; TESTNET remains guarded. No mainnet,
+custody or money movement is supported. History is bounded, in memory and limited
+to the current session.
+
+
 **HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
 
-Phases 1–8 are implemented, Phase 9 supervisory agents are implemented / in review, Phase 10 deterministic simulation + bounded optimization and Phase 11 deterministic research vault/accounting are implemented / in review as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Phases 1–12 are implemented / in review, including deterministic supervisory agents, simulation + bounded optimization, research vault/accounting and the full operator terminal as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
 
 ## Why a virtual AMM?
 
@@ -132,6 +145,13 @@ GET  /api/v1/amm/state
 GET  /api/v1/amm/curve
 GET  /api/v1/amm/quotes
 GET  /api/v1/positions
+GET  /api/v1/vault
+GET  /api/v1/accounting/pnl
+GET  /api/v1/accounting/position
+GET  /api/v1/accounting/ledger
+GET  /api/v1/accounting/events
+GET  /api/v1/terminal/history
+GET  /api/v1/terminal/events
 GET  /api/v1/market-adaptation
 GET  /api/v1/perp-context
 GET  /api/v1/orders
@@ -153,7 +173,7 @@ WS   /ws/terminal
 
 ## Frontend
 
-The terminal uses a dark institutional layout with selected-market/feed/execution/risk state in the header, rolling market + fair-value charting, Hyperliquid L2, an AMM liquidity view, quote ladder, strategy controls, metric cards, kill-switch controls, supervisory-agent observability, and a focused Simulation & Optimization research page. Vault, expanded Analytics, Logs and expanded Settings remain planned; simulation is visibly labeled SIMULATED / NO LIVE ORDERS and has no auto-deploy action.
+The terminal uses a dark institutional layout with selected-market/feed/execution/risk state in the header, rolling market + fair-value charting, Hyperliquid L2, an AMM liquidity view, quote ladder, strategy controls, metric cards, kill-switch controls, supervisory-agent observability, and a focused Simulation & Optimization research page. All 12 pages are active: Dashboard, Markets, Strategy, AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation & Optimization, Logs and Settings; simulation is visibly labeled SIMULATED / NO LIVE ORDERS and has no auto-deploy action.
 
 ## Tests
 
@@ -313,8 +333,10 @@ latched error. No public accounting reset/replay endpoint is provided.
 The React terminal exposes the existing Phase 1–11.1 pipeline through twelve
 active pages: Dashboard, Markets, Strategy, AMM Settings, Execution, Risk,
 Supervisory Agents, Vault, Analytics, Simulation & Optimization, Logs and Settings.
-It adds real quote lineage, incremental price/liquidity charts, session analytics,
-responsive layouts, visible emergency kill and resilient WebSocket diagnostics.
+It displays retained quote-stage evidence, incremental price/liquidity charts, session analytics,
+responsive layouts, visible emergency kill and WebSocket diagnostics. Missing or
+approximate lineage remains qualified by A1-021; chart history ordering (A1-020)
+and remaining remote/operational limits are tracked in [Audit 1.0](AUDIT_REPORT_1.0.md).
 
 `/ws/terminal` now carries the code-owned `phase12-v1` contract, process-wide
 sequence, UTC emission time, pre-agent/post-agent/final quote stages and

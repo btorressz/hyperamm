@@ -4,6 +4,18 @@
 
 ---
 
+## Current review status (2026-10-07)
+
+Phases 1–12 are implemented, including all 12 active terminal pages. Implementation,
+local fixture acceptance and live/external-provider acceptance are separate gates.
+Historical acceptance counts below describe their merge milestones, not the current
+suite. Phase 6–12 review status is not promoted by local tests; external provider,
+authority and operational limitations remain tracked in
+[Audit 1.0](AUDIT_REPORT_1.0.md). This change addresses A1-019 and A1-018 only.
+PAPER remains deterministic and crossing-only; TESTNET remains guarded. No mainnet,
+custody or money movement is supported. History is bounded, in memory and limited
+to the current session.
+
 ## 🚀 Overview
 
 HyperAMM is a research-focused market-making infrastructure project built with:
@@ -1307,7 +1319,7 @@ and never overrides the actual underlying risk/execution authorities.
 
 # 🖥️ Terminal Pages
 
-The final Phase 12 terminal contains twelve active pages:
+The current Phase 12 terminal contains twelve active pages:
 
 ```text
 Dashboard
@@ -1431,7 +1443,9 @@ Each stage may expose:
 - survival/suppression state
 - authorization provenance
 
-Missing stages remain unavailable rather than being reconstructed artificially.
+Missing stages remain unavailable. Some retained lineage labels are approximate;
+Audit 1.0 A1-021 qualifies exact per-stage provenance. A1-020 tracks history/live
+chart ordering; local visual acceptance did not establish production authority.
 
 ---
 
@@ -1935,7 +1949,7 @@ No React component or terminal health indicator becomes part of that authority.
 
 The repository grew substantially throughout the roadmap.
 
-Major accepted test milestones included:
+Historical locally accepted test milestones included:
 
 ```text
 Phase 4.1
@@ -1957,7 +1971,7 @@ Phase 12
 546 tests passing
 ```
 
-Latest Phase 12 local acceptance:
+Historical Phase 12 acceptance at merge (2026-10-06, America/Los_Angeles):
 
 ```text
 Python 3.12.14
@@ -1988,7 +2002,7 @@ Phase 12 also passed:
 
 ---
 
-# 🖥️ Latest Frontend Acceptance
+# 🖥️ Historical Phase 12 Frontend Acceptance (2026-10-06)
 
 The completed React terminal contains twelve active pages and passed browser rendering without page-level errors.
 

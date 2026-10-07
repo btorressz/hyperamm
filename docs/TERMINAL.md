@@ -145,10 +145,11 @@ RAW AMM uses retained `neutral_price`/`neutral_size`; strategy and authorized
 modes use their actual stages. Levels suppressed before retained lineage are not
 reconstructed. Inventory bars distinguish BID/ASK even when distances overlap.
 
-The level-selectable pipeline uses neutral, inventory/pre-market, pre-agent,
+The level-selectable pipeline displays retained neutral, inventory/pre-market, pre-agent,
 pre-risk, agent/final and resting-order evidence. Missing stage size/price is
 unavailable. It reports factors, survival/blocking state and authorization
-fingerprint. Strategy attribution uses actual shifts and multiplicative factors;
+fingerprint. Some lineage labels are approximate (Audit 1.0 A1-021); retained
+fields do not prove independent evidence at every stage. Strategy attribution uses actual shifts and multiplicative factors;
 it does not invent additive basis-point contributions or TypeScript AMM formulas.
 
 L2 remains Hyperliquid data in LIVE and explicitly simulated in DEMO. Spread,
@@ -198,3 +199,18 @@ and critical statuses contain text rather than relying on color.
 
 Local acceptance evidence is recorded in the Phase 12 roadmap entry. No signed
 TESTNET trade is required or performed by the acceptance workflow.
+
+## Current audit qualifications (2026-10-07)
+
+All 12 pages above are active; historical Phase 12 local/browser acceptance is
+recorded at merge on 2026-10-06, not a fresh external-provider acceptance claim.
+See [Audit 1.0](../AUDIT_REPORT_1.0.md): A1-020 qualifies history/live ordering,
+A1-021 qualifies exact lineage, and remaining authority/provider/operational
+issues remain separate from UI observability. A1-009 keeps the local deployment
+boundary. Lifecycle A1-019 blocks recovery until publication completes and normal
+runtime evidence passes; failure requires restart and does not disable kill or
+cancellation. Terminal health is observational and cannot restore quote authority.
+
+The full REST/WebSocket inventory is listed in [README](../README.md#api-surface),
+including terminal history/events and vault/accounting summary, position, PnL,
+ledger and event routes. No new route or terminal contract is added by A1-019.

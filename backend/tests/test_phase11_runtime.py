@@ -203,7 +203,7 @@ async def test_disabled_accounting_does_not_misreport_confirmed_cancellation():
 
 
 @pytest.mark.asyncio
-async def test_paper_testnet_and_market_transitions_rebind_under_execution_lock():
+async def test_paper_testnet_and_market_transitions_rebind_under_execution_lock(monkeypatch):
     rt, snap = await runtime()
     await rt.paper.submit_orders([OrderRequest(client_order_id="cross", market="ETH", side="BID",
                                                price=snap.best_ask, size=D(".1"))])
@@ -219,9 +219,11 @@ async def test_paper_testnet_and_market_transitions_rebind_under_execution_lock(
     assert rt.paper.fills.all() == []
     assert rt.accounting_service.position.position_base == 0
     # Avoid starting services during this focused configuration test.
-    async def no_start(): pass
-    rt.market.start = no_start
-    rt.reference_service.start = no_start
+    from app.market_data.service import MarketDataService
+    from app.references.service import ReferenceService
+    async def no_start_service(self): pass
+    monkeypatch.setattr(MarketDataService, "start", no_start_service)
+    monkeypatch.setattr(ReferenceService, "start", no_start_service)
     await rt.update_config(rt.config.model_copy(update={"market": "BTC"}))
     assert rt.accounting_service.market == "BTC"
     assert rt.accounting_service.ledger.version == 0

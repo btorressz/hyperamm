@@ -81,7 +81,8 @@ it does not claim the venue has no orders. Explicit operator recovery is require
 
 One shared `asyncio.Lock` serializes generation/reconciliation, order creates,
 replacements and cancellations, cancel-all, market-driven paper mutations,
-venue updates, kill completion and execution-adapter/configuration changes.
+venue updates, kill completion and execution-adapter/configuration publication. A separate lifecycle lock serializes
+transport transitions (see A1-019 below).
 Kill revokes authority before waiting for the lock, then cancels after in-flight
 work finishes. Authority and fresh market state are checked before each create,
 again inside the TESTNET adapter after SDK setup, and after reconciliation.
@@ -254,3 +255,54 @@ Phase 8 uses the existing execution lock; no second lock hierarchy is introduced
 Automatic risk HALT does not set the manual kill latch. It produces an empty authorized ladder and uses existing reconciliation to cancel resting strategy orders. Recovery requires deterministic hysteresis and consecutive healthy confirmations. Manual kill still disables strategy intent and cannot be cleared by automatic firewall recovery.
 
 Immediately before transmission, authority rechecks market/adaptation, inventory, perp, reference and risk versions plus the current authorized quote fingerprint. Stale authorization is rejected before the execution adapter is allowed to submit an order.
+
+## A1-019 serialized configuration lifecycle
+
+`HyperAmmRuntime.update_config()` holds a dedicated `lifecycle_lock` for the
+entire transition. The deterministic order is lifecycle lock, then execution
+lock; callbacks, quote refresh and emergency controls acquire only execution.
+Runtime start/stop share lifecycle serialization. Transport stop/start awaits do
+not hold the execution lock, so callback drain and cancellation can proceed.
+
+The configuration sequence is:
+
+```text
+invalidate quote authority / cancel strategy orders
+→ capture exact old market/reference identities
+→ stage replacement market, perp and reference services and session objects
+→ stop captured old transports
+→ start staged replacement transports
+→ publish config/service graph and reset dependent evidence under execution lock
+→ wake ordinary strategy recovery through normal authority checks
+```
+
+Replacement listeners are registered before startup and bind their source market
+identity. They ignore callbacks while transitioning/failed and from retired
+markets. Reference wakeups are detached during transition and retirement; only
+the published replacement can wake recovery. Market/feed or PAPER↔TESTNET context
+changes create fresh PAPER, telemetry/supervisor and research accounting sessions.
+
+Publication/reset has no awaits; it is atomic relative to this asyncio runtime's
+execution-lock users, not a distributed transport transaction. `start()` completion
+means transport startup was scheduled/completed by its service, not proof of fresh
+LIVE data or external provider health. Strategy intent may stay enabled, but
+refresh, periodic authority checks, venue refresh and CREATE/REPLACE are gated
+while the lifecycle is incomplete. Success only wakes the ordinary quote loop;
+market/perp/reference evidence, Phase 8 final authorization and Phase 11 accounting
+must independently pass before reconciliation can transmit.
+
+Constructor failure, old-service stop failure, either replacement start failure,
+partial startup and request cancellation all latch `FAILED`. The old published
+config/references remain visible but are explicitly unavailable for quoting;
+desired/authorized ladders stay invalidated and strategy health/error reports the
+failure. Every constructed staged transport gets a stop attempt, including one
+that started before its peer failed. Cleanup failures are reported and ownership
+is retained for shutdown retry. No automatic rollback is claimed: uncertain old
+shutdown cannot support safe recovery. Further config/start requests require a
+runtime restart; resume clears only the manual kill latch and never the lifecycle
+failure. Cancellation, strategy stop and manual kill remain available. The initial
+runtime service startup also fails closed if a transport start raises.
+
+Current implementation is PAPER/guarded TESTNET research, not production readiness.
+See [Audit 1.0](../AUDIT_REPORT_1.0.md) for outstanding authority, lineage and
+provider limitations. Historical phase acceptance does not close those findings.
