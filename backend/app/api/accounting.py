@@ -13,13 +13,11 @@ async def vault(rt=Depends(runtime)):
 
 @router.get("/accounting/pnl")
 async def pnl(rt=Depends(runtime)):
-    await rt.vault_summary()
     return rt.accounting_service.pnl().model_dump(mode="json")
 
 
 @router.get("/accounting/position")
 async def position(rt=Depends(runtime)):
-    await rt.vault_summary()
     if rt.config.execution_mode.value == "TESTNET":
         return rt.perp_position.model_dump(mode="json") if rt.perp_position is not None else None
     return rt.accounting_service.position.model_dump(mode="json")

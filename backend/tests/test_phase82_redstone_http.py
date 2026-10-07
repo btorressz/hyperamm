@@ -408,6 +408,11 @@ def test_fastapi_serializes_single_effective_http_evidence_without_live_credenti
         return rt
     monkeypatch.setattr(main,"HyperAmmRuntime",runtime)
     with TestClient(main.app) as client:
+        # Assemble feed evidence on the runtime path before observing it.
+        rt=main.app.state.runtime
+        snap=MockMarketDataAdapter().snapshot_for(2)
+        client.portal.call(rt.market._accept, snap)
+        client.portal.call(rt.refresh_once)
         r=client.get("/api/v1/references")
         assert r.status_code==200
         payload=r.json()

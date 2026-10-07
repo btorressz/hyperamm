@@ -2,6 +2,15 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
+def preview_tick(client):
+    # Preview computation is an explicit runtime tick, never a browser GET.
+    from app.market_data.mock import MockMarketDataAdapter
+    rt = client.app.state.runtime
+    client.portal.call(rt.market._accept, MockMarketDataAdapter().snapshot_for(2))
+    client.portal.call(rt.refresh_once)
+    client.portal.call(rt._publish_terminal_snapshot)
+
+
 def test_fastapi_health_and_strategy():
     with TestClient(app) as client:
         r=client.get('/api/v1/health'); assert r.status_code==200 and r.json()['app']=='HyperAMM'
@@ -24,6 +33,7 @@ def test_stopped_strategy_preview_does_not_place_orders():
 
 def test_positions_returns_normalized_paper_inventory():
     with TestClient(app) as client:
+        preview_tick(client)
         r=client.get('/api/v1/positions')
         assert r.status_code==200
         data=r.json()
@@ -36,6 +46,7 @@ def test_positions_returns_normalized_paper_inventory():
 
 def test_market_adaptation_endpoint_returns_normalized_warmup_or_ready_state():
     with TestClient(app) as client:
+        preview_tick(client)
         r=client.get('/api/v1/market-adaptation')
         assert r.status_code==200
         data=r.json()
@@ -48,8 +59,9 @@ def test_market_adaptation_endpoint_returns_normalized_warmup_or_ready_state():
             assert data['spread_multiplier']=='1'
 
 
-def test_terminal_state_includes_market_adaptation_after_preview_refresh():
+def test_terminal_state_includes_market_adaptation_after_runtime_tick():
     with TestClient(app) as client:
+        preview_tick(client)
         assert client.get('/api/v1/amm/curve').status_code==200
         with client.websocket_connect('/ws/terminal') as ws:
             data=ws.receive_json()
@@ -71,6 +83,7 @@ def test_invalid_market_adaptation_config_returns_422():
 
 def test_perp_context_endpoint_returns_normalized_demo_context():
     with TestClient(app) as client:
+        preview_tick(client)
         r=client.get('/api/v1/perp-context')
         assert r.status_code==200
         data=r.json()
@@ -90,8 +103,9 @@ def test_perp_context_endpoint_returns_normalized_demo_context():
         assert data['position']['liquidation_price'] is None
 
 
-def test_terminal_state_includes_perp_context_after_preview_refresh():
+def test_terminal_state_includes_perp_context_after_runtime_tick():
     with TestClient(app) as client:
+        preview_tick(client)
         assert client.get('/api/v1/amm/curve').status_code==200
         with client.websocket_connect('/ws/terminal') as ws:
             data=ws.receive_json()
@@ -111,6 +125,7 @@ def test_invalid_perp_config_returns_422():
 
 def test_phase8_reference_and_risk_endpoints_in_demo():
     with TestClient(app) as client:
+        preview_tick(client)
         assert client.get('/api/v1/amm/curve').status_code==200
         refs=client.get('/api/v1/references')
         assert refs.status_code==200
@@ -152,6 +167,7 @@ def test_phase8_terminal_serialization_and_secrets_absent():
 
 def test_phase9_agents_api_and_terminal_state():
     with TestClient(app) as client:
+        preview_tick(client)
         assert client.get('/api/v1/amm/curve').status_code==200
         agents=client.get('/api/v1/agents')
         assert agents.status_code==200

@@ -3,7 +3,7 @@ from app.dependencies import runtime
 from app.strategy.models import StrategyConfig
 router=APIRouter(tags=['strategy'])
 @router.get('/strategy')
-async def get_strategy(rt=Depends(runtime)):return rt.strategy
+async def get_strategy(rt=Depends(runtime)):return rt.strategy.model_copy(deep=True)
 @router.put('/strategy')
 async def put_strategy(config:StrategyConfig,rt=Depends(runtime)):return await rt.update_config(config)
 @router.post('/strategy/start')
@@ -13,13 +13,12 @@ async def start(rt=Depends(runtime)):
 @router.post('/strategy/stop')
 async def stop(rt=Depends(runtime)):return await rt.stop_strategy()
 @router.get('/amm/state')
-async def amm_state(rt=Depends(runtime)):return {'fair_value':rt.fair_value,'pool':rt.pool,'model':rt.config.amm_model,'inventory':rt._inventory_payload(rt.inventory,rt.inventory_decision) if rt.inventory else None}
+async def amm_state(rt=Depends(runtime)):return {'fair_value':rt.fair_value,'pool':rt.pool.model_copy(deep=True) if rt.pool else None,'model':rt.config.amm_model,'inventory':rt._inventory_payload(rt.inventory,rt.inventory_decision) if rt.inventory else None}
 @router.get('/amm/curve')
 async def curve(rt=Depends(runtime)):
-    if rt.fair_value is None:await rt.refresh_once()
-    return {'fair_value':rt.fair_value,'quotes':rt.quotes,'inventory':rt._inventory_payload(rt.inventory,rt.inventory_decision) if rt.inventory else None}
+    return {'fair_value':rt.fair_value,'quotes':[q.model_copy(deep=True) for q in rt.quotes],'inventory':rt._inventory_payload(rt.inventory,rt.inventory_decision) if rt.inventory else None}
 @router.get('/amm/quotes')
-async def quotes(rt=Depends(runtime)):return rt.quotes
+async def quotes(rt=Depends(runtime)):return [q.model_copy(deep=True) for q in rt.quotes]
 
 @router.get('/market-adaptation')
 async def market_adaptation(rt=Depends(runtime)):

@@ -378,6 +378,7 @@ export type AgentsState = {
   telemetry: {
     version: number;
     fill_observations: number;
+    unavailable_markouts: number;
     reconcile_cycles: number;
     tracked_orders: number;
     unknown_orders: number;
