@@ -150,7 +150,8 @@ class StrategyOptimizer:
                 simulation_config=simulation,scenario=name,
             )
             evaluations.append(ScenarioEvaluation(
-                scenario=name,run_fingerprint=result.run_fingerprint,metrics=result.metrics,
+                scenario=name,dataset_fingerprint=result.dataset_fingerprint,
+                run_fingerprint=result.run_fingerprint,metrics=result.metrics,
                 score=score_metrics(result.metrics,objective),
             ))
         score=_mean([item.score.final_score for item in evaluations])
@@ -186,14 +187,15 @@ class StrategyOptimizer:
             try:
                 strategy=StrategyConfig.model_validate({**baseline_strategy.model_dump(),**strategy_updates})
                 agents=AgentConfig.model_validate({**baseline_agents.model_dump(),**agent_updates})
-                candidate=await self._evaluate(
-                    label=f"CANDIDATE_{index}",strategy=strategy,agents=agents,risk=risk_config.model_copy(deep=True),
-                    simulation=simulation_config.model_copy(deep=True),scenario_names=training_scenarios,
-                    frames=frames,objective=objective,strategy_updates=strategy_updates,agent_updates=agent_updates,
-                )
-                candidates.append(candidate)
-            except (ValidationError, ValueError) as exc:
+            except ValidationError as exc:
                 rejected.append({"strategy_updates":strategy_updates,"agent_updates":agent_updates,"reason":str(exc)})
+                continue
+            candidate=await self._evaluate(
+                label=f"CANDIDATE_{index}",strategy=strategy,agents=agents,risk=risk_config.model_copy(deep=True),
+                simulation=simulation_config.model_copy(deep=True),scenario_names=training_scenarios,
+                frames=frames,objective=objective,strategy_updates=strategy_updates,agent_updates=agent_updates,
+            )
+            candidates.append(candidate)
 
         ranked=sorted(candidates,key=candidate_ranking_key)
         baseline_summary=_candidate_summary(baseline.training)
@@ -207,7 +209,8 @@ class StrategyOptimizer:
                 simulation_config=simulation_config.model_copy(deep=True),scenario=name,
             )
             baseline_validation.append(ScenarioEvaluation(
-                scenario=name,run_fingerprint=result.run_fingerprint,metrics=result.metrics,
+                scenario=name,dataset_fingerprint=result.dataset_fingerprint,
+                run_fingerprint=result.run_fingerprint,metrics=result.metrics,
                 score=score_metrics(result.metrics,objective),
             ))
         baseline.validation=baseline_validation
@@ -228,7 +231,8 @@ class StrategyOptimizer:
                     simulation_config=simulation_config.model_copy(deep=True),scenario=name,
                 )
                 validation.append(ScenarioEvaluation(
-                    scenario=name,run_fingerprint=result.run_fingerprint,metrics=result.metrics,
+                    scenario=name,dataset_fingerprint=result.dataset_fingerprint,
+                    run_fingerprint=result.run_fingerprint,metrics=result.metrics,
                     score=score_metrics(result.metrics,objective),
                 ))
             candidate.validation=validation

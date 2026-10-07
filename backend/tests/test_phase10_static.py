@@ -24,8 +24,10 @@ def test_candidate_exception_handler_only_catches_expected_failures():
     tree=ast.parse((SIM/'optimizer.py').read_text())
     handlers=[node for node in ast.walk(tree) if isinstance(node,ast.ExceptHandler)]
     assert len(handlers)==1
-    assert isinstance(handlers[0].type,ast.Tuple)
-    assert [node.id for node in handlers[0].type.elts]==['ValidationError','ValueError']
+    assert isinstance(handlers[0].type,ast.Name)
+    assert handlers[0].type.id=='ValidationError'
+    guarded=next(node for node in ast.walk(tree) if isinstance(node,ast.Try))
+    assert not any(isinstance(node,ast.Await) for statement in guarded.body for node in ast.walk(statement))
 
 
 def test_simulation_package_has_no_external_optimizer_or_llm_imports():
