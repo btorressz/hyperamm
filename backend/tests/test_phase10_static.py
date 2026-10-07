@@ -19,6 +19,15 @@ def test_simulation_package_has_no_network_provider_or_private_key_access():
     assert hits==[]
 
 
+def test_candidate_exception_handler_only_catches_expected_failures():
+    import ast
+    tree=ast.parse((SIM/'optimizer.py').read_text())
+    handlers=[node for node in ast.walk(tree) if isinstance(node,ast.ExceptHandler)]
+    assert len(handlers)==1
+    assert isinstance(handlers[0].type,ast.Tuple)
+    assert [node.id for node in handlers[0].type.elts]==['ValidationError','ValueError']
+
+
 def test_simulation_package_has_no_external_optimizer_or_llm_imports():
     forbidden=(
         'numpy','pandas','scipy','sklearn','optuna','ray','torch','tensorflow',

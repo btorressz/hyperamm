@@ -22,6 +22,21 @@ from app.simulation.references import build_simulated_references
 from app.simulation.scenarios import generate_scenario
 
 
+@pytest.mark.asyncio
+async def test_code_owned_engine_version_is_visible_and_fingerprint_bound(monkeypatch):
+    from app.simulation import version
+    kwargs=dict(dataset=generate_scenario("QUIET",frames=3),strategy_config=StrategyConfig(),
+                agent_config=AgentConfig(),risk_config=RiskFirewallConfig(),
+                simulation_config=SimulationConfig(max_frames=3))
+    first=await SimulationEngine().run(**kwargs)
+    assert first.engine_version==version.SIMULATION_ENGINE_VERSION=="phase10.1-v1"
+    monkeypatch.setattr(version,"SIMULATION_ENGINE_VERSION","test-implementation-v2")
+    second=await SimulationEngine().run(**kwargs)
+    assert second.engine_version=="test-implementation-v2"
+    assert first.run_fingerprint!=second.run_fingerprint
+    assert first.metrics==second.metrics
+
+
 def crossed_snapshot(frame,*,bid=None,ask=None):
     mid=frame.market.mid_price
     best_bid=D(str(bid)) if bid is not None else mid-D("1")

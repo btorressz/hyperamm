@@ -3,7 +3,7 @@
 
 **HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
 
-Phases 1–8 are implemented, Phase 9 supervisory agents are implemented / in review, and Phase 10 deterministic simulation + bounded optimization is in development as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Phases 1–8 are implemented, Phase 9 supervisory agents are implemented / in review, and Phase 10 deterministic simulation + bounded optimization is implemented / in review as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
 
 ## Why a virtual AMM?
 
@@ -42,7 +42,7 @@ Hyperliquid L2 / Demo Feed
 - **Phase 7 — Perpetual vAMM context:** normalized mark/oracle/funding/OI context, bounded perp strategy reference, AMM recentering, shared TESTNET position observability, freshness/version authority, and terminal explainability.
 - **Phase 8 — Reference integrity + institutional risk firewall:** normalized multi-source price evidence, deterministic quorum/consensus, source health and freshness, signed deviation matrix, projected exposure, liquidation/PnL guards, NORMAL/WIDEN/REDUCE/HALT postures, hysteresis/recovery, SHA-256 authorization fingerprints, and final pre-transmission authority binding.
 - **Phase 9 — Supervisory agents (IMPLEMENTED / IN REVIEW):** deterministic regime, adverse-selection markout and execution-quality analysis; conservative supervisor composition; bounded quote widening/size/level reduction; agent provenance bound into final authorization.
-- **Phase 10 — Strategy simulation + bounded optimization (IN DEVELOPMENT):** deterministic scenario/replay datasets, scenario-time PAPER execution, production-stack simulation, research metrics, reproducible fingerprints, and deterministic grid search across an explicit strategy/agent allowlist.
+- **Phase 10 — Strategy simulation + bounded optimization (IMPLEMENTED / IN REVIEW):** deterministic scenario/replay datasets, scenario-time PAPER execution, production-stack simulation, research metrics, reproducible fingerprints, and deterministic grid search across an explicit strategy/agent allowlist.
 
 A minimal Phase 1–4 risk authority enforces freshness, level count, per-order size, aggregate notional, minimum price, quote distance, execution state and a kill switch. The kill switch cancels active strategy orders and blocks new quote generation.
 
@@ -186,7 +186,7 @@ Phase 8 adds deterministic multi-source reference integrity and institutional ri
 
 ## 12-phase roadmap
 
-Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IN DEVELOPMENT. Phase 11 vault/accounting and Phase 12 expanded production trading terminal remain planned.
+Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IMPLEMENTED / IN REVIEW. Phase 11 vault/accounting and Phase 12 expanded production trading terminal remain planned.
 
 ## Phase 4.1 acceptance and hardening
 

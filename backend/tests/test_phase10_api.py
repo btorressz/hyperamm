@@ -2,6 +2,138 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
+import asyncio
+from threading import Event, get_ident
+
+import httpx
+import pytest
+
+from app.simulation.service import SimulationService
+from app.simulation.version import SIMULATION_ENGINE_VERSION
+
+
+OPTIMIZE_PAYLOAD={
+    "strategy_grid":{"levels_per_side":[4]},"agent_grid":{},
+    "training_scenarios":["QUIET"],"validation_scenarios":["TREND_UP"],
+    "frames":3,"max_candidates":1,"top_n":1,
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("operation",["run_scenario","optimize"])
+async def test_worker_keeps_health_responsive_and_rejects_overflow(monkeypatch,operation):
+    live_loop=asyncio.get_running_loop()
+    live_thread=get_ident()
+    started=asyncio.Event()
+    release=Event()
+    original=getattr(SimulationService,operation)
+    seen=[]
+    async def held(self,**inputs):
+        assert get_ident()!=live_thread
+        assert asyncio.get_running_loop() is not live_loop
+        seen.append(self)
+        live_loop.call_soon_threadsafe(started.set)
+        assert release.wait(10),"test did not release research worker"
+        return await original(self,**inputs)
+    monkeypatch.setattr(SimulationService,operation,held)
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url="http://test") as client:
+            path="optimize" if operation=="optimize" else "run"
+            payload=OPTIMIZE_PAYLOAD if path=="optimize" else {"frames":3}
+            first=asyncio.create_task(client.post(f"/api/v1/simulation/{path}",json=payload))
+            try:
+                await asyncio.wait_for(started.wait(),5)
+                health=await asyncio.wait_for(client.get("/api/v1/health"),5)
+                assert health.status_code==200
+                for busy_path,busy_payload in (("optimize",OPTIMIZE_PAYLOAD),("run",{"frames":3})):
+                    overflow=await client.post(f"/api/v1/simulation/{busy_path}",json=busy_payload)
+                    assert overflow.status_code==429
+                    assert "already running" in overflow.json()["detail"]
+                assert not first.done()
+            finally:
+                release.set()
+                response=await asyncio.wait_for(first,5)
+            assert response.status_code==200,response.text
+            next_response=await client.post(f"/api/v1/simulation/{path}",json=payload)
+            assert next_response.status_code==200,next_response.text
+            assert seen[0] is not seen[1]
+
+
+@pytest.mark.parametrize("path,payload",[("run",{"frames":3}),("optimize",OPTIMIZE_PAYLOAD)])
+def test_api_unexpected_failure_is_sanitized_and_slot_released(monkeypatch,caplog,path,payload):
+    from app.simulation.engine import SimulationEngine
+    original=SimulationEngine.run
+    failed=False
+    calls=0
+    async def injected(self,**inputs):
+        nonlocal failed,calls
+        calls+=1
+        # For optimization, fail in candidate execution after the baseline.
+        if not failed and calls==(2 if path=="optimize" else 1):
+            failed=True
+            raise RuntimeError("unexpected simulation invariant failure")
+        return await original(self,**inputs)
+    monkeypatch.setattr(SimulationEngine,"run",injected)
+    with TestClient(app) as client:
+        response=client.post(f"/api/v1/simulation/{path}",json=payload)
+        assert response.status_code==500
+        assert "invariant" not in response.text
+        assert "unexpected simulation invariant failure" in caplog.text
+        assert client.post(f"/api/v1/simulation/{path}",json=payload).status_code==200
+
+
+@pytest.mark.parametrize("path,payload",[("run",{"frames":3}),("optimize",OPTIMIZE_PAYLOAD)])
+def test_api_rejects_spoofed_engine_version_and_unknown_fields(path,payload):
+    with TestClient(app) as client:
+        for extra in ({"simulation":{"engine_version":"fake-version"}},
+                      {"simulation":{"safety_override":True}},
+                      {"engine_version":"fake-version"}):
+            response=client.post(f"/api/v1/simulation/{path}",json={**payload,**extra})
+            assert response.status_code==422
+            assert any(x["type"]=="extra_forbidden" for x in response.json()["detail"])
+        response=client.post(f"/api/v1/simulation/{path}",json=payload)
+        assert response.status_code==200,response.text
+        assert response.json()["engine_version"]==SIMULATION_ENGINE_VERSION
+
+
+@pytest.mark.parametrize("extra",[
+    {"frames":1001},{"max_candidates":129},{"top_n":11},{"top_n":0},
+    {"training_scenarios":["QUIET"]*9},{"validation_scenarios":["TREND_UP"]*9},
+    {"simulation":{"max_frames":5001}},{"simulation":{"trace_max_points":5001}},
+    {"objective":{"unknown_weight":1}},
+])
+def test_optimization_api_preserves_workload_bounds(extra):
+    with TestClient(app) as client:
+        assert client.post("/api/v1/simulation/optimize",json={**OPTIMIZE_PAYLOAD,**extra}).status_code==422
+
+
+def test_worker_receives_only_detached_config_inputs(monkeypatch):
+    original=SimulationService.optimize
+    async def inspect(self,**inputs):
+        rt=app.state.runtime
+        # Inspect identities for the test only; production workers never read rt.
+        for name,live in (("strategy",rt.config),("agents",rt.agent_config),("risk",rt.risk_config)):
+            assert inputs[name] is not live
+            assert inputs[name].model_dump()==live.model_dump()
+        assert set(inputs)=={"strategy","agents","risk","simulation","strategy_grid","agent_grid",
+                            "training_scenarios","validation_scenarios","objective","max_candidates","frames","top_n"}
+        inputs["strategy"].levels_per_side=4
+        inputs["agents"].agents_enabled=False
+        inputs["risk"].enabled=False
+        inputs["strategy_grid"]["levels_per_side"].append(6)
+        return await original(self,**inputs)
+    monkeypatch.setattr(SimulationService,"optimize",inspect)
+    with TestClient(app) as client:
+        rt=app.state.runtime
+        def snapshot():
+            return (rt.config.model_dump(),rt.agent_config.model_dump(),rt.risk_config.model_dump(),
+                    rt.strategy.running,rt.risk.kill_switch_active,id(rt.execution),
+                    [x.model_dump() for x in rt.paper.all_orders()])
+        before=snapshot()
+        response=client.post("/api/v1/simulation/optimize",json={**OPTIMIZE_PAYLOAD,"max_candidates":2})
+        assert response.status_code==200,response.text
+        assert snapshot()==before
+
 
 def test_phase10_scenario_run_and_live_runtime_immutability():
     with TestClient(app) as client:

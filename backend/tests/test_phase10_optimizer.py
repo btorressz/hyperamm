@@ -10,6 +10,51 @@ from app.simulation.models import CandidateEvaluation
 from app.simulation.optimizer import StrategyOptimizer,candidate_ranking_key,score_metrics
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("error_type",[RuntimeError,AttributeError,KeyError,TypeError])
+async def test_unexpected_candidate_engine_errors_propagate(monkeypatch,error_type):
+    from app.simulation.engine import SimulationEngine
+    original=SimulationEngine.run
+    calls=0
+    async def fail_candidate(self,**inputs):
+        nonlocal calls
+        calls+=1
+        if calls==2:
+            raise error_type("internal candidate invariant")
+        return await original(self,**inputs)
+    monkeypatch.setattr(SimulationEngine,"run",fail_candidate)
+    with pytest.raises(error_type,match="internal candidate invariant"):
+        await StrategyOptimizer().optimize(
+            baseline_strategy=StrategyConfig(),baseline_agents=AgentConfig(),risk_config=RiskFirewallConfig(),
+            simulation_config=SimulationConfig(max_frames=3,record_trace=False),
+            strategy_grid={"levels_per_side":[4,6]},agent_grid={},
+            training_scenarios=["QUIET"],validation_scenarios=["TREND_UP"],
+            objective=OptimizationObjectiveConfig(),max_candidates=2,frames=3,top_n=1,
+        )
+    assert calls==2
+
+
+@pytest.mark.asyncio
+async def test_expected_candidate_domain_value_error_is_rejected(monkeypatch):
+    from app.simulation.engine import SimulationEngine
+    original=SimulationEngine.run
+    async def domain_failure(self,**inputs):
+        if inputs["strategy_config"].levels_per_side==4:
+            raise ValueError("unsupported candidate parameter combination")
+        return await original(self,**inputs)
+    monkeypatch.setattr(SimulationEngine,"run",domain_failure)
+    result=await StrategyOptimizer().optimize(
+        baseline_strategy=StrategyConfig(),baseline_agents=AgentConfig(),risk_config=RiskFirewallConfig(),
+        simulation_config=SimulationConfig(max_frames=3,record_trace=False),
+        strategy_grid={"levels_per_side":[4,6]},agent_grid={},
+        training_scenarios=["QUIET"],validation_scenarios=["TREND_UP"],
+        objective=OptimizationObjectiveConfig(),max_candidates=2,frames=3,top_n=1,
+    )
+    assert result.candidate_count==1
+    assert len(result.rejected_candidates)==1
+    assert result.rejected_candidates[0]["reason"]=="unsupported candidate parameter combination"
+
+
 def test_grid_enumeration_exact_and_bounded():
     grid=StrategyOptimizer.enumerate_grid(
         {"levels_per_side":[4,8]},{"regime_spread_strength":[".2",".4"]},max_candidates=4

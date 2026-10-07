@@ -21,6 +21,7 @@ from .metrics import MetricsAccumulator
 from .models import SimulationDataset,SimulationResult,SimulationTracePoint,stable_fingerprint
 from .references import build_simulated_references
 from .replay import bounded_frames
+from . import version
 
 
 LIMITATIONS=[
@@ -117,7 +118,7 @@ class SimulationEngine:
         orders=OrderManager(paper,authority=simulation_authority)
         strategy_fingerprint=stable_fingerprint(strategy)
         run_fingerprint=stable_fingerprint({
-            "engine_version":simulation_config.engine_version,
+            "engine_version":version.SIMULATION_ENGINE_VERSION,
             "dataset_fingerprint":dataset.fingerprint,
             "strategy":strategy,
             "agents":agents,
@@ -128,7 +129,6 @@ class SimulationEngine:
                 "record_trace":simulation_config.record_trace,
                 "trace_max_points":simulation_config.trace_max_points,
                 "fill_model":simulation_config.fill_model,
-                "engine_version":simulation_config.engine_version,
             },
         })
 
@@ -241,6 +241,7 @@ class SimulationEngine:
             agent_config=agents,frame_count=len(frames),
         )
         return SimulationResult(
+            engine_version=version.SIMULATION_ENGINE_VERSION,
             run_fingerprint=run_fingerprint,scenario=scenario or dataset.source,
             dataset_fingerprint=dataset.fingerprint,strategy_fingerprint=strategy_fingerprint,
             metrics=final_metrics,trace=list(trace or []),simulated=True,limitations=list(LIMITATIONS),

@@ -165,6 +165,7 @@ class SimulationMetrics(BaseModel):
 
 
 class SimulationResult(BaseModel):
+    engine_version:str
     run_fingerprint:str
     scenario:str
     dataset_fingerprint:str
@@ -210,6 +211,7 @@ class CandidateEvaluation(BaseModel):
 
 
 class OptimizationResult(BaseModel):
+    engine_version:str
     baseline:CandidateEvaluation
     requested_candidate_count:int
     candidate_count:int

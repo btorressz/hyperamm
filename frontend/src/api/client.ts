@@ -2,6 +2,7 @@ import type { OptimizationResult,SimulationResult,StrategyConfig } from '../type
 const API='/api/v1'
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
   const r=await fetch(`${API}${path}`,{headers:{'Content-Type':'application/json'},...init})
+  if(r.status===429&&path.startsWith('/simulation/')) throw new Error('Research capacity is busy. Try again after the current simulation or optimization finishes.')
   if(!r.ok) throw new Error((await r.text())||`HTTP ${r.status}`)
   return r.json()
 }
