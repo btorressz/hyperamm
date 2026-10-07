@@ -128,19 +128,33 @@ class RiskEvent(BaseModel):
 
 
 def exposure_metrics(quotes,current_position,reference_price,position_limit,existing_orders=None)->ExposureMetrics:
-    effective={(q.side,q.level_index):(q.size,q.price) for q in quotes}
+    effective = {}
+    for q in quotes:
+        key = (q.side, q.level_index)
+        if key in effective:
+            raise ValueError("duplicate desired risk order level")
+        effective[key] = (q.size, q.price*q.size)
+    resting = {}
     for order in existing_orders or []:
-        if getattr(order,"status",None) not in {"OPEN","PARTIALLY_FILLED","UNKNOWN"}:
+        if order.status not in {"OPEN", "PARTIALLY_FILLED", "UNKNOWN"}:
             continue
-        remaining=max(Decimal("0"),order.size-order.filled_size)
-        key=(order.side,order.level_index)
-        current=effective.get(key)
-        if current is None or remaining>current[0]:
-            effective[key]=(remaining,order.price)
-    bid_qty=sum((size for (side,_),(size,_) in effective.items() if side=="BID"),Decimal("0"))
-    ask_qty=sum((size for (side,_),(size,_) in effective.items() if side=="ASK"),Decimal("0"))
-    bid_ntl=sum((price*size for (side,_),(size,price) in effective.items() if side=="BID"),Decimal("0"))
-    ask_ntl=sum((price*size for (side,_),(size,price) in effective.items() if side=="ASK"),Decimal("0"))
+        if (order.side not in {"BID", "ASK"} or not order.price.is_finite()
+                or not order.size.is_finite() or not order.filled_size.is_finite()
+                or order.price <= 0 or not Decimal("0") <= order.filled_size <= order.size):
+            raise ValueError("invalid resting risk exposure")
+        remaining = max(Decimal("0"), order.size-order.filled_size)
+        key = (order.side, order.level_index)
+        quantity, notional = resting.get(key, (Decimal("0"), Decimal("0")))
+        resting[key] = (quantity+remaining, notional+remaining*order.price)
+    for key, (quantity, notional) in resting.items():
+        desired_quantity, desired_notional = effective.get(key, (Decimal("0"), Decimal("0")))
+        # Quantity and notional have independent conservative maxima. A normal
+        # cancel-before-create replacement overlaps once, surplus always sums.
+        effective[key] = (max(quantity, desired_quantity), max(notional, desired_notional))
+    bid_qty=sum((qty for (side,_),(qty,_) in effective.items() if side=="BID"),Decimal("0"))
+    ask_qty=sum((qty for (side,_),(qty,_) in effective.items() if side=="ASK"),Decimal("0"))
+    bid_ntl=sum((ntl for (side,_),(_,ntl) in effective.items() if side=="BID"),Decimal("0"))
+    ask_ntl=sum((ntl for (side,_),(_,ntl) in effective.items() if side=="ASK"),Decimal("0"))
     long=current_position+bid_qty
     short=current_position-ask_qty
     util=abs(current_position)/position_limit if position_limit>0 else Decimal("1")

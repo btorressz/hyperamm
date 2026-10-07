@@ -89,8 +89,11 @@ class SimulationEngine:
         def on_fill(fill):
             telemetry.observe_fill(fill,current_fill_reference)
             accounting.ingest_fill(fill)
-            accounting.observe_execution_fills(paper.fills.all())
+            accounting.observe_execution_fills(paper.fills.all(), retired_count=paper.fills.retired_count,
+                                               duplicate_fills=paper.fills.duplicate_pending(accounting))
+            paper.fills.acknowledge(fill, accounting, agent_consumed=True)
         paper.on_fill=on_fill
+        paper.orders.observer=telemetry.observe_orders
 
         current_authorization=None
         current_agent=None
@@ -100,7 +103,8 @@ class SimulationEngine:
         expected={}
 
         async def simulation_authority():
-            accounting.observe_execution_fills(paper.fills.all())
+            accounting.observe_execution_fills(paper.fills.all(), retired_count=paper.fills.retired_count,
+                                               duplicate_fills=paper.fills.duplicate_pending(accounting))
             if current_authorization is None or not current_authorization.authorized:
                 raise PermissionError("simulation FinalQuoteAuthorization is not authorized")
             if current_agent is None or current_risk is None or current_refs is None:
@@ -167,7 +171,7 @@ class SimulationEngine:
                 version=frame.sequence,
             )
             current_fill_reference=refs.consensus.consensus_price or frame.market.mid_price
-            telemetry.observe_orders(paper.all_orders())
+            telemetry.observe_orders(await paper.get_open_orders())
             agent_evidence=build_agent_evidence(
                 market_decision=market_decision,inventory=inventory,perp_context=frame.perp_context,
                 refs=refs,history=history,momentum_window=agents.regime_momentum_window_samples,
@@ -217,7 +221,7 @@ class SimulationEngine:
             actions=await orders.reconcile(
                 strategy.market,authorized,strategy.replace_tolerance_bps,strategy.size_tolerance
             )
-            telemetry.observe_reconcile(actions,paper.all_orders())
+            telemetry.observe_reconcile(actions,await paper.get_open_orders())
 
             # Immediate crossing fills, if any, belong to this frame and deterministic clock.
             inventory_after=build_inventory_state(
@@ -247,7 +251,7 @@ class SimulationEngine:
                     execution_quality_state=agent_decision.execution_quality.state.value,
                     risk_state=risk_decision.state.value,desired_quote_count=len(proposed),
                     agent_quote_count=len(agent_quotes),authorized_quote_count=len(authorized),
-                    open_order_count=len(await paper.get_open_orders()),fill_count=len(paper.fills.all()),
+                    open_order_count=len(await paper.get_open_orders()),fill_count=paper.fills.version,
                 ))
 
         final_metrics=metrics.finalize(

@@ -129,7 +129,7 @@ class AccountingService:
         fee = paper_fee(fill, identity, self.config)
         return identity, fee, fingerprint({"fill": fill, "fee": fee})
 
-    def observe_execution_fills(self, fills):
+    def observe_execution_fills(self, fills, *, retired_count=0, duplicate_fills=()):
         """Compare current-session execution against actual immutable trade rows.
 
         Detection only: never replay or clear a latched accounting failure.
@@ -140,10 +140,14 @@ class AccountingService:
         booked = self.ledger.fill_evidence()
         seen, missing, conflicts = set(), [], []
         accounted = 0
+        duplicate_objects = {id(fill) for fill in duplicate_fills}
         for fill in fills:
             identity, _, economics = self._fill_evidence(fill)
             trade_id = "fill:" + identity
-            if identity in seen:
+            if id(fill) in duplicate_objects:
+                conflicts.append("duplicate execution fill identity after consumption")
+                missing.append(fill)
+            elif identity in seen:
                 conflicts.append("duplicate execution fill identity")
                 missing.append(fill)
             elif fill.market != self.market:
@@ -161,7 +165,7 @@ class AccountingService:
             f"{len(missing)} executed PAPER fill(s) not represented in accounting ledger" if missing else None)
         previous = self._consistency
         self._consistency = ExecutionAccountingConsistency(
-            execution_fill_count=len(fills), accounted_fill_count=accounted,
+            execution_fill_count=len(fills)+retired_count, accounted_fill_count=accounted+retired_count,
             unaccounted_fill_count=len(missing), execution_accounting_consistent=not missing,
             oldest_unaccounted_fill_at=min((f.timestamp for f in missing), default=None),
             latest_unaccounted_fill_at=max((f.timestamp for f in missing), default=None),

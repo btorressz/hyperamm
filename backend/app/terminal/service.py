@@ -291,6 +291,7 @@ class TerminalService:
         data["authorized_quotes"] = data["quotes"]
         data["system_health"] = aggregate_health(data)
         all_orders, all_fills = data["orders"], data["fills"]
+        totals = data.pop("execution_totals", {})
         counts = {
             state: sum(o["status"] == state for o in all_orders)
             for state in ("OPEN", "PARTIALLY_FILLED", "UNKNOWN", "REJECTED")
@@ -298,15 +299,15 @@ class TerminalService:
         data["execution_summary"] = {
             "order_count": len(all_orders),
             "status_counts": counts,
-            "fill_count": len(all_fills)
+            "fill_count": totals.get("fill_count", len(all_fills))
             if config["execution_mode"] == "PAPER"
             else None,
-            "filled_notional": str(
+            "filled_notional": totals.get("filled_notional", str(
                 sum(
                     (Decimal(f["price"]) * Decimal(f["size"]) for f in all_fills),
                     Decimal("0"),
                 )
-            )
+            ))
             if config["execution_mode"] == "PAPER"
             else None,
             "fill_history_available": config["execution_mode"] == "PAPER",

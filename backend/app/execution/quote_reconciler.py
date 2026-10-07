@@ -17,20 +17,40 @@ class ReconcileAction(BaseModel):
 
 
 def reconcile_quotes(desired: list[QuoteLevel], existing: list[StrategyOrder], price_tolerance_bps: Decimal, size_tolerance: Decimal) -> list[ReconcileAction]:
-    desired_map={(q.side,q.level_index):q for q in desired}
-    existing_map={(o.side,o.level_index):o for o in existing if o.level_index is not None}
-    actions=[]
-    for key,q in desired_map.items():
-        old=existing_map.get(key)
-        if old is None:
-            actions.append(ReconcileAction(action=ReconcileActionType.CREATE,desired=q)); continue
-        price_diff=abs(q.price-old.price)/q.price*Decimal("10000")
-        size_diff=abs(q.size-(old.size-old.filled_size))
-        if price_diff <= price_tolerance_bps and size_diff <= size_tolerance:
-            actions.append(ReconcileAction(action=ReconcileActionType.KEEP,desired=q,existing=old))
+    desired_map = {(q.side, q.level_index): q for q in desired}
+    slots = {}
+    unmanaged = []
+    for order in existing:
+        if order.status not in {"OPEN", "PARTIALLY_FILLED", "UNKNOWN"}:
+            continue
+        if order.side not in {"BID", "ASK"} or not isinstance(order.level_index, int) or order.level_index < 0:
+            unmanaged.append(order)
         else:
-            actions.append(ReconcileAction(action=ReconcileActionType.REPLACE,desired=q,existing=old))
-    for key,old in existing_map.items():
-        if key not in desired_map:
-            actions.append(ReconcileAction(action=ReconcileActionType.CANCEL,existing=old))
-    return sorted(actions,key=lambda a:(a.desired.side if a.desired else a.existing.side, a.desired.level_index if a.desired else (a.existing.level_index or 0), a.action))
+            slots.setdefault((order.side, order.level_index), []).append(order)
+    actions = [ReconcileAction(action=ReconcileActionType.CANCEL, existing=o) for o in unmanaged]
+
+    def matches(q, order):
+        return (order.status != "UNKNOWN"
+                and abs(q.price-order.price)/q.price*Decimal("10000") <= price_tolerance_bps
+                and abs(q.size-max(Decimal("0"), order.size-order.filled_size)) <= size_tolerance)
+
+    for key, q in desired_map.items():
+        orders = sorted(slots.pop(key, []), key=lambda o: (o.created_at, o.client_order_id))
+        # Prefer a matching verified keeper, independent of insertion order.
+        keeper = next((o for o in orders if matches(q, o)), None)
+        if keeper is None:
+            keeper = next((o for o in orders if o.status != "UNKNOWN"), None)
+        for order in orders:
+            if order is not keeper:
+                actions.append(ReconcileAction(action=ReconcileActionType.CANCEL, existing=order))
+        if keeper is None:
+            actions.append(ReconcileAction(action=ReconcileActionType.CREATE, desired=q))
+        else:
+            actions.append(ReconcileAction(action=ReconcileActionType.KEEP if matches(q, keeper)
+                                           else ReconcileActionType.REPLACE, desired=q, existing=keeper))
+    for orders in slots.values():
+        actions.extend(ReconcileAction(action=ReconcileActionType.CANCEL, existing=o) for o in orders)
+    # Clear surplus/unmanaged exposure before any new order is considered.
+    return sorted(actions, key=lambda a: (a.action != ReconcileActionType.CANCEL,
+                   a.desired.side if a.desired else a.existing.side,
+                   a.desired.level_index if a.desired else (a.existing.level_index or 0)))

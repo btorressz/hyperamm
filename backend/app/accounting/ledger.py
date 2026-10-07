@@ -16,6 +16,7 @@ class AccountingLedger:
         self._entries: list[LedgerEntry] = []
         self._identities: dict[str, str] = {}
         self.max_entries = max_entries
+        self._fill_evidence = {}
 
     @property
     def version(self):
@@ -57,6 +58,8 @@ class AccountingLedger:
             previous = fingerprint(payload)
             pending.append(LedgerEntry(**payload, ledger_fingerprint=previous))
         self._entries.extend(pending)
+        self._fill_evidence.update({e.event_id: e.evidence_fingerprint for e in pending
+                                    if e.event_type == "TRADE_FILL"})
         self._identities.update({event.event_id: event.fingerprint for event, _ in records})
         self._fingerprint = previous
         return True
@@ -68,5 +71,5 @@ class AccountingLedger:
 
     def fill_evidence(self):
         """All booked trade identities/economics, independent of API page limits."""
-        return {entry.event_id: entry.evidence_fingerprint for entry in self._entries
-                if entry.event_type == "TRADE_FILL"}
+        from types import MappingProxyType
+        return MappingProxyType(self._fill_evidence)

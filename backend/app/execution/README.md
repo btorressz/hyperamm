@@ -73,3 +73,49 @@ replacement.
 - Receives final quotes from `risk`/runtime.
 - Supplies fills/orders to `accounting`, `agents`, risk exposure calculations and the terminal.
 - Venue uncertainty feeds back into Phase 8 and can halt new risk.
+
+## Audit 1.0 A1-005 / A1-006 retention and reconciliation
+
+Authoritative OPEN, PARTIALLY_FILLED and UNKNOWN orders have no eviction limit.
+PAPER and TESTNET retain **1,000 unpinned closed orders** each. Closed orders
+with pending PAPER fill evidence, TESTNET cancellation verification, or TESTNET
+fill/order evidence awaiting Phase 11 position/account consumption remain
+pinned outside that allowance until consumed/resolved. Closed transitions reach
+agent telemetry before pruning. TESTNET verification rows remain conservative
+UNKNOWN exposure for risk and capital even after a cancellation acknowledgement;
+new transmission waits for independent terminal venue evidence. TESTNET closed
+fill evidence additionally waits for Phase 11 observation of authoritative
+position/account timestamps at least as new as the order update; no full TESTNET
+trade ledger is inferred.
+
+PAPER retains **1,000 acknowledged fills**, plus all pending evidence. Both
+matching immutable ledger evidence and agent consumption are required to
+acknowledge a fill. **1,000 pending fills** stop admission of new PAPER orders;
+already-active execution can still produce authoritative fills beyond this
+threshold, which are preserved rather than truncated. Cancellation remains
+available. Consumption receipts cannot exceed half the configured immutable
+ledger capacity (default **5,000** identities); duplicate execution remains
+an error even after its recent UI row is evicted. Phase 11's existing **10,000**
+entry default ledger and HALT_WHEN_FULL policy are unchanged: trade and fee
+commit atomically, and no ledger entry or economic identity is evicted.
+
+Position, inventory version, last-fill time and fill notional are cumulative
+counters, independent of recent fill retention. Pending booking visits only
+pending evidence; consistency checks visit bounded retained fills plus pending
+evidence and use the ledger's immutable commit-time fill index. Agent order
+observations consume transitions/current active state rather than replaying
+closed history. API /orders and /fills default to **100** recent rows and accept
+`limit=1..1000`; /orders additionally includes every authoritative active or
+verification-pinned order. Terminal reads **100** recent closed orders/fills
+directly before its existing display limits (100 recent, 200 active) apply.
+Display limits never prune execution or accounting authority.
+
+Every active order belongs to a slot group `(side, level_index)`, or is explicitly
+unmanaged and cancelled. Remaining exposure uses `size - filled_size` for every
+order. Quantity and notional sums have independent maxima against the desired
+slot, retaining ordinary single-order KEEP/cancel-before-create REPLACE overlap
+without hiding duplicates at differing prices. Phase 11 capital already sums
+resting duplicate notionals and remains at least as conservative as risk quote
+notional. Reconciliation chooses at most one verified keeper, cancels all surplus
+and unmanaged orders first, and blocks CREATE/REPLACE on UNKNOWN or unconfirmed
+cancellation/verification. Active client order identities cannot be overwritten.
