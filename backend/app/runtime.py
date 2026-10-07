@@ -28,6 +28,7 @@ from app.agents import AgentConfig,AgentSupervisor,AgentTelemetryStore,build_age
 from app.accounting import AccountingConfig, AccountingService
 from app.accounting.pnl import to_pnl_drawdown
 from app.accounting.vault import reserved_capital
+from app.terminal import TerminalService
 
 log = logging.getLogger(__name__)
 
@@ -103,6 +104,8 @@ class HyperAmmRuntime:
         self._strategy_task = None
         self._venue_task = None
         self._closing = False
+        self.terminal_service = TerminalService()
+        self._terminal_task = None
         self.testnet.authority = self._execution_authority
         self.paper.on_fill = self._on_paper_fill
         self.market.add_listener(self._on_market)
@@ -362,6 +365,15 @@ class HyperAmmRuntime:
         await self.market.start()
         await self.reference_service.start()
         self._venue_task = asyncio.create_task(self._venue_loop(), name="venue-reconciliation")
+        self._terminal_task = asyncio.create_task(self._terminal_observer(), name="terminal-observation")
+
+    async def _terminal_observer(self):
+        while not self._closing:
+            try:
+                await self.terminal_state()
+            except Exception:
+                log.exception("terminal observation failed")
+            await asyncio.sleep(1)
 
     async def _venue_loop(self):
         while not self._closing:
@@ -388,6 +400,12 @@ class HyperAmmRuntime:
                         log.exception("venue exposure unresolved; execution halted")
 
     async def stop_services(self):
+        if self._terminal_task:
+            self._terminal_task.cancel()
+            try:
+                await self._terminal_task
+            except asyncio.CancelledError:
+                pass
         await self.stop_strategy()
         await self.market.stop()
         await self.reference_service.stop()
@@ -960,7 +978,7 @@ class HyperAmmRuntime:
         inventory = None
         if self.inventory is not None:
             inventory = self._inventory_payload(self.inventory, self.inventory_decision)
-        return {
+        data = {
             "market": snap.model_dump(mode="json"),
             "strategy": self.strategy.model_dump(mode="json"),
             "fair_value": str(self.fair_value) if self.fair_value is not None else None,
@@ -974,6 +992,7 @@ class HyperAmmRuntime:
             "agents": self.agents_payload(),
             "agent_events": self.agent_events_summary()[-20:],
             "agent_quotes": [q.model_dump(mode="json") for q in self.agent_quotes],
+            "strategy_quotes": [q.model_dump(mode="json") for q in self.strategy_quotes],
             "risk_firewall": self.risk_firewall_payload(),
             "risk_authorization": self.authorization_summary(),
             "risk_events": self.risk_events_summary()[-20:],
@@ -996,3 +1015,7 @@ class HyperAmmRuntime:
             },
             "reconciliation": [a.model_dump(mode="json") for a in self.last_actions],
         }
+        return self.terminal_service.observe(data, diagnostics={
+            "testnet_enabled": self.testnet.enabled,
+            "reference_firewall_enabled": self.risk_config.enabled,
+        }).model_dump(mode="json")

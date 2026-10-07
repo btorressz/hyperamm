@@ -1,1 +1,63 @@
-import '../phase5.css';import '../phase6.css';import '../phase7.css';import '../phase8.css';import '../phase9.css';import type { TerminalState } from '../types';import { MetricCards } from '../components/MetricCards';import { PriceChart } from '../components/PriceChart';import { OrderBook } from '../components/OrderBook';import { LiquidityCurve } from '../components/LiquidityCurve';import { QuoteLadder } from '../components/QuoteLadder';import { StrategyControls } from '../components/StrategyControls';import { PhaseStatus } from '../components/PhaseStatus';import { ExecutionActivity } from '../components/ExecutionActivity';import { InventoryPanel } from '../components/InventoryPanel';import { MarketAdaptationPanel } from '../components/MarketAdaptationPanel';import { PerpContextPanel } from '../components/PerpContextPanel';import { ReferenceSourcesPanel,RiskFirewallPanel } from '../components/RiskFirewallPanel';import {AgentPanel} from '../components/AgentPanel';export function Dashboard({t}:{t:TerminalState}){return <><MetricCards t={t}/><div className="grid topGrid"><PriceChart t={t}/><OrderBook m={t.market}/></div><div className="grid midGrid"><InventoryPanel t={t}/><MarketAdaptationPanel t={t}/></div><PerpContextPanel t={t}/><AgentPanel t={t}/><div className="grid midGrid"><ReferenceSourcesPanel t={t}/><RiskFirewallPanel t={t}/></div><LiquidityCurve t={t}/><StrategyControls t={t}/><div className="grid bottomGrid"><QuoteLadder quotes={t.quotes} orders={t.orders}/><PhaseStatus/></div><ExecutionActivity mode={t.strategy.config.execution_mode} orders={t.orders} fills={t.fills}/></>}
+import type { TerminalState } from "../types";
+import { TerminalKpis } from "../components/TerminalKpis";
+import { PriceLiquidityChart } from "../components/PriceLiquidityChart";
+import { OrderBook } from "../components/OrderBook";
+import { QuickStrategyControl } from "../components/QuickStrategyControl";
+import { LiquidityDistributionChart } from "../components/LiquidityDistributionChart";
+import { StrategyAttribution } from "../components/StrategyAttribution";
+import { InventorySkewChart } from "../components/InventorySkewChart";
+import { RecentExecution } from "../components/RecentExecution";
+import { SystemHealth } from "../components/SystemHealth";
+import { Panel, Metrics } from "../components/TerminalPrimitives";
+import { number } from "../utils/format";
+export function Dashboard({ t }: { t: TerminalState }) {
+  const a = t.agents;
+  return (
+    <>
+      <div className="operatorTitle">
+        <div>
+          <span className="eyebrow">OPERATOR OVERVIEW</span>
+          <h1>Liquidity terminal</h1>
+        </div>
+        <span className="sessionLabel">
+          {t.market.mode} ·{" "}
+          {t.strategy.config.execution_mode === "PAPER"
+            ? "PAPER / SIMULATED"
+            : "GUARDED TESTNET"}{" "}
+          · current session
+        </span>
+      </div>
+      <div className="dashboardTop">
+        <PriceLiquidityChart t={t} />
+        <OrderBook m={t.market} />
+        <QuickStrategyControl t={t} />
+      </div>
+      <TerminalKpis t={t} />
+      <div className="dashboardSecondary">
+        <LiquidityDistributionChart t={t} />
+        <StrategyAttribution t={t} />
+        <InventorySkewChart t={t} />
+      </div>
+      <div className="dashboardBottom">
+        <Panel title="Supervisory agents" meta="Phase 9 · recommendations">
+          <Metrics
+            items={[
+              ["Regime", a.regime?.state ?? "Unavailable"],
+              ["Toxic flow", a.toxic_flow?.state ?? "Unavailable"],
+              [
+                "Execution quality",
+                a.execution_quality?.state ?? "Unavailable",
+              ],
+              [
+                "Supervisor spread",
+                number(a.supervisor?.spread_multiplier) + "×",
+              ],
+            ]}
+          />
+        </Panel>
+        <RecentExecution t={t} />
+        <SystemHealth t={t} compact />
+      </div>
+    </>
+  );
+}

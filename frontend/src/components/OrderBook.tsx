@@ -1,3 +1,67 @@
-import type { MarketState } from '../types'
-const f=(x:unknown,d=2)=>Number(x).toLocaleString(undefined,{maximumFractionDigits:d})
-export function OrderBook({m}:{m:MarketState}){const asks=[...(m.book?.asks??[])].slice(0,7).reverse(), bids=(m.book?.bids??[]).slice(0,7); let ca=0,cb=0;return <section className="panel orderbook"><div className="panelHead"><b>Hyperliquid L2</b><span>{m.simulated?'Simulated':'Public feed'}</span></div><div className="bookHeader"><span>Price</span><span>Size</span><span>Cum.</span></div>{asks.map((x,i)=>{ca+=Number(x.size);return <div className="bookRow ask" key={`a${i}`}><span>{f(x.price)}</span><span>{f(x.size,4)}</span><span>{f(ca,4)}</span></div>})}<div className="midline"><b>{f(m.mid_price)}</b><span>mid</span></div>{bids.map((x,i)=>{cb+=Number(x.size);return <div className="bookRow bid" key={`b${i}`}><span>{f(x.price)}</span><span>{f(x.size,4)}</span><span>{f(cb,4)}</span></div>})}</section>}
+import type { MarketState, Level } from "../types";
+import { finite, price, quantity, bps, percentage } from "../utils/format";
+export function OrderBook({ m }: { m: MarketState }) {
+  const asks = (m.book?.asks ?? []).slice(0, 7),
+    bids = (m.book?.bids ?? []).slice(0, 7),
+    bid = finite(m.best_bid),
+    ask = finite(m.best_ask),
+    mid = finite(m.mid_price),
+    spread = bid !== null && ask !== null ? ask - bid : null;
+  const depth = (rows: Level[]) =>
+      rows.reduce((sum, row) => sum + (finite(row.size) ?? 0), 0),
+    ad = depth(asks),
+    bd = depth(bids),
+    max = Math.max(ad, bd, 1e-12);
+  const rows = (levels: Level[], side: string) => {
+    let cumulative = 0;
+    const result = levels.map((x, i) => {
+      cumulative += Number(x.size);
+      return (
+        <div
+          className={`bookRow ${side}`}
+          key={`${side}-${i}`}
+          style={{
+            background: `linear-gradient(to left,${side === "bid" ? "#12342d" : "#36212a"} ${(cumulative / max) * 100}%,transparent 0)`,
+          }}
+        >
+          <span>{price(x.price)}</span>
+          <span>{quantity(x.size)}</span>
+          <span>{quantity(cumulative)}</span>
+        </div>
+      );
+    });
+    return side === "ask" ? result.reverse() : result;
+  };
+  return (
+    <section className="panel orderbook">
+      <div className="panelHead">
+        <b>L2 order book</b>
+        <span>
+          {m.simulated ? "DEMO / SIMULATED" : "Hyperliquid LIVE"} ·{" "}
+          {m.stale ? "STALE" : "FRESH"}
+        </span>
+      </div>
+      <div className="bookHeader">
+        <span>Price</span>
+        <span>Size</span>
+        <span>Cumulative</span>
+      </div>
+      {rows(asks, "ask")}
+      <div className="midline">
+        <b>{price(m.mid_price)}</b>
+        <span>
+          spread {price(spread)} ·{" "}
+          {bps(spread !== null && mid ? (spread / mid) * 10000 : null)}
+        </span>
+      </div>
+      {rows(bids, "bid")}
+      {!m.book && <p className="emptyEvidence">L2 evidence unavailable</p>}
+      <div className="bookFooter">
+        <span>Seq {m.book?.sequence ?? "—"}</span>
+        <span>
+          7-level imbalance {percentage(ad + bd ? (bd - ad) / (bd + ad) : null)}
+        </span>
+      </div>
+    </section>
+  );
+}

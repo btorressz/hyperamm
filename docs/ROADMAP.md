@@ -15,7 +15,7 @@
 | 10 | IMPLEMENTED / IN REVIEW | Deterministic production-stack simulation + bounded grid optimization; Phase 10.1 hardening and full local acceptance passed |
 | 11 | IMPLEMENTED / IN REVIEW | Deterministic research vault/accounting, shared runtime/simulation ledger, simulated fees/funding, capital authority and Vault observability; local acceptance passed |
 | 11.1 | ACCEPTED | High-water invariants and identity-based execution/accounting consistency hardening; local acceptance passed |
-| 12 | PLANNED | Expanded production-grade React terminal |
+| 12 | IMPLEMENTED / IN REVIEW | Full React operator terminal, versioned observation contracts, bounded history/events, health and lineage; local acceptance passed |
 
 ## Phase 6 extension points
 
@@ -205,5 +205,57 @@ Acceptance on 2026-10-06 (America/Los_Angeles), starting main
 
 Phase 11 stays **IMPLEMENTED / IN REVIEW**, with Phase 11.1 build/hardening accepted
 and closed locally. This does not declare production readiness or start Phase 12.
-No persistence, custody, money movement, mainnet execution, Pyth or GitHub Actions
+No persistence, custody, money movement, mainnet execution, additional oracle providers or GitHub Actions
 were added.
+
+
+## Phase 12 — IMPLEMENTED / IN REVIEW
+
+Starting main: `ef41168657b4d635c0cf4961689dfa1b73e18ae3`, the merged
+Phase 11.1 accounting-hardening revision. The initial workspace was behind at
+`c7854eb`; GitHub main and the missing Git objects were independently verified
+before implementation on `phase-12-terminal`.
+
+Adds the `phase12-v1` normalized TerminalSnapshot, process-wide observation
+sequence, UTC emission timestamp, pre-agent/post-agent/authorized quotes,
+read-only health aggregation, bounded current-session chart history and structured
+events. All twelve terminal pages are active, including distinct Strategy and
+AMM Settings, Execution, Analytics, Logs and Settings. React charts reuse backend
+lineage and timestamps; no trading or accounting formulas were added to React.
+
+Local acceptance on 2026-10-06 (America/Los_Angeles):
+
+- Fresh Python **3.12.14** virtualenv and editable `.[test]` installation passed.
+- Full suite: **546 passed, 1 warning in 16.30s**. All 517 prior cases retained;
+  29 Phase 12 cases cover contracts, process sequencing, bounds/filters, history
+  ordering, future-evidence exclusion, redaction, authority isolation, TESTNET
+  truth, API validation and actual WebSocket frames/disconnect.
+- Real Uvicorn: fourteen required/context REST endpoints returned **HTTP 200**;
+  invalid terminal queries returned **422**. Existing PAPER start/stop/kill/resume
+  controls passed. Startup and graceful shutdown were checked.
+- Real `/ws/terminal`: three frames, sequences **23 / 25 / 27**, contract
+  **phase12-v1**, aware UTC timestamps, matching accounting fingerprints, Phase
+  8/9/11 state and compact payloads (**96123 / 96198 / 96205 bytes** in the
+  JSON acceptance measurement). No full ledger or terminal history was streamed.
+- `npm install`, frontend typecheck and build exited **0**. Vite **7.3.6**,
+  **139 modules**, final build **1.98s**. Charts/React/query chunks separate the production bundle;
+  non-failing upstream TanStack Query directive warnings remain.
+- Chromium: all twelve pages rendered with **0 page errors**; no document
+  horizontal overflow at 1600, 1200, 900, 600 or 390 pixels. Dirty edits survived
+  WebSocket frames, server validation/reset, immediate kill/confirmed resume,
+  malformed/out-of-order payload visibility, recovery, terminal staleness and
+  controlled TESTNET fill-history-unavailable state passed.
+- `git diff --check` exited **0**. No trading-core domain module was modified.
+
+The inherited Phase 11.1 roadmap contained a forbidden-provider name in a
+negative scope statement, causing three existing static scans to fail. That
+sentence now uses generic scope wording; no prior test was removed or weakened.
+
+Phase 12 local implementation and acceptance are complete for review. The full
+Phase 1–12 implementation roadmap is present; separate Phase 8 external-provider
+acceptance, Phase 9 review and prior review statuses are preserved. This does not
+claim the entire roadmap is fully accepted/COMPLETE or a production launch.
+History/events are in-memory, current-session only; durable 24h statistics,
+TESTNET normalized fills, custody/money movement and autonomous optimization
+deployment remain outside scope. No signed TESTNET order or repository workflow
+was added. See [Terminal](TERMINAL.md) for contracts, limits and truth boundaries.

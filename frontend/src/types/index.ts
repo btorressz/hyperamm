@@ -1,43 +1,782 @@
-export type Decimalish = string | number
-export type Level={price:Decimalish,size:Decimalish,order_count:number}
-export type MarketState={market:string,best_bid:Decimalish|null,best_ask:Decimalish|null,mid_price:Decimalish|null,book:{bids:Level[],asks:Level[],timestamp:string,sequence:number}|null,latest_valid_update:string|null,connection_state:string,mode:string,simulated:boolean,stale:boolean,message?:string|null}
-export type Quote={side:'BID'|'ASK',price:Decimalish,size:Decimalish,level_index:number,distance_bps:Decimalish,source_model:string,state:string,neutral_price?:Decimalish|null,neutral_size?:Decimalish|null,inventory_intent?:string|null,inventory_effect?:string|null,pre_market_adaptation_price?:Decimalish|null,pre_market_adaptation_size?:Decimalish|null,market_spread_multiplier?:Decimalish|null,market_size_multiplier?:Decimalish|null,volatility_effect?:string|null,imbalance_effect?:string|null,market_fair_value?:Decimalish|null,perp_reference_price?:Decimalish|null,inventory_adjusted_price?:Decimalish|null,pre_agent_price?:Decimalish|null,pre_agent_size?:Decimalish|null,agent_spread_multiplier?:Decimalish|null,agent_size_multiplier?:Decimalish|null,agent_regime?:string|null,agent_toxic_flow_state?:string|null,agent_execution_quality_state?:string|null,agent_version?:number|null,pre_risk_price?:Decimalish|null,pre_risk_size?:Decimalish|null,risk_spread_multiplier?:Decimalish|null,risk_size_multiplier?:Decimalish|null,risk_state?:string|null,authorization_fingerprint?:string|null}
-export type StrategyConfig={market:string,market_data_mode:'LIVE'|'DEMO',execution_mode:'PAPER'|'TESTNET',amm_model:'CONSTANT_PRODUCT'|'CONCENTRATED',virtual_base_reserve:Decimalish,virtual_quote_reserve:Decimalish,levels_per_side:number,max_distance_bps:Decimalish,base_order_size:Decimalish,total_liquidity:Decimalish,concentration_factor:Decimalish,concentration_lower_bps:Decimalish,concentration_upper_bps:Decimalish,quote_refresh_interval_ms:number,replace_tolerance_bps:Decimalish,size_tolerance:Decimalish,tick_size:Decimalish,size_precision:number,inventory_skew_enabled:boolean,target_inventory_base:Decimalish,soft_inventory_limit_base:Decimalish,hard_inventory_limit_base:Decimalish,max_inventory_price_skew_bps:Decimalish,inventory_size_skew_strength:Decimalish,min_inventory_size_multiplier:Decimalish,max_inventory_size_multiplier:Decimalish,inventory_stale_after_seconds:number,market_adaptation_enabled:boolean,volatility_window_samples:number,volatility_min_samples:number,volatility_low_threshold:Decimalish,volatility_high_threshold:Decimalish,volatility_spread_strength:Decimalish,volatility_size_strength:Decimalish,book_imbalance_levels:number,imbalance_spread_strength:Decimalish,imbalance_size_strength:Decimalish,min_spread_multiplier:Decimalish,max_spread_multiplier:Decimalish,min_market_size_multiplier:Decimalish,perp_context_enabled:boolean,perp_context_stale_after_seconds:number,perp_mark_weight:Decimalish,perp_oracle_weight:Decimalish,funding_reference_abs_rate:Decimalish,max_funding_reference_shift_bps:Decimalish,max_perp_reference_shift_bps:Decimalish}
-export type StrategyState={running:boolean,config:StrategyConfig,last_error:string|null,quote_health:'NO_QUOTES'|'HEALTHY'|'DEGRADED'|'HALTED'}
-export type Order={client_order_id:string,market:string,side:string,price:Decimalish,size:Decimalish,status:string,filled_size:Decimalish,venue_order_id:string|null,updated_at:string,created_at:string,fill_source?:string|null,level_index?:number|null}
-export type Fill={client_order_id:string,market:string,side:string,price:Decimalish,size:Decimalish,timestamp:string,source:string}
-export type InventoryState={market:string,position_base:Decimalish,target_base:Decimalish,deviation_base:Decimalish,inventory_ratio:Decimalish,inventory_ratio_effective:Decimalish|null,reservation_price:Decimalish|null,price_skew_bps:Decimalish|null,bid_size_multiplier:Decimalish|null,ask_size_multiplier:Decimalish|null,hard_limit_state:'NORMAL'|'LONG_LIMIT'|'SHORT_LIMIT'|null,source:'PAPER'|'TESTNET',updated_at:string,stale:boolean,version:number,error:string|null}
-export type MarketAdaptationState={market:string,realized_volatility:Decimalish|null,volatility_score:Decimalish,volatility_ready:boolean,sample_count:number,bid_depth:Decimalish,ask_depth:Decimalish,book_imbalance:Decimalish,spread_multiplier:Decimalish,global_size_multiplier:Decimalish,bid_imbalance_multiplier:Decimalish,ask_imbalance_multiplier:Decimalish,bid_size_multiplier:Decimalish,ask_size_multiplier:Decimalish,regime:'WARMING_UP'|'QUIET'|'NORMAL'|'ELEVATED'|'HIGH_VOLATILITY',imbalance_state:'BALANCED'|'BID_HEAVY'|'ASK_HEAVY',updated_at:string,stale:boolean,source:string,version:number}
-export type PerpPositionState={market:string,signed_position_base:Decimalish,entry_price:Decimalish|null,leverage_type:string|null,leverage_value:Decimalish|null,liquidation_price:Decimalish|null,margin_used:Decimalish|null,position_value:Decimalish|null,unrealized_pnl:Decimalish|null,return_on_equity:Decimalish|null,updated_at:string,stale:boolean,version:number,source:'PAPER'|'TESTNET'}
-export type PerpContextState={market:string,market_mid:Decimalish,provider_mid_price:Decimalish|null,mark_price:Decimalish,oracle_price:Decimalish,funding_rate:Decimalish,open_interest_base:Decimalish,open_interest_notional:Decimalish,mark_oracle_basis_bps:Decimalish,mark_mid_basis_bps:Decimalish,oracle_mid_basis_bps:Decimalish,premium:Decimalish|null,updated_at:string,stale:boolean,version:number,source:'HYPERLIQUID'|'DEMO',simulated:boolean,market_fair_value:Decimalish,funding_score:Decimalish|null,funding_shift_bps:Decimalish|null,strategy_reference_price:Decimalish|null,reference_shift_bps:Decimalish|null,position:PerpPositionState|null}
-export type ReferenceTransport='LIVE_WS'|'PUBLIC_HTTP'|'NATIVE'|'REST'|'DEMO'
-export type TransportQuality='PRIMARY'|'FALLBACK'|'SIMULATED'
-export type PriceEvidence={market:string,provider:string,source_type:string,price:Decimalish|null,observed_at:string,source_timestamp:string|null,age_ms:number,healthy:boolean,stale:boolean,status:string,source_id:string|null,transport:ReferenceTransport|null,transport_quality:TransportQuality|null,simulated:boolean,version:number,error:string|null}
-export type ReferenceConsensus={market:string,primary_oracle_price:Decimalish|null,native_oracle_price:Decimalish|null,exchange_reference_price:Decimalish|null,aggregate_reference_price:Decimalish|null,consensus_price:Decimalish|null,healthy_sources:number,healthy_core_sources:number,confidence_state:string,max_source_deviation_bps:Decimalish|null,source_statuses:Record<string,string>,outliers:string[],eligible_providers:string[],reasons:string[],version:number,updated_at:string}
-export type ReferenceSnapshot={market:string,evidence:Record<string,PriceEvidence>,consensus:ReferenceConsensus,deviations_bps:Record<string,Decimalish|null>,deviation_magnitudes_bps:Record<string,Decimalish|null>,version:number,updated_at:string}
-export type RiskDecision={state:'NORMAL'|'WIDEN'|'REDUCE'|'HALT',allow_quotes:boolean,spread_multiplier:Decimalish,size_multiplier:Decimalish,max_levels:number|null,allow_bids:boolean,allow_asks:boolean,reasons:string[],reference_version:number,market_version:number,inventory_version:number,perp_version:number,projected_long_base:Decimalish,projected_short_base:Decimalish,healthy_confirmation_count:number,version:number,exposure:any,liquidation:any,pnl_drawdown:any}
-export type RiskFirewallState={manual_kill_active:boolean,manual_kill_reason:string|null,config:any,state:string,decision:RiskDecision|null}
-export type AgentRecommendation={agent:string,health:string,confidence:Decimalish,spread_multiplier:Decimalish,bid_size_multiplier:Decimalish,ask_size_multiplier:Decimalish,max_levels:number|null,reasons:string[],simulated:boolean,evidence_version:number,version:number,updated_at:string}
-export type RegimeAgentOutput=AgentRecommendation&{state:string,direction:string,momentum_bps:Decimalish|null,realized_volatility:Decimalish|null,volatility_score:Decimalish,book_imbalance:Decimalish}
-export type ToxicFlowAgentOutput=AgentRecommendation&{state:string,metrics:{total_fills:number,matured_fills:number,pending_markouts:number,adverse_fill_count:number,adverse_fill_rate:Decimalish,mean_signed_markout_bps:Decimalish|null,mean_adverse_markout_bps:Decimalish|null,bid_toxic_flow_score:Decimalish,ask_toxic_flow_score:Decimalish,overall_toxic_flow_score:Decimalish}}
-export type ExecutionQualityAgentOutput=AgentRecommendation&{state:string,metrics:{fill_count:number,filled_order_ratio:Decimalish|null,average_spread_capture_bps:Decimalish|null,average_mature_markout_bps:Decimalish|null,reject_count:number,unknown_order_count:number,keep_count:number,create_count:number,replace_count:number,cancel_count:number,reconciliation_churn_ratio:Decimalish}}
-export type AgentSupervisorDecision={market:string,enabled:boolean,regime:RegimeAgentOutput,toxic_flow:ToxicFlowAgentOutput,execution_quality:ExecutionQualityAgentOutput,spread_multiplier:Decimalish,bid_size_multiplier:Decimalish,ask_size_multiplier:Decimalish,max_levels:number|null,reasons:string[],market_version:number,inventory_version:number,perp_version:number,reference_version:number,simulated:boolean,version:number,fingerprint:string,updated_at:string}
-export type AgentsState={config:any,evidence:any|null,regime:RegimeAgentOutput|null,toxic_flow:ToxicFlowAgentOutput|null,execution_quality:ExecutionQualityAgentOutput|null,supervisor:AgentSupervisorDecision|null,agent_version:number,agent_fingerprint:string,telemetry:{version:number,fill_observations:number,reconcile_cycles:number,tracked_orders:number,unknown_orders:number,rejected_orders:number}}
-export type AgentEvent={timestamp:string,agent:string,previous_state:string|null,new_state:string,reasons:string[],version:number}
-export type RiskAuthorization={authorized:boolean,risk_state:string,authorization_fingerprint?:string,quote_fingerprint?:string,evidence_fingerprint?:string,agent_fingerprint?:string,reasons:string[],authorized_quote_count?:number,market_version?:number,inventory_version?:number,perp_version?:number,reference_version?:number,agent_version?:number,risk_version?:number,accounting_version?:number,accounting_fingerprint?:string}
-export type TerminalState={vault:VaultSnapshot,accounting:AccountingState,market:MarketState,strategy:StrategyState,fair_value:Decimalish|null,pool:{reserve_base:Decimalish,reserve_quote:Decimalish,k:Decimalish,reference_price:Decimalish}|null,quotes:Quote[],inventory:InventoryState|null,market_adaptation:MarketAdaptationState|null,perp_context:PerpContextState|null,references:ReferenceSnapshot|null,reference_consensus:ReferenceConsensus|null,agents:AgentsState,agent_events:AgentEvent[],agent_quotes:Quote[],risk_firewall:RiskFirewallState,risk_authorization:RiskAuthorization,risk_events:Array<{timestamp:string,previous_state:string,new_state:string,reasons:string[],reference_version:number,risk_version:number}>,projected_exposure:any|null,pnl_drawdown:any|null,risk:{kill_switch_active:boolean,last_reason:string|null,max_quote_levels:number,max_order_size:Decimalish,max_aggregate_notional:Decimalish,min_valid_price:Decimalish,max_quote_distance_bps:Decimalish},orders:Order[],fills:Fill[],venue_reconciliation:{last_reconciled_at:string|null,error:string|null},reconciliation:Array<{action:string}>}
+export type Decimalish = string | number;
+export type Level = {
+  price: Decimalish;
+  size: Decimalish;
+  order_count: number;
+};
+export type MarketState = {
+  market: string;
+  best_bid: Decimalish | null;
+  best_ask: Decimalish | null;
+  mid_price: Decimalish | null;
+  book: {
+    bids: Level[];
+    asks: Level[];
+    timestamp: string;
+    sequence: number;
+  } | null;
+  latest_valid_update: string | null;
+  connection_state: string;
+  mode: string;
+  simulated: boolean;
+  stale: boolean;
+  message?: string | null;
+};
+export type Quote = {
+  side: "BID" | "ASK";
+  price: Decimalish;
+  size: Decimalish;
+  level_index: number;
+  distance_bps: Decimalish;
+  source_model: string;
+  state: string;
+  neutral_price?: Decimalish | null;
+  neutral_size?: Decimalish | null;
+  inventory_intent?: string | null;
+  inventory_effect?: string | null;
+  pre_market_adaptation_price?: Decimalish | null;
+  pre_market_adaptation_size?: Decimalish | null;
+  market_spread_multiplier?: Decimalish | null;
+  market_size_multiplier?: Decimalish | null;
+  volatility_effect?: string | null;
+  imbalance_effect?: string | null;
+  market_fair_value?: Decimalish | null;
+  perp_reference_price?: Decimalish | null;
+  inventory_adjusted_price?: Decimalish | null;
+  pre_agent_price?: Decimalish | null;
+  pre_agent_size?: Decimalish | null;
+  agent_spread_multiplier?: Decimalish | null;
+  agent_size_multiplier?: Decimalish | null;
+  agent_regime?: string | null;
+  agent_toxic_flow_state?: string | null;
+  agent_execution_quality_state?: string | null;
+  agent_version?: number | null;
+  pre_risk_price?: Decimalish | null;
+  pre_risk_size?: Decimalish | null;
+  risk_spread_multiplier?: Decimalish | null;
+  risk_size_multiplier?: Decimalish | null;
+  risk_state?: string | null;
+  authorization_fingerprint?: string | null;
+};
+export type StrategyConfig = {
+  market: string;
+  market_data_mode: "LIVE" | "DEMO";
+  execution_mode: "PAPER" | "TESTNET";
+  amm_model: "CONSTANT_PRODUCT" | "CONCENTRATED";
+  virtual_base_reserve: Decimalish;
+  virtual_quote_reserve: Decimalish;
+  levels_per_side: number;
+  max_distance_bps: Decimalish;
+  base_order_size: Decimalish;
+  total_liquidity: Decimalish;
+  concentration_factor: Decimalish;
+  concentration_lower_bps: Decimalish;
+  concentration_upper_bps: Decimalish;
+  quote_refresh_interval_ms: number;
+  replace_tolerance_bps: Decimalish;
+  size_tolerance: Decimalish;
+  tick_size: Decimalish;
+  size_precision: number;
+  inventory_skew_enabled: boolean;
+  target_inventory_base: Decimalish;
+  soft_inventory_limit_base: Decimalish;
+  hard_inventory_limit_base: Decimalish;
+  max_inventory_price_skew_bps: Decimalish;
+  inventory_size_skew_strength: Decimalish;
+  min_inventory_size_multiplier: Decimalish;
+  max_inventory_size_multiplier: Decimalish;
+  inventory_stale_after_seconds: number;
+  market_adaptation_enabled: boolean;
+  volatility_window_samples: number;
+  volatility_min_samples: number;
+  volatility_low_threshold: Decimalish;
+  volatility_high_threshold: Decimalish;
+  volatility_spread_strength: Decimalish;
+  volatility_size_strength: Decimalish;
+  book_imbalance_levels: number;
+  imbalance_spread_strength: Decimalish;
+  imbalance_size_strength: Decimalish;
+  min_spread_multiplier: Decimalish;
+  max_spread_multiplier: Decimalish;
+  min_market_size_multiplier: Decimalish;
+  perp_context_enabled: boolean;
+  perp_context_stale_after_seconds: number;
+  perp_mark_weight: Decimalish;
+  perp_oracle_weight: Decimalish;
+  funding_reference_abs_rate: Decimalish;
+  max_funding_reference_shift_bps: Decimalish;
+  max_perp_reference_shift_bps: Decimalish;
+};
+export type StrategyState = {
+  running: boolean;
+  config: StrategyConfig;
+  last_error: string | null;
+  quote_health: "NO_QUOTES" | "HEALTHY" | "DEGRADED" | "HALTED";
+};
+export type Order = {
+  client_order_id: string;
+  market: string;
+  side: string;
+  price: Decimalish;
+  size: Decimalish;
+  status: string;
+  filled_size: Decimalish;
+  venue_order_id: string | null;
+  updated_at: string;
+  created_at: string;
+  fill_source?: string | null;
+  level_index?: number | null;
+};
+export type Fill = {
+  client_order_id: string;
+  market: string;
+  side: string;
+  price: Decimalish;
+  size: Decimalish;
+  timestamp: string;
+  source: string;
+};
+export type InventoryState = {
+  market: string;
+  position_base: Decimalish;
+  target_base: Decimalish;
+  deviation_base: Decimalish;
+  inventory_ratio: Decimalish;
+  inventory_ratio_effective: Decimalish | null;
+  reservation_price: Decimalish | null;
+  price_skew_bps: Decimalish | null;
+  bid_size_multiplier: Decimalish | null;
+  ask_size_multiplier: Decimalish | null;
+  hard_limit_state: "NORMAL" | "LONG_LIMIT" | "SHORT_LIMIT" | null;
+  source: "PAPER" | "TESTNET";
+  updated_at: string;
+  stale: boolean;
+  version: number;
+  error: string | null;
+};
+export type MarketAdaptationState = {
+  market: string;
+  realized_volatility: Decimalish | null;
+  volatility_score: Decimalish;
+  volatility_ready: boolean;
+  sample_count: number;
+  bid_depth: Decimalish;
+  ask_depth: Decimalish;
+  book_imbalance: Decimalish;
+  spread_multiplier: Decimalish;
+  global_size_multiplier: Decimalish;
+  bid_imbalance_multiplier: Decimalish;
+  ask_imbalance_multiplier: Decimalish;
+  bid_size_multiplier: Decimalish;
+  ask_size_multiplier: Decimalish;
+  regime: "WARMING_UP" | "QUIET" | "NORMAL" | "ELEVATED" | "HIGH_VOLATILITY";
+  imbalance_state: "BALANCED" | "BID_HEAVY" | "ASK_HEAVY";
+  updated_at: string;
+  stale: boolean;
+  source: string;
+  version: number;
+};
+export type PerpPositionState = {
+  market: string;
+  signed_position_base: Decimalish;
+  entry_price: Decimalish | null;
+  leverage_type: string | null;
+  leverage_value: Decimalish | null;
+  liquidation_price: Decimalish | null;
+  margin_used: Decimalish | null;
+  position_value: Decimalish | null;
+  unrealized_pnl: Decimalish | null;
+  return_on_equity: Decimalish | null;
+  updated_at: string;
+  stale: boolean;
+  version: number;
+  source: "PAPER" | "TESTNET";
+};
+export type PerpContextState = {
+  market: string;
+  market_mid: Decimalish;
+  provider_mid_price: Decimalish | null;
+  mark_price: Decimalish;
+  oracle_price: Decimalish;
+  funding_rate: Decimalish;
+  open_interest_base: Decimalish;
+  open_interest_notional: Decimalish;
+  mark_oracle_basis_bps: Decimalish;
+  mark_mid_basis_bps: Decimalish;
+  oracle_mid_basis_bps: Decimalish;
+  premium: Decimalish | null;
+  updated_at: string;
+  stale: boolean;
+  version: number;
+  source: "HYPERLIQUID" | "DEMO";
+  simulated: boolean;
+  market_fair_value: Decimalish;
+  funding_score: Decimalish | null;
+  funding_shift_bps: Decimalish | null;
+  strategy_reference_price: Decimalish | null;
+  reference_shift_bps: Decimalish | null;
+  position: PerpPositionState | null;
+};
+export type ReferenceTransport =
+  "LIVE_WS" | "PUBLIC_HTTP" | "NATIVE" | "REST" | "DEMO";
+export type TransportQuality = "PRIMARY" | "FALLBACK" | "SIMULATED";
+export type PriceEvidence = {
+  market: string;
+  provider: string;
+  source_type: string;
+  price: Decimalish | null;
+  observed_at: string;
+  source_timestamp: string | null;
+  age_ms: number;
+  healthy: boolean;
+  stale: boolean;
+  status: string;
+  source_id: string | null;
+  transport: ReferenceTransport | null;
+  transport_quality: TransportQuality | null;
+  simulated: boolean;
+  version: number;
+  error: string | null;
+};
+export type ReferenceConsensus = {
+  market: string;
+  primary_oracle_price: Decimalish | null;
+  native_oracle_price: Decimalish | null;
+  exchange_reference_price: Decimalish | null;
+  aggregate_reference_price: Decimalish | null;
+  consensus_price: Decimalish | null;
+  healthy_sources: number;
+  healthy_core_sources: number;
+  confidence_state: string;
+  max_source_deviation_bps: Decimalish | null;
+  source_statuses: Record<string, string>;
+  outliers: string[];
+  eligible_providers: string[];
+  reasons: string[];
+  version: number;
+  updated_at: string;
+};
+export type ReferenceSnapshot = {
+  market: string;
+  evidence: Record<string, PriceEvidence>;
+  consensus: ReferenceConsensus;
+  deviations_bps: Record<string, Decimalish | null>;
+  deviation_magnitudes_bps: Record<string, Decimalish | null>;
+  version: number;
+  updated_at: string;
+};
+export type RiskDecision = {
+  state: "NORMAL" | "WIDEN" | "REDUCE" | "HALT";
+  allow_quotes: boolean;
+  spread_multiplier: Decimalish;
+  size_multiplier: Decimalish;
+  max_levels: number | null;
+  allow_bids: boolean;
+  allow_asks: boolean;
+  reasons: string[];
+  reference_version: number;
+  market_version: number;
+  inventory_version: number;
+  perp_version: number;
+  projected_long_base: Decimalish;
+  projected_short_base: Decimalish;
+  healthy_confirmation_count: number;
+  version: number;
+  exposure: any;
+  liquidation: any;
+  pnl_drawdown: any;
+};
+export type RiskFirewallState = {
+  manual_kill_active: boolean;
+  manual_kill_reason: string | null;
+  config: any;
+  state: string;
+  decision: RiskDecision | null;
+};
+export type AgentRecommendation = {
+  agent: string;
+  health: string;
+  confidence: Decimalish;
+  spread_multiplier: Decimalish;
+  bid_size_multiplier: Decimalish;
+  ask_size_multiplier: Decimalish;
+  max_levels: number | null;
+  reasons: string[];
+  simulated: boolean;
+  evidence_version: number;
+  version: number;
+  updated_at: string;
+};
+export type RegimeAgentOutput = AgentRecommendation & {
+  state: string;
+  direction: string;
+  momentum_bps: Decimalish | null;
+  realized_volatility: Decimalish | null;
+  volatility_score: Decimalish;
+  book_imbalance: Decimalish;
+};
+export type ToxicFlowAgentOutput = AgentRecommendation & {
+  state: string;
+  metrics: {
+    total_fills: number;
+    matured_fills: number;
+    pending_markouts: number;
+    adverse_fill_count: number;
+    adverse_fill_rate: Decimalish;
+    mean_signed_markout_bps: Decimalish | null;
+    mean_adverse_markout_bps: Decimalish | null;
+    bid_toxic_flow_score: Decimalish;
+    ask_toxic_flow_score: Decimalish;
+    overall_toxic_flow_score: Decimalish;
+  };
+};
+export type ExecutionQualityAgentOutput = AgentRecommendation & {
+  state: string;
+  metrics: {
+    fill_count: number;
+    filled_order_ratio: Decimalish | null;
+    average_spread_capture_bps: Decimalish | null;
+    average_mature_markout_bps: Decimalish | null;
+    reject_count: number;
+    unknown_order_count: number;
+    keep_count: number;
+    create_count: number;
+    replace_count: number;
+    cancel_count: number;
+    reconciliation_churn_ratio: Decimalish;
+  };
+};
+export type AgentSupervisorDecision = {
+  market: string;
+  enabled: boolean;
+  regime: RegimeAgentOutput;
+  toxic_flow: ToxicFlowAgentOutput;
+  execution_quality: ExecutionQualityAgentOutput;
+  spread_multiplier: Decimalish;
+  bid_size_multiplier: Decimalish;
+  ask_size_multiplier: Decimalish;
+  max_levels: number | null;
+  reasons: string[];
+  market_version: number;
+  inventory_version: number;
+  perp_version: number;
+  reference_version: number;
+  simulated: boolean;
+  version: number;
+  fingerprint: string;
+  updated_at: string;
+};
+export type AgentsState = {
+  config: any;
+  evidence: any | null;
+  regime: RegimeAgentOutput | null;
+  toxic_flow: ToxicFlowAgentOutput | null;
+  execution_quality: ExecutionQualityAgentOutput | null;
+  supervisor: AgentSupervisorDecision | null;
+  agent_version: number;
+  agent_fingerprint: string;
+  telemetry: {
+    version: number;
+    fill_observations: number;
+    reconcile_cycles: number;
+    tracked_orders: number;
+    unknown_orders: number;
+    rejected_orders: number;
+  };
+};
+export type AgentEvent = {
+  timestamp: string;
+  agent: string;
+  previous_state: string | null;
+  new_state: string;
+  reasons: string[];
+  version: number;
+};
+export type RiskAuthorization = {
+  authorized: boolean;
+  risk_state: string;
+  authorization_fingerprint?: string;
+  quote_fingerprint?: string;
+  evidence_fingerprint?: string;
+  agent_fingerprint?: string;
+  reasons: string[];
+  authorized_quote_count?: number;
+  market_version?: number;
+  inventory_version?: number;
+  perp_version?: number;
+  reference_version?: number;
+  agent_version?: number;
+  risk_version?: number;
+  accounting_version?: number;
+  accounting_fingerprint?: string;
+};
+export type TerminalState = {
+  contract_version: string;
+  process_id: string;
+  session_id: string;
+  sequence: number;
+  emitted_at: string;
+  strategy_quotes: Quote[];
+  authorized_quotes: Quote[];
+  system_health: SystemHealthState;
+  execution_summary: {
+    order_count: number;
+    status_counts: Record<string, number>;
+    fill_count: number | null;
+    filled_notional: Decimalish | null;
+    fill_history_available: boolean;
+    recent_limit: number;
+    active_order_limit: number;
+    active_orders_truncated: boolean;
+  };
+  diagnostics: {
+    testnet_enabled: boolean;
+    reference_firewall_enabled: boolean;
+  };
+  vault: VaultSnapshot;
+  accounting: AccountingState;
+  market: MarketState;
+  strategy: StrategyState;
+  fair_value: Decimalish | null;
+  pool: {
+    reserve_base: Decimalish;
+    reserve_quote: Decimalish;
+    k: Decimalish;
+    reference_price: Decimalish;
+  } | null;
+  quotes: Quote[];
+  inventory: InventoryState | null;
+  market_adaptation: MarketAdaptationState | null;
+  perp_context: PerpContextState | null;
+  references: ReferenceSnapshot | null;
+  reference_consensus: ReferenceConsensus | null;
+  agents: AgentsState;
+  agent_events: AgentEvent[];
+  agent_quotes: Quote[];
+  risk_firewall: RiskFirewallState;
+  risk_authorization: RiskAuthorization;
+  risk_events: Array<{
+    timestamp: string;
+    previous_state: string;
+    new_state: string;
+    reasons: string[];
+    reference_version: number;
+    risk_version: number;
+  }>;
+  projected_exposure: any | null;
+  pnl_drawdown: any | null;
+  risk: {
+    kill_switch_active: boolean;
+    last_reason: string | null;
+    max_quote_levels: number;
+    max_order_size: Decimalish;
+    max_aggregate_notional: Decimalish;
+    min_valid_price: Decimalish;
+    max_quote_distance_bps: Decimalish;
+  };
+  orders: Order[];
+  fills: Fill[];
+  venue_reconciliation: {
+    last_reconciled_at: string | null;
+    error: string | null;
+  };
+  reconciliation: Array<{
+    action: string;
+    desired?: Quote | null;
+    existing?: Order | null;
+  }>;
+};
 
-export type SimulationMetrics={frame_count:number,starting_equity:Decimalish,ending_equity:Decimalish,session_pnl:Decimalish,return_pct:Decimalish,realized_pnl:Decimalish,unrealized_pnl:Decimalish,max_drawdown_pct:Decimalish,fill_count:number,buy_fill_count:number,sell_fill_count:number,quoted_notional:Decimalish,filled_notional:Decimalish,fill_activity_ratio:Decimalish|null,ending_inventory_base:Decimalish,max_abs_inventory_base:Decimalish,max_inventory_utilization:Decimalish,mean_spread_capture_bps:Decimalish|null,mean_mature_markout_bps:Decimalish|null,adverse_fill_rate:Decimalish|null,keep_count:number,create_count:number,replace_count:number,cancel_count:number,reconciliation_churn_ratio:Decimalish,risk_state_counts:Record<string,number>,risk_halt_fraction:Decimalish,agent_regime_counts:Record<string,number>,toxic_flow_state_counts:Record<string,number>,execution_quality_state_counts:Record<string,number>}
-export type SimulationResult={engine_version:string,run_fingerprint:string,scenario:string,dataset_fingerprint:string,strategy_fingerprint:string,metrics:SimulationMetrics,trace:Array<{sequence:number,timestamp:string,mid:Decimalish,mark:Decimalish,oracle:Decimalish,inventory_base:Decimalish,session_pnl:Decimalish,equity:Decimalish,drawdown_pct:Decimalish,reference_confidence:string,agent_regime:string,toxic_flow_state:string,execution_quality_state:string,risk_state:string,desired_quote_count:number,agent_quote_count:number,authorized_quote_count:number,open_order_count:number,fill_count:number}>,simulated:boolean,limitations:string[]}
-export type ScoreComponents={return_contribution:Decimalish,drawdown_penalty:Decimalish,inventory_penalty:Decimalish,adverse_markout_penalty:Decimalish,churn_penalty:Decimalish,halt_penalty:Decimalish,final_score:Decimalish}
-export type ScenarioEvaluation={scenario:string,run_fingerprint:string,metrics:SimulationMetrics,score:ScoreComponents}
-export type CandidateEvaluation={label:string,strategy_updates:Record<string,unknown>,agent_updates:Record<string,unknown>,configuration_fingerprint:string,training:ScenarioEvaluation[],validation:ScenarioEvaluation[],training_score:Decimalish,training_aggregate:Record<string,Decimalish|null>,validation_score:Decimalish|null,validation_aggregate:Record<string,Decimalish|null>,score_delta:Decimalish|null,baseline_delta:Record<string,Decimalish|null>}
-export type OptimizationResult={engine_version:string,baseline:CandidateEvaluation,requested_candidate_count:number,candidate_count:number,rejected_candidates:Array<Record<string,unknown>>,ranked_candidates:CandidateEvaluation[],training_scenarios:string[],validation_scenarios:string[],objective:Record<string,Decimalish>,simulated:boolean}
+export type SimulationMetrics = {
+  frame_count: number;
+  starting_equity: Decimalish;
+  ending_equity: Decimalish;
+  session_pnl: Decimalish;
+  return_pct: Decimalish;
+  realized_pnl: Decimalish;
+  unrealized_pnl: Decimalish;
+  max_drawdown_pct: Decimalish;
+  fill_count: number;
+  buy_fill_count: number;
+  sell_fill_count: number;
+  quoted_notional: Decimalish;
+  filled_notional: Decimalish;
+  fill_activity_ratio: Decimalish | null;
+  ending_inventory_base: Decimalish;
+  max_abs_inventory_base: Decimalish;
+  max_inventory_utilization: Decimalish;
+  mean_spread_capture_bps: Decimalish | null;
+  mean_mature_markout_bps: Decimalish | null;
+  adverse_fill_rate: Decimalish | null;
+  keep_count: number;
+  create_count: number;
+  replace_count: number;
+  cancel_count: number;
+  reconciliation_churn_ratio: Decimalish;
+  risk_state_counts: Record<string, number>;
+  risk_halt_fraction: Decimalish;
+  agent_regime_counts: Record<string, number>;
+  toxic_flow_state_counts: Record<string, number>;
+  execution_quality_state_counts: Record<string, number>;
+};
+export type SimulationResult = {
+  engine_version: string;
+  run_fingerprint: string;
+  scenario: string;
+  dataset_fingerprint: string;
+  strategy_fingerprint: string;
+  metrics: SimulationMetrics;
+  trace: Array<{
+    sequence: number;
+    timestamp: string;
+    mid: Decimalish;
+    mark: Decimalish;
+    oracle: Decimalish;
+    inventory_base: Decimalish;
+    session_pnl: Decimalish;
+    equity: Decimalish;
+    drawdown_pct: Decimalish;
+    reference_confidence: string;
+    agent_regime: string;
+    toxic_flow_state: string;
+    execution_quality_state: string;
+    risk_state: string;
+    desired_quote_count: number;
+    agent_quote_count: number;
+    authorized_quote_count: number;
+    open_order_count: number;
+    fill_count: number;
+  }>;
+  simulated: boolean;
+  limitations: string[];
+};
+export type ScoreComponents = {
+  return_contribution: Decimalish;
+  drawdown_penalty: Decimalish;
+  inventory_penalty: Decimalish;
+  adverse_markout_penalty: Decimalish;
+  churn_penalty: Decimalish;
+  halt_penalty: Decimalish;
+  final_score: Decimalish;
+};
+export type ScenarioEvaluation = {
+  scenario: string;
+  run_fingerprint: string;
+  metrics: SimulationMetrics;
+  score: ScoreComponents;
+};
+export type CandidateEvaluation = {
+  label: string;
+  strategy_updates: Record<string, unknown>;
+  agent_updates: Record<string, unknown>;
+  configuration_fingerprint: string;
+  training: ScenarioEvaluation[];
+  validation: ScenarioEvaluation[];
+  training_score: Decimalish;
+  training_aggregate: Record<string, Decimalish | null>;
+  validation_score: Decimalish | null;
+  validation_aggregate: Record<string, Decimalish | null>;
+  score_delta: Decimalish | null;
+  baseline_delta: Record<string, Decimalish | null>;
+};
+export type OptimizationResult = {
+  engine_version: string;
+  baseline: CandidateEvaluation;
+  requested_candidate_count: number;
+  candidate_count: number;
+  rejected_candidates: Array<Record<string, unknown>>;
+  ranked_candidates: CandidateEvaluation[];
+  training_scenarios: string[];
+  validation_scenarios: string[];
+  objective: Record<string, Decimalish>;
+  simulated: boolean;
+};
 
-export type ExecutionAccountingConsistency={execution_fill_count:number,accounted_fill_count:number,unaccounted_fill_count:number,execution_accounting_consistent:boolean|null,oldest_unaccounted_fill_at:string|null,latest_unaccounted_fill_at:string|null,status:'CONSISTENT'|'DIVERGED'|'UNAVAILABLE',reason:string|null}
-export type VaultSnapshot={execution_accounting:ExecutionAccountingConsistency,mode:'PAPER'|'TESTNET',market:string,source:string,simulated:boolean,accounting_complete:'COMPLETE'|'PARTIAL'|'UNAVAILABLE',initial_equity_quote:Decimalish|null,settled_capital_quote:Decimalish|null,position_base:Decimalish|null,average_entry_price:Decimalish|null,mark_price:Decimalish|null,position_value_quote:Decimalish|null,realized_pnl_quote:Decimalish|null,unrealized_pnl_quote:Decimalish|null,gross_pnl_quote:Decimalish|null,fees_quote:Decimalish|null,funding_quote:Decimalish|null,net_pnl_quote:Decimalish|null,equity_quote:Decimalish|null,peak_equity_quote:Decimalish|null,drawdown_quote:Decimalish|null,drawdown_pct:Decimalish|null,reserved_capital_quote:Decimalish|null,available_capital_quote:Decimalish|null,gross_exposure_quote:Decimalish|null,net_exposure_quote:Decimalish|null,capital_utilization:Decimalish|null,margin_used_quote:Decimalish|null,position_margin_used_quote:Decimalish|null,venue_withdrawable_quote:Decimalish|null,return_on_equity:Decimalish|null,liquidation_price:Decimalish|null,fee_source:string,funding_source:string,reservation_source:string,session_pnl_quote:Decimalish|null,ledger_version:number,ledger_fingerprint:string,accounting_version:number,accounting_fingerprint:string,updated_at:string|null,stale:boolean,error:string|null,warnings:string[]}
-export type PnlBreakdownState={realized_trading_pnl:Decimalish|null,unrealized_trading_pnl:Decimalish|null,fee_pnl:Decimalish|null,funding_pnl:Decimalish|null,net_realized_pnl:Decimalish|null,net_unrealized_pnl:Decimalish|null,session_pnl:Decimalish|null,gross_trading_pnl:Decimalish|null,net_pnl:Decimalish|null}
-export type AccountingEvent={timestamp:string,category:string,source_reference:string|null,message:string,accounting_version:number}
-export type LedgerEntry={sequence:number,event_id:string,event_type:string,timestamp:string,market:string,side:string|null,price:Decimalish|null,size:Decimalish|null,cash_delta_quote:Decimalish,position_delta_base:Decimalish,fee_delta_quote:Decimalish,funding_delta_quote:Decimalish,realized_pnl_delta:Decimalish,cash_balance_quote:Decimalish,position_base:Decimalish,average_entry_price:Decimalish,cumulative_realized_pnl:Decimalish,cumulative_fees:Decimalish,cumulative_funding:Decimalish,source:string,simulated:boolean,event_fingerprint:string,previous_ledger_fingerprint:string,ledger_fingerprint:string}
-export type AccountingLedgerState={mode:string,market:string,retention_policy:string,ledger_version:number,ledger_fingerprint:string,order:'newest-first',entries:LedgerEntry[]}
-export type AccountingState={execution_accounting:ExecutionAccountingConsistency,accounting_version:number,accounting_fingerprint:string,ledger_version:number,ledger_fingerprint:string,retention_policy:string,pnl:PnlBreakdownState,events:AccountingEvent[]}
+export type ExecutionAccountingConsistency = {
+  execution_fill_count: number;
+  accounted_fill_count: number;
+  unaccounted_fill_count: number;
+  execution_accounting_consistent: boolean | null;
+  oldest_unaccounted_fill_at: string | null;
+  latest_unaccounted_fill_at: string | null;
+  status: "CONSISTENT" | "DIVERGED" | "UNAVAILABLE";
+  reason: string | null;
+};
+export type VaultSnapshot = {
+  execution_accounting: ExecutionAccountingConsistency;
+  mode: "PAPER" | "TESTNET";
+  market: string;
+  source: string;
+  simulated: boolean;
+  accounting_complete: "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
+  initial_equity_quote: Decimalish | null;
+  settled_capital_quote: Decimalish | null;
+  position_base: Decimalish | null;
+  average_entry_price: Decimalish | null;
+  mark_price: Decimalish | null;
+  position_value_quote: Decimalish | null;
+  realized_pnl_quote: Decimalish | null;
+  unrealized_pnl_quote: Decimalish | null;
+  gross_pnl_quote: Decimalish | null;
+  fees_quote: Decimalish | null;
+  funding_quote: Decimalish | null;
+  net_pnl_quote: Decimalish | null;
+  equity_quote: Decimalish | null;
+  peak_equity_quote: Decimalish | null;
+  drawdown_quote: Decimalish | null;
+  drawdown_pct: Decimalish | null;
+  reserved_capital_quote: Decimalish | null;
+  available_capital_quote: Decimalish | null;
+  gross_exposure_quote: Decimalish | null;
+  net_exposure_quote: Decimalish | null;
+  capital_utilization: Decimalish | null;
+  margin_used_quote: Decimalish | null;
+  position_margin_used_quote: Decimalish | null;
+  venue_withdrawable_quote: Decimalish | null;
+  return_on_equity: Decimalish | null;
+  liquidation_price: Decimalish | null;
+  fee_source: string;
+  funding_source: string;
+  reservation_source: string;
+  session_pnl_quote: Decimalish | null;
+  ledger_version: number;
+  ledger_fingerprint: string;
+  accounting_version: number;
+  accounting_fingerprint: string;
+  updated_at: string | null;
+  stale: boolean;
+  error: string | null;
+  warnings: string[];
+};
+export type PnlBreakdownState = {
+  realized_trading_pnl: Decimalish | null;
+  unrealized_trading_pnl: Decimalish | null;
+  fee_pnl: Decimalish | null;
+  funding_pnl: Decimalish | null;
+  net_realized_pnl: Decimalish | null;
+  net_unrealized_pnl: Decimalish | null;
+  session_pnl: Decimalish | null;
+  gross_trading_pnl: Decimalish | null;
+  net_pnl: Decimalish | null;
+};
+export type AccountingEvent = {
+  timestamp: string;
+  category: string;
+  source_reference: string | null;
+  message: string;
+  accounting_version: number;
+};
+export type LedgerEntry = {
+  sequence: number;
+  event_id: string;
+  event_type: string;
+  timestamp: string;
+  market: string;
+  side: string | null;
+  price: Decimalish | null;
+  size: Decimalish | null;
+  cash_delta_quote: Decimalish;
+  position_delta_base: Decimalish;
+  fee_delta_quote: Decimalish;
+  funding_delta_quote: Decimalish;
+  realized_pnl_delta: Decimalish;
+  cash_balance_quote: Decimalish;
+  position_base: Decimalish;
+  average_entry_price: Decimalish;
+  cumulative_realized_pnl: Decimalish;
+  cumulative_fees: Decimalish;
+  cumulative_funding: Decimalish;
+  source: string;
+  simulated: boolean;
+  event_fingerprint: string;
+  previous_ledger_fingerprint: string;
+  ledger_fingerprint: string;
+};
+export type AccountingLedgerState = {
+  mode: string;
+  market: string;
+  retention_policy: string;
+  ledger_version: number;
+  ledger_fingerprint: string;
+  order: "newest-first";
+  entries: LedgerEntry[];
+};
+export type AccountingState = {
+  execution_accounting: ExecutionAccountingConsistency;
+  accounting_version: number;
+  accounting_fingerprint: string;
+  ledger_version: number;
+  ledger_fingerprint: string;
+  retention_policy: string;
+  pnl: PnlBreakdownState;
+  events: AccountingEvent[];
+};
+
+export type HealthStatus = "HEALTHY" | "DEGRADED" | "HALTED" | "UNAVAILABLE";
+export type SystemHealthState = {
+  status: HealthStatus;
+  observational: true;
+  subsystems: Record<string, { status: HealthStatus; reason: string }>;
+};
+export type HistoryRange = "1m" | "5m" | "15m" | "1h" | "session";
+export type HistoryPoint = {
+  sequence: number;
+  timestamp: string;
+  mid_price: Decimalish | null;
+  fair_value: Decimalish | null;
+  strategy_reference_price: Decimalish | null;
+  mark_price: Decimalish | null;
+  oracle_price: Decimalish | null;
+  consensus_price: Decimalish | null;
+  best_bid: Decimalish | null;
+  best_ask: Decimalish | null;
+  position_base: Decimalish | null;
+  inventory_ratio: Decimalish | null;
+  risk_state: string;
+  agent_regime: string | null;
+  equity: Decimalish | null;
+  peak_equity: Decimalish | null;
+  net_pnl: Decimalish | null;
+  drawdown_pct: Decimalish | null;
+  capital_utilization: Decimalish | null;
+  simulated: boolean;
+  execution_mode: string;
+};
+export type TerminalHistory = {
+  session_id: string;
+  range: HistoryRange;
+  max_points: number;
+  query_max: number;
+  retained_points: number;
+  retained_seconds: number;
+  available_ranges: HistoryRange[];
+  oldest_at: string | null;
+  latest_at: string | null;
+  points: HistoryPoint[];
+};
+export type EventCategory =
+  | "STRATEGY"
+  | "MARKET"
+  | "REFERENCES"
+  | "AGENTS"
+  | "RISK"
+  | "EXECUTION"
+  | "ACCOUNTING"
+  | "SYSTEM";
+export type TerminalEvent = {
+  event_id: string;
+  timestamp: string;
+  category: EventCategory;
+  previous_state: string | null;
+  state: string | null;
+  message: string;
+  reference: string | null;
+  version: number | null;
+  simulated: boolean;
+};
+export type TerminalEvents = {
+  session_id: string;
+  order: "newest-first";
+  max_events: number;
+  events: TerminalEvent[];
+};
