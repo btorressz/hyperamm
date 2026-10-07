@@ -1,0 +1,367 @@
+{
+  "contract_version": "phase12-v1",
+  "process_id": "0a13f81c-48dc-4010-8bcf-b3b41c2e36a4",
+  "session_id": "ceac84d1-7ba9-45fe-b009-6da6dd9ae5d5",
+  "sequence": 2,
+  "emitted_at": "2026-10-07T22:10:21.533178Z",
+  "market": {
+    "market": "ETH",
+    "best_bid": null,
+    "best_ask": null,
+    "mid_price": null,
+    "book": null,
+    "latest_valid_update": null,
+    "connection_state": "DISCONNECTED",
+    "mode": "DEMO",
+    "simulated": true,
+    "stale": true,
+    "message": "feed not started"
+  },
+  "strategy": {
+    "running": false,
+    "config": {
+      "market": "ETH",
+      "market_data_mode": "DEMO",
+      "execution_mode": "TESTNET",
+      "amm_model": "CONSTANT_PRODUCT",
+      "virtual_base_reserve": "100",
+      "virtual_quote_reserve": "300000",
+      "levels_per_side": 8,
+      "max_distance_bps": "100",
+      "base_order_size": "0.10",
+      "total_liquidity": "4.0",
+      "concentration_factor": "8",
+      "concentration_lower_bps": "10",
+      "concentration_upper_bps": "200",
+      "quote_refresh_interval_ms": 1000,
+      "replace_tolerance_bps": "0.5",
+      "size_tolerance": "0.0001",
+      "tick_size": "0.1",
+      "size_precision": 4,
+      "inventory_skew_enabled": true,
+      "target_inventory_base": "0",
+      "soft_inventory_limit_base": "5",
+      "hard_inventory_limit_base": "10",
+      "max_inventory_price_skew_bps": "20",
+      "inventory_size_skew_strength": "0.75",
+      "min_inventory_size_multiplier": "0.25",
+      "max_inventory_size_multiplier": "1.75",
+      "inventory_stale_after_seconds": 10.0,
+      "market_adaptation_enabled": true,
+      "volatility_window_samples": 60,
+      "volatility_min_samples": 10,
+      "volatility_low_threshold": "0.0002",
+      "volatility_high_threshold": "0.0020",
+      "volatility_spread_strength": "1.0",
+      "volatility_size_strength": "0.50",
+      "book_imbalance_levels": 5,
+      "imbalance_spread_strength": "0.25",
+      "imbalance_size_strength": "0.25",
+      "min_spread_multiplier": "1.0",
+      "max_spread_multiplier": "2.5",
+      "min_market_size_multiplier": "0.35",
+      "perp_context_enabled": true,
+      "perp_context_stale_after_seconds": 10.0,
+      "perp_mark_weight": "0.25",
+      "perp_oracle_weight": "0.25",
+      "funding_reference_abs_rate": "0.00025",
+      "max_funding_reference_shift_bps": "5",
+      "max_perp_reference_shift_bps": "50"
+    },
+    "last_error": null,
+    "quote_health": "NO_QUOTES"
+  },
+  "fair_value": null,
+  "pool": null,
+  "strategy_quotes": [],
+  "agent_quotes": [],
+  "authorized_quotes": [],
+  "quotes": [],
+  "inventory": null,
+  "market_adaptation": null,
+  "perp_context": null,
+  "references": null,
+  "reference_consensus": null,
+  "agents": {
+    "config": {
+      "agents_enabled": true,
+      "regime_agent_enabled": true,
+      "toxic_flow_agent_enabled": true,
+      "execution_quality_agent_enabled": true,
+      "agent_max_spread_multiplier": "1.75",
+      "agent_min_size_multiplier": "0.35",
+      "agent_min_confidence": "0.20",
+      "regime_momentum_window_samples": 20,
+      "regime_min_samples": 8,
+      "regime_trend_threshold_bps": "15",
+      "regime_dislocation_bps": "50",
+      "regime_spread_strength": "0.40",
+      "regime_size_strength": "0.30",
+      "toxic_flow_window_fills": 100,
+      "toxic_flow_min_matured_fills": 5,
+      "toxic_flow_markout_horizon_seconds": 5.0,
+      "toxic_flow_adverse_markout_bps": "3",
+      "toxic_flow_spread_strength": "0.50",
+      "toxic_flow_size_strength": "0.60",
+      "execution_quality_window": 50,
+      "execution_quality_min_fills": 5,
+      "execution_quality_poor_markout_bps": "3",
+      "execution_quality_max_churn_ratio": "0.65",
+      "execution_quality_spread_strength": "0.40",
+      "execution_quality_size_strength": "0.40"
+    },
+    "evidence": null,
+    "regime": null,
+    "toxic_flow": null,
+    "execution_quality": null,
+    "supervisor": null,
+    "agent_version": 0,
+    "agent_fingerprint": "1082e52582797695ee3621917704144b77c7755044774d869a1f07d6ca5a8f50",
+    "telemetry": {
+      "version": 0,
+      "fill_observations": 0,
+      "reconcile_cycles": 0,
+      "tracked_orders": 0,
+      "unknown_orders": 0,
+      "rejected_orders": 0
+    }
+  },
+  "agent_events": [],
+  "risk_firewall": {
+    "manual_kill_active": false,
+    "manual_kill_reason": null,
+    "config": {
+      "enabled": true,
+      "reference_warn_deviation_bps": "20",
+      "reference_reduce_deviation_bps": "40",
+      "reference_halt_deviation_bps": "80",
+      "source_agreement_bps": "30",
+      "source_outlier_bps": "75",
+      "max_projected_long_base": "10",
+      "max_projected_short_base": "10",
+      "max_gross_quote_notional": "1000000",
+      "max_projected_position_notional": "1000000",
+      "liquidation_warn_distance_bps": "1500",
+      "liquidation_reduce_distance_bps": "800",
+      "liquidation_halt_distance_bps": "300",
+      "max_session_loss_quote": "5000",
+      "drawdown_warn_pct": "0.05",
+      "drawdown_reduce_pct": "0.10",
+      "drawdown_halt_pct": "0.15",
+      "widen_spread_multiplier": "1.25",
+      "widen_size_multiplier": "0.90",
+      "reduce_spread_multiplier": "1.60",
+      "reduce_size_multiplier": "0.50",
+      "reduce_inventory_increasing_multiplier": "0.20",
+      "reduce_max_levels": 4,
+      "recovery_ratio": "0.75",
+      "risk_recovery_confirmations": 3
+    },
+    "state": "NORMAL",
+    "decision": null
+  },
+  "risk_authorization": {
+    "authorized": false,
+    "risk_state": "NORMAL",
+    "reasons": [
+      "no current FinalQuoteAuthorization"
+    ]
+  },
+  "risk_events": [],
+  "projected_exposure": null,
+  "pnl_drawdown": null,
+  "vault": {
+    "mode": "TESTNET",
+    "market": "ETH",
+    "source": "TESTNET_AUTHORITATIVE_USER_STATE",
+    "simulated": false,
+    "accounting_complete": "UNAVAILABLE",
+    "execution_accounting": {
+      "execution_fill_count": 0,
+      "accounted_fill_count": 0,
+      "unaccounted_fill_count": 0,
+      "execution_accounting_consistent": null,
+      "oldest_unaccounted_fill_at": null,
+      "latest_unaccounted_fill_at": null,
+      "status": "UNAVAILABLE",
+      "reason": "Normalized execution fill evidence unavailable"
+    },
+    "initial_equity_quote": null,
+    "settled_capital_quote": null,
+    "position_base": null,
+    "average_entry_price": null,
+    "mark_price": null,
+    "position_value_quote": null,
+    "realized_pnl_quote": null,
+    "unrealized_pnl_quote": null,
+    "gross_pnl_quote": null,
+    "fees_quote": null,
+    "funding_quote": null,
+    "net_pnl_quote": null,
+    "equity_quote": null,
+    "peak_equity_quote": null,
+    "drawdown_quote": null,
+    "drawdown_pct": null,
+    "reserved_capital_quote": null,
+    "available_capital_quote": null,
+    "gross_exposure_quote": null,
+    "net_exposure_quote": null,
+    "capital_utilization": null,
+    "margin_used_quote": null,
+    "position_margin_used_quote": null,
+    "venue_withdrawable_quote": null,
+    "return_on_equity": null,
+    "liquidation_price": null,
+    "fee_source": "UNAVAILABLE",
+    "funding_source": "UNAVAILABLE",
+    "reservation_source": "UNAVAILABLE",
+    "session_pnl_quote": null,
+    "ledger_version": 0,
+    "ledger_fingerprint": "1c0ea8031f2d84a1e680a99126fee02b5194e31b288981b280b857696b5ed55c",
+    "accounting_version": 1,
+    "accounting_fingerprint": "9b354dfce2606f016d6e030fb28051feb98c381c919ccb088b7fe795073754c2",
+    "updated_at": null,
+    "stale": true,
+    "error": null,
+    "warnings": [
+      "PARTIAL: complete normalized TESTNET fill ledger unavailable.",
+      "Cash, realized PnL, fees, funding payments and available trading capital unavailable.",
+      "Account equity is account-wide; position evidence is market-specific."
+    ]
+  },
+  "accounting": {
+    "config": {
+      "enabled": true,
+      "paper_initial_equity_quote": "100000",
+      "paper_fee_model_enabled": false,
+      "paper_maker_fee_bps": "1",
+      "paper_taker_fee_bps": "3",
+      "paper_funding_accounting_enabled": false,
+      "paper_funding_interval_seconds": 3600,
+      "accounting_stale_after_seconds": 30,
+      "ledger_max_entries": 10000,
+      "event_max_entries": 250,
+      "max_capital_utilization": "1"
+    },
+    "accounting_version": 1,
+    "accounting_fingerprint": "9b354dfce2606f016d6e030fb28051feb98c381c919ccb088b7fe795073754c2",
+    "ledger_version": 0,
+    "ledger_fingerprint": "1c0ea8031f2d84a1e680a99126fee02b5194e31b288981b280b857696b5ed55c",
+    "retention_policy": "HALT_WHEN_FULL",
+    "execution_accounting": {
+      "execution_fill_count": 0,
+      "accounted_fill_count": 0,
+      "unaccounted_fill_count": 0,
+      "execution_accounting_consistent": null,
+      "oldest_unaccounted_fill_at": null,
+      "latest_unaccounted_fill_at": null,
+      "status": "UNAVAILABLE",
+      "reason": "Normalized execution fill evidence unavailable"
+    },
+    "pnl": {
+      "realized_trading_pnl": null,
+      "unrealized_trading_pnl": null,
+      "fee_pnl": null,
+      "funding_pnl": null,
+      "net_realized_pnl": null,
+      "net_unrealized_pnl": null,
+      "session_pnl": null,
+      "gross_trading_pnl": null,
+      "net_pnl": null
+    },
+    "events": []
+  },
+  "risk": {
+    "kill_switch_active": false,
+    "last_reason": null,
+    "max_quote_levels": 50,
+    "max_order_size": "25",
+    "max_aggregate_notional": "1000000",
+    "min_valid_price": "1E-8",
+    "max_quote_distance_bps": "2500"
+  },
+  "orders": [],
+  "fills": [],
+  "venue_reconciliation": {
+    "last_reconciled_at": null,
+    "error": null
+  },
+  "reconciliation": [],
+  "system_health": {
+    "status": "HALTED",
+    "observational": true,
+    "subsystems": {
+      "market_feed": {
+        "status": "DEGRADED",
+        "reason": "DISCONNECTED"
+      },
+      "perp_context": {
+        "status": "UNAVAILABLE",
+        "reason": "No evidence"
+      },
+      "references": {
+        "status": "UNAVAILABLE",
+        "reason": "Individual provider evidence"
+      },
+      "reference_consensus": {
+        "status": "UNAVAILABLE",
+        "reason": "No evidence"
+      },
+      "redstone_transport": {
+        "status": "UNAVAILABLE",
+        "reason": "No evidence"
+      },
+      "agents": {
+        "status": "UNAVAILABLE",
+        "reason": "No decision yet"
+      },
+      "risk": {
+        "status": "HEALTHY",
+        "reason": "NORMAL"
+      },
+      "final_authorization": {
+        "status": "HALTED",
+        "reason": "BLOCKED"
+      },
+      "execution": {
+        "status": "HEALTHY",
+        "reason": "TESTNET"
+      },
+      "venue_reconciliation": {
+        "status": "UNAVAILABLE",
+        "reason": "Venue evidence"
+      },
+      "accounting": {
+        "status": "DEGRADED",
+        "reason": "UNAVAILABLE"
+      },
+      "execution_accounting_consistency": {
+        "status": "UNAVAILABLE",
+        "reason": "UNAVAILABLE"
+      },
+      "strategy": {
+        "status": "HEALTHY",
+        "reason": "STOPPED"
+      }
+    }
+  },
+  "execution_summary": {
+    "order_count": 0,
+    "status_counts": {
+      "OPEN": 0,
+      "PARTIALLY_FILLED": 0,
+      "UNKNOWN": 0,
+      "REJECTED": 0
+    },
+    "fill_count": null,
+    "filled_notional": null,
+    "fill_history_available": false,
+    "recent_limit": 100,
+    "active_order_limit": 200,
+    "active_orders_truncated": false
+  },
+  "diagnostics": {
+    "testnet_enabled": false,
+    "reference_firewall_enabled": true
+  }
+}

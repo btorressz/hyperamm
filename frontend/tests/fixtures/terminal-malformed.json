@@ -1,0 +1,275 @@
+[
+  {
+    "name": "wrong contract",
+    "path": "contract_version",
+    "value": "phase13-v1"
+  },
+  {
+    "name": "unsafe sequence",
+    "path": "sequence",
+    "value": 9007199254740992
+  },
+  {
+    "name": "zero sequence",
+    "path": "sequence",
+    "value": 0
+  },
+  {
+    "name": "wrong process identity type",
+    "path": "process_id",
+    "value": 123
+  },
+  {
+    "name": "empty session",
+    "path": "session_id",
+    "value": ""
+  },
+  {
+    "name": "naive timestamp",
+    "path": "emitted_at",
+    "value": "2026-10-07T12:00:00"
+  },
+  {
+    "name": "impossible date",
+    "path": "emitted_at",
+    "value": "2026-02-30T12:00:00Z"
+  },
+  {
+    "name": "missing nullable field",
+    "path": "fair_value",
+    "remove": true
+  },
+  {
+    "name": "numeric decimal",
+    "path": "quotes.0.price",
+    "value": 3000
+  },
+  {
+    "name": "empty decimal",
+    "path": "quotes.0.price",
+    "value": ""
+  },
+  {
+    "name": "whitespace decimal",
+    "path": "quotes.0.price",
+    "value": " 3000"
+  },
+  {
+    "name": "hex decimal",
+    "path": "quotes.0.price",
+    "value": "0xff"
+  },
+  {
+    "name": "nonfinite decimal",
+    "path": "quotes.0.price",
+    "value": "NaN"
+  },
+  {
+    "name": "invalid quote side",
+    "path": "quotes.0.side",
+    "value": "BUY"
+  },
+  {
+    "name": "invalid quote model",
+    "path": "quotes.0.source_model",
+    "value": "UNKNOWN"
+  },
+  {
+    "name": "malformed book",
+    "path": "market.book.bids.0.size",
+    "value": false
+  },
+  {
+    "name": "invalid market state",
+    "path": "market.connection_state",
+    "value": "ONLINE"
+  },
+  {
+    "name": "invalid execution mode",
+    "path": "strategy.config.execution_mode",
+    "value": "MAINNET"
+  },
+  {
+    "name": "invalid running flag",
+    "path": "strategy.running",
+    "value": "false"
+  },
+  {
+    "name": "invalid order status",
+    "path": "orders.0.status",
+    "value": "DONE"
+  },
+  {
+    "name": "invalid order side",
+    "path": "orders.0.side",
+    "value": "BUY"
+  },
+  {
+    "name": "malformed fill",
+    "path": "fills.0.price",
+    "value": null
+  },
+  {
+    "name": "bad fill timestamp",
+    "path": "fills.0.timestamp",
+    "value": "yesterday"
+  },
+  {
+    "name": "invalid reference transport",
+    "path": "references.evidence.REDSTONE.transport",
+    "value": "TRUST_ME"
+  },
+  {
+    "name": "missing consensus",
+    "path": "references.consensus",
+    "remove": true
+  },
+  {
+    "name": "invalid reference price",
+    "path": "references.consensus.consensus_price",
+    "value": "Infinity"
+  },
+  {
+    "name": "bad risk state",
+    "path": "risk_firewall.state",
+    "value": "SAFE"
+  },
+  {
+    "name": "partial authorization",
+    "path": "risk_authorization.authorization_fingerprint",
+    "remove": true
+  },
+  {
+    "name": "invalid authorization flag",
+    "path": "risk_authorization.authorized",
+    "value": 1
+  },
+  {
+    "name": "malformed exposure",
+    "path": "projected_exposure.bid_quantity",
+    "value": []
+  },
+  {
+    "name": "malformed drawdown",
+    "path": "pnl_drawdown.drawdown_pct",
+    "value": ""
+  },
+  {
+    "name": "invalid regime enum",
+    "path": "agents.regime.state",
+    "value": "BULLISH"
+  },
+  {
+    "name": "malformed toxic metrics",
+    "path": "agents.toxic_flow.metrics.pending_markouts",
+    "value": -1
+  },
+  {
+    "name": "malformed supervisor reasons",
+    "path": "agents.supervisor.reasons",
+    "value": [
+      42
+    ]
+  },
+  {
+    "name": "invalid accounting completeness",
+    "path": "vault.accounting_complete",
+    "value": "OK"
+  },
+  {
+    "name": "bad accounting decimal",
+    "path": "accounting.pnl.net_pnl",
+    "value": 0
+  },
+  {
+    "name": "bad consistency status",
+    "path": "vault.execution_accounting.status",
+    "value": "OK"
+  },
+  {
+    "name": "bad health",
+    "path": "system_health.subsystems.market_feed.status",
+    "value": "ONLINE"
+  },
+  {
+    "name": "non-observational health",
+    "path": "system_health.observational",
+    "value": false
+  },
+  {
+    "name": "invalid diagnostics",
+    "path": "diagnostics.testnet_enabled",
+    "value": "yes"
+  },
+  {
+    "name": "invalid execution count",
+    "path": "execution_summary.fill_count",
+    "value": 1.5
+  },
+  {
+    "name": "invalid reconciliation",
+    "path": "reconciliation",
+    "value": [
+      {
+        "action": "EXECUTE",
+        "desired": null,
+        "existing": null
+      }
+    ]
+  },
+  {
+    "name": "array nested object",
+    "path": "venue_reconciliation",
+    "value": []
+  },
+  {
+    "name": "zero quote price",
+    "path": "quotes.0.price",
+    "value": "0"
+  },
+  {
+    "name": "negative fill size",
+    "path": "fills.0.size",
+    "value": "-1"
+  },
+  {
+    "name": "invalid fingerprint",
+    "path": "risk_authorization.authorization_fingerprint",
+    "value": "trusted"
+  },
+  {
+    "name": "negative evidence version",
+    "path": "risk_authorization.reference_version",
+    "value": -1
+  },
+  {
+    "name": "excess confidence",
+    "path": "agents.regime.confidence",
+    "value": "1.1"
+  },
+  {
+    "name": "invalid consensus state",
+    "path": "reference_consensus.confidence_state",
+    "value": "TRUSTED"
+  },
+  {
+    "name": "invalid source status",
+    "path": "reference_consensus.source_statuses.REDSTONE",
+    "value": "TRUSTED"
+  },
+  {
+    "name": "wrong agent identity",
+    "path": "agents.regime.agent",
+    "value": "SUPERVISOR"
+  },
+  {
+    "name": "invalid clock hour",
+    "path": "emitted_at",
+    "value": "2026-10-07T24:00:00Z"
+  },
+  {
+    "name": "missing diagnostic flag",
+    "path": "diagnostics.testnet_enabled",
+    "remove": true
+  }
+]

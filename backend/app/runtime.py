@@ -866,32 +866,9 @@ class HyperAmmRuntime:
             "reference_price": str(decision.reference_price) if decision else None,
         }
 
-    async def inventory_summary(self, *, refresh: bool = False):
-        from app.strategy.fair_value import calculate_fair_value
-
+    async def inventory_summary(self):
         async with self.execution_lock:
-            if self.config.execution_mode == ExecutionMode.TESTNET and refresh:
-                self.testnet._require_enabled()
-                await self.testnet.reconcile_venue()
-            state = await self._inventory_state_locked(refresh=refresh)
-            decision = None
-            try:
-                snap = await self.market.snapshot()
-                fair = self.fair_value if self.fair_value is not None else calculate_fair_value(snap)
-                reference = (
-                    self.perp_reference_decision.final_reference_price
-                    if self.perp_reference_decision is not None
-                    else fair
-                )
-                decision = InventoryPolicy(self.config).decision(fair, state, reference)
-            except ValueError:
-                # Position observability remains available while market-derived strategy
-                # metrics are temporarily unavailable. Inventory-source failures are
-                # raised before this point and are never converted to zero/default state.
-                pass
-            self.inventory = state
-            self.inventory_decision = decision
-            return self._inventory_payload(state, decision)
+            return self._inventory_payload(self.inventory, self.inventory_decision) if self.inventory else None
 
     def _perp_payload(self) -> dict | None:
         if self.perp_context is None:
@@ -909,47 +886,19 @@ class HyperAmmRuntime:
         return data
 
     async def perp_context_summary(self):
-        from app.strategy.fair_value import calculate_fair_value
         async with self.execution_lock:
-            snap = await self.market.snapshot()
-            market_fair = calculate_fair_value(snap)
-            if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
-                self.perp_context_service.accept(demo_perp_context(snap))
-            context = self.perp_context_service.snapshot(market_fair)
-            decision = PerpContextPolicy(self.config).decision(market_fair, context)
-            inventory = await self._inventory_state_locked(
-                refresh=self.config.execution_mode == ExecutionMode.TESTNET
-            )
-            self.perp_context = context
-            self.perp_reference_decision = decision
-            if self.config.execution_mode == ExecutionMode.PAPER:
-                self.perp_position = self._paper_perp_position(inventory)
             return self._perp_payload()
 
     def _market_adaptation_payload(self, decision) -> dict | None:
         return decision.model_dump(mode="json") if decision is not None else None
 
     async def market_adaptation_summary(self):
-        from app.strategy.fair_value import calculate_fair_value
-
         async with self.execution_lock:
-            snapshot = await self.market.snapshot()
-            calculate_fair_value(snapshot)
-            self.market_history.add_snapshot(snapshot)
-            decision = MarketAdaptationPolicy(self.config).decision(snapshot, self.market_history)
-            self.market_adaptation_decision = decision
-            return self._market_adaptation_payload(decision)
+            return self._market_adaptation_payload(self.market_adaptation_decision)
 
     async def references_summary(self):
         async with self.execution_lock:
-            snap=await self.market.snapshot()
-            fair=calculate_fair_value(snap)
-            if self.config.market_data_mode==MarketDataMode.DEMO and self.perp_context_service._context is None:
-                self.perp_context_service.accept(demo_perp_context(snap))
-            perp=self.perp_context_service.snapshot(fair)
-            refs=self.reference_service.snapshot(snap,perp,agreement_bps=self.risk_config.source_agreement_bps,outlier_bps=self.risk_config.source_outlier_bps)
-            self.references=refs
-            return refs.model_dump(mode="json")
+            return self.references.model_dump(mode="json") if self.references else None
 
     def agents_payload(self):
         return {
@@ -965,8 +914,6 @@ class HyperAmmRuntime:
         }
 
     async def agents_summary(self):
-        if self.agent_decision is None:
-            await self.refresh_once()
         return self.agents_payload()
 
     def agent_events_summary(self):
@@ -982,8 +929,6 @@ class HyperAmmRuntime:
         }
 
     async def risk_evidence_summary(self):
-        if self.references is None or self.risk_decision is None:
-            await self.refresh_once()
         return {
             "references":self.references.model_dump(mode="json") if self.references else None,
             "risk":self.risk_decision.model_dump(mode="json") if self.risk_decision else None,
@@ -1000,9 +945,6 @@ class HyperAmmRuntime:
         }
 
     def accounting_payload(self):
-        if self.config.execution_mode == ExecutionMode.PAPER:
-            self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
-                                                         duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
         vault = self.accounting_service.snapshot()
         return {
             "config": self.accounting_config.model_dump(mode="json"),
@@ -1018,25 +960,7 @@ class HyperAmmRuntime:
 
     async def vault_summary(self):
         async with self.execution_lock:
-            try:
-                snap = await self.market.snapshot()
-                fair = calculate_fair_value(snap)
-                if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
-                    self.perp_context_service.accept(demo_perp_context(snap))
-                context = self.perp_context_service.snapshot(fair)
-                if self.config.execution_mode == ExecutionMode.TESTNET:
-                    self.perp_position = self.testnet.perp_position_snapshot(self.config.market)
-                self._mark_accounting_locked(context)
-                if self.config.execution_mode == ExecutionMode.PAPER:
-                    self.accounting_service.reserve(self.quotes, await self.paper.get_open_orders())
-            except Exception as exc:
-                # Read-only observability retains prior evidence and reports error.
-                # Market outages do not overwrite balances with defaults.
-                self.vault_snapshot = self.accounting_service.snapshot()
-                return self.vault_snapshot.model_copy(update={"stale": True, "error": str(exc),
-                    "accounting_complete": "UNAVAILABLE"}).model_dump(mode="json")
-            self.vault_snapshot = self.accounting_service.snapshot()
-            return self.vault_snapshot.model_dump(mode="json")
+            return self.accounting_service.snapshot().model_dump(mode="json")
 
     async def terminal_state(self):
         """Read the last published observation without observing domain state."""
@@ -1056,9 +980,6 @@ class HyperAmmRuntime:
         self._terminal_clients.discard(queue)
 
     async def _publish_terminal_snapshot(self):
-        if self.config.execution_mode == ExecutionMode.PAPER:
-            self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
-                                                         duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
         snap = await self.market.snapshot()
         inventory = None
         if self.inventory is not None:

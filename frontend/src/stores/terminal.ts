@@ -5,7 +5,7 @@ export type WsState =
 type Store = {
   terminal: TerminalState | null;
   wsState: WsState;
-  lastMessageAt: number | null;
+  lastValidFrameAt: number | null;
   lastSequence: number | null;
   terminalContractVersion: string | null;
   payloadError: string | null;
@@ -19,7 +19,7 @@ type Store = {
 export const useTerminalStore = create<Store>((set, get) => ({
   terminal: null,
   wsState: "connecting",
-  lastMessageAt: null,
+  lastValidFrameAt: null,
   lastSequence: null,
   terminalContractVersion: null,
   payloadError: null,
@@ -29,6 +29,7 @@ export const useTerminalStore = create<Store>((set, get) => ({
     const s = get();
     if (
       s.terminal?.process_id === terminal.process_id &&
+      s.terminal?.session_id === terminal.session_id &&
       s.lastSequence !== null &&
       terminal.sequence <= s.lastSequence
     ) {
@@ -36,7 +37,9 @@ export const useTerminalStore = create<Store>((set, get) => ({
       return;
     }
     const restart =
-        !!s.terminal && s.terminal.process_id !== terminal.process_id,
+        !!s.terminal &&
+        (s.terminal.process_id !== terminal.process_id ||
+          s.terminal.session_id !== terminal.session_id),
       gap =
         !restart &&
         s.lastSequence !== null &&
@@ -45,7 +48,7 @@ export const useTerminalStore = create<Store>((set, get) => ({
       terminal,
       lastSequence: terminal.sequence,
       terminalContractVersion: terminal.contract_version,
-      lastMessageAt: Date.now(),
+      lastValidFrameAt: Date.now(),
       payloadError: null,
       wsState: "connected",
       connectionNotice: restart

@@ -94,6 +94,7 @@ async def test_market_adaptation_summary_serializes_warmup_state():
     rt=HyperAmmRuntime(Settings())
     snap=MockMarketDataAdapter().snapshot_for(1)
     await rt.market._accept(snap)
+    await rt.refresh_once()
     payload=await rt.market_adaptation_summary()
     assert payload["market"]=="ETH"
     assert payload["volatility_ready"] is False
