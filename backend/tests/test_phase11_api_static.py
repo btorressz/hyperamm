@@ -16,6 +16,9 @@ def test_required_fastapi_endpoints_and_decimal_contracts():
         assert vault["mode"] == "PAPER" and vault["simulated"]
         assert isinstance(vault["equity_quote"], str)
         assert vault["accounting_complete"] == "COMPLETE"
+        assert vault["execution_accounting"]["status"] == "CONSISTENT"
+        assert vault["execution_accounting"]["execution_accounting_consistent"] is True
+        assert vault["execution_accounting"]["unaccounted_fill_count"] == 0
         assert client.get("/api/v1/accounting/ledger?limit=500").status_code == 200
         for limit in (0, -1, 501):
             assert client.get(f"/api/v1/accounting/ledger?limit={limit}").status_code == 422
@@ -34,6 +37,7 @@ def test_terminal_websocket_has_compact_accounting_without_full_ledger():
             assert len(payload["accounting"]["events"]) <= 20
             assert "ledger" not in payload["accounting"]
             assert "entries" not in payload["accounting"]
+            assert payload["accounting"]["execution_accounting"] == payload["vault"]["execution_accounting"]
             for field in ("market", "strategy", "risk_authorization", "agents", "orders", "fills", "pnl_drawdown"):
                 assert field in payload
 
@@ -74,5 +78,7 @@ def test_read_only_accounting_routes_and_active_vault_ui():
     ui = "\n".join((root / path).read_text() for path in (
         "frontend/src/pages/Vault.tsx", "frontend/src/components/VaultSummary.tsx", "frontend/src/components/AccountingLedger.tsx"))
     assert "PAPER / SIMULATED" in ui and "TESTNET /" in ui and "Unavailable" in ui
+    assert "Execution / Accounting" in ui and "unaccounted fills" in ui
+    assert "'CONSISTENT' ? 'good'" in ui and "'DIVERGED' ? 'bad'" in ui
     for token in ("deposit", "withdrawal", "transfer", "bridge", "investor", "management_fee", "performance_fee"):
         assert token not in ui.lower()

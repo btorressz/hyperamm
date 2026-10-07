@@ -14,6 +14,7 @@
 | 9 | IMPLEMENTED / IN REVIEW | Deterministic regime / toxic-flow / execution-quality supervisory agents merged; separate acceptance remains pending |
 | 10 | IMPLEMENTED / IN REVIEW | Deterministic production-stack simulation + bounded grid optimization; Phase 10.1 hardening and full local acceptance passed |
 | 11 | IMPLEMENTED / IN REVIEW | Deterministic research vault/accounting, shared runtime/simulation ledger, simulated fees/funding, capital authority and Vault observability; local acceptance passed |
+| 11.1 | ACCEPTED | High-water invariants and identity-based execution/accounting consistency hardening; local acceptance passed |
 | 12 | PLANNED | Expanded production-grade React terminal |
 
 ## Phase 6 extension points
@@ -172,3 +173,37 @@ See [Accounting](ACCOUNTING.md) for formulas, identities, research funding sampl
 HALT_WHEN_FULL retention, version semantics and limitations. Phase 11 is ready for
 review, not marked COMPLETE. Phase 8 and Phase 9 keep their existing review status.
 Phase 12 remains PLANNED. No signed live TESTNET orders were transmitted.
+
+## Phase 11.1 — ACCEPTED (local hardening acceptance)
+
+PAPER high-water equity now observes every committed fill+fee batch, funding
+accrual and mark. Snapshot validation enforces peak >= equity and COMPLETE
+authority requires execution/accounting consistency. Runtime and simulation use
+the same service and identity/economic evidence reconciliation. Divergence changes
+accounting provenance, makes capital authority UNAVAILABLE and blocks CREATE/REPLACE
+while preserving cancellation. Internal reconciliation books safe pending evidence
+only; it never clears a latched failure or replays behind newer mark/funding
+evidence. No public accounting mutation endpoint was added.
+
+Acceptance on 2026-10-06 (America/Los_Angeles), starting main
+`c7854ebc2d3e60173667904b7afd21ce02c75446`:
+
+- Fresh Python **3.12.14** virtualenv; editable backend/test installation succeeded.
+- Full pytest: **517 passed, 1 warning in 17.10s** (all 492 existing cases retained,
+  plus 25 hardening cases). Upstream Starlette/httpx TestClient deprecation warning.
+- Real Uvicorn: all nine required REST endpoints returned **HTTP 200**; consistency
+  and Decimal serialization passed; reset/replay/rebuild requests returned **404**.
+- Real `/ws/terminal`: compact consistency, matching accounting provenance,
+  existing terminal fields and bounded notices passed; no full ledger stream.
+- Frontend `npm install`, typecheck and build exited **0**; Vite **7.3.7** transformed
+  **120 modules**, built in **3.15s**. Non-failing TanStack Query `use client`
+  directive warnings remain.
+- Chromium: live PAPER CONSISTENT green indicator passed; controlled WebSocket
+  DIVERGED danger/count and TESTNET/PARTIAL unavailable states passed; **0 page errors**.
+- `git diff --check` exited **0**. Existing accounting formulas, ledger retention
+  and atomic append, Phase 8 authority, Phase 10 research and TESTNET truth remain.
+
+Phase 11 stays **IMPLEMENTED / IN REVIEW**, with Phase 11.1 build/hardening accepted
+and closed locally. This does not declare production readiness or start Phase 12.
+No persistence, custody, money movement, mainnet execution, Pyth or GitHub Actions
+were added.

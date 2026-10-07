@@ -299,3 +299,10 @@ The Vault page exposes research settled capital, average-cost position accountin
 PAPER accounting is always SIMULATED. TESTNET only exposes existing authoritative account/position evidence and labels full accounting PARTIAL; unavailable cash, realized PnL, fees, funding payments and capital availability remain null. No real custody, deposits, withdrawals, transfers, bridging, investor accounting or fund fees are introduced.
 
 Read-only endpoints: `/api/v1/vault`, `/api/v1/accounting/pnl`, `/api/v1/accounting/position`, `/api/v1/accounting/ledger`, `/api/v1/accounting/events`. The terminal WebSocket adds compact accounting summary and recent notices. See [Accounting](docs/ACCOUNTING.md) for formulas, defaults, retention, identities and truth boundaries.
+
+Phase 11.1 hardening observes PAPER equity highs after committed fill+fee batches,
+funding and marks. Vault/API/WebSocket expose identity-based execution/accounting
+consistency. Missing or conflicting executed fills make capital authority
+UNAVAILABLE and block CREATE/REPLACE; cancellation remains available. Internal
+reconciliation books only safe, unfailed pending evidence and never clears a
+latched error. No public accounting reset/replay endpoint is provided.

@@ -112,15 +112,16 @@ async def test_capital_insufficiency_is_phase8_input_and_cancels_existing():
 async def test_phase8_drawdown_and_session_loss_come_from_shared_accounting():
     rt, snap = await runtime(paper_initial_equity_quote=D("1000"))
     # A settled losing round trip; account mark/market stay unchanged.
+    expected_peak = D("1000") + max(D("0"), rt.accounting_service.position.mark_price - D("3000"))
     rt.accounting_service.ingest_fill(fill(price="3000"))
     rt.accounting_service.ingest_fill(fill("ASK", "2800", identity="b", seconds=1))
     await rt.refresh_once()
     assert rt.risk_decision.state == RiskState.HALT
     evidence = rt.risk_decision.pnl_drawdown
     assert evidence.current_equity == D("800")
-    assert evidence.peak_equity == D("1000")
+    assert evidence.peak_equity == expected_peak
     assert evidence.session_pnl == D("-200")
-    assert evidence.drawdown_pct == D(".2")
+    assert evidence.drawdown_pct == (expected_peak - D("800")) / expected_peak
     assert "critical drawdown" in rt.risk_decision.reasons
 
 
@@ -255,3 +256,136 @@ def test_testnet_account_equity_is_bound_when_position_version_is_unchanged():
     assert accounting.version > version
     assert accounting.snapshot().drawdown_pct == D(".1")
     assert accounting.snapshot().session_pnl_quote == D("-1000")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("action", ["CREATE", "REPLACE"])
+async def test_executed_callback_failure_diverges_and_revokes_old_authority(action, monkeypatch):
+    rt, snap = await runtime()
+    rt.strategy.running = True
+    old = rt.authorization
+    if action == "REPLACE":
+        q = rt.quotes[0]
+        await rt.paper.submit_orders([OrderRequest(client_order_id="rest", market="ETH", side=q.side,
+            price=q.price * (D(".99") if q.side == "BID" else D("1.01")), size=q.size, level_index=q.level_index)])
+    def interrupted(fill):
+        raise RuntimeError("temporary callback interruption")
+    monkeypatch.setattr(rt.accounting_service, "ingest_fill", interrupted)
+    rt._strategy_wakeup.clear()
+    await rt.paper.submit_orders([OrderRequest(client_order_id="cross", market="ETH", side="BID",
+                                               price=snap.best_ask, size=D(".1"))])
+    assert len(rt.paper.fills.all()) == 1 and rt.accounting_service.ledger.version == 0
+    state = rt.accounting_service.snapshot()
+    consistency = state.execution_accounting
+    assert consistency.status == "DIVERGED" and consistency.execution_accounting_consistent is False
+    assert consistency.execution_fill_count == consistency.unaccounted_fill_count == 1
+    assert consistency.accounted_fill_count == 0
+    assert consistency.oldest_unaccounted_fill_at == consistency.latest_unaccounted_fill_at == rt.paper.fills.all()[0].timestamp
+    assert state.accounting_complete == "UNAVAILABLE"
+    assert state.accounting_version > old.accounting_version
+    assert state.accounting_fingerprint != old.accounting_fingerprint
+    assert rt.agent_telemetry.summary()["fill_observations"] == 1 and rt._strategy_wakeup.is_set()
+    submitted = []
+    original = rt.paper.submit_orders
+    async def submit(orders):
+        submitted.extend(orders)
+        return await original(orders)
+    monkeypatch.setattr(rt.paper, "submit_orders", submit)
+    with pytest.raises(RuntimeError, match="accounting stale, error or unavailable"):
+        await rt.orders.reconcile("ETH", rt.quotes, D("0"), D("0"))
+    assert not submitted
+    await rt.orders.reconcile("ETH", [], D("0"), D("0"))
+    assert not await rt.paper.get_open_orders()
+    # Callback failure is latched, even if the callback becomes usable again.
+    monkeypatch.undo()
+    rt._sync_paper_fills_locked()
+    assert rt.accounting_service.error and rt.accounting_service.ledger.version == 0
+    assert rt.accounting_service.snapshot().execution_accounting.status == "DIVERGED"
+
+
+@pytest.mark.asyncio
+async def test_real_crossing_fill_capacity_failure_preserves_atomic_state_and_cancel():
+    rt, snap = await runtime(ledger_max_entries=3, paper_fee_model_enabled=True)
+    await rt.paper.submit_orders([OrderRequest(client_order_id="open", market="ETH", side="BID",
+                                               price=snap.best_ask, size=D(".1"))])
+    await rt.paper.submit_orders([OrderRequest(client_order_id="rest", market="ETH", side="BID",
+                                               price=snap.best_bid - D("100"), size=D(".1"))])
+    before = rt.accounting_service.snapshot()
+    await rt.paper.submit_orders([OrderRequest(client_order_id="close", market="ETH", side="ASK",
+                                               price=snap.best_bid, size=D(".1"))])
+    after = rt.accounting_service.snapshot()
+    assert len(rt.paper.fills.all()) == 2 and rt.accounting_service.ledger.version == 2
+    assert not any(e.source_reference == "close" for e in rt.accounting_service.ledger.entries())
+    for field in ("position_base", "settled_capital_quote", "fees_quote", "peak_equity_quote", "ledger_fingerprint"):
+        assert getattr(after, field) == getattr(before, field)
+    assert after.execution_accounting.status == "DIVERGED"
+    assert after.execution_accounting.accounted_fill_count == after.execution_accounting.unaccounted_fill_count == 1
+    assert after.accounting_complete == "UNAVAILABLE"
+    error = rt.accounting_service.error
+    await rt.refresh_once()
+    assert rt.accounting_service.error == error
+    assert rt.authorization is None or not rt.authorization.authorized
+    rt._sync_paper_fills_locked()
+    assert rt.accounting_service.ledger.version == 2
+    await rt.orders.cancel_all()
+    assert not await rt.paper.get_open_orders()
+
+
+@pytest.mark.asyncio
+async def test_sync_never_skips_failed_fill_or_books_later_fill(monkeypatch):
+    rt, snap = await runtime()
+    rt.paper.on_fill = None
+    for cid in ("first", "second", "third"):
+        await rt.paper.submit_orders([OrderRequest(client_order_id=cid, market="ETH", side="BID",
+                                                   price=snap.best_ask, size=D(".1"))])
+    attempts = []
+    def interrupted(event):
+        attempts.append(event.client_order_id)
+        raise RuntimeError("interruption")
+    monkeypatch.setattr(rt.accounting_service, "ingest_fill", interrupted)
+    rt._sync_paper_fills_locked()
+    rt._sync_paper_fills_locked()
+    assert attempts == ["first"]
+    state = rt.accounting_service.snapshot().execution_accounting
+    assert state.unaccounted_fill_count == 3 and state.accounted_fill_count == 0
+
+
+@pytest.mark.asyncio
+async def test_pending_unfailed_evidence_reconciles_once_and_changes_provenance():
+    rt, snap = await runtime(paper_fee_model_enabled=True)
+    rt.paper.on_fill = None
+    await rt.paper.submit_orders([OrderRequest(client_order_id="pending", market="ETH", side="BID",
+                                               price=snap.best_ask, size=D(".1"))])
+    state = rt.accounting_service.observe_execution_fills(rt.paper.fills.all())
+    assert state.status == "DIVERGED"
+    before = rt.accounting_service.snapshot()
+    rt._sync_paper_fills_locked()
+    after = rt.accounting_service.snapshot()
+    assert after.execution_accounting.status == "CONSISTENT"
+    assert after.accounting_version > before.accounting_version
+    assert after.accounting_fingerprint != before.accounting_fingerprint
+    assert after.position_base == D(".1")
+    assert after.fees_quote == snap.best_ask * D(".1") * D("3") / D("10000")
+    assert after.peak_equity_quote >= after.equity_quote
+    assert rt.accounting_service.ledger.version == 2
+    rt._sync_paper_fills_locked()
+    assert rt.accounting_service.snapshot() == after
+    await rt.refresh_once()
+    assert rt.authorization.authorized
+    assert rt.authorization.accounting_fingerprint == rt.accounting_service.fingerprint
+
+
+@pytest.mark.asyncio
+async def test_runtime_conflicting_identity_remains_diverged_with_equal_fill_counts():
+    rt, snap = await runtime()
+    await rt.paper.submit_orders([OrderRequest(client_order_id="cross", market="ETH", side="BID",
+                                               price=snap.best_ask, size=D(".1"))])
+    event = rt.paper.fills.all()[0]
+    rt.paper.fills._fills[0] = event.model_copy(update={"price": event.price + D("1")})
+    rt._sync_paper_fills_locked()
+    state = rt.accounting_service.snapshot()
+    assert state.execution_accounting.status == "DIVERGED"
+    assert "conflicting" in state.error and state.accounting_complete == "UNAVAILABLE"
+    await rt.refresh_once()
+    assert rt.authorization is None or not rt.authorization.authorized
+    assert rt.accounting_service.ledger.version == 2

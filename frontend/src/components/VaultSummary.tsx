@@ -28,6 +28,11 @@ export function VaultSummary({vault}: {vault: VaultSnapshot}) {
       <Badge tone={vault.stale || vault.error ? 'bad' : 'good'}>{vault.error ? 'ERROR' : vault.stale ? 'STALE' : vault.accounting_complete}</Badge>
     </div></div>
     <p className="muted">{paper ? 'Perpetual research capital. Fees, funding and capital reservations are simulated assumptions.' : 'Account-wide venue equity and market-specific position evidence. Unsupported economics remain unavailable.'}</p>
+    <p className="muted">Execution / Accounting · <Badge tone={vault.execution_accounting.status === 'CONSISTENT' ? 'good' : vault.execution_accounting.status === 'DIVERGED' ? 'bad' : 'warn'}>
+      {vault.execution_accounting.status}</Badge>
+      {paper && ` · ${vault.execution_accounting.execution_fill_count} executed / ${vault.execution_accounting.accounted_fill_count} accounted / ${vault.execution_accounting.unaccounted_fill_count} unaccounted fills`}
+    </p>
+    {vault.execution_accounting.reason && <p className={vault.execution_accounting.status === 'DIVERGED' ? 'dangerText' : 'muted'}>{vault.execution_accounting.reason}</p>}
     <div className="vaultMetrics">{metrics.map(([label, value, percent]) => <div className="metric" key={label}>
       <span>{label}</span><strong>{accountingNumber(value, percent)}</strong>
     </div>)}</div>

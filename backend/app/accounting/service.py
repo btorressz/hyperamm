@@ -9,6 +9,7 @@ from .fees import paper_fee
 from .funding import interval_boundary, paper_funding
 from .ledger import AccountingLedger
 from .models import (AccountingCompleteness, AccountingEvent, AccountingEventType, AccountingNotice,
+                     ConsistencyStatus, ExecutionAccountingConsistency,
                      PnlBreakdown, PositionAccounting, VaultSnapshot, fingerprint)
 from .pnl import apply_trade, drawdown, mark_position, pnl_breakdown
 from .vault import reserved_capital
@@ -25,6 +26,7 @@ class AccountingService:
             raise ValueError("unsupported accounting mode")
         self.market, self.mode = market, mode
         self.config = config or AccountingConfig()
+        self._bound_config = self.config
         self.clock = clock
         self.ledger = AccountingLedger(genesis={"schema": "phase11-v1", "market": market, "mode": mode,
                                                 "config": self.config}, max_entries=self.config.ledger_max_entries)
@@ -44,6 +46,9 @@ class AccountingService:
         self._fingerprint = self.ledger.genesis_fingerprint
         self._material = None
         self._events = deque(maxlen=self.config.event_max_entries)
+        self._consistency = (ExecutionAccountingConsistency(execution_accounting_consistent=True,
+                             status=ConsistencyStatus.CONSISTENT, reason=None)
+                             if mode == "PAPER" else ExecutionAccountingConsistency())
         self._publish()
 
     @property
@@ -64,6 +69,7 @@ class AccountingService:
                  "fees": self._fees if self.mode == "PAPER" else None,
                  "funding": self._funding if self.mode == "PAPER" else None,
                  "peak": self._peak, "reservation": self._reserved, "error": self.error,
+                 "execution_accounting": self._consistency,
                  "testnet": self._testnet, "testnet_initial": self._testnet_initial}
         material = fingerprint(state)
         if material != self._material:
@@ -76,12 +82,16 @@ class AccountingService:
                             message=message, source_reference=reference, accounting_version=self.version))
 
     def fail(self, message):
-        if self.error != str(message):
+        # Preserve the first failure; repeated require/refresh calls cannot mask
+        # fatal evidence or churn authority by wrapping the same error again.
+        if self.error is None:
             self.error = str(message)
             self._publish()
             self._notice("ACCOUNTING_ERROR", self.error)
 
     def _require_paper(self):
+        if self.config != self._bound_config:
+            raise ValueError("accounting configuration mismatch; new internal PAPER session required")
         if not self.config.enabled:
             raise ValueError("accounting is disabled; capital authority unavailable")
         if self.mode != "PAPER":
@@ -96,6 +106,100 @@ class AccountingService:
                 "cumulative_realized_pnl": position.realized_pnl_quote,
                 "cumulative_fees": fees, "cumulative_funding": funding}
 
+    def _observe_equity(self):
+        """Observe only the committed, fee-adjusted PAPER economic state."""
+        if self.mode != "PAPER":
+            return False
+        pnl = self.pnl()
+        if pnl.net_pnl is None:
+            return False
+        equity = self.config.paper_initial_equity_quote + pnl.net_pnl
+        if self._peak is None or equity > self._peak:
+            self._peak = equity
+            return True
+        return False
+
+    @staticmethod
+    def fill_identity(fill):
+        return fingerprint({"client_order_id": fill.client_order_id, "market": fill.market,
+                            "timestamp": fill.timestamp, "source": fill.source})
+
+    def _fill_evidence(self, fill):
+        identity = self.fill_identity(fill)
+        fee = paper_fee(fill, identity, self.config)
+        return identity, fee, fingerprint({"fill": fill, "fee": fee})
+
+    def observe_execution_fills(self, fills):
+        """Compare current-session execution against actual immutable trade rows.
+
+        Detection only: never replay or clear a latched accounting failure.
+        Standalone research users supply their execution evidence explicitly.
+        """
+        if self.mode != "PAPER":
+            return self._consistency
+        booked = self.ledger.fill_evidence()
+        seen, missing, conflicts = set(), [], []
+        accounted = 0
+        for fill in fills:
+            identity, _, economics = self._fill_evidence(fill)
+            trade_id = "fill:" + identity
+            if identity in seen:
+                conflicts.append("duplicate execution fill identity")
+                missing.append(fill)
+            elif fill.market != self.market:
+                conflicts.append("execution fill market mismatch")
+                missing.append(fill)
+            elif trade_id not in booked:
+                missing.append(fill)
+            elif booked[trade_id] != economics:
+                conflicts.append("conflicting execution/accounting fill economics")
+                missing.append(fill)
+            else:
+                accounted += 1
+            seen.add(identity)
+        reason = "; ".join(sorted(set(conflicts))) if conflicts else (
+            f"{len(missing)} executed PAPER fill(s) not represented in accounting ledger" if missing else None)
+        previous = self._consistency
+        self._consistency = ExecutionAccountingConsistency(
+            execution_fill_count=len(fills), accounted_fill_count=accounted,
+            unaccounted_fill_count=len(missing), execution_accounting_consistent=not missing,
+            oldest_unaccounted_fill_at=min((f.timestamp for f in missing), default=None),
+            latest_unaccounted_fill_at=max((f.timestamp for f in missing), default=None),
+            status=ConsistencyStatus.DIVERGED if missing else ConsistencyStatus.CONSISTENT, reason=reason)
+        self._publish()
+        if previous.status != self._consistency.status:
+            self._notice("EXECUTION_ACCOUNTING_" + self._consistency.status,
+                         reason or "All executed PAPER fills represented in accounting ledger")
+        if conflicts:
+            self.fail(reason)
+        return self._consistency
+
+    def reconcile_paper_fills(self, fills):
+        """Internal pending-evidence booking; never recover a latched failure.
+
+        Replay is allowed only before newer mark/funding evidence. Each fill
+        still passes the ordinary economics, chronology and atomic capacity
+        checks. Stop at the first failure and retain every unbooked identity.
+        """
+        self.observe_execution_fills(fills)
+        if self.mode != "PAPER" or self.error:
+            return self._consistency
+        booked = self.ledger.fill_evidence()
+        try:
+            self._require_paper()
+            for fill in fills:
+                if "fill:" + self.fill_identity(fill) in booked:
+                    continue
+                if any(fill.timestamp < timestamp for timestamp in
+                       (self._updated_at, self._funding_interval) if timestamp is not None):
+                    raise ValueError("pending fill predates irreversible mark/funding evidence; new PAPER session required")
+                self.ingest_fill(fill)
+        except Exception as exc:
+            self.fail(exc)
+        finally:
+            self.observe_execution_fills(fills)
+        return self._consistency
+
     def ingest_fill(self, fill):
         try:
             return self._ingest_fill(fill)
@@ -109,10 +213,7 @@ class AccountingService:
             raise ValueError("accounting fill market mismatch")
         if fill.timestamp.tzinfo is None:
             raise ValueError("accounting fill timestamp must be timezone-aware")
-        identity = fingerprint({"client_order_id": fill.client_order_id, "market": fill.market,
-                                "timestamp": fill.timestamp, "source": fill.source})
-        fee = paper_fee(fill, identity, self.config)
-        economics = fingerprint({"fill": fill, "fee": fee})
+        identity, fee, economics = self._fill_evidence(fill)
         # Check input economics before computing realized deltas against current state.
         trade_id = "fill:" + identity
         if identity in self._fill_inputs:
@@ -143,7 +244,10 @@ class AccountingService:
         self._position, self._cash = position, cash - fee.fee_quote
         self._fees += fee.fee_quote
         self._last_fill_at = fill.timestamp
+        peak_changed = self._observe_equity()
         self._publish()
+        if peak_changed:
+            self._notice("EQUITY_PEAK_UPDATED", "Research equity high-water mark updated", trade_id, fill.timestamp)
         self._notice("FILL_BOOKED", "Simulated trade accounted", trade_id, fill.timestamp)
         self._notice("FEE_BOOKED", "PAPER_CONFIG research fee", fee_event.event_id, fill.timestamp)
         new = position.position_base
@@ -177,7 +281,10 @@ class AccountingService:
             self.ledger.append_batch([(event, self._balances(self._position, cash, self._fees, funding))])
             self._cash, self._funding = cash, funding
             self._funding_interval = effective_at
+            peak_changed = self._observe_equity()
             self._publish()
+            if peak_changed:
+                self._notice("EQUITY_PEAK_UPDATED", "Research equity high-water mark updated", event.event_id, effective_at)
             self._notice("FUNDING_BOOKED", "Deterministic PAPER research interval", event.event_id, effective_at)
             return True
         except Exception as exc:
@@ -207,12 +314,9 @@ class AccountingService:
             if self._updated_at is not None and timestamp < self._updated_at:
                 raise ValueError("out-of-order accounting mark")
             self._position, self._updated_at = position, timestamp
-            pnl = self.pnl()
-            equity = self.config.paper_initial_equity_quote + pnl.net_pnl
-            previous = self._peak
-            self._peak = max(self._peak, equity)
+            peak_changed = self._observe_equity()
             self._publish()
-            if self._peak != previous:
+            if peak_changed:
                 self._notice("EQUITY_PEAK_UPDATED", "Research equity high-water mark updated", timestamp=timestamp)
         except Exception as exc:
             self.fail(exc)
@@ -290,6 +394,7 @@ class AccountingService:
                       ledger_version=self.ledger.version, ledger_fingerprint=self.ledger.fingerprint,
                       accounting_version=self.version, accounting_fingerprint=self.fingerprint,
                       updated_at=self._updated_at, stale=stale, error=self.error)
+        common["execution_accounting"] = self._consistency
         if self.mode == "TESTNET":
             pos = self._testnet.get("position") or {}
             equity = self._testnet.get("account_value")
@@ -323,6 +428,7 @@ class AccountingService:
             warnings.append("Accounting disabled; new capital authority unavailable.")
         return VaultSnapshot(**common, source="PAPER_RESEARCH", accounting_complete=
             AccountingCompleteness.COMPLETE if equity is not None and not stale and not self.error and self.config.enabled
+            and self._consistency.execution_accounting_consistent is True
             else AccountingCompleteness.UNAVAILABLE,
             initial_equity_quote=self.config.paper_initial_equity_quote, settled_capital_quote=self._cash,
             position_base=self._position.position_base, average_entry_price=self._position.average_entry_price,
