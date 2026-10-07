@@ -35,10 +35,17 @@ class OrderManager:
             if action.action in {ReconcileActionType.CANCEL, ReconcileActionType.REPLACE}:
                 await self.execution.cancel_orders([action.existing.client_order_id])
             if action.action in {ReconcileActionType.CREATE, ReconcileActionType.REPLACE}:
-                check = self.authority()
+                request = self.request_for(market, action.desired)
+                # Preserve legacy zero-argument PAPER/research callbacks.
+                try:
+                    inspect.signature(self.authority).bind(request)
+                except TypeError:
+                    check = self.authority()
+                else:
+                    check = self.authority(request.model_copy(deep=True))
                 if inspect.isawaitable(check):
                     await check
-                await self.execution.submit_orders([self.request_for(market, action.desired)])
+                await self.execution.submit_orders([request])
         return actions
 
     async def cancel_all(self):

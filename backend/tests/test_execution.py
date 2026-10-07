@@ -57,6 +57,7 @@ class VenueFixture:
         self.cancel_response={'status':'ok','response':{'data':{'statuses':['success']}}}
         self.order_response={'status':'ok','response':{'data':{'statuses':[{'resting':{'oid':123}}]}}}
         self.transmissions=0
+        self.arguments=[]
     def name_to_asset(self,market): return 0
     def open_orders(self,address): return self.opened
     def query_order_by_oid(self,address,oid): return self.results.get(str(oid),{'status':'unknownOid'})
@@ -67,6 +68,7 @@ class VenueFixture:
     def disconnect_websocket(self): self.callbacks.clear()
     def order(self,*args):
         self.transmissions+=1
+        self.arguments.append(args)
         if isinstance(self.order_response,Exception): raise self.order_response
         return self.order_response
     def cancel_by_cloid(self,*args): return self.cancel_response
@@ -77,6 +79,9 @@ def venue_adapter():
     adapter=HyperliquidTestnetExecutionAdapter(enabled=True,private_key='fixture-only',account_address='fixture-account',
         base_url='https://api.hyperliquid-testnet.xyz',venue_info=venue,exchange=venue)
     venue.info=venue
+    async def fixture_authority(request):
+        assert (request.market,request.side,request.price,request.size) == ('ETH','BID',D('2999'),D('1'))
+    adapter.authority=fixture_authority
     order=o(cid='tracked'); order.venue_order_id='123'
     adapter._orders['tracked']=order
     return adapter,venue,order
@@ -100,6 +105,114 @@ async def test_venue_missing_open_order_gets_authoritative_terminal_status(statu
     before=order.model_copy(deep=True)
     await adapter.reconcile_venue()
     assert order==before
+
+
+@pytest.mark.parametrize('asset,decimals',[(0,n) for n in range(7)]+[(10000,n) for n in range(9)])
+@pytest.mark.parametrize('side',['BID','ASK'])
+def test_decimal_venue_normalization_precision_and_idempotence(asset,decimals,side):
+    from types import SimpleNamespace
+    info=SimpleNamespace(name_to_asset=lambda market:asset,asset_to_sz_decimals={asset:decimals})
+    exchange=SimpleNamespace(info=info)
+    req=OrderRequest(client_order_id='stable-id',market='ETH',side=side,level_index=3,
+                     price=D('1234.56789'),size=D('12.345678901'))
+    normalized=HyperliquidTestnetExecutionAdapter.normalize_order_request(exchange,req)
+    assert isinstance(normalized.price,D) and isinstance(normalized.size,D)
+    assert normalized.price <= req.price if side == 'BID' else normalized.price >= req.price
+    assert 0 < normalized.size <= req.size
+    max_places=(8 if asset >= 10000 else 6)-decimals
+    assert normalized.price == normalized.price.quantize(D(1).scaleb(-max_places))
+    assert len(normalized.price.normalize().as_tuple().digits) <= 5 or normalized.price == normalized.price.to_integral_value()
+    assert normalized.size == normalized.size.quantize(D(1).scaleb(-decimals))
+    assert HyperliquidTestnetExecutionAdapter.normalize_order_request(exchange,normalized) == normalized
+    assert (normalized.client_order_id,normalized.market,normalized.side,normalized.level_index) == ('stable-id','ETH',side,3)
+    price,size=HyperliquidTestnetExecutionAdapter._normalize_for_sdk(exchange,normalized)
+    from hyperliquid.utils.signing import float_to_wire
+    assert D(float_to_wire(price)) == normalized.price and D(float_to_wire(size)) == normalized.size
+
+
+@pytest.mark.parametrize('price',['2999.9','3000.1','123456','0.01'])
+def test_valid_venue_economics_remain_unchanged(price):
+    adapter,venue,_=venue_adapter()
+    req=OrderRequest(client_order_id='stable',market='ETH',side='BID',price=D(price),size=D('.1234'))
+    assert adapter.normalize_order_request(venue,req) == req
+
+
+@pytest.mark.parametrize('field,value',[(field,value) for field in ('price','size')
+                                     for value in ('NaN','Infinity','-Infinity','0','-1')])
+def test_invalid_decimal_venue_economics_rejected(field,value):
+    adapter,venue,_=venue_adapter()
+    req=OrderRequest(client_order_id='invalid',market='ETH',side='BID',price=D('2999'),size=D('1'))
+    req=req.model_copy(update={field:D(value)})
+    with pytest.raises(ValueError,match='finite and positive'):
+        adapter.normalize_order_request(venue,req)
+
+
+def test_sub_quantum_size_rejected_and_audit_counterexample_closed():
+    adapter,venue,_=venue_adapter()
+    req=OrderRequest(client_order_id='audit',market='ETH',side='BID',price=D('2999.96'),size=D('.12349'))
+    bid=adapter.normalize_order_request(venue,req)
+    ask=adapter.normalize_order_request(venue,req.model_copy(update={'side':'ASK','price':D('3000.04')}))
+    assert bid.price == D('2999.9') < D('2999.96')
+    assert ask.price == D('3000.1') > D('3000.04')
+    assert bid.price < ask.price and bid.size == ask.size == D('.1234')
+    with pytest.raises(ValueError,match='zero'):
+        adapter.normalize_order_request(venue,req.model_copy(update={'size':D('.00001')}))
+
+
+def test_spot_perp_fractional_constraint_and_zero_bid_rejection():
+    adapter,venue,_=venue_adapter()
+    req=OrderRequest(client_order_id='precision',market='ETH',side='BID',price=D('.123456'),size=D('1'))
+    assert adapter.normalize_order_request(venue,req).price == D('.12')
+    venue.asset_to_sz_decimals[10000]=4
+    venue.name_to_asset=lambda market:10000
+    assert adapter.normalize_order_request(venue,req).price == D('.1234')
+    venue.name_to_asset=lambda market:0
+    with pytest.raises(ValueError,match='non-positive'):
+        adapter.normalize_order_request(venue,req.model_copy(update={'price':D('.001')}))
+
+
+@pytest.mark.asyncio
+async def test_testnet_requires_concrete_authority_but_cancellation_does_not():
+    adapter,venue,order=venue_adapter()
+    adapter.authority=None
+    with pytest.raises(PermissionError,match='authority is required'):
+        await adapter.submit_orders([order])
+    assert venue.transmissions == 0
+    await adapter.cancel_all()
+    assert order.status == OrderStatus.CANCELLED
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('change',[{'price':D('2999.96')},{'size':D('.12349')}])
+async def test_adapter_refuses_post_authorization_normalization(change):
+    adapter,venue,_=venue_adapter()
+    req=OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))
+    with pytest.raises(ValueError,match='not already venue-normalized'):
+        await adapter.submit_orders([req.model_copy(update=change)])
+    assert venue.transmissions == 0 and 'new' not in adapter._orders
+
+
+@pytest.mark.asyncio
+async def test_sdk_round_trip_drift_fails_before_unknown_registration():
+    adapter,venue,_=venue_adapter()
+    req=OrderRequest(client_order_id='huge',market='ETH',side='BID',
+                     price=D('9007199254740993'),size=D('1'))
+    async def authorized(request): assert request == req
+    adapter.authority=authorized
+    with pytest.raises(ValueError,match='SDK serialization changes'):
+        await adapter.submit_orders([req])
+    assert venue.transmissions == 0 and 'huge' not in adapter._orders
+
+
+@pytest.mark.asyncio
+async def test_mutation_during_authority_fails_closed():
+    adapter,venue,_=venue_adapter()
+    req=OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))
+    async def mutate(request): request.price=D('3000')
+    adapter.authority=mutate
+    with pytest.raises(ValueError,match='changed during final authority'):
+        await adapter.submit_orders([req])
+    assert venue.transmissions == 0 and 'new' not in adapter._orders
 
 
 @pytest.mark.asyncio
@@ -186,7 +299,7 @@ async def test_submission_timeout_retains_cancellable_unknown_order():
 @pytest.mark.asyncio
 async def test_final_authority_check_after_sdk_setup_blocks_transmission():
     adapter,venue,order=venue_adapter()
-    async def denied(): raise PermissionError('kill switch is active')
+    async def denied(request): raise PermissionError('kill switch is active')
     adapter.authority=denied
     with pytest.raises(PermissionError):
         await adapter.submit_orders([OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))])
