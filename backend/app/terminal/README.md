@@ -58,7 +58,8 @@ System health is display-only. The runtime's underlying risk/authorization/accou
 
 ## Connections
 
-- `runtime.terminal_state()` provides upstream serialized state.
-- `api.websocket` sends current snapshots.
+- One runtime publisher observes upstream state once per second.
+- `runtime.terminal_state()` reads a copy of the latest cached snapshot (or `None` before publication).
+- `api.websocket` sends pre-serialized publications through one-slot coalescing queues; slow sends time out and disconnects release subscriptions.
 - `api.terminal` exposes history/events.
 - React validates `phase12-v1` and uses sequence/process/session metadata for stale/restart/gap diagnostics.

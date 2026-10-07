@@ -37,7 +37,7 @@ async def test_worker_keeps_health_responsive_and_rejects_overflow(monkeypatch,o
         return await original(self,**inputs)
     monkeypatch.setattr(SimulationService,operation,held)
     async with app.router.lifespan_context(app):
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url="http://localhost") as client:
             path="optimize" if operation=="optimize" else "run"
             payload=OPTIMIZE_PAYLOAD if path=="optimize" else {"frames":3}
             first=asyncio.create_task(client.post(f"/api/v1/simulation/{path}",json=payload))

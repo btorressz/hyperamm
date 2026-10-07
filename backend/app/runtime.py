@@ -108,6 +108,8 @@ class HyperAmmRuntime:
         self._closing = False
         self.terminal_service = TerminalService()
         self._terminal_task = None
+        self._terminal_latest = None
+        self._terminal_clients = set()
         self.testnet.authority = self._execution_authority
         self.paper.on_fill = self._on_paper_fill
         self.paper.orders.observer = self.agent_telemetry.observe_orders
@@ -403,6 +405,8 @@ class HyperAmmRuntime:
             self._strategy_wakeup.set()
 
     async def start_services(self):
+        if self._terminal_task is not None and not self._terminal_task.done():
+            raise RuntimeError("Runtime services already started")
         self._closing = False
         await self.market.start()
         await self.reference_service.start()
@@ -412,7 +416,7 @@ class HyperAmmRuntime:
     async def _terminal_observer(self):
         while not self._closing:
             try:
-                await self.terminal_state()
+                await self._publish_terminal_snapshot()
             except Exception:
                 log.exception("terminal observation failed")
             await asyncio.sleep(1)
@@ -448,6 +452,7 @@ class HyperAmmRuntime:
                 await self._terminal_task
             except asyncio.CancelledError:
                 pass
+            self._terminal_task = None
         await self.stop_strategy()
         await self.market.stop()
         await self.reference_service.stop()
@@ -1034,6 +1039,23 @@ class HyperAmmRuntime:
             return self.vault_snapshot.model_dump(mode="json")
 
     async def terminal_state(self):
+        """Read the last published observation without observing domain state."""
+        from copy import deepcopy
+        return deepcopy(self._terminal_latest)
+
+    def subscribe_terminal(self):
+        if len(self._terminal_clients) >= 32:
+            raise RuntimeError("Local terminal client limit reached")
+        queue = asyncio.Queue(maxsize=1)
+        self._terminal_clients.add(queue)
+        if self._terminal_latest is not None:
+            queue.put_nowait(self._terminal_wire)
+        return queue
+
+    def unsubscribe_terminal(self, queue):
+        self._terminal_clients.discard(queue)
+
+    async def _publish_terminal_snapshot(self):
         if self.config.execution_mode == ExecutionMode.PAPER:
             self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
                                                          duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
@@ -1080,7 +1102,16 @@ class HyperAmmRuntime:
             },
             "reconciliation": [a.model_dump(mode="json") for a in self.last_actions],
         }
-        return self.terminal_service.observe(data, diagnostics={
+        snapshot = self.terminal_service.observe(data, diagnostics={
             "testnet_enabled": self.testnet.enabled,
             "reference_firewall_enabled": self.risk_config.enabled,
         }).model_dump(mode="json")
+
+        import json
+        self._terminal_wire = json.dumps(snapshot)
+        self._terminal_latest = snapshot
+        for queue in self._terminal_clients:
+            if queue.full():
+                queue.get_nowait()
+            queue.put_nowait(self._terminal_wire)
+        return snapshot

@@ -425,7 +425,7 @@ async def test_execution_retention_keeps_ledger_truth_and_unconsumed_evidence(mo
         def __iter__(self): raise AssertionError('full ledger scan')
     rt.accounting_service.ledger._entries = NoLedgerIteration(rt.accounting_service.ledger._entries)
     monkeypatch.setattr(rt.paper, 'all_orders', lambda: pytest.fail('full order history observation'))
-    terminal = await rt.terminal_state()
+    terminal = await rt._publish_terminal_snapshot()
     assert len(terminal['fills']) == 5 and len(terminal['orders']) == 5
     assert terminal['execution_summary']['fill_count'] == 18
     assert D(terminal['execution_summary']['filled_notional']) == rt.paper.fills.filled_notional
