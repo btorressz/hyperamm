@@ -62,7 +62,7 @@ Post-agent quotes and the supervisor version/fingerprint are passed to Phase 8 a
 Uses Phase 6 volatility/imbalance plus bounded momentum, basis/funding and reference state to characterize the current environment.
 
 ### Toxic-Flow Agent
-Uses fill-time evidence and the first eligible future reference after the configured horizon to calculate signed markouts. Missing future evidence remains pending rather than being fabricated.
+Uses fill-time evidence and the first eligible future reference after the configured horizon to calculate signed markouts. The selected observation sequence, timestamp, reference price, target maturity time and computed markout are frozen per fill and horizon for the lifetime of the retained fill. Future evidence remains pending until available; if history eviction or clearing has discarded the required maturity observation before selection, the result is terminally unavailable (reported in telemetry summary), rather than replaced with a newer sample.
 
 ### Execution-Quality Agent
 Uses normalized fills/order/reconciliation evidence. TESTNET metrics requiring an authoritative normalized fill ledger remain unavailable instead of being synthesized.

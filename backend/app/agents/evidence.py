@@ -4,7 +4,7 @@ from collections import deque
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.execution.models import Fill, OrderStatus
 from app.execution.quote_reconciler import ReconcileActionType
@@ -27,7 +27,12 @@ class FillObservation(BaseModel):
 
 
 class MarkoutObservation(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     fill_identity: str
+    target_maturity_time: datetime
+    selected_observation_sequence: int
+    selected_observation_timestamp: datetime
     side: str
     fill_price: Decimal
     future_reference_price: Decimal
@@ -48,6 +53,8 @@ class AgentTelemetryStore:
         self.max_fills=max_fills
         self._fills: deque[FillObservation]=deque()
         self._fill_ids:set[str]=set()
+        # None is a terminal unavailable result, distinct from a pending horizon.
+        self._markouts:dict[tuple[str,datetime],MarkoutObservation | None]={}
         self._reconcile:deque[ReconcileObservation]=deque(maxlen=max_reconcile_cycles)
         self._order_statuses:dict[str,OrderStatus]={}
         self._order_order:deque[str]=deque()
@@ -71,6 +78,7 @@ class AgentTelemetryStore:
         if len(self._fills)>=self.max_fills:
             dropped=self._fills.popleft()
             self._fill_ids.discard(dropped.identity)
+            self._markouts={key:value for key,value in self._markouts.items() if key[0]!=dropped.identity}
         simulated=fill.source.startswith("SIMULATED")
         self._fills.append(FillObservation(
             identity=identity,client_order_id=fill.client_order_id,market=fill.market,side=fill.side,
@@ -126,21 +134,35 @@ class AgentTelemetryStore:
         observations=history.observations(max(2,len(history)))
         matured=[]
         pending=0
-        for fill in fills:
+        # Resolve all retained fills even when a consumer asks for a smaller window.
+        for fill in self._fills:
             target=fill.timestamp+timedelta(seconds=horizon_seconds)
+            key=(fill.identity,target)
+            if key in self._markouts:
+                continue
+            if history.evicted_through_timestamp is not None and history.evicted_through_timestamp>=target:
+                self._markouts[key]=None
+                continue
             future=next((obs for obs in observations if obs.timestamp>=target),None)
             if future is None:
-                pending+=1
                 continue
             sign=Decimal("1") if fill.side=="BID" else Decimal("-1")
             markout=sign*(future.mid_price-fill.price)/fill.price*Decimal("10000")
             if not markout.is_finite():
                 raise ValueError("non-finite toxic-flow markout")
-            matured.append(MarkoutObservation(
+            self._markouts[key]=MarkoutObservation(
                 fill_identity=fill.identity,side=fill.side,fill_price=fill.price,
+                target_maturity_time=target,selected_observation_sequence=future.sequence,
+                selected_observation_timestamp=future.timestamp,
                 future_reference_price=future.mid_price,signed_markout_bps=markout,
                 simulated=fill.simulated,
-            ))
+            )
+        for fill in fills:
+            key=(fill.identity,fill.timestamp+timedelta(seconds=horizon_seconds))
+            if key not in self._markouts:
+                pending+=1
+            elif self._markouts[key] is not None:
+                matured.append(self._markouts[key])
         return matured,pending
 
     def summary(self) -> dict:
@@ -148,6 +170,7 @@ class AgentTelemetryStore:
         return {
             "version":self.version,
             "fill_observations":len(self._fills),
+            "unavailable_markouts":sum(value is None for value in self._markouts.values()),
             "reconcile_cycles":len(self._reconcile),
             "tracked_orders":len(self._order_statuses),
             "unknown_orders":statuses.get(OrderStatus.UNKNOWN.value,0),
