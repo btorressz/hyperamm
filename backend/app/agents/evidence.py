@@ -10,6 +10,7 @@ from app.execution.models import Fill, OrderStatus
 from app.execution.quote_reconciler import ReconcileActionType
 from app.market_data.history import MarketPriceHistory
 from app.market_data.models import utcnow
+from app.references.models import PriceEvidence, ReferenceSnapshot
 from .models import AgentEvidenceSnapshot, semantic_fingerprint
 
 
@@ -22,6 +23,10 @@ class FillObservation(BaseModel):
     size: Decimal = Field(gt=0)
     timestamp: datetime
     reference_price: Decimal | None = Field(default=None, gt=0)
+    reference_timestamp: datetime | None = None
+    reference_source: str | None = None
+    reference_version: int | None = None
+    reference_provenance: dict[str, PriceEvidence] = Field(default_factory=dict)
     source: str
     simulated: bool
 
@@ -56,6 +61,8 @@ class AgentTelemetryStore:
         # None is a terminal unavailable result, distinct from a pending horizon.
         self._markouts:dict[tuple[str,datetime],MarkoutObservation | None]={}
         self._reconcile:deque[ReconcileObservation]=deque(maxlen=max_reconcile_cycles)
+        # KEEP cadence must not evict order-changing activity from the churn window.
+        self._action_reconcile:deque[ReconcileObservation]=deque(maxlen=max_reconcile_cycles)
         self._order_statuses:dict[str,OrderStatus]={}
         self._order_order:deque[str]=deque()
         self.max_orders=max_orders
@@ -71,7 +78,29 @@ class AgentTelemetryStore:
             format(fill.price,"f"),
         ])
 
-    def observe_fill(self, fill: Fill, reference_price: Decimal | None) -> bool:
+    def observe_fill_from_references(self, fill: Fill, refs: ReferenceSnapshot | None) -> bool:
+        """Bind the accepted consensus retained at fill time; never substitute midpoint.
+
+        The timestamp identifies consensus evaluation; provider evidence retains each
+        accepted source timestamp/transport separately. Later updates cannot rebind a fill.
+        """
+        if refs is None or refs.consensus.consensus_price is None:
+            return self.observe_fill(fill, None)
+        return self.observe_fill(
+            fill, refs.consensus.consensus_price,
+            reference_timestamp=refs.consensus.updated_at,
+            reference_source="CONSENSUS", reference_version=refs.version,
+            reference_provenance={
+                provider: refs.evidence[provider].model_copy(deep=True)
+                for provider in refs.consensus.eligible_providers
+            },
+        )
+
+    def observe_fill(self, fill: Fill, reference_price: Decimal | None, *,
+                     reference_timestamp: datetime | None = None,
+                     reference_source: str | None = None,
+                     reference_version: int | None = None,
+                     reference_provenance: dict[str, PriceEvidence] | None = None) -> bool:
         identity=self.fill_identity(fill)
         if identity in self._fill_ids:
             return False
@@ -83,6 +112,8 @@ class AgentTelemetryStore:
         self._fills.append(FillObservation(
             identity=identity,client_order_id=fill.client_order_id,market=fill.market,side=fill.side,
             price=fill.price,size=fill.size,timestamp=fill.timestamp,reference_price=reference_price,
+            reference_timestamp=reference_timestamp,reference_source=reference_source,
+            reference_version=reference_version,reference_provenance=reference_provenance or {},
             source=fill.source,simulated=simulated,
         ))
         self._fill_ids.add(identity)
@@ -107,13 +138,16 @@ class AgentTelemetryStore:
         counts={kind:0 for kind in ReconcileActionType}
         for action in actions:
             counts[action.action]+=1
-        self._reconcile.append(ReconcileObservation(
+        observation=ReconcileObservation(
             keep_count=counts[ReconcileActionType.KEEP],
             create_count=counts[ReconcileActionType.CREATE],
             replace_count=counts[ReconcileActionType.REPLACE],
             cancel_count=counts[ReconcileActionType.CANCEL],
             timestamp=utcnow(),
-        ))
+        )
+        self._reconcile.append(observation)
+        if observation.create_count or observation.replace_count or observation.cancel_count:
+            self._action_reconcile.append(observation)
         self.observe_orders(orders)
         self.version+=1
 
@@ -122,6 +156,9 @@ class AgentTelemetryStore:
 
     def reconcile(self, window: int) -> list[ReconcileObservation]:
         return list(self._reconcile)[-window:]
+
+    def action_reconcile(self, window: int) -> list[ReconcileObservation]:
+        return list(self._action_reconcile)[-window:]
 
     def order_status_counts(self) -> dict[str,int]:
         counts={status.value:0 for status in OrderStatus}

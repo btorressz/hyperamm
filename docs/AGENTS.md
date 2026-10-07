@@ -260,7 +260,7 @@ Reconciliation churn:
 ```text
 (REPLACE + CANCEL)
 /
-max(1, KEEP + CREATE + REPLACE + CANCEL)
+max(1, CREATE + REPLACE + CANCEL)
 ```
 
 Metrics include:
@@ -282,7 +282,13 @@ NORMAL
 POOR
 ```
 
-No GOOD state is emitted before sufficient fill evidence exists.
+GOOD requires sufficient fills, positive capture and available non-negative mature
+markout evidence. Positive capture without mature markouts remains NORMAL with
+`provisional: mature markout unavailable`; adverse authoritative evidence can
+still produce POOR. Mature markout values and sample counts appear in reasons.
+KEEP counts remain observable but do not dilute churn. Runtime uses the bounded
+window of order-changing reconciliation cycles; KEEP-only/empty cycles do not
+evict action evidence. Simulation applies the same formula to run-wide counts.
 
 ## TESTNET limitation
 
@@ -327,7 +333,15 @@ recommendation = neutral
 reason = recorded
 ```
 
-The deterministic base strategy and Phase 8 continue to evaluate.
+This is a deliberate soft/optional supervisory failure policy: an individual
+exception produces `AgentHealth.ERROR` and a fresh neutral recommendation while
+remaining agents continue. Stale prior advice is never silently reused. ERROR may
+be less conservative than that agent's previous successful recommendation, but
+quotes remain bounded by the current upstream ladder (no tightening or size
+increase beyond upstream, no restored levels/sides). ERROR does not authorize
+execution. Phase 8 deterministic risk, structural validation and
+FinalQuoteAuthorization remain authoritative. The error and reason are visible
+in agent output; this tradeoff does not make agents sticky execution authority.
 
 Warmup/insufficient-data recommendations are also neutral.
 
@@ -454,7 +468,13 @@ bounded telemetry update
 strategy wakeup
 ```
 
-The fill records a contemporaneous normalized reference only when one is already available; otherwise reference price stays null.
+Spread capture binds the accepted consensus retained at fill time. FillObservation
+records reference price, consensus evaluation timestamp/source/version and the
+eligible providers' normalized PriceEvidence (including source timestamps and
+transport provenance). It never substitutes midpoint when consensus is absent;
+reference price remains null. Runtime and simulation share this binding method.
+Simulation prepares each frame's consensus before update_market can fill resting
+orders, and retains that binding for immediate submit fills from the same frame.
 
 No second runtime loop is introduced.
 

@@ -62,6 +62,7 @@ class MetricsAccumulator:
         mean_markout=sum((m.signed_markout_bps for m in markouts),Decimal("0"))/Decimal(len(markouts)) if markouts else None
         adverse=sum(1 for m in markouts if m.signed_markout_bps<0)
         adverse_rate=Decimal(adverse)/Decimal(len(markouts)) if markouts else None
+        # Same action-based economics as runtime; KEEP is observability only.
         churn=churn_ratio(self.keep,self.create,self.replace,self.cancel)
 
         return SimulationMetrics(

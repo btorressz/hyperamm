@@ -16,9 +16,10 @@ def spread_capture_bps(side:str,fill_price:Decimal,reference_price:Decimal)->Dec
 
 
 def churn_ratio(keep:int,create:int,replace:int,cancel:int)->Decimal:
+    """Order-changing activity ratio; KEEP count is observability only."""
     for value in (keep,create,replace,cancel):
         if value<0:raise ValueError("reconciliation counts must be non-negative")
-    return Decimal(replace+cancel)/Decimal(max(1,keep+create+replace+cancel))
+    return Decimal(replace+cancel)/Decimal(max(1,create+replace+cancel))
 
 
 def _clamp(value:Decimal,low:Decimal=Decimal("0"),high:Decimal=Decimal("1"))->Decimal:
@@ -50,8 +51,10 @@ class ExecutionQualityAgent:
         markouts,_=telemetry.markouts(history,horizon_seconds=c.toxic_flow_markout_horizon_seconds,window=c.execution_quality_window) if execution_mode=="PAPER" else ([],0)
         average_markout=sum((m.signed_markout_bps for m in markouts),Decimal("0"))/Decimal(len(markouts)) if markouts else None
         cycles=telemetry.reconcile(c.execution_quality_window)
-        keep=sum(x.keep_count for x in cycles);create=sum(x.create_count for x in cycles)
-        replace=sum(x.replace_count for x in cycles);cancel=sum(x.cancel_count for x in cycles)
+        keep=sum(x.keep_count for x in cycles)
+        activity=telemetry.action_reconcile(c.execution_quality_window)
+        create=sum(x.create_count for x in activity)
+        replace=sum(x.replace_count for x in activity);cancel=sum(x.cancel_count for x in activity)
         churn=churn_ratio(keep,create,replace,cancel)
         statuses=telemetry.order_status_counts()
         rejected=statuses.get(OrderStatus.REJECTED.value,0)
@@ -98,14 +101,15 @@ class ExecutionQualityAgent:
             return self._versioned(ExecutionQualityAgentOutput(
                 **base,health=AgentHealth.INSUFFICIENT_DATA,confidence=Decimal("0"),
                 spread_multiplier=Decimal("1"),bid_size_multiplier=Decimal("1"),ask_size_multiplier=Decimal("1"),
-                reasons=[f"fill observations {len(fills)}/{c.execution_quality_min_fills}"],
+                reasons=[f"fill observations {len(fills)}/{c.execution_quality_min_fills}"]
+                    + (["provisional: mature markout unavailable"] if average_capture is not None and average_capture>0 and average_markout is None else []),
                 state=ExecutionQualityState.INSUFFICIENT_DATA,metrics=metrics,
             ))
 
         poor_markout=average_markout is not None and average_markout<=-c.execution_quality_poor_markout_bps
         poor_capture=average_capture is not None and average_capture<0
         poor=poor_markout or poor_capture or churn>c.execution_quality_max_churn_ratio or rejected>0 or unknown>0
-        good=(not poor and average_capture is not None and average_capture>0 and (average_markout is None or average_markout>=0) and churn<c.execution_quality_max_churn_ratio/Decimal("2"))
+        good=(not poor and average_capture is not None and average_capture>0 and (average_markout is not None and average_markout>=0) and churn<c.execution_quality_max_churn_ratio/Decimal("2"))
         state=ExecutionQualityState.POOR if poor else ExecutionQualityState.GOOD if good else ExecutionQualityState.NORMAL
         churn_score=_clamp(churn/c.execution_quality_max_churn_ratio)
         markout_score=_clamp(abs(min(average_markout or Decimal("0"),Decimal("0")))/c.execution_quality_poor_markout_bps)
@@ -115,6 +119,10 @@ class ExecutionQualityAgent:
         spread=_clamp(Decimal("1")+c.execution_quality_spread_strength*risk_score,Decimal("1"),c.agent_max_spread_multiplier)
         size=_clamp(Decimal("1")-c.execution_quality_size_strength*risk_score,c.agent_min_size_multiplier,Decimal("1"))
         reasons=[f"reconciliation churn {churn}",f"rejects {rejected}; unknown {unknown}"]
+        if average_markout is None:
+            reasons.append("provisional: mature markout unavailable")
+        else:
+            reasons.append(f"mature markout {average_markout} bps ({len(markouts)} fills)")
         if confidence<c.agent_min_confidence:
             spread=Decimal("1");size=Decimal("1")
             reasons.append("confidence below minimum; neutral recommendation")

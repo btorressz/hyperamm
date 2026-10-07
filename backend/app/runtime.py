@@ -118,10 +118,7 @@ class HyperAmmRuntime:
         self.market.add_perp_listener(self._on_perp_context)
 
     def _on_paper_fill(self, fill):
-        reference_price=None
-        if self.references is not None:
-            reference_price=self.references.consensus.consensus_price
-        self.agent_telemetry.observe_fill(fill,reference_price)
+        self.agent_telemetry.observe_fill_from_references(fill,self.references)
         try:
             self.accounting_service.ingest_fill(fill)
         except Exception as exc:

@@ -65,8 +65,26 @@ Uses Phase 6 volatility/imbalance plus bounded momentum, basis/funding and refer
 Uses fill-time evidence and the first eligible future reference after the configured horizon to calculate signed markouts. The selected observation sequence, timestamp, reference price, target maturity time and computed markout are frozen per fill and horizon for the lifetime of the retained fill. Future evidence remains pending until available; if history eviction or clearing has discarded the required maturity observation before selection, the result is terminally unavailable (reported in telemetry summary), rather than replaced with a newer sample.
 
 ### Execution-Quality Agent
-Uses normalized fills/order/reconciliation evidence. TESTNET metrics requiring an authoritative normalized fill ledger remain unavailable instead of being synthesized.
+Uses normalized fills/order/reconciliation evidence. Spread capture uses accepted
+consensus retained at fill time, recording price, consensus timestamp/source/version
+and eligible normalized provider provenance. Runtime and simulation share this
+binding; simulation prepares consensus before any frame fills. Missing consensus
+stays unavailable without midpoint substitution. Churn is `(REPLACE + CANCEL) /
+max(1, CREATE + REPLACE + CANCEL)`; KEEP remains observable and cannot dilute or
+evict runtime action evidence. GOOD requires mature non-negative markouts as well
+as positive capture; without mature markouts quality is provisional NORMAL (or
+INSUFFICIENT_DATA with too few fills), with an explicit reason. Poor evidence can
+still produce POOR. TESTNET metrics requiring an authoritative normalized fill
+ledger remain unavailable instead of being synthesized.
 
 ## Failure boundary
 
-An individual agent error is recorded and converted to a neutral recommendation; deterministic strategy and Phase 8 still evaluate the result. The audit should continue to evaluate whether that is the ideal fail posture, but agents themselves never become execution authority.
+This is a deliberate soft/optional supervisory failure policy: an individual
+exception produces `AgentHealth.ERROR` and a fresh neutral recommendation while
+remaining agents continue. Stale prior advice is never silently reused. ERROR may
+be less conservative than that agent's previous successful recommendation, but
+quotes remain bounded by the current upstream ladder (no tightening or size
+increase beyond upstream, no restored levels/sides). ERROR does not authorize
+execution. Phase 8 deterministic risk, structural validation and
+FinalQuoteAuthorization remain authoritative. The error and reason are visible
+in agent output; this tradeoff does not make agents sticky execution authority.
