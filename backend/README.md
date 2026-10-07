@@ -12,6 +12,24 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 Public live Hyperliquid market data can be enabled with `MARKET_DATA_MODE=LIVE`. Signed testnet execution additionally requires `EXECUTION_MODE=TESTNET`, `ENABLE_HYPERLIQUID_TESTNET_ORDERS=true`, and a testnet signing key supplied through environment variables. Mainnet execution is intentionally absent.
 
+### Audit 1.0: dependency hygiene (A1-017)
+
+HyperAMM has no current direct NumPy usage in its runtime, tests, or tooling.
+The project intentionally retains `numpy>=2.1,<3` as a direct core dependency
+for future quant/research use. This is a project dependency-policy decision,
+not a requirement of the current numerical implementation; A1-017's removal
+recommendation is deferred. Numerical code continues to use `Decimal` and
+Python `math`, including the A1-016 Phase 6 volatility estimator.
+
+NumPy is installed because HyperAMM explicitly declares it. That differs from
+a transitive dependency installed to satisfy another package's requirements;
+such a third-party requirement alone would not justify a direct declaration.
+
+The scoped compatibility review covered serialization/fingerprint helpers,
+legacy PnL and execution-callback adapters, terminal quote aliases, SDK version
+support, and the chart compatibility entry point. No additional removal was
+justified while preserving the existing domain boundaries and public behavior.
+
 
 ### Audit 1.0: local deployment boundary (A1-009)
 
