@@ -163,5 +163,5 @@ async def test_services_cannot_start_a_second_publisher():
 def test_local_loopback_request_and_browser_origin_work():
     with TestClient(app, base_url="http://127.0.0.1", client=("127.0.0.1", 1000)) as client:
         assert client.get("/api/v1/health", headers={"origin": "http://localhost:5173"}).status_code == 200
-        with client.websocket_connect("/ws/terminal", headers={"origin": "http://localhost:5173"}) as ws:
+        with client.websocket_connect("ws://127.0.0.1/ws/terminal", headers={"origin": "http://localhost:5173"}) as ws:
             assert ws.receive_json()["contract_version"] == "phase12-v1"
