@@ -8,6 +8,16 @@ from decimal import Decimal
 from app.market_data.models import MarketSnapshot
 
 
+def material_identity(snapshot: MarketSnapshot) -> tuple:
+    """Economic normalized L2 identity; Decimal equality ignores wire formatting."""
+    book = snapshot.book
+    return (
+        snapshot.market, snapshot.best_bid, snapshot.best_ask, snapshot.mid_price,
+        tuple((x.price, x.size, x.order_count) for x in book.bids) if book else (),
+        tuple((x.price, x.size, x.order_count) for x in book.asks) if book else (),
+    )
+
+
 @dataclass(frozen=True)
 class MarketObservation:
     timestamp: datetime
@@ -25,6 +35,9 @@ class MarketPriceHistory:
         self._seen_sequences: set[int] = set()
         self._seen_timestamps: set[datetime] = set()
         self._version = 0
+        self._material_identity = None
+        self._latest_timestamp = None
+        self._latest_sequence = -1
 
     @property
     def version(self) -> int:
@@ -34,6 +47,9 @@ class MarketPriceHistory:
         self._items.clear()
         self._seen_sequences.clear()
         self._seen_timestamps.clear()
+        self._material_identity = None
+        self._latest_timestamp = None
+        self._latest_sequence = -1
         self._version += 1
 
     def add_snapshot(self, snapshot: MarketSnapshot) -> bool:
@@ -44,6 +60,18 @@ class MarketPriceHistory:
             return False
         timestamp = snapshot.latest_valid_update or snapshot.book.timestamp
         sequence = snapshot.book.sequence
+        if self._latest_timestamp and timestamp < self._latest_timestamp:
+            return False
+        if sequence < self._latest_sequence:
+            return False
+        identity = material_identity(snapshot)
+        changed = identity != self._material_identity
+        self._material_identity = identity
+        self._latest_timestamp = timestamp
+        self._latest_sequence = sequence
+        # Authority tracks the full book independently of midpoint sampling.
+        if changed:
+            self._version += 1
         if sequence in self._seen_sequences or timestamp in self._seen_timestamps:
             return False
         if self._items and (timestamp < self._items[-1].timestamp or sequence <= self._items[-1].sequence):
@@ -55,7 +83,8 @@ class MarketPriceHistory:
         self._items.append(MarketObservation(timestamp=timestamp, sequence=sequence, mid_price=price))
         self._seen_sequences.add(sequence)
         self._seen_timestamps.add(timestamp)
-        self._version += 1
+        if not changed:
+            self._version += 1
         return True
 
     def prices(self, window: int) -> list[Decimal]:

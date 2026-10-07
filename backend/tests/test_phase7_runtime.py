@@ -230,3 +230,33 @@ def test_same_user_state_feeds_phase5_and_phase7_position_consistently():
     phase5=HyperliquidTestnetExecutionAdapter.normalize_user_position(state,"ETH")
     phase7=normalize_user_position_context(state,"ETH").signed_position_base
     assert phase5==phase7==D("-2.25")
+
+
+from test_integration import sdk_market, eventually, record_snapshot
+
+
+@pytest.mark.asyncio
+async def test_perp_sdk_subscription_and_fresh_context_restored_exactly_once(sdk_market):
+    import asyncio
+    h=sdk_market
+    contexts=[]; states=[]
+    h.adapter.add_perp_listener(contexts.append)
+    task=asyncio.create_task(h.adapter.start(lambda snap:record_snapshot(states,snap)))
+    try:
+        await eventually(lambda:states and states[-1].connection_state=='CONNECTED')
+        h.instances[0].ws_manager.ws.close()
+        await eventually(lambda:len(h.instances)==2 and states[-1].connection_state=='CONNECTED')
+        for info in h.instances:
+            subscriptions=[x['subscription']['type'] for x in info.ws_manager.ws.sent if x['method']=='subscribe']
+            assert subscriptions==['l2Book','activeAssetCtx']
+            assert info.snapshot_calls==1 and info.ctx_calls==1
+        assert len(contexts)==2
+        assert all(ctx.source=='HYPERLIQUID' and not ctx.simulated for ctx in contexts)
+        update=dict(h.ctx,markPx='3002')
+        h.instances[1].ws_manager.ws.emit('activeAssetCtx',{'coin':'ETH','ctx':update})
+        await eventually(lambda:len(contexts)==3)
+        assert contexts[-1].mark_price==D('3002')
+    finally:
+        await h.adapter.stop()
+        await task
+    assert all(info.disconnects==1 for info in h.instances)

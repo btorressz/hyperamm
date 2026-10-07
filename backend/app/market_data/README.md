@@ -36,6 +36,39 @@ The runtime installs listeners so new market/perpetual evidence wakes strategy r
 
 Market history accepts unique monotonic observations and rejects stale/invalid/non-positive prices. Exchange sequence/timestamps remain distinct from local observation/terminal timestamps.
 
+For LIVE L2, `latest_valid_update` is the exchange timestamp; `book.timestamp`
+is local receive time and `book.sequence` is a monotonic HyperAMM material
+identity. The service retains the source ordering watermark across unavailable
+states. Full normalized bids/asks (prices, sizes and order counts) and BBO bind
+material identity. Economically identical replays, including alternate Decimal
+formatting, retain identity. Changed books advance it even within one exchange
+millisecond. History keeps duplicate-time price samples deduplicated while
+advancing its authority version for changed material. The existing Phase 6
+decision, Phase 8 authorization and Phase 9 evidence all bind that version;
+the final transmission guard observes the current book before checking it.
+
+## Official SDK WebSocket lifecycle (Audit 1.0 A1-003 / A1-004)
+
+The supported SDK 0.24.0 WebsocketManager does not automatically reconnect.
+HyperAMM monitors its socket, manager and ping sender plus L2/context delivery.
+Failures publish DEGRADED, unsubscribe when possible, call
+`Info.disconnect_websocket()`, and join/verify both SDK threads before dropping
+ownership. RECONNECTING uses interruptible exponential backoff from one to ten
+seconds. Each attempt owns one new Info, subscribes l2Book once and
+activeAssetCtx once when used, bootstraps perp context through
+`Info.meta_and_asset_ctxs()`, and requires a fresh valid `Info.l2_snapshot()`
+before CONNECTED. Queued stream updates cannot cross that recovery barrier;
+callbacks from old clients cannot reach a new session.
+
+Ownership begins before SDK initialization because its constructor starts the
+socket before fetching metadata. Cancellation drains in-flight SDK calls before
+shutdown. Stop and reconfiguration disconnect the owned socket. A bounded
+shutdown timeout retains the old Info and prevents replacement while cleanup
+is unresolved; it never reports recovery or starts another socket. Deterministic
+Phase 1/6/7/8 tests use SDK-shaped HTTP fixtures and the actual SDK subscription
+methods, WebsocketManager and threads with a fake socket. No signed trades are
+needed for lifecycle acceptance.
+
 ## Safety boundary
 
 This package supplies normalized evidence only. It does not decide position sizing, risk posture or whether an order may be transmitted.
