@@ -59,7 +59,7 @@ async def test_code_owned_engine_version_is_visible_and_fingerprint_bound(monkey
                 agent_config=AgentConfig(),risk_config=RiskFirewallConfig(),
                 simulation_config=SimulationConfig(max_frames=3))
     first=await SimulationEngine().run(**kwargs)
-    assert first.engine_version==version.SIMULATION_ENGINE_VERSION=="phase10.1-v1"
+    assert first.engine_version==version.SIMULATION_ENGINE_VERSION=="phase10.1-v2"
     monkeypatch.setattr(version,"SIMULATION_ENGINE_VERSION","test-implementation-v2")
     second=await SimulationEngine().run(**kwargs)
     assert second.engine_version=="test-implementation-v2"
@@ -381,3 +381,98 @@ async def test_simulation_does_not_start_reference_service_or_network_transport(
         risk_config=RiskFirewallConfig(),simulation_config=SimulationConfig(max_frames=4,record_trace=False),
     )
     assert result.metrics.frame_count==4
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("missing_consensus",[False,True])
+async def test_frame_fills_bind_consensus_before_update_and_match_runtime(monkeypatch,missing_consensus):
+    from app.config import Settings
+    from app.runtime import HyperAmmRuntime
+    from app.agents.execution_quality import ExecutionQualityAgent,spread_capture_bps
+    from test_phase9_agents import evidence
+
+    dataset=generate_scenario("FLASH_MOVE",frames=12)
+    stores=[];bound_refs={};phases=[];in_update=[False]
+    class CapturingTelemetry(AgentTelemetryStore):
+        def __init__(self):
+            super().__init__();stores.append(self)
+        def observe_fill_from_references(self,fill,refs):
+            bound_refs[self.fill_identity(fill)]=refs.model_copy(deep=True)
+            phases.append(in_update[0])
+            return super().observe_fill_from_references(fill,refs)
+    monkeypatch.setattr(engine_module,"AgentTelemetryStore",CapturingTelemetry)
+    original_refs=engine_module.build_simulated_references
+    prepared={}
+    def build_refs(frame,**kwargs):
+        refs=original_refs(frame,**kwargs)
+        refs.consensus.consensus_price=None if missing_consensus else frame.market.mid_price+D(".25")
+        prepared[frame.timestamp]=refs.model_copy(deep=True)
+        return refs
+    monkeypatch.setattr(engine_module,"build_simulated_references",build_refs)
+    # Permit orders to rest despite missing fill-capture evidence, then exercise
+    # their market-update fills. Phase 8 behavior is covered independently.
+    original_risk=engine_module.RiskFirewall.evaluate
+    def risk_evaluate(self,**kwargs):
+        if missing_consensus:
+            kwargs["refs"]=kwargs["refs"].model_copy(deep=True)
+            kwargs["refs"].consensus.consensus_price=kwargs["mark"]
+        return original_risk(self,**kwargs)
+    monkeypatch.setattr(engine_module.RiskFirewall,"evaluate",risk_evaluate)
+    original_update=PaperExecutionAdapter.update_market
+    def update(self,snapshot):
+        in_update[0]=True
+        try:return original_update(self,snapshot)
+        finally:in_update[0]=False
+    monkeypatch.setattr(PaperExecutionAdapter,"update_market",update)
+    agents=AgentConfig(execution_quality_min_fills=1)
+    result=await SimulationEngine().run(dataset=dataset,strategy_config=StrategyConfig(),agent_config=agents,
+                                      risk_config=RiskFirewallConfig(),simulation_config=SimulationConfig(max_frames=12))
+    assert result.fills and any(phases),"must exercise fills inside update_market"
+    sim_store=stores[0];runtime=HyperAmmRuntime(Settings(_env_file=None))
+    for payload in result.fills:
+        fill=Fill.model_validate(payload)
+        refs=prepared[fill.timestamp]
+        assert bound_refs[sim_store.fill_identity(fill)]==refs
+        runtime.references=refs
+        runtime._on_paper_fill(fill)
+    observed=sim_store.fills(500)
+    assert runtime.agent_telemetry.fills(500)==observed
+    for fill in observed:
+        if missing_consensus:
+            assert fill.reference_price is None and fill.reference_source is None
+            assert fill.reference_provenance=={}
+        else:
+            refs=prepared[fill.timestamp]
+            assert fill.reference_price==refs.consensus.consensus_price
+            assert fill.reference_timestamp==refs.consensus.updated_at==fill.timestamp
+            assert fill.reference_source=="CONSENSUS" and fill.reference_version==refs.version
+            assert set(fill.reference_provenance)==set(refs.consensus.eligible_providers)
+            for provider,item in fill.reference_provenance.items():
+                assert item==refs.evidence[provider]
+                assert item.source_timestamp==fill.timestamp and item.source_id.startswith("simulation:")
+    history=MarketPriceHistory()
+    for frame in dataset.frames:history.add_snapshot(frame.market)
+    runtime_quality=ExecutionQualityAgent(agents).evaluate(evidence(),runtime.agent_telemetry,history,"PAPER")
+    sim_quality=ExecutionQualityAgent(agents).evaluate(evidence(),sim_store,history,"PAPER")
+    assert runtime_quality.metrics.average_spread_capture_bps==sim_quality.metrics.average_spread_capture_bps==result.metrics.mean_spread_capture_bps
+    if missing_consensus:assert result.metrics.mean_spread_capture_bps is None
+    else:
+        expected=sum((spread_capture_bps(f.side,f.price,f.reference_price) for f in observed),D("0"))/D(len(observed))
+        assert result.metrics.mean_spread_capture_bps==expected
+        # Later provider/reference updates must not rebind the accepted fill evidence.
+        refs=prepared[observed[0].timestamp]
+        refs.consensus.consensus_price=D("1")
+        refs.evidence[next(iter(observed[0].reference_provenance))].source_id="later"
+        assert observed[0].reference_price!=D("1")
+        assert all(item.source_id!="later" for item in observed[0].reference_provenance.values())
+
+
+def test_simulation_churn_is_action_based_and_ignores_keep_cadence():
+    from app.agents.execution_quality import churn_ratio
+    acc=MetricsAccumulator(D("1000"));acc.create=1;acc.replace=1
+    kwargs=dict(paper=SimpleNamespace(fills=SimpleNamespace(all=lambda:[])),market="ETH",
+                vault=SimpleNamespace(net_pnl_quote=D("0"),equity_quote=D("1000"),realized_pnl_quote=D("0"),unrealized_pnl_quote=D("0"),position_base=D("0")),
+                telemetry=AgentTelemetryStore(),history=MarketPriceHistory(),agent_config=AgentConfig(),frame_count=1)
+    initial=acc.finalize(**kwargs);acc.keep=1000;after=acc.finalize(**kwargs)
+    assert initial.reconciliation_churn_ratio==after.reconciliation_churn_ratio==churn_ratio(1000,1,1,0)==D(".5")
+    assert after.keep_count==1000

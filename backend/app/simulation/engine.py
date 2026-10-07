@@ -84,10 +84,10 @@ class SimulationEngine:
         risk_status=RiskStatus()
         metrics=MetricsAccumulator(simulation_config.initial_equity_quote)
         trace=deque(maxlen=simulation_config.trace_max_points or None) if simulation_config.record_trace and simulation_config.trace_max_points>0 else None
-        current_fill_reference:Decimal|None=None
+        fill_refs=None
 
         def on_fill(fill):
-            telemetry.observe_fill(fill,current_fill_reference)
+            telemetry.observe_fill_from_references(fill,fill_refs)
             accounting.ingest_fill(fill)
             accounting.observe_execution_fills(paper.fills.all(), retired_count=paper.fills.retired_count,
                                                duplicate_fills=paper.fills.duplicate_pending(accounting))
@@ -154,7 +154,12 @@ class SimulationEngine:
 
         for frame in frames:
             clock.set(frame.timestamp)
-            current_fill_reference=frame.market.mid_price
+            refs=build_simulated_references(
+                frame,agreement_bps=risk.source_agreement_bps,outlier_bps=risk.source_outlier_bps,
+                version=frame.sequence,
+            )
+            # Bind this frame before resting-order or immediate submit fills can occur.
+            fill_refs=refs
             paper.update_market(frame.market)
             inventory=build_inventory_state(
                 market=strategy.market,position=accounting.position.position_base,
@@ -166,11 +171,6 @@ class SimulationEngine:
             fair,pool,proposed,inventory_decision,market_decision,perp_decision=quote_engine.generate_perp_market_adaptive(
                 strategy,frame.market,inventory,history,frame.perp_context
             )
-            refs=build_simulated_references(
-                frame,agreement_bps=risk.source_agreement_bps,outlier_bps=risk.source_outlier_bps,
-                version=frame.sequence,
-            )
-            current_fill_reference=refs.consensus.consensus_price or frame.market.mid_price
             telemetry.observe_orders(await paper.get_open_orders())
             agent_evidence=build_agent_evidence(
                 market_decision=market_decision,inventory=inventory,perp_context=frame.perp_context,

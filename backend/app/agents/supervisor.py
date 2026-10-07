@@ -71,6 +71,8 @@ class AgentSupervisor:
             self._states[agent]=state
 
     def evaluate(self,*,evidence,telemetry,history,execution_mode:str)->AgentSupervisorDecision:
+        # Soft/optional supervision: ERROR replaces prior advice with neutral output.
+        # It may relax prior agent caution; Phase 8 and final authorization still decide.
         try:regime=self.regime.evaluate(evidence)
         except Exception as exc:regime=_neutral_regime(evidence,f"regime agent error: {exc}")
         try:toxic=self.toxic_flow.evaluate(evidence,telemetry,history)

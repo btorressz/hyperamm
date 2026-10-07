@@ -260,7 +260,7 @@ def test_small_consumer_window_preserves_maturity_for_other_retained_fills():
 def test_spread_capture_signs_and_churn():
     assert spread_capture_bps("BID",D("2997"),D("3000"))==D("10")
     assert spread_capture_bps("ASK",D("3003"),D("3000"))==D("10")
-    assert churn_ratio(5,1,2,2)==D("0.4")
+    assert churn_ratio(5,1,2,2)==D("0.8")
 
 
 def test_execution_quality_no_data_and_testnet_do_not_fabricate():
@@ -428,7 +428,7 @@ def test_execution_quality_healthy_evidence_can_be_good():
     telemetry=AgentTelemetryStore();t0=utcnow()
     telemetry.observe_fill(Fill(client_order_id="g",market="ETH",side="BID",price=D("2999"),size=D("1"),timestamp=t0),D("3000"))
     out=ExecutionQualityAgent(c).evaluate(evidence(),telemetry,history(["3000","3001"],start=t0,step=5),execution_mode="PAPER")
-    assert out.state in {ExecutionQualityState.GOOD,ExecutionQualityState.NORMAL}
+    assert out.state==ExecutionQualityState.GOOD
     assert out.metrics.average_spread_capture_bps is not None
     assert out.metrics.average_mature_markout_bps is not None
 
@@ -439,3 +439,79 @@ def test_missing_fill_reference_remains_unavailable_not_fabricated():
     telemetry.observe_fill(Fill(client_order_id="noref",market="ETH",side="BID",price=D("3000"),size=D("1"),timestamp=t0),None)
     out=ExecutionQualityAgent(c).evaluate(evidence(),telemetry,history(["3000","3001"],start=t0,step=5),execution_mode="PAPER")
     assert out.metrics.average_spread_capture_bps is None
+
+
+@pytest.mark.parametrize("status",["pending","unavailable","adverse","favorable"])
+def test_quality_requires_mature_markout_and_explains_provisional(status):
+    t0=utcnow();telemetry=AgentTelemetryStore()
+    telemetry.observe_fill(Fill(client_order_id="quality",market="ETH",side="BID",price=D("2999"),size=D("1"),timestamp=t0),D("3000"))
+    h=MarketPriceHistory(max_samples=2)
+    h.add_snapshot(snapshot("3000",1,t0))
+    if status!="pending":
+        h.add_snapshot(snapshot("2990" if status=="adverse" else "3001",2,t0+timedelta(seconds=5)))
+    if status=="unavailable":
+        h.add_snapshot(snapshot("3010",3,t0+timedelta(seconds=6)))
+        h.add_snapshot(snapshot("3020",4,t0+timedelta(seconds=7)))
+    out=ExecutionQualityAgent(AgentConfig(execution_quality_min_fills=1,toxic_flow_markout_horizon_seconds=5)).evaluate(evidence(),telemetry,h,"PAPER")
+    assert out.metrics.average_spread_capture_bps>0
+    if status in {"pending","unavailable"}:
+        assert out.state==ExecutionQualityState.NORMAL
+        assert out.metrics.average_mature_markout_bps is None
+        assert "provisional: mature markout unavailable" in out.reasons
+    else:
+        assert out.state==(ExecutionQualityState.POOR if status=="adverse" else ExecutionQualityState.GOOD)
+        assert any("mature markout" in reason for reason in out.reasons)
+
+
+def test_keep_cadence_cannot_dilute_or_evict_action_churn():
+    from types import SimpleNamespace
+    from app.execution.quote_reconciler import ReconcileActionType as A
+    telemetry=AgentTelemetryStore(max_reconcile_cycles=2)
+    agent=ExecutionQualityAgent(AgentConfig(execution_quality_window=2,execution_quality_min_fills=1))
+    telemetry.observe_reconcile([SimpleNamespace(action=A.CREATE),SimpleNamespace(action=A.REPLACE)],[])
+    initial=agent.evaluate(evidence(),telemetry,MarketPriceHistory(),"PAPER").metrics
+    assert initial.reconciliation_churn_ratio==D(".5")
+    for _ in range(10):
+        telemetry.observe_reconcile([SimpleNamespace(action=A.KEEP)],[])
+        metrics=agent.evaluate(evidence(),telemetry,MarketPriceHistory(),"PAPER").metrics
+        assert metrics.reconciliation_churn_ratio==initial.reconciliation_churn_ratio
+        assert (metrics.create_count,metrics.replace_count)==(1,1)
+        assert metrics.keep_count>0
+    assert churn_ratio(0,1,1,0)==churn_ratio(1000,1,1,0)
+    assert churn_ratio(1000,0,0,0)==0
+
+
+@pytest.mark.parametrize("failed_agent",["regime","toxic_flow","execution_quality"])
+def test_soft_error_discards_prior_advice_and_preserves_upstream_bounds(monkeypatch,failed_agent):
+    ev=evidence();s=AgentSupervisor(AgentConfig())
+    outputs={"regime":neutral_regime(ev,spread="1.7",size=".5"),
+             "toxic_flow":neutral_toxic(ev,spread="1.7",bid=".5",ask=".5"),
+             "execution_quality":neutral_execution(ev,spread="1.7",size=".5")}
+    neutral={"regime":neutral_regime(ev),"toxic_flow":neutral_toxic(ev),"execution_quality":neutral_execution(ev)}
+    calls=[]
+    for name in outputs:
+        def evaluate(*args,name=name):
+            calls.append(name)
+            return outputs[name] if name==failed_agent else neutral[name]
+        monkeypatch.setattr(getattr(s,name),"evaluate",evaluate)
+    kwargs=dict(evidence=ev,telemetry=AgentTelemetryStore(),history=MarketPriceHistory(),execution_mode="PAPER")
+    previous=s.evaluate(**kwargs)
+    assert previous.spread_multiplier==D("1.7")
+    def fail(*args):
+        calls.append(failed_agent)
+        raise RuntimeError("deliberate failure")
+    monkeypatch.setattr(getattr(s,failed_agent),"evaluate",fail)
+    calls.clear();current=s.evaluate(**kwargs)
+    assert set(calls)==set(outputs)
+    error=getattr(current,failed_agent)
+    assert error.health==AgentHealth.ERROR
+    assert (error.confidence,error.spread_multiplier,error.bid_size_multiplier,error.ask_size_multiplier)==(0,1,1,1)
+    assert error.max_levels is None and "deliberate failure" in error.reasons[0]
+    assert current.spread_multiplier==1 and current.bid_size_multiplier==1
+    assert current.version>previous.version and current.fingerprint!=previous.fingerprint
+    base=[quote("BID","2990"),quote("ASK","3010")]
+    adapted=transform_quotes(base,current,center=D("3000"),tick_size=D(".1"),size_precision=4)
+    for before,after in zip(base,adapted):
+        assert after.size<=before.size
+        assert after.price<=before.price if before.side=="BID" else after.price>=before.price
+    assert len(adapted)==len(base)

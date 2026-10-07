@@ -144,15 +144,24 @@ async def test_manual_kill_remains_absolute_with_agents_enabled():
 
 
 @pytest.mark.asyncio
-async def test_agent_software_error_remains_neutral_while_phase8_still_halts(monkeypatch):
+@pytest.mark.parametrize("agent_name",["regime","toxic_flow","execution_quality"])
+async def test_agent_software_error_remains_neutral_while_phase8_still_halts(monkeypatch,agent_name):
     rt=HyperAmmRuntime(Settings(_env_file=None))
     snap=MockMarketDataAdapter().snapshot_for(1)
     await rt.market._accept(snap)
     monkeypatch.setattr(rt.reference_service,"snapshot",lambda *args,**kwargs:insufficient_refs())
-    monkeypatch.setattr(rt.agent_supervisor.regime,"evaluate",lambda _ev:(_ for _ in ()).throw(RuntimeError("agent failure")))
+    monkeypatch.setattr(getattr(rt.agent_supervisor,agent_name),"evaluate",lambda *_:(_ for _ in ()).throw(RuntimeError("agent failure")))
     await rt.refresh_once()
-    assert rt.agent_decision.regime.health.value=="ERROR"
-    assert rt.agent_decision.regime.spread_multiplier==1
+    failed=getattr(rt.agent_decision,agent_name)
+    assert failed.health.value=="ERROR"
+    assert failed.spread_multiplier==1
+    assert failed.bid_size_multiplier==failed.ask_size_multiplier==1
     assert rt.risk_decision.state.value=="HALT"
     assert rt.authorization.authorized is False
     assert rt.quotes==[]
+
+    # A neutral ERROR cannot mint execution authority while Phase 8 denies it.
+    rt.strategy.running=True
+    with pytest.raises(PermissionError,match="Phase 8 FinalQuoteAuthorization"):
+        await rt._execution_authority()
+    assert rt.paper.all_orders()==[]

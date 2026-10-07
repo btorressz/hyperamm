@@ -278,15 +278,15 @@ Funding-stress scenarios alter funding context. Phase 11 optionally books determ
 For each frame:
 
 1. advance scenario clock;
-2. apply the new market snapshot to existing PAPER orders;
-3. allow existing crossing-only PAPER orders to fill;
+2. build simulated provider evidence and run ReferenceConsensusPolicy, binding fill-time consensus;
+3. apply the market snapshot to existing PAPER orders and allow crossing-only fills;
 4. record fills into Phase 9 telemetry;
 5. derive PAPER inventory from actual fills;
 6. add the current market observation to `MarketPriceHistory`;
 7. use the frame's normalized `PerpMarketContext`;
 8. run the real `QuoteEngine.generate_perp_market_adaptive()`;
-9. build simulated provider evidence;
-10. run the real `ReferenceConsensusPolicy`;
+9. retain the prepared reference consensus for this frame;
+10. retain that same fill-time reference for any immediate submit fills;
 11. build Phase 9 agent evidence;
 12. run the real `AgentSupervisor`;
 13. run Phase 9 `transform_quotes()`;
@@ -412,7 +412,12 @@ The Phase 8 firewall receives a simulated `PnlDrawdown` containing realized/unre
 
 Unavailable execution-quality values remain `None`; zero is not used as an unavailable sentinel.
 
-Phase 9 formulas are reused for spread capture, markouts and churn.
+Phase 9 formulas are reused for spread capture, markouts and churn. Capture uses
+the frame's accepted consensus bound before any fill, with explicit consensus and
+eligible-provider provenance; absent consensus stays unavailable, never midpoint.
+Churn is `(REPLACE + CANCEL) / max(1, CREATE + REPLACE + CANCEL)` over run-wide
+counts; KEEP cannot dilute it. GOOD requires mature markout evidence; positive
+capture alone remains provisional with an explicit agent reason.
 
 ## Trace
 
@@ -435,7 +440,7 @@ When the bound is reached, the deque retains the most recent points. Full strate
 
 ## Reproducibility and fingerprints
 
-Phase 11 additionally binds accounting schema `phase11-v1` and full accounting config into every run fingerprint, and exposes the final vault, bounded accounting ledger and accounting fingerprint. The existing pipeline engine provenance is owned by code: `SIMULATION_ENGINE_VERSION = "phase10.1-v1"`
+Phase 11 additionally binds accounting schema `phase11-v1` and full accounting config into every run fingerprint, and exposes the final vault, bounded accounting ledger and accounting fingerprint. The existing pipeline engine provenance is owned by code: `SIMULATION_ENGINE_VERSION = "phase10.1-v2"`
 in `backend/app/simulation/version.py`. `SimulationConfig` has no version field.
 Both `SimulationResult.engine_version` and `OptimizationResult.engine_version`
 report this constant. Every candidate run fingerprint binds the same constant;
