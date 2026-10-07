@@ -87,3 +87,31 @@ def test_funding_gap_and_non_boundary_fail_without_interpolation():
     with pytest.raises(ValueError, match="interval gap"):
         accounting.observe_funding(context)
     assert accounting.ledger.version == 0
+
+
+def test_funding_receipt_observed_immediately_and_payment_retains_peak():
+    accounting = service(paper_funding_accounting_enabled=True)
+    accounting.ingest_fill(fill())
+    accounting.mark(D("3000"))
+    accounting.accrue_funding(effective_at=T, mark=D("3000"), rate=D("-.01"))
+    vault = accounting.snapshot()
+    assert vault.equity_quote == vault.peak_equity_quote == D("100030")
+    assert len([e for e in accounting.events() if e.category == "EQUITY_PEAK_UPDATED"]) == 1
+    accounting.accrue_funding(effective_at=T + timedelta(hours=1), mark=D("3000"), rate=D(".02"))
+    vault = accounting.snapshot()
+    assert vault.equity_quote == D("99970")
+    assert vault.peak_equity_quote == D("100030")
+    assert vault.drawdown_quote == D("60")
+    assert len([e for e in accounting.events() if e.category == "EQUITY_PEAK_UPDATED"]) == 1
+
+
+def test_failed_funding_append_cannot_change_cash_funding_or_peak():
+    accounting = service(paper_funding_accounting_enabled=True, ledger_max_entries=2)
+    accounting.ingest_fill(fill())
+    accounting.mark(D("3000"))
+    before = accounting.snapshot()
+    with pytest.raises(ValueError, match="retention capacity"):
+        accounting.accrue_funding(effective_at=T, mark=D("3000"), rate=D("-.01"))
+    after = accounting.snapshot()
+    for field in ("equity_quote", "peak_equity_quote", "settled_capital_quote", "funding_quote", "ledger_fingerprint"):
+        assert getattr(after, field) == getattr(before, field)

@@ -4,7 +4,7 @@ from enum import StrEnum
 import hashlib
 import json
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 def canonical(value):
@@ -53,6 +53,23 @@ class AccountingCompleteness(StrEnum):
     COMPLETE = "COMPLETE"
     PARTIAL = "PARTIAL"
     UNAVAILABLE = "UNAVAILABLE"
+
+
+class ConsistencyStatus(StrEnum):
+    CONSISTENT = "CONSISTENT"
+    DIVERGED = "DIVERGED"
+    UNAVAILABLE = "UNAVAILABLE"
+
+
+class ExecutionAccountingConsistency(Record):
+    execution_fill_count: int = Field(default=0, ge=0)
+    accounted_fill_count: int = Field(default=0, ge=0)
+    unaccounted_fill_count: int = Field(default=0, ge=0)
+    execution_accounting_consistent: bool | None = None
+    oldest_unaccounted_fill_at: datetime | None = None
+    latest_unaccounted_fill_at: datetime | None = None
+    status: ConsistencyStatus = ConsistencyStatus.UNAVAILABLE
+    reason: str | None = "Normalized execution fill evidence unavailable"
 
 
 class AccountingEvent(Record):
@@ -137,6 +154,7 @@ class VaultSnapshot(Record):
     source: str
     simulated: bool
     accounting_complete: AccountingCompleteness
+    execution_accounting: ExecutionAccountingConsistency = Field(default_factory=ExecutionAccountingConsistency)
     initial_equity_quote: Decimal | None = None
     settled_capital_quote: Decimal | None = None
     position_base: Decimal | None = None
@@ -175,6 +193,19 @@ class VaultSnapshot(Record):
     stale: bool = True
     error: str | None = None
     warnings: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def paper_invariants(self):
+        if self.mode == "PAPER":
+            if self.equity_quote is not None and self.peak_equity_quote is not None:
+                if self.peak_equity_quote < self.equity_quote:
+                    raise ValueError("PAPER peak equity is below current equity")
+            if self.accounting_complete == AccountingCompleteness.COMPLETE:
+                if (self.error is not None or self.stale
+                        or self.execution_accounting.execution_accounting_consistent is not True
+                        or self.equity_quote is None or self.peak_equity_quote is None):
+                    raise ValueError("COMPLETE PAPER accounting requires valid, consistent equity authority")
+        return self
 
 
 class AccountingNotice(Record):

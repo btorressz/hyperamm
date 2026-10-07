@@ -65,3 +65,8 @@ class AccountingLedger:
         if not 1 <= limit <= 500:
             raise ValueError("ledger limit must be between 1 and 500")
         return tuple(reversed(self._entries[-limit:]))
+
+    def fill_evidence(self):
+        """All booked trade identities/economics, independent of API page limits."""
+        return {entry.event_id: entry.evidence_fingerprint for entry in self._entries
+                if entry.event_type == "TRADE_FILL"}

@@ -62,3 +62,53 @@ async def test_simulation_capital_authority_halts_insufficient_research_capital(
                 simulation_config=SimulationConfig(max_frames=3, initial_equity_quote=D("1")))
     assert result.metrics.risk_state_counts == {"HALT": 3}
     assert result.orders == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("economic_event,peak,equity", [
+    ("fills", "100200", "100000"), ("funding", "100031", "99969")])
+async def test_simulation_retains_intermediate_economic_peak_deterministically(monkeypatch, economic_event, peak, equity):
+    from app.execution.models import StrategyOrder
+    from app.execution.paper import PaperExecutionAdapter
+    from app.simulation import engine
+    from app.simulation.models import SimulationDataset
+
+    # Controlled execution evidence isolates between-mark transitions while
+    # retaining the real fill callback, accounting service and simulation loop.
+    class ScriptedPaper(PaperExecutionAdapter):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.frame = 0
+
+        def update_market(self, snapshot):
+            super().update_market(snapshot)
+            self.frame += 1
+            events = ([("BID", "3000")] if self.frame == 1 else
+                      [("ASK", "3200"), ("BID", "3300")] if self.frame == 2 else [])
+            if economic_event == "funding":
+                events = [("BID", "3100")] if self.frame == 1 else []
+            for index, (side, price) in enumerate(events):
+                order = StrategyOrder(client_order_id=f"script-{self.frame}-{index}", market="ETH",
+                    side=side, price=D(price), size=D("1"), created_at=self.clock(), updated_at=self.clock())
+                self.orders[order.client_order_id] = order
+                self._fill(order)
+
+    monkeypatch.setattr(engine, "PaperExecutionAdapter", ScriptedPaper)
+    monkeypatch.setattr(engine.RiskFirewall, "transform", lambda *args, **kwargs: [])
+    original = generate_scenario("QUIET", frames=3)
+    frames = tuple(frame.model_copy(update={"perp_context": frame.perp_context.model_copy(update={
+        "mark_price": D("3100"), "funding_rate": [D("0"), D("-.01"), D(".02")][index]})})
+        for index, frame in enumerate(original.frames))
+    dataset = SimulationDataset(market="ETH", frames=frames, source="PHASE11_1_ECONOMIC_PEAK")
+    kwargs = dict(dataset=dataset, strategy_config=StrategyConfig(), agent_config=AgentConfig(),
+        risk_config=RiskFirewallConfig(), simulation_config=SimulationConfig(max_frames=3,
+        accounting=AccountingConfig(paper_funding_accounting_enabled=economic_event == "funding",
+                                    paper_funding_interval_seconds=1)))
+    a, b = await SimulationEngine().run(**kwargs), await SimulationEngine().run(**kwargs)
+    assert a.vault.peak_equity_quote == D(peak)
+    assert a.vault.equity_quote == D(equity)
+    assert a.vault.drawdown_quote == D(peak) - D(equity)
+    assert a.vault.peak_equity_quote >= a.vault.equity_quote
+    assert a.vault.execution_accounting.status == "CONSISTENT"
+    assert a.vault == b.vault and a.accounting_fingerprint == b.accounting_fingerprint
+    assert a.vault.drawdown_pct == b.vault.drawdown_pct

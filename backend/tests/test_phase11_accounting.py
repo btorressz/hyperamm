@@ -175,3 +175,63 @@ def test_nonpositive_equity_has_no_utilization_or_fabricated_available_capital()
     assert accounting.snapshot().equity_quote == D("-100")
     assert accounting.snapshot().available_capital_quote == 0
     assert accounting.snapshot().capital_utilization is None
+
+
+def assert_complete_paper(vault):
+    assert vault.accounting_complete == "COMPLETE"
+    assert vault.error is None and not vault.stale
+    assert vault.execution_accounting.execution_accounting_consistent is True
+    assert vault.peak_equity_quote >= vault.equity_quote
+    if vault.reserved_capital_quote is not None and vault.equity_quote > 0:
+        assert vault.capital_utilization == vault.reserved_capital_quote / vault.equity_quote
+
+
+@pytest.mark.parametrize("fees,expected", [(False, "100200"), (True, "100193.8")])
+def test_realized_gain_observes_final_fill_plus_fee_peak_without_mark(fees, expected):
+    accounting = service(paper_fee_model_enabled=fees, paper_taker_fee_bps=D("10"))
+    accounting.ingest_fill(fill())
+    accounting.mark(D("3100"))
+    accounting.ingest_fill(fill("ASK", "3200", identity="b", seconds=1))
+    vault = accounting.snapshot()
+    assert vault.equity_quote == vault.peak_equity_quote == D(expected)
+    assert_complete_paper(vault)
+    notices = [e for e in accounting.events() if e.category == "EQUITY_PEAK_UPDATED"]
+    assert len(notices) == 2
+    assert notices[-1].source_reference.startswith("fill:")
+    accounting.mark(D("3100"))
+    assert len([e for e in accounting.events() if e.category == "EQUITY_PEAK_UPDATED"]) == 2
+
+
+def test_intermediate_fill_peak_retained_across_fills_between_marks():
+    accounting = service()
+    accounting.ingest_fill(fill())
+    accounting.mark(D("3100"))
+    accounting.ingest_fill(fill("ASK", "3200", identity="b", seconds=1))
+    accounting.ingest_fill(fill("BID", "3300", identity="c", seconds=2))
+    accounting.reserve()
+    vault = accounting.snapshot()
+    assert vault.equity_quote == D("100000")
+    assert vault.peak_equity_quote == D("100200")
+    assert vault.drawdown_quote == D("200")
+    assert vault.drawdown_pct == D("200") / D("100200")
+    assert_complete_paper(vault)
+
+
+def test_atomic_fee_prevents_artificial_trade_only_peak():
+    accounting = service(paper_fee_model_enabled=True, paper_taker_fee_bps=D("1000"))
+    accounting.ingest_fill(fill(price="1000"))
+    accounting.mark(D("1000"))
+    accounting.ingest_fill(fill("ASK", "1200", identity="b", seconds=1))
+    vault = accounting.snapshot()
+    assert vault.equity_quote == D("99980")
+    assert vault.peak_equity_quote == D("100000")
+    assert not any(e.category == "EQUITY_PEAK_UPDATED" for e in accounting.events())
+    assert_complete_paper(vault)
+
+
+def test_snapshot_rejects_corrupt_peak_instead_of_repairing_it():
+    accounting = service()
+    accounting.mark(D("3000"))
+    accounting._peak = D("99999")
+    with pytest.raises(ValueError, match="peak equity is below"):
+        accounting.snapshot()

@@ -110,7 +110,7 @@ net realized PnL = realized trading PnL - fees + funding
 net unrealized PnL = unrealized trading PnL
 net PnL = session PnL = gross trading PnL - fees + funding
 vault equity = initial capital + net PnL = settled capital + unrealized PnL
-peak equity = max(previous peak, marked equity), seeded by initial capital
+peak equity = max(previous peak, current committed equity), seeded by initial capital
 drawdown quote = max(0, peak equity - equity)
 drawdown fraction = drawdown quote / peak equity, when peak > 0
 ```
@@ -119,6 +119,59 @@ Snapshots retain last-known balances when stale and label their health explicitl
 Before a valid mark, unrealized PnL and equity are unavailable. A missing input is
 not replaced with zero. Zero fees/funding are valid only when explicitly
 configured as PAPER research assumptions.
+
+### Phase 11.1 high-water invariant
+
+`AccountingService._observe_equity()` uses the shared `pnl()` result after each
+committed fill plus fee transaction, funding accrual, and mark update. It never
+observes an intermediate trade-only balance before its corresponding fee. An
+unavailable equity does not change peak. A failed ledger append leaves position,
+settled capital, fees/funding and peak unchanged. `EQUITY_PEAK_UPDATED` is emitted
+once per new economic high, including realized fills and funding receipts; an
+unchanged peak emits no notice. Intermediate highs survive later fills/payments
+even when no new mark intervenes.
+
+PAPER snapshot validation rejects `peak_equity_quote < equity_quote`; it does
+not repair corrupt state. COMPLETE additionally requires a fresh, error-free,
+execution-consistent snapshot with available equity and peak. Capital utilization
+continues to use exact Decimal `reserved_capital_quote / equity_quote` for positive
+equity.
+
+### Execution/accounting consistency and internal reconciliation
+
+Vault and compact WebSocket accounting summaries include `execution_accounting`:
+execution, accounted and unaccounted fill counts, a nullable consistency boolean,
+CONSISTENT / DIVERGED / UNAVAILABLE status, reason, and oldest/latest unaccounted
+timestamps. Runtime reconciles the current session's entire PAPER FillStore with
+immutable TRADE_FILL ledger identities and economic fingerprints, independently
+of API ledger pagination. `fill_identity()` and `_fill_evidence()` are shared with
+ingestion; there is no separate identity formula. A matching TRADE_FILL counts
+once; FEE and FUNDING rows never count as fills. Missing rows, duplicate execution
+identities, market mismatches and changed economics are explicit divergence.
+TESTNET has UNAVAILABLE consistency with a null boolean; no fills are fabricated.
+
+Divergence makes PAPER completeness UNAVAILABLE while keeping last-known balances
+visible. Consistency is material accounting provenance: divergence and valid
+reconciliation change accounting version/fingerprint, invalidating prior final
+authorization. Existing Phase 8 capital authority and pre-transmission checks
+block CREATE/REPLACE. CANCEL and cancel_all remain available. The PAPER callback
+retains executed fills, attempts accounting, updates telemetry and wakes strategy
+even when ingestion fails.
+
+`reconcile_paper_fills()` is an internal operation, used under the runtime execution
+lock. It may book pending evidence when no failure is latched, configuration is
+still bound, timestamps are ordered and no newer mark/funding evidence precedes
+replay. Normal ingestion validates economics and ledger capacity; each trade/fee
+batch remains atomic. Repeated reconciliation books nothing twice. Processing
+stops at the first failure; there is no cursor that can skip failed fills.
+
+Callback exceptions (including temporary interruptions), conflicting economics,
+invalid economics, exhausted retention, unsafe chronology and config mismatches
+latch the first accounting error. No reconciliation clears it or retries later
+fills. These cases require a new internal PAPER session; capacity is never
+expanded automatically. The permitted recovery case is unfailed pending evidence,
+not recovery after an accounting failure. There is no public reset, replay,
+rebuild or other accounting mutation endpoint.
 
 ## Events, identities and atomic append
 

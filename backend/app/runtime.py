@@ -73,7 +73,6 @@ class HyperAmmRuntime:
         self.accounting_config = AccountingConfig()
         self.accounting_service = AccountingService(settings.market, self.config.execution_mode.value, self.accounting_config)
         self.vault_snapshot = self.accounting_service.snapshot()
-        self._accounted_fill_count = 0
         self.kill = KillSwitch(self.risk, self.execution_lock)
         self.fair_value = None
         self.pool = None
@@ -116,11 +115,10 @@ class HyperAmmRuntime:
         self.agent_telemetry.observe_fill(fill,reference_price)
         try:
             self.accounting_service.ingest_fill(fill)
-            if len(self.paper.fills.all()) == self._accounted_fill_count + 1:
-                self._accounted_fill_count += 1
         except Exception as exc:
             # Execution already happened; retain it and fail new authority closed.
             self.accounting_service.fail(exc)
+        self.accounting_service.observe_execution_fills(self.paper.fills.all())
         self.vault_snapshot = self.accounting_service.snapshot()
         self._strategy_wakeup.set()
 
@@ -189,6 +187,8 @@ class HyperAmmRuntime:
         return await self._testnet_inventory_locked(refresh=refresh)
 
     async def _execution_authority(self):
+        if self.config.execution_mode == ExecutionMode.PAPER:
+            self.accounting_service.observe_execution_fills(self.paper.fills.all())
         current_market = await self.market.snapshot()
         market_fair = calculate_fair_value(current_market)
         self.market_history.add_snapshot(current_market)
@@ -401,13 +401,11 @@ class HyperAmmRuntime:
         return to_pnl_drawdown(self.accounting_service.snapshot())
 
     def _sync_paper_fills_locked(self):
-        # Fill callbacks book normal traffic; recovery also observes externally
-        # populated FillStore fixtures without losing economic events.
+        # No cursor can advance past failed evidence. Never clear a latched error.
         fills = self.paper.fills.all()
-        for fill in fills[self._accounted_fill_count:]:
-            if fill.market == self.config.market:
-                self.accounting_service.ingest_fill(fill)
-        self._accounted_fill_count = len(fills)
+        if self.accounting_service.config != self.accounting_config:
+            self.accounting_service.fail("accounting configuration changed; internal context rebind required")
+        self.accounting_service.reconcile_paper_fills(fills)
 
     def _mark_accounting_locked(self, context):
         if self.config.execution_mode == ExecutionMode.PAPER:
@@ -746,7 +744,6 @@ class HyperAmmRuntime:
                 self.accounting_service = AccountingService(new_config.market, new_config.execution_mode.value,
                                                             self.accounting_config)
                 self.vault_snapshot = self.accounting_service.snapshot()
-                self._accounted_fill_count = 0
                 self._expected_accounting_version = None
                 self._expected_accounting_fingerprint = None
             if mode_changed:
@@ -919,6 +916,8 @@ class HyperAmmRuntime:
         }
 
     def accounting_payload(self):
+        if self.config.execution_mode == ExecutionMode.PAPER:
+            self.accounting_service.observe_execution_fills(self.paper.fills.all())
         vault = self.accounting_service.snapshot()
         return {
             "config": self.accounting_config.model_dump(mode="json"),
@@ -927,6 +926,7 @@ class HyperAmmRuntime:
             "ledger_version": vault.ledger_version,
             "ledger_fingerprint": vault.ledger_fingerprint,
             "retention_policy": self.accounting_service.ledger.retention_policy,
+            "execution_accounting": vault.execution_accounting.model_dump(mode="json"),
             "pnl": self.accounting_service.pnl().model_dump(mode="json"),
             "events": [e.model_dump(mode="json") for e in self.accounting_service.events(20)],
         }
@@ -948,11 +948,14 @@ class HyperAmmRuntime:
                 # Read-only observability retains prior evidence and reports error.
                 # Market outages do not overwrite balances with defaults.
                 self.vault_snapshot = self.accounting_service.snapshot()
-                return self.vault_snapshot.model_copy(update={"stale": True, "error": str(exc)}).model_dump(mode="json")
+                return self.vault_snapshot.model_copy(update={"stale": True, "error": str(exc),
+                    "accounting_complete": "UNAVAILABLE"}).model_dump(mode="json")
             self.vault_snapshot = self.accounting_service.snapshot()
             return self.vault_snapshot.model_dump(mode="json")
 
     async def terminal_state(self):
+        if self.config.execution_mode == ExecutionMode.PAPER:
+            self.accounting_service.observe_execution_fills(self.paper.fills.all())
         snap = await self.market.snapshot()
         inventory = None
         if self.inventory is not None:

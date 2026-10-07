@@ -89,6 +89,7 @@ class SimulationEngine:
         def on_fill(fill):
             telemetry.observe_fill(fill,current_fill_reference)
             accounting.ingest_fill(fill)
+            accounting.observe_execution_fills(paper.fills.all())
         paper.on_fill=on_fill
 
         current_authorization=None
@@ -99,6 +100,7 @@ class SimulationEngine:
         expected={}
 
         async def simulation_authority():
+            accounting.observe_execution_fills(paper.fills.all())
             if current_authorization is None or not current_authorization.authorized:
                 raise PermissionError("simulation FinalQuoteAuthorization is not authorized")
             if current_agent is None or current_risk is None or current_refs is None:
