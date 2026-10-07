@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from itertools import product
 from math import prod
+from pydantic import ValidationError
 
 from app.agents.config import AgentConfig
 from app.risk.firewall import RiskFirewallConfig
@@ -12,6 +13,7 @@ from .config import OptimizationObjectiveConfig,SimulationConfig
 from .engine import SimulationEngine
 from .models import CandidateEvaluation,OptimizationResult,ScenarioEvaluation,ScoreComponents,stable_fingerprint
 from .scenarios import generate_scenario
+from . import version
 
 
 STRATEGY_PARAMETER_ALLOWLIST={
@@ -167,6 +169,12 @@ class StrategyOptimizer:
     )->OptimizationResult:
         if not training_scenarios:raise ValueError("at least one training scenario is required")
         if not validation_scenarios:raise ValueError("at least one validation scenario is required")
+        if len(training_scenarios)>8 or len(validation_scenarios)>8:
+            raise ValueError("at most 8 training and 8 validation scenarios are allowed")
+        if not 2<=frames<=min(1000,simulation_config.max_frames):
+            raise ValueError("optimization frames must be within 2..1000 and simulation max_frames")
+        if not 1<=top_n<=10:
+            raise ValueError("top_n must be between 1 and 10")
         requested=self._validate_grid(strategy_grid,agent_grid,max_candidates)
         baseline=await self._evaluate(
             label="BASELINE",strategy=baseline_strategy.model_copy(deep=True),agents=baseline_agents.model_copy(deep=True),
@@ -184,7 +192,7 @@ class StrategyOptimizer:
                     frames=frames,objective=objective,strategy_updates=strategy_updates,agent_updates=agent_updates,
                 )
                 candidates.append(candidate)
-            except Exception as exc:
+            except (ValidationError, ValueError) as exc:
                 rejected.append({"strategy_updates":strategy_updates,"agent_updates":agent_updates,"reason":str(exc)})
 
         ranked=sorted(candidates,key=candidate_ranking_key)
@@ -237,6 +245,7 @@ class StrategyOptimizer:
             candidate.baseline_delta["objective_score"]=candidate.training_score-baseline.training_score
 
         return OptimizationResult(
+            engine_version=version.SIMULATION_ENGINE_VERSION,
             baseline=baseline,requested_candidate_count=requested,candidate_count=len(candidates),
             rejected_candidates=rejected,ranked_candidates=ranked,training_scenarios=training_scenarios,
             validation_scenarios=validation_scenarios,objective=objective.model_dump(mode="json"),simulated=True,

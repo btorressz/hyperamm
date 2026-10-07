@@ -131,7 +131,6 @@ max_frames
 record_trace
 trace_max_points
 fill_model = CROSSING_ONLY
-engine_version
 ```
 
 The live runtime is never mutated by a simulation request. API orchestration deep-copies current strategy, agent and risk configuration. The research strategy copy forces:
@@ -434,6 +433,15 @@ When the bound is reached, the deque retains the most recent points. Full strate
 
 ## Reproducibility and fingerprints
 
+Engine provenance is owned by code: `SIMULATION_ENGINE_VERSION = "phase10.1-v1"`
+in `backend/app/simulation/version.py`. `SimulationConfig` has no version field.
+Both `SimulationResult.engine_version` and `OptimizationResult.engine_version`
+report this constant. Every candidate run fingerprint binds the same constant;
+changing the implementation version changes the fingerprint without changing
+scenario economics. Run/optimization request models, `SimulationConfig` and
+`OptimizationObjectiveConfig` use `extra="forbid"`; caller-selected versions or
+unknown behavior/safety fields receive HTTP 422.
+
 The run fingerprint binds:
 
 - engine version
@@ -689,9 +697,65 @@ NO LIVE ORDERS
 
 There is no auto-apply/deploy/trade-best-candidate control.
 
-## Acceptance
+## Phase 10.1 workload isolation and lifecycle
 
-Phase 10 remains IN DEVELOPMENT until:
+FastAPI lifespan owns one persistent `SimulationExecutor` in
+`app.state.simulation_executor`. Simulation and optimization share **one research
+slot**: maximum concurrent simulation jobs = 1, maximum concurrent optimization
+jobs = 1, maximum combined jobs = 1. A thread-safe admission lock guards only
+submission and completion. Busy requests immediately receive HTTP 429 with
+`Phase 10 research is already running`; there is no research request queue.
+
+Before admission, handlers capture deep copies of validated strategy, agent,
+risk, simulation and objective models, grid values and scenario lists. Only
+these detached inputs and scalar settings cross into the worker. The worker
+never receives the runtime, its services, orders, async locks/events, reference
+service or execution adapter. It calls `asyncio.run()` inside the dedicated
+thread, creating a separate event loop and a fresh `SimulationService`, engine
+and optimizer per request. Each engine run still constructs fresh PAPER,
+history, telemetry, supervisor, firewall and reconciliation state. The existing
+production strategy/risk/authorization pipeline remains intact.
+
+The executor completion callback releases admission on success or failure.
+Request cancellation stops awaiting a shielded worker future but does not kill
+the thread or release its slot early. The worker finishes safely, and detached
+unexpected errors are logged. Shutdown closes admission and waits for the one
+bounded active job to finish, off the live event loop; the pool is explicitly
+joined before runtime services are stopped. Python threads are never forcibly
+terminated. This protects event-loop scheduling, not separate-process CPU or
+memory isolation; the worker still shares the interpreter.
+
+Only `pydantic.ValidationError` and `ValueError` in candidate validation/domain
+execution are recorded as rejected candidates. `RuntimeError`, `AttributeError`,
+`KeyError`, `TypeError` and other unexpected failures abort optimization and
+produce a generic HTTP 500, with engineering diagnostics in application logs.
+Bad request/config inputs receive HTTP 422. Broad exception handlers exist only
+at the worker/API/submit cleanup boundaries, where they log or re-raise failures;
+none converts unexpected candidate errors into rejections.
+
+Existing bounds remain: 128 candidates, at most 8 training and 8 validation
+scenarios, optimization frames 2..1000, standalone simulation frames 2..5000
+subject to `SimulationConfig.max_frames`, trace points 0..5000 and top_n 1..10.
+The optimizer also validates its direct-call bounds before evaluating baseline.
+No additional total-frame budget is introduced; bounded admission and the
+existing per-request limits are the Phase 10.1 workload policy.
+
+Acceptance tests hold a worker behind a synchronization event, prove a health
+request runs while it is occupied, reject concurrent simulation and optimization,
+and accept another job after completion. Tests also cover candidate failure
+cleanup, detached config identities/mutation, cancellation, submission failure,
+shutdown thread joining, version spoofing and code-version fingerprint binding.
+
+## Acceptance status
+
+Phase 10 is IMPLEMENTED / IN REVIEW after Phase 10.1 local acceptance on
+2026-10-06 (America/Los_Angeles). Python 3.12.14 completed the full suite:
+**407 passed, 1 warning in 8.91s** (upstream Starlette/httpx deprecation).
+Real Uvicorn startup, eight required REST endpoints, terminal WebSocket state and
+graceful application shutdown passed in DEMO/PAPER mode. The installed Uvicorn
+version re-raises SIGTERM after lifespan shutdown, returning -15. Frontend
+typecheck and build exited 0 (115 modules, 2.49s; non-failing TanStack Query
+directive warnings). `git diff --check` passed. Completed acceptance gates:
 
 - full Python 3.12 backend suite passes
 - Phase 10 scenario/engine/optimizer/API/static tests pass

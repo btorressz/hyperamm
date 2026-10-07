@@ -12,7 +12,7 @@
 | 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; acceptance validation pending |
 | 8 | IN REVIEW | Multi-source reference integrity + deterministic institutional risk firewall implemented; acceptance validation pending |
 | 9 | IMPLEMENTED / IN REVIEW | Deterministic regime / toxic-flow / execution-quality supervisory agents merged; separate acceptance remains pending |
-| 10 | IN DEVELOPMENT | Deterministic production-stack simulation + bounded grid optimization implemented on branch; acceptance pending |
+| 10 | IMPLEMENTED / IN REVIEW | Deterministic production-stack simulation + bounded grid optimization; Phase 10.1 hardening and full local acceptance passed |
 | 11 | PLANNED | Vault/accounting |
 | 12 | PLANNED | Expanded production-grade React terminal |
 
@@ -87,7 +87,7 @@ Phase 9 also adds bounded fill/reconciliation telemetry, simulated PAPER markout
 Phase 8 remains IN REVIEW. Phase 9 must not be promoted to COMPLETE until the full Python 3.12 backend suite, FastAPI/API/WebSocket checks, frontend typecheck/build and repository static acceptance pass. No GitHub Actions workflow is introduced.
 
 
-## Phase 10 — IN DEVELOPMENT
+## Phase 10 — IMPLEMENTED / IN REVIEW
 
 Phase 10 adds an offline deterministic research framework around the actual HyperAMM strategy instead of a parallel toy strategy.
 
@@ -108,4 +108,23 @@ Implemented scope on this branch includes:
 - focused Simulation & Optimization frontend with no auto-apply/deploy action
 - Phase 10 scenario/engine/optimizer/API/static tests
 
-Phase 10 remains IN DEVELOPMENT until the complete Python 3.12 backend suite, FastAPI checks, frontend typecheck/build and repository static acceptance pass. Phase 8 remains IN REVIEW. Phase 9 remains IMPLEMENTED / IN REVIEW. Phase 11 remains PLANNED.
+Phase 10.1 acceptance passed on 2026-10-06 (America/Los_Angeles): Python
+3.12.14, **407 passed, 1 warning in 8.91s**. The warning is upstream
+Starlette/httpx deprecation. Real Uvicorn startup, all eight required REST
+checks, terminal WebSocket state and graceful lifespan shutdown passed in
+DEMO/PAPER mode. Uvicorn re-raised SIGTERM after complete shutdown (process
+return code -15). Frontend typecheck and build exited 0; Vite transformed 115
+modules and built in 2.49s, with non-failing TanStack Query directive warnings.
+`git diff --check` passed.
+
+Hardening includes a lifespan-owned, single-slot research thread with a private
+asyncio loop per job, immediate HTTP 429 overflow rejection, cancellation-safe
+admission, failure cleanup and explicit pool shutdown. Tests deterministically
+prove live-loop responsiveness and detached runtime configuration. Candidate
+rejections only catch ValidationError/ValueError; unexpected errors propagate.
+Engine version `phase10.1-v1` is code-owned, result-visible and fingerprint-bound;
+API version spoofing receives HTTP 422.
+
+The requested Phase 10 build/acceptance gates are closed; code review remains.
+Phase 8 remains IN REVIEW for its separate external-provider acceptance. Phase 9
+remains IMPLEMENTED / IN REVIEW. Phase 11 remains PLANNED.
