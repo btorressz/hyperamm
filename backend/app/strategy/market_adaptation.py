@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import math
+import sys
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, DecimalException, Underflow, localcontext
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +35,13 @@ class ImbalanceState(StrEnum):
 
 class MarketAdaptationDecision(BaseModel):
     market: str
-    realized_volatility: Decimal | None = None
+    volatility_sampling: Literal["PER_ACCEPTED_OBSERVATION"] = Field(
+        default="PER_ACCEPTED_OBSERVATION",
+        description="Count-based RMS log return; not annualized or time-normalized.",
+    )
+    realized_volatility: Decimal | None = Field(
+        default=None, description="RMS log return across consecutive accepted normalized mid prices."
+    )
     volatility_score: Decimal = Field(ge=0, le=1)
     volatility_ready: bool
     sample_count: int = Field(ge=0)
@@ -61,26 +69,60 @@ def _finite(value: Decimal, name: str) -> Decimal:
 
 
 def calculate_realized_volatility(prices: list[Decimal]) -> Decimal:
-    """RMS log return: sqrt(mean(log(P_t/P_t-1)^2))."""
+    """Per-observation RMS log return, without elapsed-time or annual scaling.
+
+    Decimal ratios use the caller's Decimal precision. Only this descriptive
+    log/sqrt estimator uses float; financial arithmetic remains Decimal.
+    Reject subnormal/overflowing ratios rather than accepting lost range.
+    Binary64 rounding near unity can erase returns below machine precision;
+    score thresholds use the returned Decimal without an epsilon band.
+    """
     if len(prices) < 2:
         raise ValueError("at least two prices are required")
-    returns: list[float] = []
+    squared_returns: list[float] = []
     for previous, current in zip(prices, prices[1:]):
         _finite(previous, "previous price")
         _finite(current, "current price")
         if previous <= 0 or current <= 0:
             raise ValueError("volatility prices must be positive")
-        value = math.log(float(current / previous))
-        if not math.isfinite(value):
-            raise ValueError("non-finite log return")
-        returns.append(value)
-    sigma = math.sqrt(sum(value * value for value in returns) / len(returns))
-    if not math.isfinite(sigma):
-        raise ValueError("non-finite realized volatility")
+        try:
+            with localcontext() as context:
+                context.clear_flags()
+                ratio = current / previous
+                if context.flags[Underflow]:
+                    raise ValueError("Decimal volatility ratio underflow")
+            _finite(ratio, "volatility ratio")
+            if not Decimal.from_float(sys.float_info.min) <= ratio <= Decimal.from_float(sys.float_info.max):
+                raise ValueError("volatility ratio outside normal finite float range")
+            converted = float(ratio)
+            if not math.isfinite(converted) or converted < sys.float_info.min:
+                raise ValueError("invalid float volatility ratio")
+            value = math.log(converted)
+            if not math.isfinite(value):
+                raise ValueError("non-finite log return")
+            squared = value * value
+            if not math.isfinite(squared) or (value != 0 and squared < sys.float_info.min):
+                raise ValueError("invalid squared log return")
+            squared_returns.append(squared)
+        except (DecimalException, OverflowError) as exc:
+            raise ValueError("volatility ratio cannot be represented safely") from exc
+    try:
+        mean_square = math.fsum(squared_returns) / len(squared_returns)
+    except OverflowError as exc:
+        raise ValueError("mean squared log return cannot be represented safely") from exc
+    if not math.isfinite(mean_square) or mean_square < 0 or (any(squared_returns) and mean_square < sys.float_info.min):
+        raise ValueError("invalid mean squared log return")
+    try:
+        sigma = math.sqrt(mean_square)
+    except OverflowError as exc:
+        raise ValueError("realized volatility cannot be represented safely") from exc
+    if not math.isfinite(sigma) or sigma < 0 or (mean_square > 0 and sigma == 0):
+        raise ValueError("invalid realized volatility")
     return Decimal(str(sigma))
 
 
 def calculate_volatility_score(sigma: Decimal, low: Decimal, high: Decimal) -> Decimal:
+    """Clamp per-observation RMS log return; inclusive endpoints, no epsilon."""
     for value, name in ((sigma, "realized volatility"), (low, "low threshold"), (high, "high threshold")):
         _finite(value, name)
     if sigma < 0 or low < 0 or high <= low:

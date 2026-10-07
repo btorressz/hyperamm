@@ -17,6 +17,10 @@ def _clamp(value: Decimal, low: Decimal, high: Decimal) -> Decimal:
 
 
 class RegimeAgent:
+    """Consume Phase 6 per-observation RMS/score/regime without recomputing it.
+
+    Momentum also uses an observation window, not elapsed-time normalization.
+    """
     def __init__(self, config: AgentConfig):
         self.config=config
         self.version=0

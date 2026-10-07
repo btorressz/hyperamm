@@ -2,6 +2,18 @@
 
 Phase 10 is an offline research framework around the actual HyperAMM strategy implementation.
 
+Volatility is supplied by the shared Phase 6 `MarketAdaptationPolicy` through
+QuoteEngine, then copied into Phase 9 agent evidence. It is
+[per accepted observation RMS log return](MARKET_ADAPTATION.md#realized-volatility),
+without annualization or elapsed-time weighting; no simulation-specific estimator
+exists. Identical accepted price sequences yield identical sigma/score/regime
+regardless of regular, bursty, sparse or irregular frame timing. Warmup and the
+trailing window count accepted prices, not seconds. Other simulation effects
+(funding intervals, markout maturity, freshness, timestamps and dataset/run
+fingerprints) can depend on timing; equality of volatility does not imply equality
+of all economic outputs across retimed datasets. Repeated runs of each dataset
+remain deterministic.
+
 It is:
 
 ```text

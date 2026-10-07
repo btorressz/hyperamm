@@ -36,15 +36,48 @@ r_t = ln(P_t / P_(t-1))
 sigma = sqrt(mean(r_t^2))
 ```
 
-This is per-observation RMS log-return volatility and is not annualized.
+This is RMS log return **per accepted normalized price observation**. It is not
+annualized and is not inherently time-normalized: timestamps control acceptance,
+ordering and deduplication, but do not weight returns or divide by elapsed time.
+There is no fixed-time resampling or interpolation. Regular, irregular, bursty
+and sparse timestamps yield the same sigma for the same accepted price sequence.
+Distinct timestamps/sequences with unchanged prices count as observations with
+zero returns. Repeated identities do not count, even during a burst.
 
-Input prices are validated `Decimal` values. The logarithm/square-root boundary uses Python `math` float operations, requires finite results, then converts back using `Decimal(str(result))`.
+Feed cadence therefore changes economic interpretation: a 60-observation window
+can span milliseconds or hours. Thresholds must be calibrated against the intended
+feed's accepted observation cadence and market; these defaults are heuristic
+settings, not empirically calibrated estimates of volatility per second/hour/day.
+
+Input prices and ratios must be finite and positive. Ratios are computed in
+Decimal using the caller's context (normally 28 significant digits). Decimal
+arithmetic failures/underflow and ratios outside the normal finite binary64
+range (`sys.float_info.min` through `sys.float_info.max`, approximately
+2.225e-308 through 1.798e308) are rejected before conversion. This deliberately
+rejects subnormal ratios rather than allowing conversion underflow or lost range.
+Absolute positive Decimal prices may be much larger/smaller than float can hold
+when their ratio remains representable; prices themselves are never converted.
+
+Only this descriptive estimator uses float for `math.log`, squared returns,
+`math.fsum`/mean and `math.sqrt`. Each stage checks finite/nonnegative results and
+underflow; failures raise `ValueError` into the existing fail-closed quote path.
+The result returns through `Decimal(str(sigma))`. Financial authority arithmetic
+(prices, sizes, scores, quotes, risk and accounting) remains Decimal.
+
+Binary64 provides about 15–16 significant digits, not exact Decimal logarithms.
+Returns from ratios sufficiently close to 1 (roughly machine epsilon, 2.22e-16)
+may round to zero. Tests compare ordinary numerical results with 1e-12 relative /
+1e-15 absolute tolerance; this is a verification tolerance, not a score epsilon.
+Threshold comparisons use the computed Decimal exactly, without rounding bands.
+Inputs closer to a threshold than estimator precision are not promised the same
+classification across math-library implementations; identical inputs in the same
+runtime remain deterministic.
 
 Default thresholds are in the same per-observation units:
 
 ```text
-low  = 0.0002  # 0.02%
-high = 0.0020  # 0.20%
+low  = 0.0002  # RMS log return per observation: about 0.02% / 2 bps
+high = 0.0020  # RMS log return per observation: about 0.20% / 20 bps
 ```
 
 The bounded score is:
@@ -54,6 +87,13 @@ sigma <= low  -> 0
 sigma >= high -> 1
 otherwise     -> (sigma - low) / (high - low)
 ```
+
+These percentages are small-return approximations, not simple-return standard
+deviation. For a constant upward step, the exact simple return is `exp(sigma)-1`.
+The RMS is uncentered: steady drift contributes rather than being subtracted.
+Low is inclusive (QUIET); just above low is NORMAL. High is inclusive (score 1,
+HIGH_VOLATILITY), and above high remains saturated. HIGH_VOLATILITY already starts
+at score 0.85, not only at the high threshold.
 
 ## Warmup
 
@@ -167,14 +207,13 @@ Only variable liquidity above the baseline is reduced. A side removed by Phase 5
 
 ## Deterministic labels
 
-Volatility labels depend only on the bounded score:
+After warmup, volatility labels depend only on the bounded score:
 
 ```text
-WARMING_UP
-QUIET
-NORMAL
-ELEVATED
-HIGH_VOLATILITY
+QUIET           score = 0
+NORMAL          0 < score < 0.50
+ELEVATED        0.50 <= score < 0.85
+HIGH_VOLATILITY 0.85 <= score <= 1
 ```
 
 Imbalance labels depend only on normalized imbalance:
@@ -203,6 +242,12 @@ The shared execution lock, kill switch, risk checks, and KEEP / CREATE / REPLACE
 ## API and terminal
 
 `GET /api/v1/market-adaptation` exposes normalized Phase 6 decision state.
+
+The decision includes `volatility_sampling = PER_ACCEPTED_OBSERVATION` and the
+configuration schema describes thresholds in the same per-observation RMS units.
+Phase 9 copies this sigma/score/regime into agent evidence; its Regime Agent
+does not recalculate volatility. Phase 10 uses the same QuoteEngine /
+MarketAdaptationPolicy and evidence builder for accepted simulation frames.
 
 `/ws/terminal` includes the same `market_adaptation` block.
 

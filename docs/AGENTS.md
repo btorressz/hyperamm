@@ -111,6 +111,13 @@ Relevant upstream version changes force runtime recomputation. Agent authority v
 
 The Regime Agent is broader than Phase 6 but does not replace `MarketAdaptationPolicy`.
 
+Its volatility value, score and regime are copied from Phase 6, whose metric is
+[RMS log return per accepted normalized observation](MARKET_ADAPTATION.md#realized-volatility).
+It is neither annualized nor time-normalized. Timestamp spacing alone does not
+change the metric for identical accepted prices. Momentum also uses a count-based
+endpoint window. Phase 9 has no second volatility estimator or separate low/high
+volatility calibration; the existing state priority and score cutoffs still apply.
+
 States:
 
 ```text
