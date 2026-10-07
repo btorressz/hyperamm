@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
-from app.api import accounting, agents, health, markets, simulation, strategy, orders, risk, websocket, positions
+from app.api import accounting, agents, health, markets, simulation, strategy, orders, risk, websocket, positions, terminal
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 settings = get_settings()
@@ -27,13 +27,13 @@ async def lifespan(app: FastAPI):
             await app.state.runtime.stop_services()
 
 
-app = FastAPI(title="HyperAMM API", version="0.11.0", lifespan=lifespan)
+app = FastAPI(title="HyperAMM API", version="0.12.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
-for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, accounting.router):
+for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 
 
 @app.get("/")
 async def root():
-    return {"name": "HyperAMM", "phase": "1-11", "docs": "/docs"}
+    return {"name": "HyperAMM", "phase": "1-12", "docs": "/docs"}

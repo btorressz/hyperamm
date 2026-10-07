@@ -189,7 +189,7 @@ Phase 8 adds deterministic multi-source reference integrity and institutional ri
 
 ## 12-phase roadmap
 
-Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IMPLEMENTED / IN REVIEW. Phase 11 deterministic research vault/accounting is IMPLEMENTED / IN REVIEW. Phase 12 expanded production trading terminal remains planned.
+Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IMPLEMENTED / IN REVIEW. Phase 11 deterministic research vault/accounting is IMPLEMENTED / IN REVIEW. Phase 12 React operator terminal is IMPLEMENTED / IN REVIEW; see [Terminal](docs/TERMINAL.md).
 
 ## Phase 4.1 acceptance and hardening
 
@@ -306,3 +306,24 @@ consistency. Missing or conflicting executed fills make capital authority
 UNAVAILABLE and block CREATE/REPLACE; cancellation remains available. Internal
 reconciliation books only safe, unfailed pending evidence and never clears a
 latched error. No public accounting reset/replay endpoint is provided.
+
+
+## Phase 12 operator terminal
+
+The React terminal exposes the existing Phase 1–11.1 pipeline through twelve
+active pages: Dashboard, Markets, Strategy, AMM Settings, Execution, Risk,
+Supervisory Agents, Vault, Analytics, Simulation & Optimization, Logs and Settings.
+It adds real quote lineage, incremental price/liquidity charts, session analytics,
+responsive layouts, visible emergency kill and resilient WebSocket diagnostics.
+
+`/ws/terminal` now carries the code-owned `phase12-v1` contract, process-wide
+sequence, UTC emission time, pre-agent/post-agent/final quote stages and
+observational system health. Read-only `/api/v1/terminal/history` (3600 retained
+points, at most 1000 per response) and `/api/v1/terminal/events` (500 retained
+and at most 500 per response) keep history outside live snapshots.
+
+History is in-memory and current-session only. PAPER/DEMO remains simulated;
+TESTNET fills and unsupported accounting economics remain explicitly unavailable.
+Existing risk, supervision, execution and accounting authority/formulas are
+unchanged. No custody, money movement or autonomous candidate deployment is added.
+See [Terminal architecture, operator pages and limits](docs/TERMINAL.md).
