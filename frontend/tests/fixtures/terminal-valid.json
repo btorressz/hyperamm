@@ -3027,6 +3027,7 @@
     "telemetry": {
       "version": 0,
       "fill_observations": 0,
+      "unavailable_markouts": 0,
       "reconcile_cycles": 0,
       "tracked_orders": 0,
       "unknown_orders": 0,

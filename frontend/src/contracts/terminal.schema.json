@@ -5627,6 +5627,10 @@
               "minimum": 0,
               "type": "integer"
             },
+            "unavailable_markouts": {
+              "minimum": 0,
+              "type": "integer"
+            },
             "unknown_orders": {
               "minimum": 0,
               "type": "integer"
@@ -5639,6 +5643,7 @@
           "required": [
             "version",
             "fill_observations",
+            "unavailable_markouts",
             "reconcile_cycles",
             "tracked_orders",
             "unknown_orders",
