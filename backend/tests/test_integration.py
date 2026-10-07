@@ -617,3 +617,310 @@ async def test_shutdown_timeout_retains_info_and_prevents_duplicate_socket(sdk_m
             await h.adapter.stop()
         elif h.adapter._info is not None:
             await h.adapter.stop()
+
+
+@pytest.fixture
+def lifecycle_transports(monkeypatch):
+    """Delay/fail real service lifecycle methods without opening sockets."""
+    from app.references.service import ReferenceService
+    calls = []
+    created_markets = []
+    created_references = []
+    market_init = MarketDataService.__init__
+    reference_init = ReferenceService.__init__
+
+    def init_market(service, *args, **kwargs):
+        market_init(service, *args, **kwargs)
+        created_markets.append(service)
+
+    def init_reference(service, *args, **kwargs):
+        reference_init(service, *args, **kwargs)
+        created_references.append(service)
+
+    async def start(service):
+        calls.append(("start", service))
+        if getattr(service, "start_entered", None):
+            service.start_entered.set()
+            await service.start_release.wait()
+        if getattr(service, "start_error", None):
+            raise RuntimeError(service.start_error)
+
+    async def stop(service):
+        calls.append(("stop", service))
+        if getattr(service, "stop_entered", None):
+            service.stop_entered.set()
+            await service.stop_release.wait()
+        if getattr(service, "stop_error", None):
+            raise RuntimeError(service.stop_error)
+
+    monkeypatch.setattr(MarketDataService, "__init__", init_market)
+    monkeypatch.setattr(ReferenceService, "__init__", init_reference)
+    for cls in (MarketDataService, ReferenceService):
+        monkeypatch.setattr(cls, "start", start)
+        monkeypatch.setattr(cls, "stop", stop)
+    return calls, created_markets, created_references
+
+
+@pytest.mark.asyncio
+async def test_config_lifecycles_serialize_captured_identities_and_publication(lifecycle_transports):
+    calls, markets, refs = lifecycle_transports
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    original = rt.config
+    old_market, old_ref = rt.market, rt.reference_service
+    old_market.stop_entered = asyncio.Event()
+    old_market.stop_release = asyncio.Event()
+    first_config = original.model_copy(update={"market": "BTC"})
+    second_config = original.model_copy(update={"market": "SOL"})
+    first = asyncio.create_task(rt.update_config(first_config))
+    await asyncio.wait_for(old_market.stop_entered.wait(), 1)
+    first_market, first_ref = markets[-1], refs[-1]
+    first_ref.start_entered = asyncio.Event()
+    first_ref.start_release = asyncio.Event()
+    second_entered = asyncio.Event()
+
+    async def second_request():
+        second_entered.set()
+        await rt.update_config(second_config)
+
+    second = asyncio.create_task(second_request())
+    await asyncio.wait_for(second_entered.wait(), 1)
+    assert len(markets) == len(refs) == 2
+    assert calls == [("stop", old_market)]
+    assert rt.config is original and rt.market is old_market and rt.reference_service is old_ref
+    old_market.stop_release.set()
+    await asyncio.wait_for(first_ref.start_entered.wait(), 1)
+    assert rt.market is old_market and rt.config is original
+    await rt.refresh_once()
+    assert rt.authorization is None and not rt.quotes
+    with pytest.raises(RuntimeError, match="in progress"):
+        await rt._execution_authority()
+    assert len(markets) == 2  # Second request has still not constructed a graph.
+    first_ref.start_release.set()
+    await asyncio.wait_for(asyncio.gather(first, second), 1)
+    second_market, second_ref = markets[-1], refs[-1]
+    assert calls == [("stop", old_market), ("stop", old_ref),
+                     ("start", first_market), ("start", first_ref),
+                     ("stop", first_market), ("stop", first_ref),
+                     ("start", second_market), ("start", second_ref)]
+    assert rt.market is second_market and rt.reference_service is second_ref
+    assert rt.config is second_config and rt.lifecycle_state == "READY"
+    assert ("stop", second_market) not in calls and ("stop", second_ref) not in calls
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["market_constructor", "perp_constructor", "reference_constructor",
+                                      "accounting_constructor", "market_stop", "reference_stop",
+                                      "market_start", "reference_start", "cleanup", "cancel_request"])
+async def test_config_failure_is_latched_unpublished_and_cancellable(failure, lifecycle_transports, monkeypatch):
+    import app.runtime as runtime_module
+    calls, markets, refs = lifecycle_transports
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    await rt.market._accept(MockMarketDataAdapter().snapshot_for(2))
+    await rt.refresh_once()
+    rt.strategy.running = True
+    old_config, old_market, old_ref = rt.config, rt.market, rt.reference_service
+    old_paper, old_accounting = rt.paper, rt.accounting_service
+    assert rt.authorization is not None
+    if failure.endswith("constructor"):
+        names = {"market_constructor": "MarketDataService", "perp_constructor": "PerpContextService",
+                 "reference_constructor": "ReferenceService", "accounting_constructor": "AccountingService"}
+        def broken(*args, **kwargs):
+            raise RuntimeError("constructor failed")
+        monkeypatch.setattr(runtime_module, names[failure], broken)
+    if failure.endswith("stop"):
+        setattr(old_market if failure == "market_stop" else old_ref, "stop_error", "old stop failed")
+    old_market.stop_entered = asyncio.Event()
+    old_market.stop_release = asyncio.Event()
+    transition = asyncio.create_task(rt.update_config(old_config.model_copy(update={"market": "BTC"})))
+    if not failure.endswith("constructor"):
+        await asyncio.wait_for(old_market.stop_entered.wait(), 1)
+        if failure in ("market_start", "reference_start", "cleanup"):
+            target = markets[-1] if failure == "market_start" else refs[-1]
+            target.start_error = "replacement start failed"
+        if failure == "cleanup":
+            markets[-1].stop_error = "replacement stop failed"
+        if failure == "cancel_request":
+            transition.cancel()
+        old_market.stop_release.set()
+    with pytest.raises((RuntimeError, asyncio.CancelledError)):
+        await transition
+    assert rt.lifecycle_state == "FAILED"
+    assert rt.config is old_config and rt.strategy.config is old_config
+    assert rt.market is old_market and rt.reference_service is old_ref
+    assert rt.paper is old_paper and rt.accounting_service is old_accounting
+    assert not rt.quotes and not rt.strategy_quotes and not rt.agent_quotes and rt.authorization is None
+    assert "configuration lifecycle failed" in rt.strategy.last_error
+    if failure == "reference_start":
+        assert ("start", markets[-1]) in calls
+    for service in markets[1:] + refs[1:]:
+        assert ("stop", service) in calls
+    if failure == "cleanup":
+        assert "cleanup unconfirmed" in rt.lifecycle_error
+    await rt.market._accept(MockMarketDataAdapter().snapshot_for(3))
+    await rt.refresh_once()
+    assert not rt.quotes and rt.authorization is None
+    with pytest.raises(RuntimeError, match="lifecycle failed"):
+        await rt._execution_authority()
+    with pytest.raises(RuntimeError, match="lifecycle failed"):
+        await rt.start_strategy()
+    with pytest.raises(RuntimeError, match="lifecycle failed"):
+        await rt.update_config(old_config)
+    await rt.orders.cancel_all()
+    await rt.activate_kill()
+    assert rt.risk.kill_switch_active and not rt.strategy.running
+    await rt.resume()
+    assert rt.lifecycle_state == "FAILED" and "lifecycle failed" in rt.strategy.last_error
+    assert not rt.strategy.running
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("emergency", [False, True])
+async def test_config_blocks_running_strategy_then_recovers_only_on_normal_evidence(emergency, lifecycle_transports, monkeypatch):
+    from app.market_data.perp_context import demo_perp_context
+    calls, markets, refs = lifecycle_transports
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    await rt.market._accept(MockMarketDataAdapter().snapshot_for(2))
+    rt.strategy.running = True
+    await rt.refresh_once()
+    old_market, old_ref = rt.market, rt.reference_service
+    old_market.stop_entered = asyncio.Event()
+    old_market.stop_release = asyncio.Event()
+    transition = asyncio.create_task(rt.update_config(rt.config.model_copy(update={"market": "BTC"})))
+    await asyncio.wait_for(old_market.stop_entered.wait(), 1)
+    before = rt.paper.fills.version
+    async def no_reconcile(*args, **kwargs):
+        pytest.fail("reconciled during lifecycle transition")
+    with monkeypatch.context() as patch:
+        patch.setattr(rt.orders, "reconcile", no_reconcile)
+        # Run the actual enabled loop while transport shutdown is deliberately held.
+        rt._strategy_task = asyncio.create_task(rt._loop())
+        rt._strategy_wakeup.set()
+        await asyncio.sleep(.02)
+        await rt.refresh_once()
+        await markets[-1]._accept(MockMarketDataAdapter("BTC").snapshot_for(2))
+        await rt._on_perp_context(demo_perp_context(MockMarketDataAdapter().snapshot_for(2)), source=old_market)
+        assert rt.perp_context is None or rt.perp_context.market == "ETH"
+        assert rt.authorization is None and not rt.quotes and rt.paper.fills.version == before
+        with pytest.raises(RuntimeError, match="in progress"):
+            await rt.start_strategy()
+        await asyncio.wait_for(rt.orders.cancel_all(), 1)
+        if emergency:
+            await asyncio.wait_for(rt.activate_kill(), 1)
+        rt._strategy_task.cancel()
+        try:
+            await rt._strategy_task
+        except asyncio.CancelledError:
+            pass
+        rt._strategy_task = None
+        await markets[-1]._accept(MarketSnapshot.unavailable("BTC", MarketDataMode.DEMO, "no current evidence"))
+    old_market.stop_release.set()
+    await asyncio.wait_for(transition, 1)
+    assert rt.authorization is None and not rt.quotes
+    # Retired identities cannot add market history, perp/accounting evidence or wake.
+    history_version = rt.market_history.version
+    accounting_version = rt.accounting_service.version
+    rt._strategy_wakeup.clear()
+    old_snapshot = MockMarketDataAdapter().snapshot_for(4)
+    await old_market._accept(old_snapshot)
+    for listener in old_market._perp_listeners:
+        await listener(demo_perp_context(old_snapshot))
+    old_ref.redstone.on_update()
+    assert not rt._strategy_wakeup.is_set()
+    assert rt.market_history.version == history_version
+    assert rt.accounting_service.version == accounting_version and rt.perp_context is None
+    # Startup alone supplied no authority. Explicit replacement evidence can recover.
+    await rt.market._accept(MockMarketDataAdapter("BTC").snapshot_for(3))
+    await rt.refresh_once()
+    if emergency:
+        assert rt.risk.kill_switch_active and not rt.strategy.running
+        assert rt.authorization is None and not await rt.paper.get_open_orders()
+    else:
+        assert rt.authorization.authorized and rt.strategy.quote_health == "HEALTHY"
+        assert await rt.paper.get_open_orders()
+        await rt._execution_authority()
+    await rt.stop_strategy()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["execution", "feed", "market"])
+async def test_config_context_rebind_preserves_session_isolation(change, lifecycle_transports):
+    from app.strategy.models import ExecutionMode
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    await rt.market._accept(MockMarketDataAdapter().snapshot_for(2))
+    await rt.refresh_once()
+    original_paper = rt.paper
+    original_accounting = rt.accounting_service
+    original_telemetry = rt.agent_telemetry
+    original_supervisor = rt.agent_supervisor
+    changes = {"execution": {"execution_mode": ExecutionMode.TESTNET},
+               "feed": {"market_data_mode": MarketDataMode.LIVE},
+               "market": {"market": "BTC"}}
+    await rt.update_config(rt.config.model_copy(update=changes[change]))
+    assert rt.paper is not original_paper and rt.paper.fills.all() == []
+    assert rt.accounting_service is not original_accounting
+    assert rt.accounting_service.ledger.version == 0
+    assert rt.accounting_service.market == rt.config.market
+    assert rt.accounting_service.mode == rt.config.execution_mode.value
+    assert rt.agent_telemetry is not original_telemetry
+    assert rt.agent_supervisor is not original_supervisor
+    assert rt.authorization is None
+    assert rt._expected_accounting_version is None and rt._expected_accounting_fingerprint is None
+    assert rt.orders.execution is rt.execution
+    # Retired PAPER fills cannot contaminate the new accounting session.
+    original_paper.on_fill(None)
+    assert rt.accounting_service.ledger.version == 0
+    if change == "execution":
+        assert rt.accounting_service.snapshot().equity_quote is None
+        await rt.update_config(rt.config.model_copy(update={"execution_mode": ExecutionMode.PAPER}))
+        assert rt.paper.fills.all() == [] and rt.accounting_service.position.position_base == 0
+        assert rt.accounting_service.mode == "PAPER"
+
+
+@pytest.mark.asyncio
+async def test_config_cancellation_failure_halts_before_staging(lifecycle_transports, monkeypatch):
+    calls, markets, refs = lifecycle_transports
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    old_config = rt.config
+    async def unconfirmed():
+        raise RuntimeError("venue cancellation failed")
+    monkeypatch.setattr(rt.execution, "cancel_all", unconfirmed)
+    with pytest.raises(RuntimeError, match="venue cancellation failed"):
+        await rt.update_config(old_config.model_copy(update={"market": "BTC"}))
+    assert len(markets) == len(refs) == 1 and not calls
+    assert rt.config is old_config and rt.lifecycle_state == "FAILED"
+    assert rt.risk.kill_switch_active and rt.strategy.quote_health == "HALTED"
+    assert not rt.quotes and rt.authorization is None
+
+
+@pytest.mark.asyncio
+async def test_failed_replacement_cleanup_is_retried_at_runtime_shutdown(lifecycle_transports):
+    calls, markets, refs = lifecycle_transports
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    old_market = rt.market
+    old_market.stop_entered = asyncio.Event()
+    old_market.stop_release = asyncio.Event()
+    transition = asyncio.create_task(rt.update_config(rt.config.model_copy(update={"market": "BTC"})))
+    await asyncio.wait_for(old_market.stop_entered.wait(), 1)
+    markets[-1].stop_error = "cleanup failed"
+    refs[-1].start_error = "reference start failed"
+    old_market.stop_release.set()
+    with pytest.raises(RuntimeError, match="reference start failed"):
+        await transition
+    assert rt.lifecycle_state == "FAILED"
+    markets[-1].stop_error = None
+    await rt.stop_services()
+    assert calls.count(("stop", markets[-1])) == 2
+    assert calls.count(("stop", refs[-1])) == 2
+
+
+@pytest.mark.asyncio
+async def test_initial_service_start_failure_also_blocks_authority(lifecycle_transports):
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    rt.reference_service.start_error = "initial reference startup failed"
+    with pytest.raises(RuntimeError, match="initial reference startup failed"):
+        await rt.start_services()
+    assert rt.lifecycle_state == "FAILED" and rt.authorization is None
+    assert "runtime service startup failed" in rt.strategy.last_error
+    with pytest.raises(RuntimeError, match="runtime service startup failed"):
+        await rt.start_strategy()
+    await rt.stop_services()

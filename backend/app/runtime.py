@@ -56,6 +56,12 @@ class HyperAmmRuntime:
             base_url=settings.hyperliquid_testnet_url,
         )
         self.execution = self.paper if self.config.execution_mode == ExecutionMode.PAPER else self.testnet
+        # Lock order is lifecycle_lock -> execution_lock. Transport awaits never
+        # hold execution_lock: feed callbacks and emergency cancellation need it.
+        self.lifecycle_lock = asyncio.Lock()
+        self.lifecycle_state = "READY"
+        self.lifecycle_error = None
+        self._failed_services = []
         self.execution_lock = asyncio.Lock()
         self._strategy_wakeup = asyncio.Event()
         self.orders = OrderManager(self.execution, self.execution_lock, self._execution_authority)
@@ -111,11 +117,31 @@ class HyperAmmRuntime:
         self._terminal_latest = None
         self._terminal_clients = set()
         self.testnet.authority = self._execution_authority
-        self.paper.on_fill = self._on_paper_fill
+        self._bind_paper(self.paper)
         self.paper.orders.observer = self.agent_telemetry.observe_orders
         self.testnet._orders.observer = self.agent_telemetry.observe_orders
-        self.market.add_listener(self._on_market)
-        self.market.add_perp_listener(self._on_perp_context)
+        self._bind_market(self.market)
+
+    def _bind_market(self, market):
+        async def on_market(snapshot):
+            await self._on_market(snapshot, source=market)
+
+        async def on_perp(context):
+            await self._on_perp_context(context, source=market)
+
+        market.add_listener(on_market)
+        market.add_perp_listener(on_perp)
+
+    def _bind_paper(self, paper):
+        def on_fill(fill):
+            if paper is self.paper:
+                self._on_paper_fill(fill)
+
+        paper.on_fill = on_fill
+
+    def _require_lifecycle(self):
+        if self.lifecycle_state != "READY":
+            raise RuntimeError(self.lifecycle_error or "configuration lifecycle transition in progress")
 
     def _on_paper_fill(self, fill):
         self.agent_telemetry.observe_fill_from_references(fill,self.references)
@@ -222,6 +248,7 @@ class HyperAmmRuntime:
         return exp
 
     async def _execution_authority(self, request: OrderRequest | None = None):
+        self._require_lifecycle()
         if self.config.execution_mode == ExecutionMode.PAPER:
             self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
                                                          duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
@@ -352,8 +379,10 @@ class HyperAmmRuntime:
                 self.accounting_service.fail(exc)
                 self.vault_snapshot = self.accounting_service.snapshot()
 
-    async def _on_perp_context(self, context):
+    async def _on_perp_context(self, context, *, source=None):
         async with self.execution_lock:
+            if self.lifecycle_state != "READY" or (source is not None and source is not self.market):
+                return
             try:
                 if isinstance(context, Exception):
                     raise ValueError(str(context))
@@ -372,10 +401,12 @@ class HyperAmmRuntime:
                     except Exception:
                         log.exception("perp context invalidation failed")
 
-    async def _on_market(self, snapshot):
+    async def _on_market(self, snapshot, *, source=None):
         from app.strategy.fair_value import calculate_fair_value
 
         async with self.execution_lock:
+            if self.lifecycle_state != "READY" or (source is not None and source is not self.market):
+                return
             try:
                 snapshot = await self.market.snapshot()
                 calculate_fair_value(snapshot)
@@ -402,8 +433,26 @@ class HyperAmmRuntime:
             self._strategy_wakeup.set()
 
     async def start_services(self):
-        if self._terminal_task is not None and not self._terminal_task.done():
-            raise RuntimeError("Runtime services already started")
+        async with self.lifecycle_lock:
+            self._require_lifecycle()
+            if self._terminal_task is not None and not self._terminal_task.done():
+                raise RuntimeError("Runtime services already started")
+            try:
+                await self._start_services()
+            except BaseException as exc:
+                async with self.execution_lock:
+                    self.lifecycle_state = "FAILED"
+                    self.lifecycle_error = f"runtime service startup failed: {exc}; runtime restart required"
+                    self.reference_service.wakeup = None
+                    await self._invalidate_locked(self.lifecycle_error)
+                for service in (self.market, self.reference_service):
+                    try:
+                        await service.stop()
+                    except BaseException:
+                        log.exception("runtime startup cleanup unconfirmed")
+                raise
+
+    async def _start_services(self):
         self._closing = False
         await self.market.start()
         await self.reference_service.start()
@@ -428,7 +477,7 @@ class HyperAmmRuntime:
             if self._closing:
                 break
             async with self.execution_lock:
-                if self.execution is not self.testnet or not self.testnet.enabled:
+                if self.lifecycle_state != "READY" or self.execution is not self.testnet or not self.testnet.enabled:
                     continue
                 try:
                     await self.testnet.reconcile_venue()
@@ -443,6 +492,10 @@ class HyperAmmRuntime:
                         log.exception("venue exposure unresolved; execution halted")
 
     async def stop_services(self):
+        async with self.lifecycle_lock:
+            await self._stop_services()
+
+    async def _stop_services(self):
         if self._terminal_task:
             self._terminal_task.cancel()
             try:
@@ -451,13 +504,23 @@ class HyperAmmRuntime:
                 pass
             self._terminal_task = None
         await self.stop_strategy()
-        await self.market.stop()
-        await self.reference_service.stop()
+        async with self.execution_lock:
+            self.lifecycle_state = "STOPPED"
+            self.reference_service.wakeup = None
+            services = [self.market, self.reference_service, *self._failed_services]
+        errors = []
+        for service in services:
+            try:
+                await service.stop()
+            except Exception as exc:
+                errors.append(exc)
         self._closing = True
         self.testnet.venue_changed.set()
         if self._venue_task:
             await self._venue_task
         await self.testnet.close()
+        if errors:
+            raise RuntimeError("runtime transport shutdown unconfirmed") from errors[0]
 
     def _pnl_drawdown_locked(self, mark_price):
         return to_pnl_drawdown(self.accounting_service.snapshot())
@@ -489,6 +552,8 @@ class HyperAmmRuntime:
 
     async def refresh_once(self):
         async with self.execution_lock:
+            if self.lifecycle_state != "READY":
+                return
             if self.risk.kill_switch_active:
                 await self._invalidate_locked(self.risk.last_reason or "kill switch is active", "HALTED")
                 return
@@ -672,6 +737,8 @@ class HyperAmmRuntime:
                 except TimeoutError:
                     pass
                 async with self.execution_lock:
+                    if self.lifecycle_state != "READY":
+                        continue
                     try:
                         from app.strategy.fair_value import calculate_fair_value
                         current_market = await self.market.snapshot()
@@ -716,6 +783,7 @@ class HyperAmmRuntime:
 
     async def start_strategy(self):
         async with self.execution_lock:
+            self._require_lifecycle()
             if self.risk.kill_switch_active:
                 raise PermissionError("kill switch is active")
             if self.config.execution_mode == ExecutionMode.TESTNET:
@@ -746,7 +814,8 @@ class HyperAmmRuntime:
                 except asyncio.CancelledError:
                     pass
                 self._strategy_task = None
-            await self._invalidate_locked("strategy stopped", "NO_QUOTES")
+            await self._invalidate_locked(self.lifecycle_error or "strategy stopped",
+                                          "DEGRADED" if self.lifecycle_state == "FAILED" else "NO_QUOTES")
         return self.strategy
 
     async def activate_kill(self):
@@ -763,92 +832,130 @@ class HyperAmmRuntime:
             self.kill.resume()
             self.strategy.running = False
             self.strategy.quote_health = "NO_QUOTES"
-            self.strategy.last_error = None
+            if self.lifecycle_state != "READY":
+                self.strategy.quote_health = "DEGRADED"
+                self.strategy.last_error = self.lifecycle_error or "configuration lifecycle transition in progress"
+            else:
+                self.strategy.last_error = None
         return self.risk
 
     async def update_config(self, new_config: StrategyConfig):
-        old_market = None
-        old_references = None
-        async with self.execution_lock:
-            mode_changed = (
-                new_config.market_data_mode != self.config.market_data_mode
-                or new_config.market != self.config.market
-            )
-            agent_context_changed = mode_changed or new_config.execution_mode != self.config.execution_mode
-            await self._invalidate_locked("configuration changed", "NO_QUOTES")
-            if mode_changed:
-                old_market = self.market
-                old_references = self.reference_service
-                self.market = MarketDataService(
-                    new_config.market,
-                    new_config.market_data_mode,
-                    self.settings.market_stale_after_seconds,
-                    self.settings.demo_update_interval_seconds,
-                )
-                self.market.add_listener(self._on_market)
-                self.market.add_perp_listener(self._on_perp_context)
-            self.execution = self.paper if new_config.execution_mode == ExecutionMode.PAPER else self.testnet
-            self.orders.execution = self.execution
-            self.config = new_config
-            self.strategy.config = new_config
-            self._expected_inventory_version = None
-            self._expected_market_version = None
-            self._expected_perp_version = None
-            self._expected_reference_version = None
-            self._expected_agent_version = None
-            self._expected_agent_fingerprint = None
-            self._expected_risk_version = None
-            self.inventory = None
-            self.inventory_decision = None
-            self.market_adaptation_decision = None
-            self.perp_context = None
-            self.perp_reference_decision = None
-            self.perp_position = None
-            self.references = None
-            self.risk_decision = None
-            self.authorization = None
-            self.strategy_quotes = []
-            self.agent_quotes = []
-            self.agent_evidence = None
-            self.agent_decision = None
-            if agent_context_changed:
-                self.agent_telemetry = AgentTelemetryStore()
-                self.agent_supervisor = AgentSupervisor(self.agent_config)
-                # Serialized, internal new research session. Old PAPER economics
-                # must never seed TESTNET or a different market/session.
-                self.paper = PaperExecutionAdapter()
-                self.paper.on_fill = self._on_paper_fill
-                self.paper.orders.observer = self.agent_telemetry.observe_orders
-                self.testnet._orders.observer = self.agent_telemetry.observe_orders
-                self.execution = self.paper if new_config.execution_mode == ExecutionMode.PAPER else self.testnet
-                self.orders.execution = self.execution
-                self.accounting_service = AccountingService(new_config.market, new_config.execution_mode.value,
-                                                            self.accounting_config)
-                self.vault_snapshot = self.accounting_service.snapshot()
-                self._expected_accounting_version = None
-                self._expected_accounting_fingerprint = None
-            if mode_changed:
-                self.market_history.clear()
-                self.perp_context_service = PerpContextService(
-                    new_config.market, new_config.perp_context_stale_after_seconds
-                )
-                self.reference_service = ReferenceService(
-                    self.settings,
-                    market=new_config.market,
-                    mode=new_config.market_data_mode,
-                    wakeup=self._strategy_wakeup,
-                )
-            else:
-                self.perp_context_service.stale_after_seconds = new_config.perp_context_stale_after_seconds
-        if old_market:
-            await old_market.stop()
-            if old_references:
-                await old_references.stop()
-            await self.market.start()
-            await self.reference_service.start()
-        if self.strategy.running:
-            await self.refresh_once()
-        return self.strategy
+        async with self.lifecycle_lock:
+            # A failed stop may leave a transport alive. Restart is required;
+            # never create another graph on top of uncertain transport ownership.
+            self._require_lifecycle()
+            staged = []
+            try:
+                async with self.execution_lock:
+                    self.lifecycle_state = "TRANSITIONING"
+                    await self._invalidate_locked("configuration lifecycle transition in progress", "NO_QUOTES")
+                    old_market = self.market
+                    old_references = self.reference_service
+                    mode_changed = (new_config.market_data_mode != self.config.market_data_mode
+                                    or new_config.market != self.config.market)
+                    context_changed = mode_changed or new_config.execution_mode != self.config.execution_mode
+                    old_references.wakeup = None
+
+                # Construction and startup do not publish runtime authority.
+                market = old_market
+                references = old_references
+                perp = self.perp_context_service
+                paper = self.paper
+                telemetry = self.agent_telemetry
+                supervisor = self.agent_supervisor
+                accounting = self.accounting_service
+                vault = self.vault_snapshot
+                if mode_changed:
+                    market = MarketDataService(new_config.market, new_config.market_data_mode,
+                                               self.settings.market_stale_after_seconds,
+                                               self.settings.demo_update_interval_seconds)
+                    staged.append(market)
+                    self._bind_market(market)
+                    perp = PerpContextService(new_config.market, new_config.perp_context_stale_after_seconds)
+                    references = ReferenceService(self.settings, market=new_config.market,
+                                                  mode=new_config.market_data_mode, wakeup=None)
+                    staged.append(references)
+                if context_changed:
+                    telemetry = AgentTelemetryStore()
+                    supervisor = AgentSupervisor(self.agent_config)
+                    paper = PaperExecutionAdapter()
+                    self._bind_paper(paper)
+                    paper.orders.observer = telemetry.observe_orders
+                    accounting = AccountingService(new_config.market, new_config.execution_mode.value,
+                                                   self.accounting_config)
+                    vault = accounting.snapshot()
+                if mode_changed:
+                    await old_market.stop()
+                    await old_references.stop()
+                    await market.start()
+                    await references.start()
+
+                async with self.execution_lock:
+                    # No awaits in publication/reset: readers see a complete graph.
+                    self.market = market
+                    self.reference_service = references
+                    self.perp_context_service = perp
+                    self.perp_context_service.stale_after_seconds = new_config.perp_context_stale_after_seconds
+                    self.paper = paper
+                    self.agent_telemetry = telemetry
+                    self.agent_supervisor = supervisor
+                    self.testnet._orders.observer = telemetry.observe_orders
+                    self.accounting_service = accounting
+                    self.vault_snapshot = vault
+                    self.execution = paper if new_config.execution_mode == ExecutionMode.PAPER else self.testnet
+                    self.orders.execution = self.execution
+                    self.config = new_config
+                    self.strategy.config = new_config
+                    self._expected_inventory_version = None
+                    self._expected_market_version = None
+                    self._expected_perp_version = None
+                    self._expected_reference_version = None
+                    self._expected_agent_version = None
+                    self._expected_agent_fingerprint = None
+                    self._expected_risk_version = None
+                    self.inventory = None
+                    self.inventory_decision = None
+                    self.market_adaptation_decision = None
+                    self.perp_context = None
+                    self.perp_reference_decision = None
+                    self.perp_position = None
+                    self.references = None
+                    self.risk_decision = None
+                    self.authorization = None
+                    self.strategy_quotes = []
+                    self.agent_quotes = []
+                    self.agent_evidence = None
+                    self.agent_decision = None
+                    if mode_changed:
+                        self.market_history.clear()
+                    references.wakeup = self._strategy_wakeup
+                    self.lifecycle_error = None
+                    self.lifecycle_state = "READY"
+                    self._strategy_wakeup.set()
+            except BaseException as exc:
+                # Keep the old published config, but do not pretend it is still
+                # operational. Stop every staged object, even on partial startup.
+                self.lifecycle_state = "FAILED"
+                self.lifecycle_error = f"configuration lifecycle failed: {exc or type(exc).__name__}; runtime restart required"
+                self._failed_services.extend(staged)
+                async with self.execution_lock:
+                    self.strategy.last_error = self.lifecycle_error
+                    self.strategy.quote_health = "HALTED" if self.risk.kill_switch_active else "DEGRADED"
+                cleanup_errors = []
+                for service in staged:
+                    try:
+                        await service.stop()
+                    except BaseException as cleanup_exc:
+                        cleanup_errors.append(str(cleanup_exc) or type(cleanup_exc).__name__)
+                if cleanup_errors:
+                    self.lifecycle_error += "; replacement cleanup unconfirmed: " + "; ".join(cleanup_errors)
+                async with self.execution_lock:
+                    self.strategy.last_error = self.lifecycle_error
+                    self.strategy.quote_health = "HALTED" if self.risk.kill_switch_active else "DEGRADED"
+                raise
+            # Wake the ordinary strategy loop; never reconcile from config intent
+            # alone. Fresh market/perp/reference/accounting evidence must pass.
+            return self.strategy
 
     def _inventory_payload(self, state: InventoryState, decision) -> dict:
         return {

@@ -8,9 +8,9 @@
 | 4 | COMPLETE | Concentrated-liquidity policy with normalized weighting and tested concentration-factor behavior |
 | 4.1 | COMPLETE | Phase 1–4 Acceptance & Hardening: AMM-derived sizes, fail-closed quotes, serialized execution/kill, TESTNET venue reconciliation |
 | 5 | COMPLETE | Inventory-aware quoting with bounded price/size skew, authoritative inventory state, hard-limit side suppression, API/UI visibility, and acceptance coverage |
-| 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; acceptance validation pending |
-| 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; acceptance validation pending |
-| 8 | IN REVIEW | Multi-source reference integrity + deterministic institutional risk firewall implemented; acceptance validation pending |
+| 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; local commands have passed; substantive review/live calibration remain |
+| 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; local commands have passed; substantive review/live calibration remain |
+| 8 | IN REVIEW | Multi-source reference integrity + deterministic risk firewall implemented; local fixtures passed, external-provider acceptance pending |
 | 9 | IMPLEMENTED / IN REVIEW | Deterministic regime / toxic-flow / execution-quality supervisory agents merged; separate acceptance remains pending |
 | 10 | IMPLEMENTED / IN REVIEW | Deterministic production-stack simulation + bounded grid optimization; Phase 10.1 hardening and full local acceptance passed |
 | 11 | IMPLEMENTED / IN REVIEW | Deterministic research vault/accounting, shared runtime/simulation ledger, simulated fees/funding, capital authority and Vault observability; local acceptance passed |
@@ -19,7 +19,12 @@
 
 ## Phase 6 extension points
 
-Phase 6 composes after the completed inventory policy. `MarketPriceHistory` provides bounded normalized mid-price observations; `MarketAdaptationPolicy` transforms Phase 5 quotes using deterministic volatility and top-N L2 imbalance before the unchanged downstream risk/reconciliation authority. Phase 7 may consume the resulting strategy seams later, but funding, mark/oracle basis, open interest and perpetual context are not part of Phase 6.
+Phase 6 composes after the completed inventory policy. `MarketPriceHistory` provides bounded normalized mid-price observations; `MarketAdaptationPolicy` transforms Phase 5 quotes using deterministic volatility and top-N L2 imbalance before the unchanged downstream risk/reconciliation authority. Phase 7 consumes the resulting strategy seams, but funding, mark/oracle basis, open interest and perpetual context are not part of Phase 6.
+
+Current review as of 2026-10-07: phases 1–12 are implemented. Historical local
+acceptance records below do not establish live/provider acceptance or production
+readiness. See [Audit 1.0](../AUDIT_REPORT_1.0.md) for remaining authority,
+provider and operational findings; this PR addresses only A1-018/A1-019.
 
 ## Phase 4.1 — COMPLETE
 
@@ -45,36 +50,36 @@ behavior remains opt-in and was not exercised; see the integration limitations.
 
 Implemented scope includes normalized PAPER/TESTNET inventory state, configurable target/soft/hard bounds, bounded deterministic reservation-price and side-size skew, hard-limit side suppression, inventory-version authority checks, the positions/terminal API surface, frontend controls/gauge/explainability, and focused Phase 5 acceptance tests.
 
-Acceptance verified on Python 3.12 / Node 24: full backend suite, FastAPI startup/health, frontend typecheck/build, and diff/static validation all pass. Phase 6 remains unstarted.
+Historical Phase 5 acceptance: Python 3.12 / Node 24: full backend suite, FastAPI startup/health, frontend typecheck/build, and diff/static validation all pass. Phase 6 was unstarted at that milestone; it is now implemented / in review.
 
 
 ## Phase 6 — IN REVIEW
 
 Implemented scope includes bounded unique market history, RMS log-return realized volatility, explicit neutral warmup, bounded volatility scoring, top-N base-size L2 imbalance, widening-only spread adaptation around the Phase 5 reservation center, bounded global/side variable-liquidity reduction, market/adaptation version authority, normalized REST/WebSocket state, grouped frontend controls, explainability metadata, and focused Phase 6 tests.
 
-Phase 6 should be promoted to COMPLETE only after the explicit local Python 3.12 backend suite, FastAPI health/API checks, frontend typecheck/build, and `git diff --check` pass. No GitHub Actions workflow is part of Phase 6.
+The earlier local-command gate has been superseded by subsequent local acceptance and Audit 1.0 verification. Phase 6 remains IN REVIEW for substantive findings and live calibration; local commands alone do not close that review. No GitHub Actions workflow is part of Phase 6.
 
 
 ## Phase 7 — IN REVIEW
 
 Implemented scope includes normalized Hyperliquid mark/oracle/funding/open-interest context, deterministic DEMO context, signed basis and OI-notional calculations, bounded market/mark/oracle reference weighting, bounded funding bias, total reference-shift clamping, AMM recentering before reserve-delta sizing, Phase 5/6 composition, shared TESTNET user-state position context, perp freshness/version authority, normalized REST/WebSocket state, frontend controls/panels, and focused Phase 7 tests.
 
-Phase 6 remains IN REVIEW because its exact Python 3.12/full frontend acceptance evidence is still outstanding in this environment. Phase 7 must also remain IN REVIEW until the complete Phase 6 prerequisite and Phase 7 acceptance commands pass. No GitHub Actions workflow is part of either phase.
+Historical command-blocked wording is superseded: local Python 3.12/backend and frontend checks subsequently passed, including Audit 1.0 verification. Phases 6 and 7 remain IN REVIEW for substantive audit and live/calibration issues, not because local commands are still blocked. No GitHub Actions workflow is part of either phase.
 
 
 ## Phase 8 — IN REVIEW
 
 Implemented scope includes provider-independent price evidence; RedStone primary external oracle support; Hyperliquid native oracle/mark/mid reuse; Kraken WebSocket v2 BBO exchange reference; CoinGecko REST aggregate reference; provider health/freshness/versioning; deterministic quorum, outlier handling and signed deviation matrix; projected resting/desired exposure; liquidation distance; fill-derived PAPER PnL; TESTNET equity/drawdown when authoritative account values exist; NORMAL/WIDEN/REDUCE/HALT risk states; hysteresis and recovery confirmations; bounded event logging; deterministic SHA-256 evidence/quote/risk fingerprints; FinalQuoteAuthorization; pre-transmission version/fingerprint checks; REST/WebSocket observability; and focused Phase 8 adversarial tests.
 
-Phase 6 and Phase 7 remain IN REVIEW because their exact full acceptance evidence is still outstanding. Phase 8 must also remain IN REVIEW until the complete Python 3.12 backend suite, FastAPI endpoint checks, frontend typecheck/build, and repository diff/static validation pass. Validation is local/manual; no repository workflow is introduced.
+Phases 6–8 remain IN REVIEW. Subsequent local checks supersede the earlier command-blocked acceptance notes; external-provider acceptance and unresolved authority findings remain distinct. Validation is local/manual; no repository workflow is introduced.
 
 ### Phase 8.2 — transport resilience, IN REVIEW
 
 RedStone retains one provider identity and one consensus vote. Authenticated Live WebSocket remains primary; a no-key Python/httpx public cache transport polls every 10 seconds with a separate 30-second freshness threshold. Fresh HTTP evidence remains usable but caps confidence at DEGRADED, preserving the existing firewall's REDUCE posture. Transport failover/recovery advances reference and FinalQuoteAuthorization provenance even at the same price. The API and existing terminal row expose effective transport and FALLBACK quality.
 
-On 2026-10-05, the production public HTTP attempt was blocked by the execution environment's HTTP CONNECT proxy (`403 Forbidden` / `httpx.ProxyError`); no real ETH observation was received. Offline deterministic acceptance does not satisfy external-provider acceptance. Phase 8 remains IN REVIEW because external-provider acceptance is still outstanding. That upstream acceptance does not block Phase 9 implementation; Phase 9 is IN DEVELOPMENT and remains subordinate to Phase 8 authority.
+On 2026-10-05, the production public HTTP attempt was blocked by the execution environment's HTTP CONNECT proxy (`403 Forbidden` / `httpx.ProxyError`); no real ETH observation was received. Offline deterministic acceptance does not satisfy external-provider acceptance. Phase 8 remains IN REVIEW because external-provider acceptance is still outstanding. That upstream acceptance does not block Phase 9 implementation; Phase 9 is now IMPLEMENTED / IN REVIEW and remains subordinate to Phase 8 authority.
 
-Offline acceptance on Python 3.12.14: **287 passed, 1 warning in 2.38s**, preserving all 223 existing tests and adding 64 transport/provenance cases. Uvicorn startup and graceful shutdown passed; `/api/v1/health`, `/api/v1/references`, `/api/v1/risk`, `/api/v1/risk/evidence`, and `/api/v1/risk/authorization` each returned HTTP 200 in DEMO/PAPER mode. A deterministic FastAPI test separately verifies PUBLIC_HTTP serialization. Frontend `npm run typecheck` and `npm run build` exited 0 (109 modules, 2.25s); `git diff --check` passed. The backend warning is upstream Starlette/httpx deprecation; the frontend reports non-failing TanStack Query `use client` directive warnings. No real orders were transmitted.
+Historical Phase 8.2 offline acceptance (2026-10-05) on Python 3.12.14: **287 passed, 1 warning in 2.38s**, preserving all 223 existing tests and adding 64 transport/provenance cases. Uvicorn startup and graceful shutdown passed; `/api/v1/health`, `/api/v1/references`, `/api/v1/risk`, `/api/v1/risk/evidence`, and `/api/v1/risk/authorization` each returned HTTP 200 in DEMO/PAPER mode. A deterministic FastAPI test separately verifies PUBLIC_HTTP serialization. Frontend `npm run typecheck` and `npm run build` exited 0 (109 modules, 2.25s); `git diff --check` passed. The backend warning is upstream Starlette/httpx deprecation; the frontend reports non-failing TanStack Query `use client` directive warnings. No real orders were transmitted.
 
 
 ## Phase 9 — IMPLEMENTED / IN REVIEW
@@ -85,7 +90,7 @@ The runtime uses one reference snapshot for agent evidence and the downstream Ph
 
 Phase 9 also adds bounded fill/reconciliation telemetry, simulated PAPER markouts, explicit TESTNET fill-data limitations, read-only agent APIs, terminal/frontend explainability and focused regression/static tests.
 
-Phase 8 remains IN REVIEW. Phase 9 must not be promoted to COMPLETE until the full Python 3.12 backend suite, FastAPI/API/WebSocket checks, frontend typecheck/build and repository static acceptance pass. No GitHub Actions workflow is introduced.
+Phase 8 remains IN REVIEW for external-provider acceptance. Historical Phase 9 local build/test gates have subsequently passed; Phase 9 remains IMPLEMENTED / IN REVIEW for substantive authority/provider review. Local commands alone do not promote it to COMPLETE. No GitHub Actions workflow is introduced.
 
 
 ## Phase 10 — IMPLEMENTED / IN REVIEW
@@ -149,7 +154,7 @@ sessions under the serialized execution lock. No public reset or money movement
 endpoint is added. The active Vault page shows metrics, bounded ledger and
 provenance with PAPER/SIMULATED and TESTNET/PARTIAL source labels.
 
-Local acceptance on 2026-10-06 (America/Los_Angeles):
+Historical local acceptance at merge on 2026-10-06 (America/Los_Angeles):
 
 - Fresh Python 3.12.14 virtualenv and editable backend/test installation succeeded.
 - Full backend suite: **492 passed, 1 warning in 10.05s** (407 existing tests plus
@@ -172,7 +177,7 @@ Local acceptance on 2026-10-06 (America/Los_Angeles):
 See [Accounting](ACCOUNTING.md) for formulas, identities, research funding sampling,
 HALT_WHEN_FULL retention, version semantics and limitations. Phase 11 is ready for
 review, not marked COMPLETE. Phase 8 and Phase 9 keep their existing review status.
-Phase 12 remains PLANNED. No signed live TESTNET orders were transmitted.
+Phase 12 was PLANNED at this historical Phase 11 acceptance; it is now IMPLEMENTED / IN REVIEW (see below). No signed live TESTNET orders were transmitted.
 
 ## Phase 11.1 — ACCEPTED (local hardening acceptance)
 
@@ -219,11 +224,12 @@ before implementation on `phase-12-terminal`.
 Adds the `phase12-v1` normalized TerminalSnapshot, process-wide observation
 sequence, UTC emission timestamp, pre-agent/post-agent/authorized quotes,
 read-only health aggregation, bounded current-session chart history and structured
-events. All twelve terminal pages are active, including distinct Strategy and
-AMM Settings, Execution, Analytics, Logs and Settings. React charts reuse backend
-lineage and timestamps; no trading or accounting formulas were added to React.
+events. All twelve terminal pages are active: Dashboard, Markets, Strategy,
+AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation &
+Optimization, Logs and Settings. React charts display retained backend stages
+and timestamps; exact lineage is qualified by Audit 1.0 A1-021; no trading or accounting formulas were added to React.
 
-Local acceptance on 2026-10-06 (America/Los_Angeles):
+Historical local acceptance at merge on 2026-10-06 (America/Los_Angeles):
 
 - Fresh Python **3.12.14** virtualenv and editable `.[test]` installation passed.
 - Full suite: **546 passed, 1 warning in 16.30s**. All 517 prior cases retained;
@@ -259,3 +265,20 @@ History/events are in-memory, current-session only; durable 24h statistics,
 TESTNET normalized fills, custody/money movement and autonomous optimization
 deployment remain outside scope. No signed TESTNET order or repository workflow
 was added. See [Terminal](TERMINAL.md) for contracts, limits and truth boundaries.
+
+## Audit 1.0 — A1-019 / A1-018 local validation (2026-10-07)
+
+A1-019 serializes configuration transport transitions with captured identities,
+staged construction/publication, retired callback gating and an explicit failed
+state requiring runtime restart. A1-018 refreshes current documentation while
+preserving historical merge acceptance above. See [Architecture](ARCHITECTURE.md#a1-019-serialized-configuration-lifecycle)
+for exact ordering, recovery and failure semantics.
+
+- Python 3.12.14 full backend suite: **851 passed, 1 warning in 20.17s**.
+- Focused integration/runtime configuration suite: **94 passed in 3.43s**;
+  19 new lifecycle regression cases extend the existing test architecture.
+- `git diff --check` passed. The warning remains upstream Starlette/httpx
+  TestClient deprecation. No frontend/schema changes warranted a new frontend
+  build; previous frontend/browser records remain historical evidence.
+- No signed TESTNET orders or mainnet operations were performed. External-provider
+  acceptance and remaining audit findings are not closed by this local result.
