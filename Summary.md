@@ -39,4 +39,21 @@ The system remains intentionally focused on:
 
 and does **not** claim production-mainnet readiness.
 
+# 🧠 Core Design Philosophy
+
+HyperAMM separates:
+
+```text
+Strategy
+    from
+Risk
+    from
+Execution
+    from
+Accounting
+    from
+Observability
+
+The system is designed so that increasingly intelligent strategy components can propose changes without becoming the final authority over execution.
+
 ---
