@@ -4,7 +4,6 @@ from collections import Counter
 from decimal import Decimal
 
 from app.agents.execution_quality import churn_ratio,spread_capture_bps
-from app.risk.firewall import paper_pnl
 from .models import SimulationMetrics
 
 
@@ -41,11 +40,10 @@ class MetricsAccumulator:
         self.toxic[agent_decision.toxic_flow.state.value]+=1
         self.execution[agent_decision.execution_quality.state.value]+=1
 
-    def finalize(self,*,paper,market:str,mark:Decimal,telemetry,history,agent_config,frame_count:int)->SimulationMetrics:
+    def finalize(self,*,paper,market:str,vault,telemetry,history,agent_config,frame_count:int)->SimulationMetrics:
         fills=paper.fills.all()
-        pnl=paper_pnl(fills,market,mark)
-        session=pnl.session_pnl or Decimal("0")
-        ending=self.initial_equity+session
+        session=vault.net_pnl_quote
+        ending=vault.equity_quote
         buy=sum(1 for f in fills if f.side=="BID")
         sell=sum(1 for f in fills if f.side=="ASK")
         filled_notional=sum((f.price*f.size for f in fills),Decimal("0"))
@@ -69,10 +67,10 @@ class MetricsAccumulator:
         return SimulationMetrics(
             frame_count=frame_count,starting_equity=self.initial_equity,ending_equity=ending,
             session_pnl=session,return_pct=session/self.initial_equity*Decimal("100"),
-            realized_pnl=pnl.realized_pnl or Decimal("0"),unrealized_pnl=pnl.unrealized_pnl or Decimal("0"),
+            realized_pnl=vault.realized_pnl_quote,unrealized_pnl=vault.unrealized_pnl_quote,
             max_drawdown_pct=self.max_drawdown_pct,fill_count=len(fills),buy_fill_count=buy,sell_fill_count=sell,
             quoted_notional=self.quoted_notional,filled_notional=filled_notional,fill_activity_ratio=activity,
-            ending_inventory_base=paper.position_base(market),max_abs_inventory_base=self.max_abs_inventory,
+            ending_inventory_base=vault.position_base,max_abs_inventory_base=self.max_abs_inventory,
             max_inventory_utilization=self.max_inventory_utilization,mean_spread_capture_bps=mean_capture,
             mean_mature_markout_bps=mean_markout,adverse_fill_rate=adverse_rate,
             keep_count=self.keep,create_count=self.create,replace_count=self.replace,cancel_count=self.cancel,

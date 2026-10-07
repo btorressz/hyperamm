@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Literal
 from pydantic import BaseModel, Field
 from app.market_data.models import utcnow
 
@@ -37,3 +38,4 @@ class Fill(BaseModel):
     size: Decimal
     timestamp: datetime = Field(default_factory=utcnow)
     source: str = "SIMULATED PAPER FILL"
+    liquidity: Literal["MAKER", "TAKER"] | None = None

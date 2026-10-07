@@ -27,7 +27,7 @@ class PaperExecutionAdapter:
             return order.price <= self._market.best_bid
         return False
 
-    def _fill(self, order: StrategyOrder):
+    def _fill(self, order: StrategyOrder, *, liquidity="MAKER"):
         fill_size = order.size - order.filled_size
         if fill_size <= 0:
             return
@@ -38,6 +38,7 @@ class PaperExecutionAdapter:
         fill = Fill(
             client_order_id=order.client_order_id, market=order.market, side=order.side,
             price=order.price, size=fill_size, timestamp=self.clock(),
+            liquidity=liquidity,
         )
         self.fills.add(fill)
         if self.on_fill is not None:
@@ -72,7 +73,7 @@ class PaperExecutionAdapter:
             order = StrategyOrder(**req.model_dump(),created_at=now,updated_at=now)
             self.orders[order.client_order_id] = order
             if self._crosses(order):
-                self._fill(order)
+                self._fill(order, liquidity="TAKER")
             result.append(order)
         return result
 

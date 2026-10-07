@@ -13,7 +13,7 @@
 | 8 | IN REVIEW | Multi-source reference integrity + deterministic institutional risk firewall implemented; acceptance validation pending |
 | 9 | IMPLEMENTED / IN REVIEW | Deterministic regime / toxic-flow / execution-quality supervisory agents merged; separate acceptance remains pending |
 | 10 | IMPLEMENTED / IN REVIEW | Deterministic production-stack simulation + bounded grid optimization; Phase 10.1 hardening and full local acceptance passed |
-| 11 | PLANNED | Vault/accounting |
+| 11 | IMPLEMENTED / IN REVIEW | Deterministic research vault/accounting, shared runtime/simulation ledger, simulated fees/funding, capital authority and Vault observability; local acceptance passed |
 | 12 | PLANNED | Expanded production-grade React terminal |
 
 ## Phase 6 extension points
@@ -127,4 +127,48 @@ API version spoofing receives HTTP 422.
 
 The requested Phase 10 build/acceptance gates are closed; code review remains.
 Phase 8 remains IN REVIEW for its separate external-provider acceptance. Phase 9
-remains IMPLEMENTED / IN REVIEW. Phase 11 remains PLANNED.
+remains IMPLEMENTED / IN REVIEW. Phase 11 was PLANNED at Phase 10.1 acceptance.
+
+
+## Phase 11 — IMPLEMENTED / IN REVIEW
+
+Phase 11 implements the dedicated Decimal accounting domain, immutable append-only
+idempotent ledger, one shared average-cost position/PnL formula, simulated PAPER
+fee/funding accounting, research settled capital, equity/peak/drawdown, full-notional
+simulated capital reservation, accounting provenance and stale-state execution
+binding. Runtime PAPER inventory and Phase 10 simulation use AccountingService;
+Phase 8 consumes its vault-derived PnlDrawdown and capital sufficiency input.
+FinalQuoteAuthorization binds accounting version/fingerprint, checked before
+CREATE/REPLACE. Cancellation remains possible when accounting fails.
+
+TESTNET exposes only existing authoritative position/account fields and labels
+completeness PARTIAL; missing cash, realized PnL, fees, funding payments and capital
+availability remain null. Market/execution/data-mode transitions isolate research
+sessions under the serialized execution lock. No public reset or money movement
+endpoint is added. The active Vault page shows metrics, bounded ledger and
+provenance with PAPER/SIMULATED and TESTNET/PARTIAL source labels.
+
+Local acceptance on 2026-10-06 (America/Los_Angeles):
+
+- Fresh Python 3.12.14 virtualenv and editable backend/test installation succeeded.
+- Full backend suite: **492 passed, 1 warning in 10.05s** (407 existing tests plus
+  85 Phase 11 cases). Warning: upstream Starlette/httpx TestClient deprecation.
+- Real Uvicorn DEMO/PAPER startup: all eight requested REST endpoints and the
+  optional accounting-position endpoint returned HTTP 200. Ledger invalid limits
+  returned HTTP 422. Application startup and graceful shutdown completed;
+  Uvicorn re-raised SIGTERM after shutdown (process return code -15).
+- Real terminal WebSocket: vault, compact accounting, matching provenance, <=20
+  notices and existing terminal fields passed. No ledger history is streamed.
+- `npm install` succeeded using the local package cache. Frontend typecheck and
+  build exited 0; Vite 7.3.6 transformed 120 modules and built in 1.87s. Non-failing
+  TanStack Query `use client` directive warnings remain.
+- React server-render acceptance passed for PAPER metrics/ledger, TESTNET/PARTIAL
+  unavailable values and the active Vault sidebar. This is a rendering check,
+  not a live signed TESTNET or browser visual acceptance claim.
+- `git diff --check` passed. No repository workflow, additional oracle, mainnet,
+  custody, deposits, withdrawals, transfers/bridging or Phase 12 work was added.
+
+See [Accounting](ACCOUNTING.md) for formulas, identities, research funding sampling,
+HALT_WHEN_FULL retention, version semantics and limitations. Phase 11 is ready for
+review, not marked COMPLETE. Phase 8 and Phase 9 keep their existing review status.
+Phase 12 remains PLANNED. No signed live TESTNET orders were transmitted.

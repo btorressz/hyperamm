@@ -9,6 +9,7 @@ from pydantic import BaseModel,ConfigDict,Field,model_validator
 
 from app.market_data.models import MarketSnapshot
 from app.market_data.perp_context import PerpMarketContext
+from app.accounting.models import LedgerEntry, VaultSnapshot
 
 
 def _canonical(value):
@@ -176,6 +177,9 @@ class SimulationResult(BaseModel):
     limitations:list[str]=Field(default_factory=list)
     orders:list[dict]=Field(default_factory=list)
     fills:list[dict]=Field(default_factory=list)
+    vault:VaultSnapshot|None=None
+    accounting_ledger:tuple[LedgerEntry,...]=()
+    accounting_fingerprint:str|None=None
 
 
 class ScoreComponents(BaseModel):

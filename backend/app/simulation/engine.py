@@ -9,7 +9,9 @@ from app.execution.order_manager import OrderManager
 from app.execution.paper import PaperExecutionAdapter
 from app.market_data.history import MarketPriceHistory
 from app.risk.authorization import authorize,fingerprint
-from app.risk.firewall import PnlDrawdown,RiskFirewall,RiskFirewallConfig,paper_pnl
+from app.risk.firewall import RiskFirewall,RiskFirewallConfig
+from app.accounting import AccountingConfig,AccountingService
+from app.accounting.pnl import to_pnl_drawdown
 from app.risk.limits import validate_quotes
 from app.risk.models import RiskStatus
 from app.strategy.inventory import build_inventory_state
@@ -27,12 +29,12 @@ from . import version
 LIMITATIONS=[
     "SIMULATED / OFFLINE / PAPER research only.",
     "PAPER fill model is deterministic crossing-only; queue priority is not simulated.",
-    "No maker/taker fee accounting.",
-    "No funding cash-flow accounting.",
+    "PAPER fees and funding use configurable research assumptions, never venue facts.",
     "No exchange latency model.",
     "No hidden-liquidity model.",
     "No stochastic fill probability.",
-    "PnL is gross strategy PnL before fees and funding.",
+    "Net PnL includes only configured simulated fees and deterministic funding intervals.",
+    "Full-notional capital reservation is simulated, not exchange margin.",
 ]
 
 
@@ -70,6 +72,9 @@ class SimulationEngine:
             raise ValueError("strategy market must match simulation dataset")
 
         clock=SimulationClock(frames[0].timestamp)
+        accounting_payload=simulation_config.accounting.model_dump()
+        accounting_payload["paper_initial_equity_quote"]=simulation_config.initial_equity_quote
+        accounting=AccountingService(strategy.market,config=AccountingConfig.model_validate(accounting_payload),clock=clock)
         paper=PaperExecutionAdapter(clock=clock)
         history=MarketPriceHistory(max_samples=max(1000,strategy.volatility_window_samples,agents.regime_momentum_window_samples))
         telemetry=AgentTelemetryStore()
@@ -83,6 +88,7 @@ class SimulationEngine:
 
         def on_fill(fill):
             telemetry.observe_fill(fill,current_fill_reference)
+            accounting.ingest_fill(fill)
         paper.on_fill=on_fill
 
         current_authorization=None
@@ -99,11 +105,12 @@ class SimulationEngine:
                 raise RuntimeError("simulation authority state is incomplete")
             checks={
                 "market":history.version,
-                "inventory":paper.inventory_version,
+                "inventory":accounting.position.version,
                 "perp":expected["perp"],
                 "reference":current_refs.version,
                 "agent":current_agent.version,
                 "risk":current_risk.version,
+                "accounting":accounting.version,
             }
             for name,value in checks.items():
                 if value!=expected[name]:
@@ -112,6 +119,11 @@ class SimulationEngine:
                 raise RuntimeError("simulation agent fingerprint changed before transmission")
             if current_authorization.agent_fingerprint!=expected["agent_fingerprint"]:
                 raise RuntimeError("simulation authorization agent fingerprint mismatch")
+            accounting.require_fresh()
+            if (accounting.fingerprint!=expected["accounting_fingerprint"]
+                    or current_authorization.accounting_fingerprint!=accounting.fingerprint
+                    or current_authorization.accounting_version!=accounting.version):
+                raise RuntimeError("simulation accounting authority changed before transmission")
             if fingerprint(current_quotes)!=current_authorization.quote_fingerprint:
                 raise RuntimeError("simulation authorized quote fingerprint mismatch")
 
@@ -123,6 +135,8 @@ class SimulationEngine:
             "strategy":strategy,
             "agents":agents,
             "risk":risk,
+            "accounting":accounting.config,
+            "accounting_schema":"phase11-v1",
             "simulation":{
                 "initial_equity_quote":simulation_config.initial_equity_quote,
                 "max_frames":simulation_config.max_frames,
@@ -137,10 +151,10 @@ class SimulationEngine:
             current_fill_reference=frame.market.mid_price
             paper.update_market(frame.market)
             inventory=build_inventory_state(
-                market=strategy.market,position=paper.position_base(strategy.market),
+                market=strategy.market,position=accounting.position.position_base,
                 target=strategy.target_inventory_base,soft_limit=strategy.soft_inventory_limit_base,
                 source="PAPER",updated_at=paper.last_fill_at or frame.timestamp,stale=False,
-                version=paper.inventory_version,
+                version=accounting.position.version,
             )
             history.add_snapshot(frame.market)
             fair,pool,proposed,inventory_decision,market_decision,perp_decision=quote_engine.generate_perp_market_adaptive(
@@ -164,22 +178,17 @@ class SimulationEngine:
                 tick_size=strategy.tick_size,size_precision=strategy.size_precision,
             )
 
-            pnl=paper_pnl(paper.fills.all(),strategy.market,frame.perp_context.mark_price)
-            session=pnl.session_pnl or Decimal("0")
-            equity=simulation_config.initial_equity_quote+session
-            metrics.peak_equity=max(metrics.peak_equity,equity)
-            drawdown=(metrics.peak_equity-equity)/metrics.peak_equity if metrics.peak_equity>0 else Decimal("0")
-            pnl_for_risk=PnlDrawdown(
-                realized_pnl=pnl.realized_pnl,unrealized_pnl=pnl.unrealized_pnl,session_pnl=session,
-                current_equity=equity,peak_equity=metrics.peak_equity,drawdown_pct=drawdown,
-                source="SIMULATION PAPER PNL",simulated=True,
-            )
+            accounting.observe_funding(frame.perp_context)
+            accounting.mark(frame.perp_context.mark_price,observed_at=frame.timestamp)
             existing=await paper.get_open_orders()
+            vault=accounting.reservation_snapshot(agent_quotes,existing)
+            pnl_for_risk=to_pnl_drawdown(vault)
             risk_decision=firewall.evaluate(
                 refs=refs,quotes=agent_quotes,current_position=inventory.position_base,
                 mark=frame.perp_context.mark_price,liquidation=None,pnl=pnl_for_risk,
                 market_version=market_decision.version,inventory_version=inventory.version,
                 perp_version=frame.perp_context.version,venue_uncertain=False,existing_orders=existing,
+                capital=vault,max_capital_utilization=accounting.config.max_capital_utilization,
             )
             risk_decision=risk_decision.model_copy(update={"created_at":frame.timestamp})
             authorized=firewall.transform(
@@ -188,7 +197,9 @@ class SimulationEngine:
                 base_order_size=strategy.base_order_size,
             )
             validate_quotes(authorized,frame.market,risk_status)
-            authorization=authorize(authorized,refs,risk_decision,agent_decision)
+            accounting.reserve(authorized,existing)
+            vault=accounting.snapshot()
+            authorization=authorize(authorized,refs,risk_decision,agent_decision,vault)
 
             current_authorization=authorization
             current_agent=agent_decision
@@ -199,6 +210,7 @@ class SimulationEngine:
                 "market":history.version,"inventory":inventory.version,"perp":frame.perp_context.version,
                 "reference":refs.version,"agent":agent_decision.version,"risk":risk_decision.version,
                 "agent_fingerprint":agent_decision.fingerprint,
+                "accounting":accounting.version,"accounting_fingerprint":accounting.fingerprint,
             }
             actions=await orders.reconcile(
                 strategy.market,authorized,strategy.replace_tolerance_bps,strategy.size_tolerance
@@ -207,16 +219,17 @@ class SimulationEngine:
 
             # Immediate crossing fills, if any, belong to this frame and deterministic clock.
             inventory_after=build_inventory_state(
-                market=strategy.market,position=paper.position_base(strategy.market),
+                market=strategy.market,position=accounting.position.position_base,
                 target=strategy.target_inventory_base,soft_limit=strategy.soft_inventory_limit_base,
                 source="PAPER",updated_at=paper.last_fill_at or frame.timestamp,stale=False,
-                version=paper.inventory_version,
+                version=accounting.position.version,
             )
-            pnl_after=paper_pnl(paper.fills.all(),strategy.market,frame.perp_context.mark_price)
-            session_after=pnl_after.session_pnl or Decimal("0")
-            equity_after=simulation_config.initial_equity_quote+session_after
-            metrics.peak_equity=max(metrics.peak_equity,equity_after)
-            drawdown_after=(metrics.peak_equity-equity_after)/metrics.peak_equity if metrics.peak_equity>0 else Decimal("0")
+            accounting.mark(frame.perp_context.mark_price,observed_at=frame.timestamp)
+            accounting.reserve(authorized,await paper.get_open_orders())
+            vault_after=accounting.snapshot()
+            session_after=vault_after.net_pnl_quote
+            equity_after=vault_after.equity_quote
+            drawdown_after=vault_after.drawdown_pct
             metrics.record(
                 authorized_quotes=authorized,inventory=inventory_after,risk_decision=risk_decision,
                 agent_decision=agent_decision,equity=equity_after,drawdown_pct=drawdown_after,actions=actions,
@@ -235,9 +248,8 @@ class SimulationEngine:
                     open_order_count=len(await paper.get_open_orders()),fill_count=len(paper.fills.all()),
                 ))
 
-        final_mark=frames[-1].perp_context.mark_price
         final_metrics=metrics.finalize(
-            paper=paper,market=strategy.market,mark=final_mark,telemetry=telemetry,history=history,
+            paper=paper,market=strategy.market,vault=accounting.snapshot(),telemetry=telemetry,history=history,
             agent_config=agents,frame_count=len(frames),
         )
         return SimulationResult(
@@ -247,4 +259,6 @@ class SimulationEngine:
             metrics=final_metrics,trace=list(trace or []),simulated=True,limitations=list(LIMITATIONS),
             orders=[o.model_dump(mode="json") for o in paper.all_orders()],
             fills=[f.model_dump(mode="json") for f in paper.fills.all()],
+            vault=accounting.snapshot(),accounting_ledger=accounting.ledger.entries(500),
+            accounting_fingerprint=accounting.fingerprint,
         )

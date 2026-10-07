@@ -32,6 +32,8 @@ class FinalQuoteAuthorization(BaseModel):
     reference_version:int
     agent_version:int=0
     agent_fingerprint:str=Field(default_factory=lambda:fingerprint({"phase9":"not-bound"}))
+    accounting_version:int=0
+    accounting_fingerprint:str=Field(default_factory=lambda:fingerprint({"phase11":"not-bound"}))
     risk_version:int
     authorized_quote_count:int
     bid_authorized:bool
@@ -39,9 +41,12 @@ class FinalQuoteAuthorization(BaseModel):
     reasons:list[str]
     created_at:datetime=Field(default_factory=utcnow)
 
-def authorize(quotes,refs,decision:RiskDecision,agent=None):
+def authorize(quotes,refs,decision:RiskDecision,agent=None,accounting=None):
     qf=fingerprint(quotes);ef=fingerprint(refs);rf=fingerprint(decision)
     agent_version=agent.version if agent is not None else 0
     agent_fingerprint=agent.fingerprint if agent is not None else fingerprint({"phase9":"not-bound"})
+    accounting_version=accounting.accounting_version if accounting is not None else 0
+    accounting_fingerprint=accounting.accounting_fingerprint if accounting is not None else fingerprint({"phase11":"not-bound"})
     payload={"quote_fingerprint":qf,"evidence_fingerprint":ef,"risk_fingerprint":rf,"agent_fingerprint":agent_fingerprint,"market_version":decision.market_version,"inventory_version":decision.inventory_version,"perp_version":decision.perp_version,"reference_version":decision.reference_version,"agent_version":agent_version,"risk_version":decision.version}
-    return FinalQuoteAuthorization(authorized=decision.allow_quotes,risk_state=decision.state,quote_fingerprint=qf,evidence_fingerprint=ef,risk_fingerprint=rf,authorization_fingerprint=fingerprint(payload),market_version=decision.market_version,inventory_version=decision.inventory_version,perp_version=decision.perp_version,reference_version=decision.reference_version,agent_version=agent_version,agent_fingerprint=agent_fingerprint,risk_version=decision.version,authorized_quote_count=len(quotes),bid_authorized=any(q.side=="BID" for q in quotes),ask_authorized=any(q.side=="ASK" for q in quotes),reasons=decision.reasons)
+    payload.update(accounting_version=accounting_version,accounting_fingerprint=accounting_fingerprint)
+    return FinalQuoteAuthorization(authorized=decision.allow_quotes,risk_state=decision.state,quote_fingerprint=qf,evidence_fingerprint=ef,risk_fingerprint=rf,authorization_fingerprint=fingerprint(payload),market_version=decision.market_version,inventory_version=decision.inventory_version,perp_version=decision.perp_version,reference_version=decision.reference_version,agent_version=agent_version,agent_fingerprint=agent_fingerprint,accounting_version=accounting_version,accounting_fingerprint=accounting_fingerprint,risk_version=decision.version,authorized_quote_count=len(quotes),bid_authorized=any(q.side=="BID" for q in quotes),ask_authorized=any(q.side=="ASK" for q in quotes),reasons=decision.reasons)

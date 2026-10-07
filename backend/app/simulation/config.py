@@ -4,6 +4,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel,ConfigDict,Field,model_validator
+from app.accounting.config import AccountingConfig
 
 
 class FillModel(StrEnum):
@@ -17,6 +18,7 @@ class SimulationConfig(BaseModel):
     record_trace:bool=True
     trace_max_points:int=Field(default=500,ge=0,le=5000)
     fill_model:FillModel=FillModel.CROSSING_ONLY
+    accounting:AccountingConfig=Field(default_factory=AccountingConfig)
 
     @model_validator(mode="after")
     def validate_values(self):
