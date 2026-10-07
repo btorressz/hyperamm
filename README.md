@@ -3,7 +3,7 @@
 
 **HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
 
-Phases 1–8 are implemented, Phase 9 supervisory agents are implemented / in review, and Phase 10 deterministic simulation + bounded optimization is implemented / in review as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Phases 1–8 are implemented, Phase 9 supervisory agents are implemented / in review, Phase 10 deterministic simulation + bounded optimization and Phase 11 deterministic research vault/accounting are implemented / in review as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
 
 ## Why a virtual AMM?
 
@@ -31,7 +31,7 @@ Hyperliquid L2 / Demo Feed
  PAPER execution or guarded TESTNET
 ```
 
-## Phase 1–10 capabilities
+## Phase 1–11 capabilities
 
 - **Phase 1 — Market data + paper execution:** normalized L2/BBO state, WebSocket subscription adapter, initial L2 snapshot, monotonic exchange-time handling, reconnection/degraded states, explicit deterministic demo feed, paper orders/fills, optional testnet adapter.
 - **Phase 2 — Virtual constant-product AMM:** invariant, marginal price, reserve initialization/recentering, base→quote and quote→base virtual swaps, curve-state calculations.
@@ -43,6 +43,8 @@ Hyperliquid L2 / Demo Feed
 - **Phase 8 — Reference integrity + institutional risk firewall:** normalized multi-source price evidence, deterministic quorum/consensus, source health and freshness, signed deviation matrix, projected exposure, liquidation/PnL guards, NORMAL/WIDEN/REDUCE/HALT postures, hysteresis/recovery, SHA-256 authorization fingerprints, and final pre-transmission authority binding.
 - **Phase 9 — Supervisory agents (IMPLEMENTED / IN REVIEW):** deterministic regime, adverse-selection markout and execution-quality analysis; conservative supervisor composition; bounded quote widening/size/level reduction; agent provenance bound into final authorization.
 - **Phase 10 — Strategy simulation + bounded optimization (IMPLEMENTED / IN REVIEW):** deterministic scenario/replay datasets, scenario-time PAPER execution, production-stack simulation, research metrics, reproducible fingerprints, and deterministic grid search across an explicit strategy/agent allowlist.
+
+- **Phase 11 — Deterministic research vault/accounting (IMPLEMENTED / IN REVIEW):** one shared average-cost authority for runtime/simulation, immutable idempotent ledger, simulated PAPER fees/funding, settled research capital, equity/drawdown, conservative capital reservations, accounting-bound authorization, TESTNET partial truth, read-only APIs and Vault observability.
 
 A minimal Phase 1–4 risk authority enforces freshness, level count, per-order size, aggregate notional, minimum price, quote distance, execution state and a kill switch. The kill switch cancels active strategy orders and blocks new quote generation.
 
@@ -171,7 +173,7 @@ Live Hyperliquid integration is intentionally not required by normal unit tests.
 
 ## Limitations
 
-Phase 8 adds deterministic multi-source reference integrity and institutional risk authorization. Phase 9 supervisory agents are implemented / in review. Phase 10 simulation is offline PAPER research with deterministic crossing-only fills and does not model fees, funding cash flows, exchange latency, queue priority, hidden liquidity, or stochastic fill probability. Persistent vault accounting and production mainnet trading remain out of scope.
+Phase 8 adds deterministic multi-source reference integrity and institutional risk authorization. Phase 9 supervisory agents are implemented / in review. Phase 10 simulation is offline PAPER research with deterministic crossing-only fills and reuses Phase 11 accounting with optional simulated fees and deterministic funding intervals. It does not model exchange latency, queue priority, hidden liquidity, or stochastic fill probability. Accounting is an in-memory research session ledger; durable wallet custody and production mainnet trading remain out of scope.
 
 ## Documentation
 
@@ -183,10 +185,11 @@ Phase 8 adds deterministic multi-source reference integrity and institutional ri
 - `docs/RISK_FIREWALL.md`
 - `docs/AGENTS.md`
 - `docs/SIMULATION.md`
+- `docs/ACCOUNTING.md`
 
 ## 12-phase roadmap
 
-Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IMPLEMENTED / IN REVIEW. Phase 11 vault/accounting and Phase 12 expanded production trading terminal remain planned.
+Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IMPLEMENTED / IN REVIEW. Phase 11 deterministic research vault/accounting is IMPLEMENTED / IN REVIEW. Phase 12 expanded production trading terminal remains planned.
 
 ## Phase 4.1 acceptance and hardening
 
@@ -287,3 +290,12 @@ Built-in deterministic scenarios cover quiet/trending/mean-reverting/high-volati
 The v1 optimizer is deterministic grid search only. It supports an explicit allowlist of strategy/agent research parameters, rejects safety/runtime fields, evaluates an unchanged BASELINE, ranks on training scenarios, evaluates top candidates on separate validation scenarios, and exposes every numeric score component. Results are research rankings under the selected scenarios/objective—not claims of optimality or future profitability.
 
 See [Simulation](docs/SIMULATION.md).
+
+
+## Phase 11 — Vault & Deterministic Accounting Layer
+
+The Vault page exposes research settled capital, average-cost position accounting, realized/unrealized PnL, configured PAPER fees and funding, equity/peak/drawdown, simulated full-notional capital reservation and append-only ledger provenance. Runtime PAPER, Phase 8 risk and Phase 10 simulation share one accounting service. Final authorization binds accounting version/fingerprint and stale or changed accounting blocks CREATE/REPLACE while cancellation remains possible.
+
+PAPER accounting is always SIMULATED. TESTNET only exposes existing authoritative account/position evidence and labels full accounting PARTIAL; unavailable cash, realized PnL, fees, funding payments and capital availability remain null. No real custody, deposits, withdrawals, transfers, bridging, investor accounting or fund fees are introduced.
+
+Read-only endpoints: `/api/v1/vault`, `/api/v1/accounting/pnl`, `/api/v1/accounting/position`, `/api/v1/accounting/ledger`, `/api/v1/accounting/events`. The terminal WebSocket adds compact accounting summary and recent notices. See [Accounting](docs/ACCOUNTING.md) for formulas, defaults, retention, identities and truth boundaries.

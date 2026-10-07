@@ -271,7 +271,7 @@ ORACLE_DISLOCATION supplies divergent RedStone evidence; it does not hardcode a 
 
 REFERENCE_DEGRADATION removes RedStone evidence and lets the existing consensus/fallback policy decide.
 
-Funding-stress scenarios alter funding context but Phase 10 v1 does not book funding cash flows.
+Funding-stress scenarios alter funding context. Phase 11 optionally books deterministic PAPER research funding through the shared accounting service.
 
 ## Frame processing order
 
@@ -290,7 +290,7 @@ For each frame:
 11. build Phase 9 agent evidence;
 12. run the real `AgentSupervisor`;
 13. run Phase 9 `transform_quotes()`;
-14. calculate gross PAPER PnL/equity/drawdown;
+14. mark the shared Phase 11 accounting service and preview simulated capital reservation;
 15. load existing PAPER open orders;
 16. run the real Phase 8 `RiskFirewall` against POST-AGENT candidates;
 17. run the Phase 8 risk transform;
@@ -343,8 +343,8 @@ No probabilistic fill model is introduced.
 Known execution-model limitations:
 
 - no queue priority
-- no maker/taker fees
-- no funding cash-flow accounting
+- fees use configured PAPER maker/taker research assumptions, not venue facts
+- funding uses opt-in deterministic research intervals, not actual venue payments
 - no exchange latency model
 - no hidden liquidity
 - no stochastic fill probability
@@ -353,13 +353,15 @@ These limitations are returned with every `SimulationResult`.
 
 ## PnL, equity and drawdown
 
-Phase 10 reuses `paper_pnl()` average-cost accounting.
+Phase 10 reuses the same Phase 11 `AccountingService` as runtime PAPER. Risk receives its vault-derived PnlDrawdown and metrics consume the final vault; neither calculates a separate ledger.
 
 PnL is explicitly:
 
 ```text
-gross strategy PnL before fees/funding
+net session PnL = realized + unrealized - configured fees + configured funding
 ```
+
+Defaults explicitly select zero-fee and zero-funding PAPER research accounting. Optional `simulation.accounting` settings enable simulated fees/funding and reservation limits. The existing simulation initial equity sets accounting starting capital. See [Accounting](ACCOUNTING.md).
 
 Equity:
 
@@ -387,7 +389,7 @@ The Phase 8 firewall receives a simulated `PnlDrawdown` containing realized/unre
 
 - frame count
 - starting/ending equity
-- gross session PnL
+- net session PnL
 - return %
 - realized/unrealized PnL
 - max drawdown %
@@ -433,7 +435,7 @@ When the bound is reached, the deque retains the most recent points. Full strate
 
 ## Reproducibility and fingerprints
 
-Engine provenance is owned by code: `SIMULATION_ENGINE_VERSION = "phase10.1-v1"`
+Phase 11 additionally binds accounting schema `phase11-v1` and full accounting config into every run fingerprint, and exposes the final vault, bounded accounting ledger and accounting fingerprint. The existing pipeline engine provenance is owned by code: `SIMULATION_ENGINE_VERSION = "phase10.1-v1"`
 in `backend/app/simulation/version.py`. `SimulationConfig` has no version field.
 Both `SimulationResult.engine_version` and `OptimizationResult.engine_version`
 report this constant. Every candidate run fingerprint binds the same constant;
@@ -764,10 +766,10 @@ directive warnings). `git diff --check` passed. Completed acceptance gates:
 - frontend typecheck passes
 - frontend build passes
 - `git diff --check` passes
-- no additional oracle provider, GitHub Actions, LLM/ML optimizer, or Phase 11 work is introduced
+- no additional oracle provider, GitHub Actions, LLM/ML optimizer, or expanded terminal work is introduced
 
 Phase 8 remains IN REVIEW.
 
 Phase 9 remains IMPLEMENTED / IN REVIEW.
 
-Phase 11 remains PLANNED.
+Phase 11 shared research accounting is IMPLEMENTED / IN REVIEW; Phase 12 remains PLANNED.

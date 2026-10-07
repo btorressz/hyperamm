@@ -22,9 +22,12 @@ from app.execution.order_manager import OrderManager
 from app.risk.models import RiskStatus
 from app.risk.kill_switch import KillSwitch
 from app.risk.limits import validate_quotes, validate_execution_authority
-from app.risk.firewall import PnlDrawdown, RiskFirewall, RiskFirewallConfig, RiskState, paper_pnl
+from app.risk.firewall import RiskFirewall, RiskFirewallConfig, RiskState
 from app.risk.authorization import authorize, fingerprint
 from app.agents import AgentConfig,AgentSupervisor,AgentTelemetryStore,build_agent_evidence,transform_quotes
+from app.accounting import AccountingConfig, AccountingService
+from app.accounting.pnl import to_pnl_drawdown
+from app.accounting.vault import reserved_capital
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +70,10 @@ class HyperAmmRuntime:
         self.agent_config = AgentConfig()
         self.agent_telemetry = AgentTelemetryStore()
         self.agent_supervisor = AgentSupervisor(self.agent_config)
+        self.accounting_config = AccountingConfig()
+        self.accounting_service = AccountingService(settings.market, self.config.execution_mode.value, self.accounting_config)
+        self.vault_snapshot = self.accounting_service.snapshot()
+        self._accounted_fill_count = 0
         self.kill = KillSwitch(self.risk, self.execution_lock)
         self.fair_value = None
         self.pool = None
@@ -79,8 +86,6 @@ class HyperAmmRuntime:
         self.references = None
         self.risk_decision = None
         self.authorization = None
-        self._session_start_equity = None
-        self._peak_equity = None
         self.inventory: InventoryState | None = None
         self.inventory_decision = None
         self.market_adaptation_decision = None
@@ -94,6 +99,8 @@ class HyperAmmRuntime:
         self._expected_agent_version: int | None = None
         self._expected_agent_fingerprint: str | None = None
         self._expected_risk_version: int | None = None
+        self._expected_accounting_version: int | None = None
+        self._expected_accounting_fingerprint: str | None = None
         self._strategy_task = None
         self._venue_task = None
         self._closing = False
@@ -107,6 +114,14 @@ class HyperAmmRuntime:
         if self.references is not None:
             reference_price=self.references.consensus.consensus_price
         self.agent_telemetry.observe_fill(fill,reference_price)
+        try:
+            self.accounting_service.ingest_fill(fill)
+            if len(self.paper.fills.all()) == self._accounted_fill_count + 1:
+                self._accounted_fill_count += 1
+        except Exception as exc:
+            # Execution already happened; retain it and fail new authority closed.
+            self.accounting_service.fail(exc)
+        self.vault_snapshot = self.accounting_service.snapshot()
         self._strategy_wakeup.set()
 
     def _paper_perp_position(self, inventory: InventoryState) -> PerpPositionContext:
@@ -120,15 +135,16 @@ class HyperAmmRuntime:
         )
 
     def _paper_inventory(self) -> InventoryState:
+        self._sync_paper_fills_locked()
         return build_inventory_state(
             market=self.config.market,
-            position=self.paper.position_base(self.config.market),
+            position=self.accounting_service.position.position_base,
             target=self.config.target_inventory_base,
             soft_limit=self.config.soft_inventory_limit_base,
             source="PAPER",
             updated_at=self.paper.last_fill_at or utcnow(),
             stale=False,
-            version=self.paper.inventory_version,
+            version=self.accounting_service.position.version,
         )
 
     async def _testnet_inventory_locked(self, *, refresh: bool) -> InventoryState:
@@ -230,6 +246,25 @@ class HyperAmmRuntime:
             raise RuntimeError("risk decision changed after quote authorization; recompute before transmission")
         if fingerprint(self.quotes) != self.authorization.quote_fingerprint:
             raise RuntimeError("authorized quote ladder fingerprint mismatch")
+        if self.config.execution_mode == ExecutionMode.TESTNET:
+            # Account value can change without the market position version changing.
+            self.accounting_service.observe_testnet(self.perp_position, self.testnet.account_risk_snapshot(),
+                                                   mark=current_perp.mark_price)
+        vault = self.accounting_service.require_fresh()
+        if self.accounting_service.config != self.accounting_config:
+            raise RuntimeError("accounting configuration changed; internal context rebind required")
+        if (vault.accounting_version != self._expected_accounting_version
+                or vault.accounting_version != self.authorization.accounting_version
+                or vault.accounting_fingerprint != self._expected_accounting_fingerprint
+                or vault.accounting_fingerprint != self.authorization.accounting_fingerprint):
+            raise RuntimeError("accounting changed after quote authorization; recompute before transmission")
+        if self.config.execution_mode == ExecutionMode.PAPER:
+            if current_perp.mark_price != vault.mark_price:
+                raise RuntimeError("accounting mark changed after quote authorization")
+            actual = reserved_capital(vault.position_base, vault.mark_price, self.quotes,
+                                      await self.execution.get_open_orders())
+            if vault.reserved_capital_quote is None or actual > vault.reserved_capital_quote:
+                raise RuntimeError("accounting order reservation changed after authorization")
 
     async def _invalidate_locked(self, reason, health="DEGRADED"):
         self.quotes = []
@@ -249,6 +284,8 @@ class HyperAmmRuntime:
         self._expected_agent_version = None
         self._expected_agent_fingerprint = None
         self._expected_risk_version = None
+        self._expected_accounting_version = None
+        self._expected_accounting_fingerprint = None
         self.last_actions = []
         self.strategy.last_error = reason
         self.strategy.quote_health = "HALTED" if self.risk.kill_switch_active else health
@@ -260,6 +297,16 @@ class HyperAmmRuntime:
             self.risk.kill_switch_active = True
             self.risk.last_reason = self.strategy.last_error
             raise
+        if (self.config.execution_mode == ExecutionMode.PAPER and self.accounting_service.config.enabled
+                and not self.accounting_service.error and self.accounting_service.position.mark_price is not None):
+            try:
+                self.accounting_service.reserve(existing=await self.paper.get_open_orders())
+                self.vault_snapshot = self.accounting_service.snapshot()
+            except Exception as exc:
+                # Cancellation already succeeded. Accounting failure must never be
+                # reported as an unconfirmed venue cancellation.
+                self.accounting_service.fail(exc)
+                self.vault_snapshot = self.accounting_service.snapshot()
 
     async def _on_perp_context(self, context):
         async with self.execution_lock:
@@ -270,6 +317,10 @@ class HyperAmmRuntime:
                 if changed:
                     self.perp_context = self.perp_context_service._context
                     self._strategy_wakeup.set()
+                self._mark_accounting_locked(self.perp_context_service.snapshot(context.market_mid))
+                if self.config.execution_mode == ExecutionMode.PAPER:
+                    self.accounting_service.reserve(self.quotes, await self.paper.get_open_orders())
+                self.vault_snapshot = self.accounting_service.snapshot()
             except Exception as exc:
                 if self.config.perp_context_enabled or self.risk_config.enabled:
                     try:
@@ -295,6 +346,15 @@ class HyperAmmRuntime:
                 self.paper.update_market(snapshot)
                 if self.paper.inventory_version != before:
                     self.inventory = self._paper_inventory()
+                try:
+                    context = self.perp_context_service.snapshot(calculate_fair_value(snapshot))
+                    self._mark_accounting_locked(context)
+                    self.accounting_service.reserve(self.quotes, await self.paper.get_open_orders())
+                    self.vault_snapshot = self.accounting_service.snapshot()
+                except Exception:
+                    # Perp freshness and accounting authority are checked at refresh
+                    # and before transmission; feed startup may precede perp startup.
+                    pass
             self._strategy_wakeup.set()
 
     async def start_services(self):
@@ -338,33 +398,26 @@ class HyperAmmRuntime:
         await self.testnet.close()
 
     def _pnl_drawdown_locked(self, mark_price):
+        return to_pnl_drawdown(self.accounting_service.snapshot())
+
+    def _sync_paper_fills_locked(self):
+        # Fill callbacks book normal traffic; recovery also observes externally
+        # populated FillStore fixtures without losing economic events.
+        fills = self.paper.fills.all()
+        for fill in fills[self._accounted_fill_count:]:
+            if fill.market == self.config.market:
+                self.accounting_service.ingest_fill(fill)
+        self._accounted_fill_count = len(fills)
+
+    def _mark_accounting_locked(self, context):
         if self.config.execution_mode == ExecutionMode.PAPER:
-            return paper_pnl(self.paper.fills.all(), self.config.market, mark_price)
-        account = self.testnet.account_risk_snapshot()
-        current_equity = account.get("account_value") if account else None
-        if current_equity is not None:
-            if self._session_start_equity is None:
-                self._session_start_equity = current_equity
-            self._peak_equity = current_equity if self._peak_equity is None else max(self._peak_equity, current_equity)
-            session_pnl = current_equity - self._session_start_equity
-            drawdown = (
-                (self._peak_equity - current_equity) / self._peak_equity
-                if self._peak_equity is not None and self._peak_equity > 0
-                else None
-            )
+            self._sync_paper_fills_locked()
+            self.accounting_service.observe_funding(context)
+            self.accounting_service.mark(context.mark_price, observed_at=context.updated_at)
         else:
-            session_pnl = None
-            drawdown = None
-        return PnlDrawdown(
-            realized_pnl=None,
-            unrealized_pnl=self.perp_position.unrealized_pnl if self.perp_position else None,
-            session_pnl=session_pnl,
-            current_equity=current_equity,
-            peak_equity=self._peak_equity,
-            drawdown_pct=drawdown,
-            source="TESTNET AUTHORITATIVE USER STATE",
-            simulated=False,
-        )
+            self.accounting_service.observe_testnet(self.perp_position, self.testnet.account_risk_snapshot(),
+                                                   mark=context.mark_price)
+        self.vault_snapshot = self.accounting_service.snapshot()
 
     async def refresh_once(self):
         async with self.execution_lock:
@@ -388,6 +441,10 @@ class HyperAmmRuntime:
                 if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
                     self.perp_context_service.accept(demo_perp_context(snap))
                 perp_context = self.perp_context_service.snapshot(market_fair)
+                self._mark_accounting_locked(perp_context)
+                if self.config.execution_mode == ExecutionMode.PAPER:
+                    if self.accounting_service.position.position_base != inventory.position_base:
+                        raise RuntimeError("PAPER inventory and accounting position disagree")
 
                 if self.config.perp_context_enabled:
                     fair, pool, proposed, inventory_decision, market_decision, perp_decision = (
@@ -432,6 +489,8 @@ class HyperAmmRuntime:
                 )
                 pnl = self._pnl_drawdown_locked(perp_context.mark_price)
                 existing_orders = await self.execution.get_open_orders()
+                self.vault_snapshot = (self.accounting_service.reservation_snapshot(agent_candidate, existing_orders)
+                    if self.config.execution_mode == ExecutionMode.PAPER else self.accounting_service.snapshot())
                 risk_decision = self.firewall.evaluate(
                     refs=refs,
                     quotes=agent_candidate,
@@ -444,6 +503,8 @@ class HyperAmmRuntime:
                     perp_version=perp_context.version,
                     venue_uncertain=self.config.execution_mode == ExecutionMode.TESTNET and self.testnet.has_unknown_exposure(),
                     existing_orders=existing_orders,
+                    capital=self.vault_snapshot,
+                    max_capital_utilization=self.accounting_config.max_capital_utilization,
                 )
                 authorized = self.firewall.transform(
                     agent_candidate,
@@ -454,7 +515,10 @@ class HyperAmmRuntime:
                     base_order_size=self.config.base_order_size,
                 )
                 validate_quotes(authorized, snap, self.risk)
-                authorization = authorize(authorized, refs, risk_decision, agent_decision)
+                if self.config.execution_mode == ExecutionMode.PAPER:
+                    self.accounting_service.reserve(authorized, existing_orders)
+                self.vault_snapshot = self.accounting_service.snapshot()
+                authorization = authorize(authorized, refs, risk_decision, agent_decision, self.vault_snapshot)
 
                 self.inventory = inventory
                 self.inventory_decision = inventory_decision
@@ -475,6 +539,8 @@ class HyperAmmRuntime:
                 self._expected_agent_version = agent_decision.version
                 self._expected_agent_fingerprint = agent_decision.fingerprint
                 self._expected_risk_version = risk_decision.version
+                self._expected_accounting_version = self.vault_snapshot.accounting_version
+                self._expected_accounting_fingerprint = self.vault_snapshot.accounting_fingerprint
 
                 if self.strategy.running:
                     if authorized:
@@ -489,6 +555,11 @@ class HyperAmmRuntime:
                     self.agent_telemetry.observe_reconcile(self.last_actions,self.execution.all_orders())
                     if authorized:
                         await self._execution_authority()
+                    if self.config.execution_mode == ExecutionMode.PAPER:
+                        self.accounting_service.reserve(authorized, await self.execution.get_open_orders())
+                        self.vault_snapshot = self.accounting_service.snapshot()
+                        if self.accounting_service.version != self._expected_accounting_version:
+                            self._strategy_wakeup.set()
                     self.strategy.quote_health = "HALTED" if risk_decision.state == RiskState.HALT else "HEALTHY"
                 else:
                     self.last_actions = []
@@ -666,6 +737,18 @@ class HyperAmmRuntime:
             if agent_context_changed:
                 self.agent_telemetry = AgentTelemetryStore()
                 self.agent_supervisor = AgentSupervisor(self.agent_config)
+                # Serialized, internal new research session. Old PAPER economics
+                # must never seed TESTNET or a different market/session.
+                self.paper = PaperExecutionAdapter()
+                self.paper.on_fill = self._on_paper_fill
+                self.execution = self.paper if new_config.execution_mode == ExecutionMode.PAPER else self.testnet
+                self.orders.execution = self.execution
+                self.accounting_service = AccountingService(new_config.market, new_config.execution_mode.value,
+                                                            self.accounting_config)
+                self.vault_snapshot = self.accounting_service.snapshot()
+                self._accounted_fill_count = 0
+                self._expected_accounting_version = None
+                self._expected_accounting_fingerprint = None
             if mode_changed:
                 self.market_history.clear()
                 self.perp_context_service = PerpContextService(
@@ -835,6 +918,40 @@ class HyperAmmRuntime:
             "reasons":["no current FinalQuoteAuthorization"],
         }
 
+    def accounting_payload(self):
+        vault = self.accounting_service.snapshot()
+        return {
+            "config": self.accounting_config.model_dump(mode="json"),
+            "accounting_version": vault.accounting_version,
+            "accounting_fingerprint": vault.accounting_fingerprint,
+            "ledger_version": vault.ledger_version,
+            "ledger_fingerprint": vault.ledger_fingerprint,
+            "retention_policy": self.accounting_service.ledger.retention_policy,
+            "pnl": self.accounting_service.pnl().model_dump(mode="json"),
+            "events": [e.model_dump(mode="json") for e in self.accounting_service.events(20)],
+        }
+
+    async def vault_summary(self):
+        async with self.execution_lock:
+            try:
+                snap = await self.market.snapshot()
+                fair = calculate_fair_value(snap)
+                if self.config.market_data_mode == MarketDataMode.DEMO and self.perp_context_service._context is None:
+                    self.perp_context_service.accept(demo_perp_context(snap))
+                context = self.perp_context_service.snapshot(fair)
+                if self.config.execution_mode == ExecutionMode.TESTNET:
+                    self.perp_position = self.testnet.perp_position_snapshot(self.config.market)
+                self._mark_accounting_locked(context)
+                if self.config.execution_mode == ExecutionMode.PAPER:
+                    self.accounting_service.reserve(self.quotes, await self.paper.get_open_orders())
+            except Exception as exc:
+                # Read-only observability retains prior evidence and reports error.
+                # Market outages do not overwrite balances with defaults.
+                self.vault_snapshot = self.accounting_service.snapshot()
+                return self.vault_snapshot.model_copy(update={"stale": True, "error": str(exc)}).model_dump(mode="json")
+            self.vault_snapshot = self.accounting_service.snapshot()
+            return self.vault_snapshot.model_dump(mode="json")
+
     async def terminal_state(self):
         snap = await self.market.snapshot()
         inventory = None
@@ -859,6 +976,8 @@ class HyperAmmRuntime:
             "risk_events": self.risk_events_summary()[-20:],
             "projected_exposure": self.risk_decision.exposure.model_dump(mode="json") if self.risk_decision else None,
             "pnl_drawdown": self.risk_decision.pnl_drawdown.model_dump(mode="json") if self.risk_decision else None,
+            "vault": self.accounting_service.snapshot().model_dump(mode="json"),
+            "accounting": self.accounting_payload(),
             "risk": self.risk.model_dump(mode="json"),
             "orders": [o.model_dump(mode="json") for o in self.paper.all_orders()]
             if self.config.execution_mode == ExecutionMode.PAPER

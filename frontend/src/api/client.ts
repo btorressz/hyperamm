@@ -1,4 +1,4 @@
-import type { OptimizationResult,SimulationResult,StrategyConfig } from '../types'
+import type { AccountingLedgerState,PnlBreakdownState,VaultSnapshot,OptimizationResult,SimulationResult,StrategyConfig } from '../types'
 const API='/api/v1'
 async function request<T>(path:string,init?:RequestInit):Promise<T>{
   const r=await fetch(`${API}${path}`,{headers:{'Content-Type':'application/json'},...init})
@@ -8,6 +8,10 @@ async function request<T>(path:string,init?:RequestInit):Promise<T>{
 }
 export const api={
   health:()=>request<{status:string;app:string;stale:boolean;mode:string;simulated:boolean}>('/health'),
+  vault:()=>request<VaultSnapshot>('/vault'),
+  accountingPnl:()=>request<PnlBreakdownState>('/accounting/pnl'),
+  accountingLedger:(limit=100)=>request<AccountingLedgerState>(`/accounting/ledger?limit=${limit}`),
+  accountingEvents:()=>request('/accounting/events'),
   marketAdaptation:()=>request('/market-adaptation'),
   perpContext:()=>request('/perp-context'),
   references:()=>request('/references'), agents:()=>request('/agents'), agentEvents:()=>request('/agents/events'), riskEvidence:()=>request('/risk/evidence'), riskEvents:()=>request('/risk/events'), riskAuthorization:()=>request('/risk/authorization'),

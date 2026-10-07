@@ -157,22 +157,12 @@ def liquidation_evidence(position,mark,liquidation)->LiquidationEvidence:
 
 
 def paper_pnl(fills,market,mark)->PnlDrawdown:
-    qty=Decimal("0");avg=Decimal("0");realized=Decimal("0")
-    for fill in fills:
-        if fill.market!=market:continue
-        signed=fill.size if fill.side=="BID" else -fill.size
-        if qty==0 or (qty>0)==(signed>0):
-            new=qty+signed
-            avg=(avg*abs(qty)+fill.price*abs(signed))/abs(new) if new else Decimal("0")
-            qty=new;continue
-        close=min(abs(qty),abs(signed))
-        realized+=(fill.price-avg)*close*(Decimal("1") if qty>0 else Decimal("-1"))
-        old_sign=Decimal("1") if qty>0 else Decimal("-1")
-        qty=qty+signed
-        if qty==0:avg=Decimal("0")
-        elif (qty>0)!=(old_sign>0):avg=fill.price
-    unrealized=(mark-avg)*qty if qty else Decimal("0")
-    return PnlDrawdown(realized_pnl=realized,unrealized_pnl=unrealized,session_pnl=realized+unrealized,source="SIMULATED PAPER PNL",simulated=True)
+    """Legacy gross-PnL adapter to the single Phase 11 average-cost formula."""
+    from app.accounting.pnl import replay_position, pnl_breakdown
+    position=replay_position(fills,market,mark)
+    pnl=pnl_breakdown(position,Decimal("0"),Decimal("0"))
+    return PnlDrawdown(realized_pnl=pnl.realized_trading_pnl,unrealized_pnl=pnl.unrealized_trading_pnl,
+                       session_pnl=pnl.net_pnl,source="SIMULATED PAPER PNL",simulated=True)
 
 
 class RiskFirewall:
@@ -202,12 +192,19 @@ class RiskFirewall:
             elif pnl.drawdown_pct>=c.drawdown_warn_pct:severity=max(severity,1);reasons.append("drawdown warning")
         if venue_uncertain:severity=3;reasons.append("venue exposure is uncertain")
         return [RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT][severity],reasons,maxdev
-    def evaluate(self,*,refs,quotes,current_position,mark,liquidation,pnl,market_version,inventory_version,perp_version,venue_uncertain=False,existing_orders=None):
+    def evaluate(self,*,refs,quotes,current_position,mark,liquidation,pnl,market_version,inventory_version,perp_version,venue_uncertain=False,existing_orders=None,capital=None,max_capital_utilization=Decimal("1")):
         c=self.config;price=refs.consensus.consensus_price or mark;exp=exposure_metrics(quotes,current_position,price,max(c.max_projected_long_base,c.max_projected_short_base),existing_orders);liq=liquidation_evidence(current_position,mark,liquidation)
         if not c.enabled:
             candidate,reasons,maxdev=RiskState.NORMAL,["reference firewall disabled"],Decimal("0")
         else:
             candidate,reasons,maxdev=self._candidate(refs,exp,liq,pnl,venue_uncertain)
+        # Accounting authority remains enforced even if the reference firewall is disabled.
+        if capital is not None:
+            if capital.stale or capital.error or capital.accounting_complete=="UNAVAILABLE":
+                candidate=RiskState.HALT;reasons.append("accounting stale, error or unavailable")
+            elif capital.mode=="PAPER" and (capital.equity_quote is None or capital.reserved_capital_quote is None
+                    or capital.reserved_capital_quote>max(Decimal("0"),capital.equity_quote)*max_capital_utilization):
+                candidate=RiskState.HALT;reasons.append("SIMULATED CAPITAL RESERVATION exceeds research capital limit")
         previous=self.state
         if candidate.value==RiskState.HALT.value or [RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT].index(candidate)>[RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT].index(self.state):
             effective=candidate;self.confirmations=0
