@@ -476,3 +476,77 @@ def test_simulation_churn_is_action_based_and_ignores_keep_cadence():
     initial=acc.finalize(**kwargs);acc.keep=1000;after=acc.finalize(**kwargs)
     assert initial.reconciliation_churn_ratio==after.reconciliation_churn_ratio==churn_ratio(1000,1,1,0)==D(".5")
     assert after.keep_count==1000
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "training,validation,alias_validation,overlap",
+    [
+        (["QUIET"],["TREND_UP"],False,False),
+        (["QUIET"],["QUIET"],False,True),
+        (["QUIET","QUIET"],["QUIET","QUIET"],False,True),
+        (["QUIET"],["TREND_UP"],True,True),
+        (["QUIET","TREND_UP"],["TREND_UP","MEAN_REVERTING"],False,True),
+    ],
+)
+async def test_optimizer_validation_provenance_uses_dataset_identity(
+    monkeypatch,training,validation,alias_validation,overlap
+):
+    import app.simulation.optimizer as optimizer_module
+    from app.simulation.config import OptimizationObjectiveConfig
+    from app.simulation.models import OptimizationResult
+
+    frames=3
+    if alias_validation:
+        # Different labels resolve to one real, validated deterministic dataset.
+        shared=generate_scenario("QUIET",frames=frames)
+        monkeypatch.setattr(optimizer_module,"generate_scenario",lambda *args,**kwargs:shared)
+    result=await optimizer_module.StrategyOptimizer().optimize(
+        baseline_strategy=StrategyConfig(),baseline_agents=AgentConfig(),risk_config=RiskFirewallConfig(),
+        simulation_config=SimulationConfig(max_frames=frames,record_trace=False),
+        strategy_grid={"levels_per_side":[4,6]},agent_grid={},
+        training_scenarios=training,validation_scenarios=validation,
+        objective=OptimizationObjectiveConfig(),max_candidates=2,frames=frames,top_n=1,
+    )
+    expected_training=[optimizer_module.generate_scenario(name,frames=frames).fingerprint for name in training]
+    expected_validation=[optimizer_module.generate_scenario(name,frames=frames).fingerprint for name in validation]
+    classification="REUSED_OVERLAPPING" if overlap else "INDEPENDENT_HOLDOUT"
+    for candidate in [result.baseline,result.ranked_candidates[0]]:
+        assert candidate.training_dataset_fingerprints==expected_training
+        assert candidate.validation_dataset_fingerprints==expected_validation
+        assert candidate.validation_overlap is overlap
+        assert candidate.independent_holdout is (not overlap)
+        assert candidate.validation_classification==classification
+        for evaluation,expected in zip(candidate.training+candidate.validation,expected_training+expected_validation):
+            assert evaluation.dataset_fingerprint==expected
+            assert evaluation.model_dump(mode="json")["dataset_fingerprint"]==expected
+        encoded=candidate.model_dump(mode="json")
+        assert encoded["training_dataset_fingerprints"]==expected_training
+        assert encoded["validation_dataset_fingerprints"]==expected_validation
+        assert encoded["validation_overlap"] is overlap
+        assert encoded["independent_holdout"] is (not overlap)
+        assert encoded["validation_classification"]==classification
+
+    unevaluated=result.ranked_candidates[1]
+    assert unevaluated.validation==[]
+    assert unevaluated.validation_classification=="NOT_EVALUATED"
+    assert unevaluated.independent_holdout is False
+    assert result.training_dataset_fingerprints==sorted(set(expected_training))
+    assert result.validation_dataset_fingerprints==sorted(set(expected_validation))
+    assert result.validation_overlap is overlap
+    assert result.independent_holdout is (not overlap)
+    assert result.validation_classification==classification
+    serialized=result.model_dump(mode="json")
+    assert serialized["training_dataset_fingerprints"]==sorted(set(expected_training))
+    assert serialized["validation_dataset_fingerprints"]==sorted(set(expected_validation))
+    assert serialized["validation_overlap"] is overlap
+    assert serialized["independent_holdout"] is (not overlap)
+    assert serialized["validation_classification"]==classification
+    assert OptimizationResult.model_validate_json(result.model_dump_json()).model_dump()==result.model_dump()
+    if overlap:
+        # Caller-supplied claims cannot override the classification derived from identity.
+        serialized.update(independent_holdout=True,validation_overlap=False,validation_classification="INDEPENDENT_HOLDOUT")
+        reconstructed=OptimizationResult.model_validate(serialized)
+        assert reconstructed.independent_holdout is False
+        assert reconstructed.validation_overlap is True
+        assert reconstructed.validation_classification=="REUSED_OVERLAPPING"

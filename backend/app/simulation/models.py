@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 import hashlib,json
 
-from pydantic import BaseModel,ConfigDict,Field,model_validator
+from pydantic import BaseModel,ConfigDict,Field,computed_field,model_validator
 
 from app.market_data.models import MarketSnapshot
 from app.market_data.perp_context import PerpMarketContext
@@ -194,6 +194,7 @@ class ScoreComponents(BaseModel):
 
 class ScenarioEvaluation(BaseModel):
     scenario:str
+    dataset_fingerprint:str
     run_fingerprint:str
     metrics:SimulationMetrics
     score:ScoreComponents
@@ -213,6 +214,35 @@ class CandidateEvaluation(BaseModel):
     score_delta:Decimal|None=None
     baseline_delta:dict[str,Decimal|None]=Field(default_factory=dict)
 
+    @computed_field
+    @property
+    def training_dataset_fingerprints(self)->list[str]:
+        return [item.dataset_fingerprint for item in self.training]
+
+    @computed_field
+    @property
+    def validation_dataset_fingerprints(self)->list[str]:
+        return [item.dataset_fingerprint for item in self.validation]
+
+    @computed_field
+    @property
+    def validation_overlap(self)->bool:
+        return bool(set(self.training_dataset_fingerprints)&set(self.validation_dataset_fingerprints))
+
+    @computed_field
+    @property
+    def independent_holdout(self)->bool:
+        return bool(self.training_dataset_fingerprints and self.validation_dataset_fingerprints) and not self.validation_overlap
+
+    @computed_field
+    @property
+    def validation_classification(self)->str:
+        if not self.validation_dataset_fingerprints:
+            return "NOT_EVALUATED"
+        if self.validation_overlap:
+            return "REUSED_OVERLAPPING"
+        return "INDEPENDENT_HOLDOUT" if self.independent_holdout else "NOT_EVALUATED"
+
 
 class OptimizationResult(BaseModel):
     engine_version:str
@@ -225,3 +255,34 @@ class OptimizationResult(BaseModel):
     validation_scenarios:list[str]
     objective:dict
     simulated:bool=True
+
+    @computed_field
+    @property
+    def training_dataset_fingerprints(self)->list[str]:
+        return sorted({fp for candidate in [self.baseline,*self.ranked_candidates]
+                       for fp in candidate.training_dataset_fingerprints})
+
+    @computed_field
+    @property
+    def validation_dataset_fingerprints(self)->list[str]:
+        return sorted({fp for candidate in [self.baseline,*self.ranked_candidates]
+                       for fp in candidate.validation_dataset_fingerprints})
+
+    @computed_field
+    @property
+    def validation_overlap(self)->bool:
+        return bool(set(self.training_dataset_fingerprints)&set(self.validation_dataset_fingerprints))
+
+    @computed_field
+    @property
+    def independent_holdout(self)->bool:
+        return bool(self.training_dataset_fingerprints and self.validation_dataset_fingerprints) and not self.validation_overlap
+
+    @computed_field
+    @property
+    def validation_classification(self)->str:
+        if not self.validation_dataset_fingerprints:
+            return "NOT_EVALUATED"
+        if self.validation_overlap:
+            return "REUSED_OVERLAPPING"
+        return "INDEPENDENT_HOLDOUT" if self.independent_holdout else "NOT_EVALUATED"

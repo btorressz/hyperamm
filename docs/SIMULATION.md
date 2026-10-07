@@ -541,7 +541,7 @@ Approved `AgentConfig` research fields:
 
 Unknown fields are rejected.
 
-Candidates are constructed through normal Pydantic `StrategyConfig` / `AgentConfig` validation. Invalid combinations are reported; they are not silently clamped.
+Candidates are constructed through normal Pydantic `StrategyConfig` / `AgentConfig` validation. Invalid combinations are reported as rejected candidates; they are not silently clamped. Only `ValidationError` raised while constructing those configs is a candidate rejection. Dataset generation, simulation, scoring and result construction run outside that exception handler; unexpected failures, including engine/runtime `ValueError` or `ValidationError`, abort optimization.
 
 ## Immutable safety/runtime settings
 
@@ -630,7 +630,29 @@ BASELINE
 
 Candidates are ranked only on the mean training-scenario objective score.
 
-After training ranking, top candidates are evaluated on validation scenarios without retuning.
+After training ranking, the baseline and top candidates are evaluated on validation scenarios without retuning.
+
+Every `ScenarioEvaluation` exposes `dataset_fingerprint` alongside `run_fingerprint`.
+Dataset identity reuses the existing `SimulationDataset.fingerprint`; scenario labels
+and configuration-dependent run fingerprints do not establish independence.
+The baseline, each candidate and the overall optimization result expose:
+
+- `training_dataset_fingerprints` and `validation_dataset_fingerprints`;
+- `validation_overlap`: whether those identity sets intersect;
+- `independent_holdout`: true only when both sets are nonempty and disjoint;
+- `validation_classification`: `INDEPENDENT_HOLDOUT`, `REUSED_OVERLAPPING`
+  (REUSED / OVERLAPPING validation), or `NOT_EVALUATED`.
+
+These fields are derived from the evaluations and included in serialized results.
+Candidate identity lists retain evaluation order and duplicates; overall lists
+are sorted unique identities across the baseline and all candidates. Candidates
+outside the validation selection have `NOT_EVALUATED` status. Any overlap makes
+the entire validation set reused/overlapping, including partially overlapping sets.
+Repeated deterministic scenarios cannot be called out-of-sample, and different
+labels resolving to the same dataset fingerprint remain overlapping. An independent
+holdout here means disjoint dataset identities within this synthetic research run;
+it does not establish real-market out-of-sample performance. Validation provenance
+does not change candidate generation, objective scoring or training ranking.
 
 Results expose:
 
@@ -732,11 +754,12 @@ joined before runtime services are stopped. Python threads are never forcibly
 terminated. This protects event-loop scheduling, not separate-process CPU or
 memory isolation; the worker still shares the interpreter.
 
-Only `pydantic.ValidationError` and `ValueError` in candidate validation/domain
-execution are recorded as rejected candidates. `RuntimeError`, `AttributeError`,
-`KeyError`, `TypeError` and other unexpected failures abort optimization and
-produce a generic HTTP 500, with engineering diagnostics in application logs.
-Bad request/config inputs receive HTTP 422. Broad exception handlers exist only
+Only `pydantic.ValidationError` during candidate config construction is recorded
+as a rejected candidate. Engine/runtime exceptions, including `ValueError` and
+`ValidationError`, propagate out of the optimizer instead of entering
+`rejected_candidates`. The existing API boundary maps `ValueError` (including
+Pydantic validation errors) to HTTP 422; other unexpected failures produce a
+generic HTTP 500 with engineering diagnostics in application logs. Broad exception handlers exist only
 at the worker/API/submit cleanup boundaries, where they log or re-raise failures;
 none converts unexpected candidate errors into rejections.
 
