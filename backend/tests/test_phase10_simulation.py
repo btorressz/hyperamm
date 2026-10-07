@@ -550,3 +550,67 @@ async def test_optimizer_validation_provenance_uses_dataset_identity(
         assert reconstructed.independent_holdout is False
         assert reconstructed.validation_overlap is True
         assert reconstructed.validation_classification=="REUSED_OVERLAPPING"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cadence", range(4), ids=["regular", "bursty", "sparse", "irregular"])
+async def test_simulation_shared_count_sampling_and_retimed_run_determinism(monkeypatch, cadence):
+    import app.strategy.market_adaptation as adaptation
+    from test_phase6_runtime import SAMPLING_CADENCES
+
+    regular = generate_scenario("HIGH_VOLATILITY", frames=5)
+    start = regular.frames[0].timestamp
+    frames = []
+    for frame, offset in zip(regular.frames, SAMPLING_CADENCES[cadence]):
+        timestamp = start + timedelta(seconds=offset)
+        market = frame.market.model_copy(update={
+            "latest_valid_update": timestamp,
+            "book": frame.market.book.model_copy(update={"timestamp": timestamp}),
+        })
+        frames.append(frame.model_copy(update={
+            "timestamp": timestamp, "market": market,
+            "perp_context": frame.perp_context.model_copy(update={"updated_at": timestamp}),
+        }))
+    dataset = SimulationDataset(market=regular.market, source=regular.source, frames=frames)
+    config = StrategyConfig(volatility_window_samples=4, volatility_min_samples=3)
+    agents = AgentConfig(regime_min_samples=3, regime_momentum_window_samples=5)
+    observed = []
+    calculated = []
+    original_evidence = engine_module.build_agent_evidence
+    original_estimator = adaptation.calculate_realized_volatility
+
+    def capture_estimator(prices):
+        calculated.append(list(prices))
+        return original_estimator(prices)
+
+    def capture_evidence(**kwargs):
+        decision = kwargs["market_decision"]
+        evidence = original_evidence(**kwargs)
+        assert evidence.realized_volatility == decision.realized_volatility
+        assert evidence.volatility_score == decision.volatility_score
+        assert evidence.market_adaptation_regime == decision.regime.value
+        observed.append((decision.sample_count, decision.volatility_ready, decision.realized_volatility, decision.volatility_score, decision.regime))
+        return evidence
+
+    monkeypatch.setattr(adaptation, "calculate_realized_volatility", capture_estimator)
+    monkeypatch.setattr(engine_module, "build_agent_evidence", capture_evidence)
+    kwargs = dict(dataset=dataset, strategy_config=config, agent_config=agents,
+                  risk_config=RiskFirewallConfig(), simulation_config=SimulationConfig(max_frames=5, trace_max_points=5))
+    first = await SimulationEngine().run(**kwargs)
+    second = await SimulationEngine().run(**kwargs)
+    assert first.run_fingerprint == second.run_fingerprint
+    assert first.metrics == second.metrics
+    assert first.orders == second.orders and first.fills == second.fills
+    assert first.trace == second.trace
+    assert observed[:5] == observed[5:]
+    expected = []
+    history = MarketPriceHistory()
+    for frame in regular.frames:
+        history.add_snapshot(frame.market)
+        decision = adaptation.MarketAdaptationPolicy(config).decision(frame.market, history)
+        expected.append((decision.sample_count, decision.volatility_ready, decision.realized_volatility, decision.volatility_score, decision.regime))
+    assert observed[:5] == expected
+    windows = [[frame.market.mid_price for frame in regular.frames[:count]][-4:] for count in range(3, 6)]
+    # Exactly one Phase 6 estimator call per ready frame, with its trailing prices.
+    assert calculated[:6] == windows * 2
+    assert [point.agent_regime for point in first.trace] == ["WARMING_UP"] * 2 + ["HIGH_VOLATILITY"] * 3

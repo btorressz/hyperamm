@@ -515,3 +515,40 @@ def test_soft_error_discards_prior_advice_and_preserves_upstream_bounds(monkeypa
         assert after.size<=before.size
         assert after.price<=before.price if before.side=="BID" else after.price>=before.price
     assert len(adapted)==len(base)
+
+
+@pytest.mark.parametrize("cadence", range(4), ids=["regular", "bursty", "sparse", "irregular"])
+def test_regime_evidence_reuses_phase6_per_observation_volatility(cadence):
+    from app.agents.evidence import build_agent_evidence
+    from app.simulation.references import build_simulated_references
+    from app.simulation.scenarios import generate_scenario
+    from app.strategy.inventory import build_inventory_state
+    from app.strategy.market_adaptation import MarketAdaptationPolicy
+    from app.strategy.models import StrategyConfig
+    from test_phase6_runtime import SAMPLING_CADENCES, timed_sampling_snapshots
+
+    config = StrategyConfig(volatility_window_samples=4, volatility_min_samples=3)
+    agent_config = AgentConfig(regime_min_samples=3, regime_momentum_window_samples=5)
+    inventory = build_inventory_state(market="ETH", position=D("0"), target=D("0"), soft_limit=D("5"), source="PAPER")
+    frame = generate_scenario("QUIET", frames=2).frames[0]
+    refs = build_simulated_references(frame, agreement_bps=D("30"), outlier_bps=D("75"), version=1)
+    history = MarketPriceHistory()
+    snapshots = timed_sampling_snapshots(SAMPLING_CADENCES[cadence])
+    for count, snap in enumerate(snapshots, 1):
+        assert history.add_snapshot(snap)
+        phase6 = MarketAdaptationPolicy(config).decision(snap, history)
+        ev = build_agent_evidence(
+            market_decision=phase6, inventory=inventory, perp_context=frame.perp_context,
+            refs=refs, history=history, momentum_window=5,
+        )
+        assert ev.realized_volatility == phase6.realized_volatility
+        assert ev.volatility_score == phase6.volatility_score
+        assert ev.market_adaptation_regime == phase6.regime.value
+        output = RegimeAgent(agent_config).evaluate(ev)
+        assert output.realized_volatility == phase6.realized_volatility
+        assert output.volatility_score == phase6.volatility_score
+        if count < 3:
+            assert output.health == AgentHealth.WARMING_UP
+        else:
+            assert output.state == MarketRegime.HIGH_VOLATILITY
+    assert ev.momentum_bps == 0  # endpoint price unchanged, despite high RMS

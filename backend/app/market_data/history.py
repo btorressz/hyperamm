@@ -26,7 +26,12 @@ class MarketObservation:
 
 
 class MarketPriceHistory:
-    """Bounded, deterministic normalized mid-price history for Phase 6."""
+    """Bounded accepted normalized observations for Phase 6's count-based RMS.
+
+    Timestamp/sequence enforce ordering and deduplication, not time weighting.
+    Distinct accepted observations with unchanged prices still count. There is
+    no cadence resampling, interpolation, or expiry based on elapsed time.
+    """
 
     def __init__(self, max_samples: int = 1000):
         if max_samples < 2:
@@ -102,6 +107,7 @@ class MarketPriceHistory:
         return True
 
     def prices(self, window: int) -> list[Decimal]:
+        """Latest N accepted prices, irrespective of timestamp spacing."""
         if window < 2:
             raise ValueError("window must be >= 2")
         return [item.mid_price for item in list(self._items)[-window:]]

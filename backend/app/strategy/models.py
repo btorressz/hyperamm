@@ -44,10 +44,10 @@ class StrategyConfig(BaseModel):
     inventory_stale_after_seconds: float = Field(default=10.0, gt=0, le=300)
 
     market_adaptation_enabled: bool = True
-    volatility_window_samples: int = Field(default=60, ge=2, le=1000)
-    volatility_min_samples: int = Field(default=10, ge=2, le=1000)
-    volatility_low_threshold: Decimal = Field(default=Decimal("0.0002"), ge=0)
-    volatility_high_threshold: Decimal = Field(default=Decimal("0.0020"), gt=0)
+    volatility_window_samples: int = Field(default=60, ge=2, le=1000, description="Trailing accepted price observations; N prices yield N-1 returns.")
+    volatility_min_samples: int = Field(default=10, ge=2, le=1000, description="Accepted price observations required for volatility warmup.")
+    volatility_low_threshold: Decimal = Field(default=Decimal("0.0002"), ge=0, description="Per-observation RMS log-return threshold (about 2 bps); score 0 at/below this value.")
+    volatility_high_threshold: Decimal = Field(default=Decimal("0.0020"), gt=0, description="Per-observation RMS log-return threshold (about 20 bps); score 1 at/above this value. Not annualized or time-normalized.")
     volatility_spread_strength: Decimal = Field(default=Decimal("1.0"), ge=0)
     volatility_size_strength: Decimal = Field(default=Decimal("0.50"), ge=0, le=Decimal("1"))
     book_imbalance_levels: int = Field(default=5, ge=1, le=50)

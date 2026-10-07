@@ -2519,6 +2519,7 @@
     "reference_price": "3001.517236494375"
   },
   "market_adaptation": {
+    "volatility_sampling": "PER_ACCEPTED_OBSERVATION",
     "market": "ETH",
     "realized_volatility": null,
     "volatility_score": "0",

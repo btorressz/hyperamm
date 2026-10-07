@@ -156,6 +156,7 @@ export type InventoryState = {
 };
 export type MarketAdaptationState = {
   market: string;
+  volatility_sampling: "PER_ACCEPTED_OBSERVATION";
   realized_volatility: Decimalish | null;
   volatility_score: Decimalish;
   volatility_ready: boolean;
