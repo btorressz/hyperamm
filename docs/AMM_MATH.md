@@ -104,6 +104,20 @@ Normalizing to a fixed per-side budget cancels that common factor. Acceptance
 therefore verifies successive reserve deltas and their sizing weights directly,
 not an incorrect requirement that changing `k` must change relative sizes.
 
+### A1-024: curve scale is not quoted capital
+
+The virtual reserves and `k` are mathematical curve state. They are not on-chain
+TVL, exchange margin, wallet balance or a promise of deployable capital. HyperAMM
+separately configures the emitted CLOB budget through `total_liquidity`, which is
+a **per-side base-asset budget** including baseline sizes.
+
+At a fixed fair value, target-price grid and per-side budget, scaling `k` can
+multiply every reserve delta by the same common factor. The subsequent normalized
+weighting removes that common factor, so the final budgeted quote sizes can remain
+unchanged. This is intentional: `k` controls virtual curve geometry while the
+explicit quote budget controls emitted capacity. Increasing virtual curve scale
+alone must never be described as adding capital, TVL or margin.
+
 
 ## Phase 5 inventory policy
 

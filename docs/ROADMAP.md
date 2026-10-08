@@ -24,7 +24,9 @@ Phase 6 composes after the completed inventory policy. `MarketPriceHistory` prov
 Current review as of 2026-10-07: phases 1–12 are implemented. Historical local
 acceptance records below do not establish live/provider acceptance or production
 readiness. See [Audit 1.0](../AUDIT_REPORT_1.0.md) for remaining authority,
-provider and operational findings; this PR addresses only A1-018/A1-019.
+provider and operational findings. Recent hardening closed A1-018 through A1-023;
+A1-024 through A1-027 are informational design boundaries documented without new
+runtime authority or roadmap phase work.
 
 ## Phase 4.1 — COMPLETE
 

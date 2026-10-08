@@ -5,6 +5,24 @@ non-custodial, in-memory research capital layer for perpetual markets. It does
 not implement money movement, investor accounting, shares or fund fees. Phase 12
 remains planned.
 
+## A1-026 operational and custody boundary
+
+The Phase 11/11.1 vault is a **non-custodial, in-memory research accounting
+system**. Its ledger and session identities describe the active research process;
+they are not a bank/exchange statement, custody ledger or durable cross-restart
+strategy book.
+
+PAPER economics are simulated under the documented fee/funding assumptions.
+TESTNET exposes only the authoritative account/position fields currently available
+through the existing integration and keeps unsupported cash, realized PnL, fee,
+funding and capital-availability fields partial or null. HyperAMM does not infer
+missing economics from zero.
+
+There are no deposits, withdrawals, transfers, investor shares, fund fees or
+custodial asset flows. Durable journals, restart/order recovery and attribution of
+external account movements would require a separately reviewed operational scope;
+they are not implied by the current append-only in-memory ledger.
+
 ## One accounting authority
 
 ```text

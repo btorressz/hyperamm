@@ -908,6 +908,7 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Preserve explicit per-side budget/profile labels and document why curve scale does not directly allocate extra capital.
 - **Changes authority semantics?:** NO; changing this would be a new economic model and outside audit scope.
 - **Priority:** P3
+- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). Informational boundary; no runtime remediation required.
 
 ### A1-025 — Scientific libraries belong in optional offline research unless justified
 
@@ -921,6 +922,7 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** If a concrete need appears, add separate optional research tooling with exported immutable inputs and proposal-only outputs; no live auto-apply.
 - **Changes authority semantics?:** NO live authority; library outputs must never become signer/kill/position/capital truth.
 - **Priority:** P3
+- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). No scientific package is promoted into live authority; future use requires a concrete offline research workflow.
 
 ### A1-026 — Research vault and partial TESTNET accounting are not durable custody
 
@@ -934,6 +936,7 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Keep current noncustodial/partial labels; define durable recovery and economic completeness only in a separately reviewed operational scope.
 - **Changes authority semantics?:** POTENTIALLY for future recovery authority; no change proposed in this audit.
 - **Priority:** P3 observation; production prerequisite
+- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). Current non-custodial/in-memory/partial scope is intentional; durable recovery or custody requires separate review.
 
 ### A1-027 — Semantic versions and decision fingerprints are not full evidence archives
 
@@ -947,6 +950,21 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Document each identity scope and add immutable research provenance when needed; do not advance authority versions solely for display timestamp changes.
 - **Changes authority semantics?:** NO by default; enlarging material authority scope requires deliberate version compatibility review.
 - **Priority:** P3
+- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). Identity scopes are documented; no authority version/fingerprint expansion is made by this closeout.
+
+## Informational closeout: A1-024 through A1-027
+
+A1-024 through A1-027 are informational findings rather than defect-remediation
+requests. Their current disposition is documentation/acknowledgement:
+
+- A1-024 preserves the intentional separation between virtual-curve scale and the explicit per-side quote budget.
+- A1-025 keeps scientific tooling in optional offline research unless a concrete workflow justifies it; scientific-library outputs do not own live authority.
+- A1-026 preserves the research vault as non-custodial, in-memory accounting with partial TESTNET economics and no implied durable custody/recovery.
+- A1-027 documents the distinct scopes of semantic versions, authorization/decision fingerprints, terminal observation identities, simulation fingerprints and ledger-chain identity.
+
+This closeout does not change AMM economics, install research libraries, add
+persistence/custody, expand fingerprint materiality, add Redis, or create a new
+roadmap phase.
 
 ## 23. Top Remediation Priorities
 
