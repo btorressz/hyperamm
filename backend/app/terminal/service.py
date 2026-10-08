@@ -55,7 +55,75 @@ def scrub_notices(value, key=None):
     return value
 
 
-def aggregate_health(data):
+def observation_age(timestamp, now, *, future_tolerance_seconds=0):
+    """Age of retained evidence; invalid times never acquire freshness from emit."""
+    try:
+        source = timestamp if isinstance(timestamp, datetime) else datetime.fromisoformat(
+            timestamp.replace("Z", "+00:00")
+        )
+        if source.tzinfo is None:
+            return 0, False
+        seconds = (now - source).total_seconds()
+        return max(0, seconds * 1000), seconds >= -future_tolerance_seconds
+    except (AttributeError, TypeError, ValueError, OverflowError):
+        return 0, False
+
+
+def age_sources(data, now, thresholds):
+    """Age serialized terminal copies only, without provider calls or decisions."""
+    perp_budget = data["strategy"]["config"]["perp_context_stale_after_seconds"]
+    market_budget = thresholds.get("market")
+    p = data["perp_context"]
+    if p:
+        age, valid = observation_age(p.get("updated_at"), now)
+        p["stale"] = p["stale"] or not valid or age > perp_budget * 1000
+    refs = data["references"]
+    for provider, e in (refs["evidence"] if refs else {}).items():
+        if provider in ("HYPERLIQUID_ORACLE", "HYPERLIQUID_MARK"):
+            budget = perp_budget
+        elif provider == "HYPERLIQUID_MID" or e.get("transport") == "DEMO":
+            budget = market_budget
+        elif provider == "REDSTONE" and e.get("transport") == "PUBLIC_HTTP":
+            budget = thresholds.get("REDSTONE_PUBLIC_HTTP")
+        else:
+            budget = thresholds.get(provider)
+        # EvidenceState accepts up to five seconds of provider clock skew;
+        # native/demo and RedStone public HTTP timestamps have no future tolerance.
+        tolerance = (
+            5 if provider in ("REDSTONE", "KRAKEN", "COINGECKO")
+            and e.get("transport") not in ("DEMO", "PUBLIC_HTTP") else 0
+        )
+        age, valid = observation_age(
+            e.get("source_timestamp"), now, future_tolerance_seconds=tolerance
+        )
+        _, observed_valid = observation_age(e.get("observed_at"), now)
+        e["age_ms"] = int(age)
+        e["stale"] = (
+            e["stale"] or not valid or not observed_valid
+            or budget is None or age > budget * 1000
+        )
+        e["healthy"] = e["healthy"] and not e["stale"] and e["price"] is not None
+        # status/transport/quality and consensus remain the last evaluated state.
+
+
+def consensus_source_current(data, now=None):
+    """All inputs supporting the retained decision must still be available."""
+    c, refs = data["reference_consensus"], data["references"]
+    if not c or not refs or c["consensus_price"] is None or not c["eligible_providers"]:
+        return False
+    if now is not None and not observation_age(c["updated_at"], now)[1]:
+        return False
+    evidence = refs["evidence"]
+    return all(
+        provider in evidence
+        and evidence[provider]["healthy"]
+        and not evidence[provider]["stale"]
+        and evidence[provider]["price"] is not None
+        for provider in c["eligible_providers"]
+    )
+
+
+def aggregate_health(data, now=None):
     states = {}
 
     def put(name, status, reason):
@@ -70,7 +138,7 @@ def aggregate_health(data):
     put(
         "perp_context",
         "UNAVAILABLE" if not p else "DEGRADED" if p["stale"] else "HEALTHY",
-        "No evidence" if not p else p["source"],
+        "No evidence" if not p else p["source"] + (" source STALE" if p["stale"] else " source fresh"),
     )
     evidence = refs["evidence"] if refs else {}
     put(
@@ -83,14 +151,18 @@ def aggregate_health(data):
         "Individual provider evidence",
     )
     c = data["reference_consensus"]
+    consensus_current = consensus_source_current(data, now)
     put(
         "reference_consensus",
         "UNAVAILABLE"
         if not c
         else "HEALTHY"
-        if c["confidence_state"] == "VERIFIED"
+        if c["confidence_state"] == "VERIFIED" and consensus_current
         else "DEGRADED",
-        c["confidence_state"] if c else "No evidence",
+        ("Last decision " + c["confidence_state"] + (
+            "; supporting sources fresh" if consensus_current
+            else "; supporting sources stale/unavailable"
+        )) if c else "No evidence",
     )
     red = evidence.get("REDSTONE")
     put(
@@ -98,9 +170,12 @@ def aggregate_health(data):
         "UNAVAILABLE"
         if not red
         else "HEALTHY"
-        if red["healthy"] and not red["stale"]
+        if red["status"] == "HEALTHY" and red["healthy"] and not red["stale"]
         else "DEGRADED",
-        (red.get("transport") or red["status"]) if red else "No evidence",
+        ("Last provider state " + red["status"] + " · "
+         + (red.get("transport") or "unknown transport")
+         + ("; source STALE" if red["stale"] else "; source fresh" if red["healthy"] else "; source unavailable"))
+        if red else "No evidence",
     )
     agents = data["agents"]
     s = agents.get("supervisor")
@@ -263,7 +338,7 @@ class TerminalService:
             )
         )
 
-    def observe(self, data, diagnostics):
+    def observe(self, data, diagnostics, *, freshness_thresholds=None):
         data = scrub_notices(data)
         now = self.clock()
         if now.tzinfo is None:
@@ -271,6 +346,8 @@ class TerminalService:
         # Wall-clock correction cannot reverse the observation ordering.
         now = max(now, self._last_emitted_at) if self._last_emitted_at else now
         self._last_emitted_at = now
+        age_sources(data, now, freshness_thresholds or {})
+        consensus_current = consensus_source_current(data, now)
         self.sequence = next(_SEQUENCE)
         config = data["strategy"]["config"]
         context = (
@@ -289,7 +366,7 @@ class TerminalService:
             self._context = context
         data["strategy_quotes"] = data.get("strategy_quotes", [])
         data["authorized_quotes"] = data["quotes"]
-        data["system_health"] = aggregate_health(data)
+        data["system_health"] = aggregate_health(data, now)
         all_orders, all_fills = data["orders"], data["fills"]
         totals = data.pop("execution_totals", {})
         counts = {
@@ -395,8 +472,7 @@ class TerminalService:
                     mark_price=p.get("mark_price") if perp_valid else None,
                     oracle_price=p.get("oracle_price") if perp_valid else None,
                     consensus_price=snapshot.reference_consensus.consensus_price
-                    if snapshot.reference_consensus
-                    and snapshot.reference_consensus.updated_at <= now
+                    if snapshot.reference_consensus and consensus_current
                     else None,
                     best_bid=max(
                         (q.price for q in quotes if q.side == "BID"), default=None

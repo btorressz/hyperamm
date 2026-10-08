@@ -1,4 +1,5 @@
 import type { TerminalState } from "../types";
+import { currentSourcePrices } from "../utils/freshness";
 import { OrderBook } from "../components/OrderBook";
 import { PriceLiquidityChart } from "../components/PriceLiquidityChart";
 import { ReferenceSourcesPanel } from "../components/RiskFirewallPanel";
@@ -12,7 +13,8 @@ import {
   timestamp,
 } from "../utils/format";
 export function Markets({ t }: { t: TerminalState }) {
-  const p = t.perp_context,
+  const current = currentSourcePrices(t);
+  const p = t.perp_context?.stale ? null : t.perp_context,
     m = t.market;
   return (
     <div className="stack">
@@ -23,7 +25,7 @@ export function Markets({ t }: { t: TerminalState }) {
       </div>
       <Panel
         title="Venue & perpetual context"
-        meta={`${m.mode} · ${m.connection_state} · ${m.stale ? "STALE" : "FRESH"}`}
+        meta={`${m.mode} · ${m.connection_state} · market ${m.stale ? "STALE" : "FRESH"} · perp ${!t.perp_context ? "UNAVAILABLE" : t.perp_context.stale ? "STALE" : "FRESH"}`}
       >
         <Metrics
           items={[
@@ -31,9 +33,9 @@ export function Markets({ t }: { t: TerminalState }) {
             ["Best ASK", price(m.best_ask)],
             ["Mid", price(m.mid_price)],
             ["Fair value", price(t.fair_value)],
-            ["Mark", price(p?.mark_price)],
-            ["HL Oracle", price(p?.oracle_price)],
-            ["Consensus", price(t.reference_consensus?.consensus_price)],
+            ["Mark", price(current.mark_price)],
+            ["HL Oracle", price(current.oracle_price)],
+            ["Consensus (current sources)", price(current.consensus_price)],
             ["Funding", percentage(p?.funding_rate, 4)],
             ["Open interest (base)", quantity(p?.open_interest_base)],
             ["Open interest (notional)", number(p?.open_interest_notional)],
@@ -45,7 +47,7 @@ export function Markets({ t }: { t: TerminalState }) {
             ],
             ["Book imbalance", percentage(t.market_adaptation?.book_imbalance)],
             ["Feed update", timestamp(m.latest_valid_update)],
-            ["Perp update", timestamp(p?.updated_at)],
+            ["Perp observation", timestamp(t.perp_context?.updated_at)],
           ]}
         />
       </Panel>

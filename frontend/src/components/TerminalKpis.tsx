@@ -8,7 +8,7 @@ export function TerminalKpis({ t }: { t: TerminalState }) {
     ["Session net PnL", money(v.net_pnl_quote)],
     ["Inventory ratio", percentage(t.inventory?.inventory_ratio)],
     ["Capital utilization", percentage(v.capital_utilization)],
-    ["Risk state", t.risk_firewall.state],
+    ["Last risk decision", t.risk_firewall.state],
     [
       "Filled notional / fills",
       money(t.execution_summary.filled_notional) +

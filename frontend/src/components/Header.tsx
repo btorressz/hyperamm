@@ -3,6 +3,7 @@ import { Badge } from "./Badge";
 import { api } from "../api/client";
 import { price, percentage, quantity } from "../utils/format";
 import type { TerminalState } from "../types";
+import { currentSourcePrices } from "../utils/freshness";
 export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
   const [error, setError] = useState("");
   const kill = async () => {
@@ -13,7 +14,8 @@ export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
       setError(String(e));
     }
   };
-  const p = t?.perp_context;
+  const p = t?.perp_context?.stale ? null : t?.perp_context;
+  const current = currentSourcePrices(t);
   return (
     <header className="topbar">
       <div className="headerMarket">
@@ -26,11 +28,11 @@ export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
       <div className="headerContext">
         <div>
           <small>Mark</small>
-          <b>{price(p?.mark_price)}</b>
+          <b>{price(current.mark_price)}</b>
         </div>
         <div>
           <small>HL Oracle</small>
-          <b>{price(p?.oracle_price)}</b>
+          <b>{price(current.oracle_price)}</b>
         </div>
         <div>
           <small>Funding</small>
@@ -43,7 +45,7 @@ export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
       </div>
       <div className="headerBadges">
         <Badge tone={ws === "connected" ? "good" : "warn"}>
-          {ws.toUpperCase()}
+          TERMINAL {ws.toUpperCase()}
         </Badge>
         <Badge tone={t?.market.mode === "LIVE" ? "blue" : "warn"}>
           {t?.market.mode ?? "UNAVAILABLE"}
