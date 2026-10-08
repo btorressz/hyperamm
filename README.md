@@ -3,6 +3,8 @@
 
 ## Current review status (2026-10-07)
 
+# Note: This project is open-source and currently under active development. Feel free to explore the codebase, review the implementation, and follow its progress as new features and improvements are added.
+
 Phases 1–12 are implemented, including all 12 active terminal pages. Implementation,
 local fixture acceptance and live/external-provider acceptance are separate gates.
 Historical acceptance counts below describe their merge milestones, not the current
