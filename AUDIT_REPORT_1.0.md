@@ -2,6 +2,44 @@
 
 ## Executive Summary
 
+### Post-remediation status — 2026-10-08 (America/Los_Angeles)
+
+This is a status update to Audit 1.0, not a replacement audit. Current GitHub
+`main` was independently verified through the GitHub integration at
+`5f3336999d62d9241bb8591b807f48a634f9812f` (merged PR #32); the reviewed local
+checkout matches that commit. The local `origin/main` ref was stale and direct
+Git fetch was proxy-blocked, so it was not used as the current-state baseline.
+Merged PR metadata, implementation commits, current source and regression-test
+assertions were reviewed for all A1-001–A1-027.
+
+**Current verdict:** substantial code remediation has landed. The original
+transmission, material-market, execution-history and duplicate-slot defects are
+remediated in code; SDK reconnect/teardown now have deterministic regression
+evidence. Live transport, external-provider and signed venue acceptance remain
+separate gates. Supported deployment remains local, single-operator and
+single-worker. Optional Redis distributes observations and coordinates ephemeral
+resources; it supplies no financial authority or durable recovery.
+
+Current dispositions: **15 🟢 CLOSED, 7 🟡 PARTIALLY CLOSED, 5 🔵 DOCUMENTED /
+ACKNOWLEDGED; no finding classified wholly 🔴 OPEN.** Partial items are A1-001,
+A1-003, A1-004, A1-006 (code closed, live/signed acceptance pending), A1-009
+(local boundary implemented, remote security absent), A1-016 (numerical/sampling
+hardening implemented, empirical calibration pending), and A1-017 (compatibility
+review documented, NumPy removal deliberately deferred). A1-013 and A1-024–A1-027
+are acknowledged policies/design boundaries, not invented runtime fixes.
+
+**Reading the historical record:** unless explicitly labeled post-remediation or
+current disposition, the original narrative, severity, finding table,
+observations, tests/missing tests, recommendations, priorities, verdict and
+48 answers below describe the **2026-10-07 original audit baseline**. Their
+present-tense wording is historical evidence, not the current action list.
+Each finding's dated status block, section 23 and the dated section 24 update
+supersede that wording for current status. Original acceptance counts and dates
+remain unchanged. This Markdown-only review did not rerun application tests or
+perform live provider, signed venue or real Redis acceptance.
+
+### Original Audit 1.0 executive summary (2026-10-07)
+
 **Verdict:** the Phase 1–12 implementation roadmap exists as an integrated research and operator system. It is not yet production-oriented trading infrastructure. Local deterministic correctness is substantially stronger than live acceptance, restart durability, operational security, and transmission-level authority. Immediate hardening is warranted before serious TESTNET reliance; remediation should follow finding IDs across phases rather than become a new feature phase.
 
 | Audit fact | Verified result |
@@ -44,6 +82,8 @@ Current main was independently verified and fetched. The starting checkout was c
 
 ## 1. System Architecture
 
+> **Post-remediation note (2026-10-08):** PR #16 now normalizes venue economics before final validation/authorization and checks concrete request membership plus SDK wire round-trip equality (A1-001). The original diagram and boundary statement below describe the pre-remediation path.
+
 ### Actual authority and data flow
 
 ```mermaid
@@ -81,6 +121,8 @@ Market and perpetual services normalize inputs; references supervise source inte
 
 ## 2. Original Roadmap vs Current Implementation
 
+> **Post-remediation note (2026-10-08):** The implementation/review table below is the original phase assessment. PR #26 corrected obsolete current documentation; phases 1–12 are implemented, with local acceptance distinct from live/provider review. No new phase is introduced here.
+
 One primary classification per numbered phase; completeness of code is separate from acceptance status.
 
 | Phase | Original intent | Classification | Current implementation, change and judgment | Documentation / review |
@@ -103,6 +145,8 @@ Subphases 4.1, 8.2, 10.1 and 11.1 are execution, reference transport, research-i
 The original assumptions that all curve variants were necessary, a generic Risk Agent should own risk, an Optimization Agent should run beside execution, and a vault necessarily means custody were simplified or replaced appropriately. Reference provenance, deterministic authority, simulation isolation and accounting became substantially more sophisticated. The main documentation problem is mixing historical acceptance statements with current status (A1-018).
 
 ## 3. Phase-by-Phase Review
+
+> **Post-remediation note (2026-10-08):** The historical gaps below now have per-finding dispositions in section 22. PRs #16–#24 and #26–#29 remediate the reviewed code defects; A1-013 retains a documented optional-agent policy and A1-017 retains NumPy by explicit decision. Live/calibration gates are not closed by these merges.
 
 ### Phase 1 — Market Data + Execution Foundation
 
@@ -172,6 +216,8 @@ Twelve pages are implemented with coherent dark styling, source/mode/health, sta
 
 ## 4. Supervisory Agent Deep Audit
 
+> **Post-remediation note (2026-10-08):** PR #19 freezes matured markouts; PR #22 binds fill-time consensus provenance, removes KEEP dilution of churn and requires mature evidence for GOOD. Optional ERROR neutrality is explicitly documented/tested, not replaced by a required-agent safety mode. PR #24 hardens the shared count-based estimator (A1-007/A1-013/A1-014/A1-016).
+
 ### Authority boundary and composition
 
 Files inspected: `agents/config.py`, `models.py`, `evidence.py`, `regime.py`, `toxic_flow.py`, `execution_quality.py`, `supervisor.py`; Phase 9 runtime/static tests and Phase 10 integration. No agent imports signer/network execution or credentials. Supervisor combines max spread, min bid/ask factors and minimum optional level caps, clamps within code-owned configuration and transforms existing quotes only. BID may not become higher, ASK may not become lower, size may not increase and missing upstream levels/sides are not restored. Risk runs after supervision on actual post-agent candidates.
@@ -199,6 +245,8 @@ Agent decision fingerprints bind material recommendation, health/confidence, fac
 Separating deterministic risk and offline optimization from agents is architecturally sound. Keep optional research libraries and heuristic confidence outside direct execution authority.
 
 ## 5. Reference / Provider / Risk Audit
+
+> **Post-remediation note (2026-10-08):** PR #19 preserves the exact retained price/source-time pair under deadband updates (A1-008). PR #28 recomputes observational source freshness (A1-022). The external-provider acceptance table below remains historical; no new successful provider acceptance is claimed.
 
 ### Provider roles and consensus
 
@@ -232,6 +280,8 @@ No egress bypass, authenticated secret output, signed TESTNET order or mainnet t
 
 ## 6. Execution & Reconciliation Audit
 
+> **Post-remediation note (2026-10-08):** PR #16 closes the normalized-request binding defect; PR #17 closes changed-material identity in code and implements supervised SDK recovery/teardown; PR #18 bounds closed execution views and counts/reconciles every active duplicate order (A1-001–A1-006). Signed venue and real transport acceptance remain pending; restart durability is still absent.
+
 `execution/quote_reconciler.py` compares desired/resting side-level slots and chooses KEEP/CANCEL/CREATE/REPLACE. Replacements cancel first; no replacement is sent after unconfirmed cancel. Unknown/in-flight orders remain active for safety. Adapter guards reject wrong venue/mode/disabled opt-in and runtime callbacks recheck current kill/running state, market/inventory/perp/reference/risk/agent/accounting versions and fingerprints.
 
 The official path is serialized by `execution_lock`. Manual kill sets running false and kill true before waiting for the lock, so a later guard cannot miss the intent; successful kill cancels and invalidates quotes. Resume verifies cancellation before clearing the manual latch and leaves the strategy stopped. Automatic risk HALT cannot clear manual kill. Cancellation failure is a halt, not falsely a canceled order. Already-transmitted/in-flight external requests remain an unavoidable boundary; wait/reconcile rather than claim instantaneous undo.
@@ -242,6 +292,8 @@ Runtime PAPER does not validate profitability or realistic matching. TESTNET use
 
 ## 7. Simulation / Optimization Audit
 
+> **Post-remediation note (2026-10-08):** PR #23 derives dataset identities, overlap and validation classification rather than trusting labels; unexpected execution errors propagate. PRs #22/#24 correct execution-quality evidence and harden the shared estimator. Disjoint deterministic datasets do not establish empirical predictive validity (A1-014–A1-016).
+
 The isolated executor has one worker and an explicit busy slot; a rejected concurrent run does not silently queue work. `SimulationExecutor` shields completion tracking so canceling a client does not allow a second run to overlap unfinished work. Shutdown waits for the worker without blocking the asyncio event loop directly. A CPU-bound Python thread can still contend for the GIL; no latency isolation benchmark proves zero impact on local live services.
 
 Fresh engine state includes history, quote engine, inventory/adaptation/perp, reference consensus, agents/telemetry, risk, authorization, PAPER, order manager and accounting. Runtime provider sockets and keys are not started or copied. Configs are deep-copied, execution/feed modes forced to offline PAPER/DEMO, scenario time used for execution/fees/funding. This is domain reuse, not a second simplified strategy, but provider delivery, network timing and full runtime lifecycle are not simulated.
@@ -251,6 +303,8 @@ Single-run frames are bounded (maximum 5000). Optimization bounds include maximu
 A training/validation scenario can be identical, including deterministic catalog data; no disjointness guard enforces an independent holdout (A1-015). Expected candidate validation errors are handled, but generic ValueError classification can hide some implementation defects as candidate rejection; use specific domain exceptions and validation before execution. Scenarios cover behavior stress, not empirically calibrated market distributions, out-of-sample returns or research multiple-testing control. Request limits are not a time/memory/rate-limit budget for remote unauthenticated callers.
 
 ## 8. Accounting / Vault Audit
+
+> **Post-remediation note (2026-10-08):** PR #18 adds indexed fill evidence, pending-consumer retention and incremental ingestion without evicting ledger authority. PR #21 removes read-triggered accounting mutation. PR #30 documents the unchanged non-custodial/in-memory/partial boundary (A1-005/A1-011/A1-026).
 
 ### Equations and economics
 
@@ -270,6 +324,8 @@ TESTNET equity/account values are partial venue observations; session-equity cha
 
 ## 9. Phase 12 Terminal Audit
 
+> **Post-remediation note (2026-10-08):** PRs #20/#21/#27/#28/#29 close local publication, getter, contract/recovery, history ordering, envelope-lineage, freshness and sanitization defects (A1-010–A1-012/A1-020–A1-023). The original payload/browser measurements and counterexamples remain historical, not new acceptance.
+
 `terminal/models.py`, `history.py` and `service.py` create phase12-v1 envelopes with aware timestamps, backend process/session identity, monotonic process sequence, normalized observations, health, bounded histories and events. Model freezing is shallow: several nested domain dictionaries are `Any`, so this is not a recursively immutable typed authority snapshot.
 
 `runtime.terminal_state` observes execution fills, assembles accounting and awaits market snapshot outside the execution lock. Domain components can change across awaited work; observation is not a transactionally consistent copy. A background one-second sampler and every WebSocket reader each construct observations; reader count advances global sequence and repeats work (A1-010). Sequence gaps therefore do not mean missed market messages or lost trades.
@@ -281,6 +337,8 @@ Events retain 500, dedup IDs 1000; currently retained state maps are bounded by 
 Chart libraries are initialized on mount with cleanup and ResizeObserver disconnect; rolling live points are bounded. REST history refetch replaces data and can overwrite newer same-session WebSocket points (A1-020). App-level store subscriptions cause broad per-frame rerenders; arrays derived from large frames increase costs. Frontend reconnect/backoff exists, but continuous invalid payloads can leave ERROR while the stale watchdog skips reconnection (A1-012).
 
 ## 10. Original Mockup vs Current Terminal
+
+> **Post-remediation note (2026-10-08):** The comparison below is retained as the original assessment. A1-020/A1-021/A1-022 are subsequently closed: chart watermark merging preserves newer observations, selected levels display backend ladder/envelope lineage, and stale source prices are suppressed. Unsupported economics remain absent.
 
 The textual mockup's useful layout is preserved: header, sidebar, central market/liquidity context, strategy controls, positions, risk, agents and execution evidence. Safe local browser acceptance verified actual pages, not illustrative rendered numbers.
 
@@ -320,6 +378,8 @@ Future full-day statistics, durable analytics and precise trade attribution coul
 
 ## 11. Quantitative / Scientific Computing Review
 
+> **Post-remediation note (2026-10-08):** A1-017 removal was attempted in commit `000e4d1`, then reversed by `67f31c0` before PR #25 merged. Current `backend/pyproject.toml` still declares `numpy>=2.1,<3`; `backend/README.md` explicitly defers removal for future quant/research policy. No direct runtime/test/tool NumPy usage was found. Pandas/SciPy remain undeclared and unimported. The original removal recommendation below is historical, not an implemented cleanup. A1-025 documents optional offline scientific workflows without live authority.
+
 ### NumPy
 
 `numpy>=2.1,<3` is declared in `backend/pyproject.toml`, but repository source/tests have no NumPy imports or actual vectorized use. Existing AMM/accounting use Decimal; volatility uses standard-library math. **Recommendation:** remove NumPy from core in a separate reviewed dependency cleanup unless a real core use is justified. Do not add artificial usage to keep a dependency. This audit did not remove or change it (A1-017).
@@ -340,6 +400,8 @@ RMS returns, heuristic confidence, mean markouts and crossing-only fills are des
 
 ## 12. Numerical Precision Audit
 
+> **Post-remediation note (2026-10-08):** PR #16 replaces aggressive SDK price rounding with conservative Decimal normalization and verifies serialization equality (A1-001). PR #24 validates finite representable Decimal ratios and float/log/fsum/sqrt results while preserving per-observation units (A1-016). The original unsafe-boundary table is historical; empirical calibration and PAPER matching assumptions remain limitations.
+
 | Boundary | Observed design | Assessment |
 |---|---|---|
 | AMM reserves / k / swaps / curve deltas | Decimal and finite positive validation | Strong local invariants; context precision and extreme dynamic ranges still need property tests. |
@@ -355,6 +417,8 @@ Pydantic/config reject nonfinite values in key typed paths, but frozen models wi
 
 ## 13. Dependency Hygiene
 
+> **Post-remediation note (2026-10-08):** PR #25 intentionally retains unused direct NumPy; it is not merely transitive and was not removed in the merged result. The narrow compatibility review justified no further deletion or cross-domain canonicalization refactor. A resolved backend lock/full build attestation is not supplied. Original package-version measurements remain historical (A1-017/A1-027).
+
 Backend direct declarations: FastAPI, uvicorn[standard], Pydantic, pydantic-settings, httpx, websockets, NumPy, hyperliquid-python-sdk and eth-account; pytest/pytest-asyncio are test extras. All except NumPy have identifiable runtime/test roles. eth-account is used at the TESTNET signer boundary. Frontend React/ReactDOM, React Query, Zustand and lightweight-charts are used; TypeScript/Vite/types are build tooling. Pandas/SciPy are absent and were not installed into the project.
 
 Resolved audit versions include FastAPI 0.142.2, Pydantic 2.13.5, uvicorn 0.54.0, pytest 8.4.2, pytest-asyncio 0.26.0, SDK 0.24.0, websockets 15.0.1, NumPy 2.5.3, httpx 0.28.1 and Starlette 1.7.0. Backend ranges are broad and no resolved backend lock pins this exact set; reproducibility/security review needs explicit dependency snapshots. Frontend lockfile remained unchanged.
@@ -365,6 +429,8 @@ Legacy `PriceChart.tsx`, `LiquidityCurve.tsx`, `MetricCards.tsx`, `ExecutionActi
 
 ## 14. Security Audit
 
+> **Post-remediation note (2026-10-08):** PR #20 adds loopback peer/Host/Origin and common launch/worker guards (A1-009); remote/public use remains unsupported and operator authentication/roles are absent. PR #29 closes the synthetic complete-credential redaction defect across selected outward diagnostic copies (A1-023). Remote security is still a separate deployment prerequisite.
+
 The backend holds signing capability only for explicitly configured TESTNET. Exact venue guard, explicit enable flag, PAPER default and no frontend secrets are positive boundaries. No credential values were printed, committed or sent in this audit. Provider secrets are server-side; error normalization/redaction exists but is not comprehensive (A1-023). CORS is configured, but CORS is neither authentication nor a WebSocket authorization mechanism.
 
 There is no application authentication/role authorization, CSRF design for authenticated sessions, API rate limiting, WebSocket client cap or remote operator identity. Configuration/start/stop/kill/resume and expensive research routes are callable in the local trust model (A1-009). This is a remote-deployment blocker, not evidence of compromise in the loopback audit. A remote architecture needs authenticated operator roles, TLS/reverse-proxy origin policy, rate/body/time budgets, secrets lifecycle and audit logging before exposure.
@@ -372,6 +438,8 @@ There is no application authentication/role authorization, CSRF design for authe
 Signer material lives in application memory by design if enabled; there is no HSM, rotation protocol or secure multi-user custody model. This is outside current research scope, not a request to add mainnet. Restart and accounting persistence are operational integrity gaps. The report distinguishes synthetic redaction failure from actual secret exposure and does not infer vulnerabilities solely from dependency age.
 
 ## 15. Async / Concurrency Review
+
+> **Post-remediation note (2026-10-08):** PR #17 owns SDK reconnect/disconnect and thread verification; PR #26 serializes lifecycle transitions with captured identities and fail-closed restart-required failure; PRs #20/#21 remove per-reader assembly and getter mutations (A1-003/A1-004/A1-010/A1-011/A1-019). Live failure soak and multi-worker execution remain unaccepted/unsupported.
 
 | Path | Verified behavior | Limit / missing evidence |
 |---|---|---|
@@ -388,6 +456,8 @@ Signer material lives in application memory by design if enabled; there is no HS
 No reproduced deadlock was established. Do not convert potential lifecycle races into a claimed observed deadlock. Multi-process workers would create independent runtimes/sessions/orders without coordination; that deployment is unsupported today.
 
 ## 16. Memory / Performance Review
+
+> **Post-remediation note (2026-10-08):** PR #18 bounds unpinned closed orders and acknowledged fills, pins uncertain/unconsumed evidence and feeds incremental consumers (A1-005). PR #19 freezes markouts; PR #22 removes KEEP cadence dilution; PR #20 caches one serialized publication with one-slot queues and a 32-client cap. Original growth/load projections below are historical, not current measurements or a production load benchmark.
 
 | Store / work | Bound and behavior | Residual risk |
 |---|---|---|
@@ -414,6 +484,8 @@ There is no measured per-object Python memory profile; do not invent exact heap 
 Measured logical JSON frames were **113,851–138,281 bytes**, larger than the historical approximate 96KB. At roughly one frame/second this is 114–138KB/s/client before wire compression. Ten clients imply roughly 1.1–1.4MB/s and 100 roughly 11–14MB/s of logical repeated data, plus assembly costs; those are arithmetic projections, not load-test results. Payload includes book, quote lineage, accounts, order/fill/event views and history-related observation metadata. Reduce redundant/full state, cache one normalized observation per tick, broadcast or version deltas, page older execution evidence and benchmark before remote scale.
 
 ## 17. API / WebSocket Contract Review
+
+> **Post-remediation note (2026-10-08):** PR #21 makes domain GETs observational; PR #18 adds recent-view limits (default 100, 1–1000) while retaining all active/pinned orders. PR #20 supplies cached fanout/admission, and PR #32 adds observational Redis status to `/api/v1/health`. The original route classifications and multi-reader sequence measurements below are historical.
 
 All listed REST domain paths are under `/api/v1`. Classification describes effective behavior; “read” does not imply side-effect-free in current code. Most routes return dictionaries/domain models without a comprehensive declared response_model.
 
@@ -467,6 +539,8 @@ Five observed sequences were 50,52,54,56,58, emitted at 05:52:02.098257, 05:52:0
 
 ## 18. Frontend / Backend Schema Review
 
+> **Post-remediation note (2026-10-08):** PR #21 adds a backend-derived checked-in schema, strict displayed-field validation, fixtures and a last-valid-frame watchdog that also recovers from ERROR. PRs #27/#28 fix chart lineage/order and current source-price display. Original malformed-payload results below are retained as evidence of A1-012, not behavior of current main.
+
 `frontend/src/types/index.ts` manually mirrors backend/domain/Any payloads. `utils/validateTerminal.ts` validates phase12-v1, metadata, sequence, timestamps and selected arrays/enums/numerics; Zustand rejects obsolete sequences and resets session state. These are useful but incomplete protections.
 
 Synthetic tests against the actual transpiled validator accepted **null quote price**, **zero quote size**, and string authorized flag **"yes"**. NaN price and missing quote array were rejected. Number(null) is finite, so finite-number coercion is not a positive Decimal-string contract. Nested risk/accounting/agent dictionaries and booleans/enums need stricter validation (A1-012). Model_dump strings and manually maintained TypeScript remain drift-prone without generated schema/contract fixtures.
@@ -474,6 +548,8 @@ Synthetic tests against the actual transpiled validator accepted **null quote pr
 Formatters generally distinguish unavailable data via placeholders from actual zero, and TESTNET partial values are labeled. The validator counterexamples, stale retained-source health and missing per-quote lineage mean this cannot receive an unqualified “truthful for all payloads” verdict. Charts use Number for display, not trading authority. Backend schema version should advance for incompatible changes; forward unknown-field policy and old-version error/reconnect tests need explicit coverage.
 
 ## 19. Test Coverage & Acceptance Matrix
+
+> **Post-remediation note (2026-10-08):** All counts and executed commands in this section belong to the original audit. Later merged validation is summarized near the end; PR #32 results supplied with this request are reported as prior acceptance, not rerun results from this documentation task.
 
 ### Test inventory: exact collected cases
 
@@ -530,6 +606,8 @@ Counterexamples are direct local evidence, separate from the 546 existing regres
 
 ## 20. Documentation Consistency
 
+> **Post-remediation note (2026-10-08):** PR #26 refreshes README, Summary, roadmap, architecture, terminal and integration documentation; PR #30 adds informational scope/identity closeout. The original inconsistency table is historical. A1-018 is closed for that scoped documentation repair; provider/live review remains distinct.
+
 | Document | Review result |
 |---|---|
 | `README.md` | Contradictory old Phase1–11 capabilities/front-end planned pages versus current Phase12 section; old reconnect and full authority claims need findings' qualifications. API overview should inventory Phase11/12 routes explicitly. |
@@ -553,6 +631,8 @@ A1-018 is a real documentation inconsistency finding; historical test counts are
 
 ## 21. What Remains Before Production-Oriented Trading Infrastructure?
 
+> **Post-remediation note (2026-10-08):** The original prerequisite matrix is retained below. Code defects cited there are subsequently remediated as recorded in section 22; section 23 now lists only partial/deferred findings and explicit remaining acceptance/deployment gates. Durable recovery, remote security, independent operational evidence and real provider/venue acceptance remain prerequisites, not completed implementations.
+
 | Required classification | Work required | Finding references / scope |
 |---|---|---|
 | **REQUIRED BEFORE REMOTE DEPLOYMENT** | Authentication/roles, TLS/origins, operator audit, rate/body/time and WS client budgets, consistent error redaction, bounded execution responses, cached observation/broadcast, strict contracts and stale-source truth | A1-005/009/010/012/020/021/022/023. Local loopback operation is a separate trust model. |
@@ -564,6 +644,8 @@ A1-018 is a real documentation inconsistency finding; historical test counts are
 Production-oriented means demonstrated behavior under real provider/venue failure and controlled recovery, not only implemented phases or 546 green tests. A new feature roadmap would distract from known authority and operational gaps. Reconcile current claims, close high-priority IDs, record safe external acceptance, then reassess scope.
 
 ## 22. Findings
+
+**Historical finding catalog:** severity, priority, evidence and original recommendations below remain unchanged. Current disposition blocks are dated 2026-10-08 and are assessed against the reviewed main commit. CLOSED means closure of the stated defect within the supported scope, not production/live certification.
 
 Priority definitions: P0 before serious reliance on affected transmission; P1 before affected live/remote operation; P2 hardening/research correctness; P3 optional/documentary. 🔴 denotes HIGH here; no CRITICAL exploit was established. 🟠 defects are material with their stated prerequisites. 🟡 findings can still be deployment blockers in a remote setting. Informational design observations are not defects.
 
@@ -609,6 +691,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Normalize in Decimal using venue rules before final structural/risk/capital validation and authorization; bind the exact canonical wire request to the authorization envelope; reject any later alteration. Make official create callbacks mandatory or capability-scoped.
 - **Changes authority semantics?:** YES: tightens transmission authority; changes which normalized requests can be accepted. Requires intentional reviewed compatibility handling.
 - **Priority:** P0
+- **Disposition:** 🟡 PARTIALLY CLOSED — 🟢 CODE REMEDIATION CLOSED / 🟡 SIGNED VENUE ACCEPTANCE PENDING (2026-10-08).
+- **Remediation:** Venue-aware side-conservative Decimal normalization now precedes final structural/risk/capital validation and authorization. Official TESTNET submission requires exact market/side/level/price/size membership, rejects mutation and verifies SDK wire equality before UNKNOWN registration/transmission.
+- **Evidence:** PR #16; `backend/app/execution/hyperliquid.py`, `runtime.py`, `order_manager.py`; `test_execution.py` normalization/idempotence/drift tests and `test_phase8_runtime.py::test_normalized_runtime_ladder_binds_fingerprint_risk_capital_and_wire` plus zero-transmission mutation/revocation cases.
+- **Residual limitation:** No signed TESTNET lifecycle acceptance was performed; mocked SDK method/wire equality and local PAPER acceptance do not certify venue execution.
 
 ### A1-002 — Changed equal-sequence L2 can evade authority identity
 
@@ -622,6 +708,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Use a monotonic material snapshot version independent of history sample dedup, or reject conflicting replay identity; bind relevant full L2/BBO content to authority and keep price sampling identity separate.
 - **Changes authority semantics?:** YES: closes a stale-material acceptance path and may reject/refresh previously accepted same-time updates.
 - **Priority:** P1
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Normalized full L2/BBO economic content has a monotonic material sequence independent of price-sample deduplication. Changed equal-time prices/depth/order counts advance authority identity; economically identical replay preserves it and older LIVE source times are rejected.
+- **Evidence:** PR #17; `backend/app/market_data/{service,history,hyperliquid}.py`; `test_integration.py::test_same_exchange_time_material_identity`, `test_phase8_runtime.py` changed-material revocation/wire rejection and identical-replay tests; Phase 6/7 cases.
+- **Residual limitation:** None for the identified equal-identity defect. Real provider delivery remains a separate acceptance boundary.
 
 ### A1-003 — Public Hyperliquid SDK stream has no demonstrated reconnect loop
 
@@ -635,6 +725,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Own explicit socket lifecycle/health monitoring and bounded reconnect/resubscribe with fresh-snapshot acceptance before recovery. Verify against the pinned SDK and safe real public endpoint.
 - **Changes authority semantics?:** NO new trading authority; recovery gating must keep stale feed fail-closed.
 - **Priority:** P1
+- **Disposition:** 🟡 PARTIALLY CLOSED — 🟢 CODE REMEDIATION CLOSED / 🟡 LIVE ACCEPTANCE PENDING (2026-10-08).
+- **Remediation:** The application monitors SDK manager/socket/ping and feed health, degrades, cleans up, backs off, restores L2/perp subscriptions and requires a fresh valid REST L2 recovery snapshot before CONNECTED.
+- **Evidence:** PR #17; `backend/app/market_data/hyperliquid.py`; `test_integration.py` socket-termination, stalled/ping failure, fresh/invalid recovery barrier, repeated-failure/backoff and exactly-once resubscription cases using official SDK-shaped resources.
+- **Residual limitation:** A real public-endpoint reconnect/resubscription/fresh-recovery soak was not run. Deterministic SDK tests close the missing-loop implementation defect only.
 
 ### A1-004 — Market SDK teardown drops Info without disconnecting its socket
 
@@ -648,6 +742,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Keep ownership until disconnect completes; close SDK manager and join/verify its threads using a bounded shutdown path; handle partially constructed Info failures.
 - **Changes authority semantics?:** NO policy change; prevents obsolete transport state reaching current authority.
 - **Priority:** P1
+- **Disposition:** 🟡 PARTIALLY CLOSED — 🟢 CODE REMEDIATION CLOSED / 🟡 LIVE ACCEPTANCE PENDING (2026-10-08).
+- **Remediation:** Info is owned before initialization; lifecycle exits disconnect and join/verify SDK manager and ping threads. Cancellation drains workers. Unconfirmed shutdown retains ownership and prevents replacement sockets.
+- **Evidence:** PR #17; `backend/app/market_data/hyperliquid.py::_shutdown_sdk`, `_unsubscribe_current`; `test_integration.py` partial-constructor, cancel/drain, reconfiguration, repeated start/stop and shutdown-timeout ownership tests.
+- **Residual limitation:** Real public-SDK repeated lifecycle/thread/resource soak remains unaccepted. No durable restart recovery is inferred.
 
 ### A1-005 — Execution history grows without bounds and is rescanned before truncation
 
@@ -661,6 +759,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Keep active/uncertain orders authoritative; archive terminal history safely, incrementally ingest new fills/order transitions, page historical APIs and truncate before serialization. Do not evict unmatched fills or UNKNOWN orders without durable reconciliation.
 - **Changes authority semantics?:** POTENTIALLY: retention must preserve active/uncertain state and all accounting identity/consistency evidence.
 - **Priority:** P1
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Retain at most 1,000 unpinned closed orders per adapter and 1,000 acknowledged PAPER fills, preserving all active/UNKNOWN/verification/pending-consumer evidence. Transitions and pending fills feed incremental consumers; ledger fill lookup is indexed and recent REST/terminal views are bounded before serialization.
+- **Evidence:** PR #18; `backend/app/execution/{fills,paper,hyperliquid}.py`, `accounting/{ledger,service}.py`, `api/orders.py`, `runtime.py`; `test_execution.py` retention tests, `test_phase11_runtime.py` receipt replay/capacity/consumer tests and `test_api.py` recent-view limits.
+- **Residual limitation:** No durable archive was added. Authoritative pending/active evidence may exceed UI retention caps intentionally; admission halts rather than dropping unmatched economics. Session recovery remains A1-026 future scope.
 
 ### A1-006 — Duplicate resting slot orders are collapsed in exposure and reconciliation
 
@@ -674,6 +776,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Group all resting orders per slot, sum actual quantities for exposure, explicitly reconcile/cancel surplus and unmanaged orders, and fail closed while uncertainty persists.
 - **Changes authority semantics?:** YES: exposure/cancellation decisions tighten under anomalous standing-order states.
 - **Priority:** P1
+- **Disposition:** 🟡 PARTIALLY CLOSED — 🟢 CODE REMEDIATION CLOSED / 🟡 SIGNED VENUE ACCEPTANCE PENDING (2026-10-08).
+- **Remediation:** Risk sums every standing order’s remaining quantity/notional. Reconciliation groups all slots, retains at most one verified keeper and cancels surplus/unmanaged orders before creation; UNKNOWN or unconfirmed verification/cancellation blocks CREATE/REPLACE.
+- **Evidence:** PR #18; `backend/app/risk/firewall.py::exposure_metrics`, `execution/quote_reconciler.py`, `order_manager.py`; `test_execution.py` duplicate BID/ASK, partial-fill, keeper/surplus, unmanaged and UNKNOWN/unconfirmed cancellation cases.
+- **Residual limitation:** Real signed venue duplicate/orphan and cancel/fill-race reconciliation remains unaccepted. Current session-local evidence is not restart discovery/recovery.
 
 ### A1-007 — A matured markout changes after history eviction
 
@@ -687,6 +793,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Store immutable chosen maturity observation identity/time/value when first available, or label a missed horizon unavailable instead of substituting later data; bound that cache by fill retention.
 - **Changes authority semantics?:** YES indirectly: heuristic outputs can change, while conservative supervisor bounds remain mandatory.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Maturity selection freezes fill/horizon, target time, observation sequence/time, reference price and signed outcome. Missed evicted maturity becomes terminally unavailable; cache retention follows fills.
+- **Evidence:** PR #19; `backend/app/agents/evidence.py`, `market_data/history.py`; `test_phase9_agents.py` immutable maturity/eviction/clear/window/horizon tests and `test_phase10_simulation.py` finalized markout cases.
+- **Residual limitation:** None for eviction-induced horizon drift. Markouts remain descriptive PAPER evidence, not calibrated toxic-flow probabilities.
 
 ### A1-008 — Provider deadband refreshes time while retaining an older price
 
@@ -700,6 +810,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Publish latest price with its exact source timestamp while separately stabilizing semantic version, or retain old price AND its timestamp and expose latest receive time separately.
 - **Changes authority semantics?:** YES for semantic version/fingerprint/freshness policy; document intentional material thresholds.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** A deadband-suppressed different price keeps its original source timestamp; receive time is separate. An identical newly observed price can refresh its own timestamp. Source-time high-water/replay rejection is retained.
+- **Evidence:** PR #19; `backend/app/references/providers.py::EvidenceState`; `test_phase8_references.py::test_deadband_retains_exact_price_timestamp_and_cannot_restore_freshness` and `test_phase82_redstone_http.py` replay/polling cases.
+- **Residual limitation:** None for price/time pairing. Native receive-time age does not certify upstream price age; external acceptance remains pending.
 
 ### A1-009 — Local trust APIs have no remote operator authorization or resource admission
 
@@ -713,6 +827,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Define local-only deployment boundary now; before remote exposure add authenticated roles/origin/TLS policy, per-operation budgets and security audit logging at a reviewed enforcement boundary.
 - **Changes authority semantics?:** YES: introduces operator authorization/admission while preserving underlying quote authority.
 - **Priority:** P1 before remote deployment
+- **Disposition:** 🟡 PARTIALLY CLOSED — LOCAL BOUNDARY IMPLEMENTED / REMOTE SECURITY PENDING (2026-10-08).
+- **Remediation:** Startup rejects common non-loopback binds/multiple workers; HTTP/WS checks loopback peer, Host and browser Origin. Unsupported proxies/tunnels/extra processes are documented. Local terminal resource admission is bounded.
+- **Evidence:** PR #20; `backend/app/deployment.py`, `main.py`, `api/websocket.py`; `test_audit_local_publisher.py` launch, environment, remote peer/Host/Origin and local success tests; README/backend deployment boundary.
+- **Residual limitation:** No authenticated operator roles, remote TLS/proxy security architecture, per-operation remote rate/body/time budgets, operator audit log or secrets lifecycle. Guards cannot detect every launch/proxy arrangement. Remote/public and multi-worker use remain unsupported; Redis does not close this gap.
 
 ### A1-010 — Each terminal reader repeats observation work and advances shared sequence
 
@@ -726,6 +844,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Build/copy one normalized observation on controlled cadence, publish/cache it, fan out read-only payloads and use bounded per-client queues. Preserve domain-version fields and clarify sequence semantics.
 - **Changes authority semantics?:** NO new trading authority; separating observation from mutation should strengthen boundaries.
 - **Priority:** P2; P1 for remote scale
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** One controlled runtime publisher creates/serializes/caches observations; readers do not observe domain state or advance sequence/history. One-slot coalescing queues, 32 local clients, five-second sends and disconnect cleanup bound fanout.
+- **Evidence:** PR #20 (transport extraction preserved in PR #31); `backend/app/runtime.py::_publish_terminal_snapshot`, `infrastructure/terminal_transport.py`, `api/websocket.py`; `test_audit_local_publisher.py` cached readers/shared frames/cadence/backpressure/publisher lifecycle tests.
+- **Residual limitation:** No remaining per-reader assembly defect. Coalescing can skip observation sequences; this is not a trade-loss counter or a production scalability benchmark.
 
 ### A1-011 — Several nominal GETs can refresh trading or accounting state
 
@@ -739,6 +861,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Update domain state on explicit runtime lifecycle/feed/tick paths; return cached immutable observation from reads; separately name deliberate refresh commands. Clarify whether evaluation cadence is time/evidence based.
 - **Changes authority semantics?:** POTENTIALLY: remove read-driven refresh/recovery and accounting updates only after preserving required runtime mark/consistency cadence.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Domain GETs return copied retained evidence or explicit unavailable values. Reads/publication no longer initialize strategy, reconcile venue state, advance reference/adaptation decisions or mark/book/reserve accounting; explicit feed/tick/execution paths retain these updates.
+- **Evidence:** PR #21; `backend/app/runtime.py`, `api/{strategy,positions,accounting}.py`; `test_audit_read_observations.py` repeated PAPER/TESTNET GET state-equality/sentinel tests and pending-fill read/publication versus explicit-tick consumption.
+- **Residual limitation:** None for identified read-triggered domain mutation. Observation freshness is computed on copies, not by changing canonical authority.
 
 ### A1-012 — Frontend validation is shallow and malformed open streams can stall recovery
 
@@ -752,6 +878,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Generate/derive schemas where practical, validate all displayed authority fields strictly, add contract fixtures and force close/backoff when valid-frame age exceeds threshold even after parse ERROR.
 - **Changes authority semantics?:** NO backend authority change; presentation and reconnect validation only.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** A backend-derived checked-in schema validates displayed nested fields, exact types/nulls/enums, Decimal bounds, identities and timestamps. Rejected/out-of-order frames do not refresh last-valid time; an ERROR or stuck CONNECTING stream closes/retries after the watchdog budget.
+- **Evidence:** PR #21; `backend/scripts/generate_terminal_contract.py`, `frontend/src/contracts/terminal.schema.json`, `utils/{validateTerminal,terminalSocket}.ts`; `test_audit_terminal_contract.py`, `frontend/tests/terminal.test.cjs` and valid/unavailable/malformed fixtures.
+- **Residual limitation:** None for the original shallow-validation/ERROR recovery defect. Schema maintenance and real browser/network soak remain operational obligations.
 
 ### A1-013 — Agent ERROR neutral policy can relax prior cautious advice
 
@@ -765,6 +895,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Document soft optional behavior; if advice is required for a deployment, use bounded last-good restrictive advice or deterministic firewall-required health policy with safe expiry. Do not silently turn every optional warmup into kill.
 - **Changes authority semantics?:** YES if selecting a required-agent fail-closed policy; explicit review required.
 - **Priority:** P2; before treating agents as safety prerequisites
+- **Disposition:** 🔵 DOCUMENTED / ACKNOWLEDGED — SOFT OPTIONAL POLICY (2026-10-08).
+- **Remediation:** PR #22 explicitly preserves fresh neutral ERROR output, discards prior advice and lets remaining agents continue. ERROR may relax previous caution, but cannot exceed upstream transform bounds or override Phase 8/final authorization.
+- **Evidence:** PR #22; `backend/app/agents/supervisor.py`, `docs/AGENTS.md`; `test_phase9_agents.py::test_soft_error_discards_prior_advice_and_preserves_upstream_bounds` and `test_phase9_runtime.py` ERROR plus Phase 8 denial tests.
+- **Residual limitation:** No required-agent mode, persistent last-good restriction or automatic health HALT is implemented. Treating agents as mandatory safety prerequisites would require separately reviewed policy; this documented optional behavior is not a code defect left on the current remediation list.
 
 ### A1-014 — Execution-quality labels depend on cadence and optimistic PAPER references
 
@@ -778,6 +912,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Define capture reference timestamp/source explicitly, align runtime/simulation semantics, express churn per action/time rather than KEEP opportunities, and distinguish provisional quality from mature outcomes.
 - **Changes authority semantics?:** YES indirectly to agent recommendations; preserve conservative bounds.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Runtime/simulation use the same accepted fill-time consensus binding with copied provider/source-time provenance. Missing reference stays unavailable. Churn excludes KEEP and retains action evidence; GOOD requires available nonnegative mature markouts and positive capture.
+- **Evidence:** PR #22; `backend/app/agents/{evidence,execution_quality}.py`, `simulation/{engine,metrics,version}.py`, `runtime.py`; `test_phase9_agents.py` provisional/mature and KEEP-invariance tests, `test_phase10_simulation.py` fill-reference parity; engine version `phase10.1-v2`.
+- **Residual limitation:** None for the identified label/cadence/reference mismatch. Queue, fees, latency and empirical execution edge are not certified; TESTNET fill-quality economics remain unavailable.
 
 ### A1-015 — Validation labels do not enforce independent optimizer holdouts
 
@@ -791,6 +929,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Expose/validate dataset identities and overlap, label reused validation honestly, enforce holdout rules for claimed out-of-sample runs and use specific expected-candidate exceptions.
 - **Changes authority semantics?:** NO live authority; research reporting/ranking validation only.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Scenario evaluations preserve dataset fingerprints; candidate/baseline/overall results derive overlap and INDEPENDENT_HOLDOUT / REUSED_OVERLAPPING / NOT_EVALUATED classifications. Config construction catches only expected Pydantic validation failures; unexpected engine errors propagate.
+- **Evidence:** PR #23; `backend/app/simulation/{models,optimizer}.py`; `test_phase10_simulation.py::test_optimizer_validation_provenance_uses_dataset_identity` (including aliases/forged claims) and `test_phase10_optimizer.py` unexpected-error tests.
+- **Residual limitation:** None for misleading identity-free validation labels/error masking. Overlapping runs are allowed but labeled honestly; disjoint deterministic datasets do not prove statistical independence or profitability.
 
 ### A1-016 — Per-observation quantitative scores need sampling and numerical calibration
 
@@ -804,6 +946,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Specify intended sampling unit, use bounded fixed-time windows/resampling if desired, calibrate threshold semantics and document float tolerances with extreme fail-closed tests.
 - **Changes authority semantics?:** YES if changing score/time policy; do not silently reinterpret existing thresholds.
 - **Priority:** P2
+- **Disposition:** 🟡 PARTIALLY CLOSED — 🟢 CODE REMEDIATION CLOSED / 🟡 EMPIRICAL CALIBRATION PENDING (2026-10-08).
+- **Remediation:** Expose PER_ACCEPTED_OBSERVATION and preserve count-based RMS semantics/default thresholds; validate Decimal ratios, normal finite float range and all log/fsum/sqrt results with fail-closed errors. Phase 9/10 reuse the estimator.
+- **Evidence:** PR #24; `backend/app/strategy/market_adaptation.py`, `market_data/history.py`, agent/regime and docs; `test_phase6_runtime.py` cadence/threshold/extreme/nonfinite cases, `test_phase9_agents.py` reuse and `test_phase10_simulation.py` retimed deterministic replay.
+- **Residual limitation:** No fixed-time resampling/annualization was introduced. Feed cadence still changes empirical interpretation; thresholds and heuristic confidence require real-data sensitivity/calibration before live or predictive reliance.
 
 ### A1-017 — Unused core NumPy and duplicated compatibility surfaces weaken maintenance
 
@@ -817,6 +963,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Remove NumPy core declaration in a separate reviewed cleanup unless justified; record resolved environment, label compatibility ownership and centralize canonical utilities only with parity tests. Keep optional research extras separate.
 - **Changes authority semantics?:** NO intended policy change; fingerprint refactors must preserve byte-level semantics or version deliberately.
 - **Priority:** P2/P3
+- **Disposition:** 🟡 PARTIALLY CLOSED — COMPATIBILITY REVIEW DOCUMENTED / NUMPY REMOVAL DEFERRED (2026-10-08).
+- **Remediation:** PR #25 records the scoped compatibility review and explicit dependency-policy decision. Removal in `000e4d1` was reversed by `67f31c0` before merge: current `backend/pyproject.toml` intentionally retains unused direct `numpy>=2.1,<3` for future research. Pandas/SciPy remain absent.
+- **Evidence:** PR #25 (verified merged final diff: `backend/README.md` only); current manifest and backend dependency/compatibility notes. No direct NumPy imports/computation found in runtime, tests or tooling; current numerical implementation remains Decimal/math.
+- **Residual limitation:** The unused-dependency removal recommendation is deferred, not implemented; no new canonicalization refactor or resolved backend lock was added. A future reviewed dependency/reproducibility decision is required to claim those recommendations closed. Earlier NumPy-free validation is not validation of the restored dependency set.
 
 ### A1-018 — Current docs mix obsolete capabilities and historical acceptance with current state
 
@@ -830,6 +980,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Update current summaries to twelve pages/all routes, date historical acceptance and link outstanding provider/authority findings. Keep IN REVIEW where unresolved rather than auto-promote COMPLETE.
 - **Changes authority semantics?:** NO authority change; operator documentation correction.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Current summaries inventory twelve pages and accounting/terminal APIs, label historical acceptance milestones and distinguish implementation/local versus live review. This status update aligns the audit’s historical/current language.
+- **Evidence:** PR #26; `README.md`, `Summary.md`, `docs/{ROADMAP,ARCHITECTURE,TERMINAL,HYPERLIQUID_INTEGRATION}.md`; cross-check against current routes/pages and PR #26 recorded local validation. PR #30 adds informational boundary notes.
+- **Residual limitation:** None for the scoped obsolete capabilities/current-status documentation defect. Historical acceptance numbers are retained and do not certify live readiness.
 
 ### A1-019 — Configuration transport lifecycle is not one serialized transition
 
@@ -843,6 +997,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Add a dedicated serialized transition lifecycle with captured service identities, staged construction, explicit failure state/rollback and restart gating before quote recovery.
 - **Changes authority semantics?:** POTENTIALLY: lifecycle failure/recovery gating changes operational authority availability.
 - **Priority:** P2 before unattended mode switching
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** A lifecycle lock serializes config/start/stop with lifecycle→execution order, captured identities, staged services and atomic graph publication. Retired callbacks are gated. Failure invalidates authority, retains cleanup ownership and requires restart rather than claiming rollback.
+- **Evidence:** PR #26; `backend/app/runtime.py::update_config`, start/stop/binding/failure paths; `test_integration.py` concurrent transitions, constructor/stop/start/cancellation/cleanup failures, retired callbacks, emergency controls and session isolation.
+- **Residual limitation:** None for the identified interleaving/partial-publication defect. Uncertain transport cleanup intentionally leaves FAILED/restart-required state; live soak is not implied.
 
 ### A1-020 — Late history GET can overwrite newer same-session live chart points
 
@@ -856,6 +1014,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Merge by session and sequence/timestamp, preserve points newer than response watermark and avoid automatic fitContent on every periodic replacement.
 - **Changes authority semantics?:** NO; observational chart behavior only.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Merge history by backend sequence/response watermark, retaining newer same-session live observations; deduplicate bounded series and reject old session/range responses. View fitting occurs on initial/session/range transitions rather than periodic refresh.
+- **Evidence:** PR #27; `frontend/src/utils/terminalHistory.ts`, `hooks/useTerminalHistory.ts`, chart components; `frontend/tests/audit-lineage.test.cjs` delayed GET/watermark/collision/session/viewport cases. PR #28 later reports complete frontend tests/typecheck/build passing.
+- **Residual limitation:** None for the delayed history overwrite defect. PR #27’s broader checks were initially environment-blocked; subsequent PR #28 validation covers the merged helpers.
 
 ### A1-021 — Per-quote authorization fingerprint display is unsupported by backend population
 
@@ -869,6 +1031,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Join the envelope to the displayed level by explicit ladder identity; label envelope versus level fingerprint. Do not mutate quote contents after hashing and introduce a circular fingerprint.
 - **Changes authority semantics?:** NO intended change; presentation join should preserve canonical authorization bytes.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** Selected side/level joins to the current authorized ladder and displays backend ladder and final envelope fingerprints with membership/count/proof checks. Suppressed/inconsistent lineage is explicit; deprecated null per-level field is retained to preserve canonical bytes.
+- **Evidence:** PR #27; `frontend/src/utils/authorizationLineage.ts`, `components/LiquidityPipeline.tsx`, `backend/app/amm/models.py`; `frontend/tests/audit-lineage.test.cjs` authorized/suppressed/inconsistent cases; later PR #28 full frontend validation.
+- **Residual limitation:** None for unsupported per-level proof display. This is envelope membership, not a new independent per-level hash or full raw-evidence archive (A1-027).
 
 ### A1-022 — Fresh terminal observations can label retained stale source evidence healthy
 
@@ -882,6 +1048,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Recompute observational source ages/health from each evidence timestamp at emit time, suppress unavailable history metrics or explicitly mark them stale, and preserve separate transport/decision/source freshness.
 - **Changes authority semantics?:** NO intended execution-policy change; fixes operator provenance.
 - **Priority:** P2
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** At emission, age serialized source copies using retained source timestamps and active transport-specific budgets. Keep last provider/consensus decisions distinct; suppress stale/unsupported perp/consensus prices in new history and current charts without re-evaluating authority.
+- **Evidence:** PR #28; `backend/app/terminal/service.py::age_sources`, `runtime.py`, frontend `utils/freshness.ts`; `test_phase12_terminal.py` aged/invalid/future/transport-budget/authority-equality cases and `frontend/tests/freshness.test.cjs` delayed-history stale-price cases.
+- **Residual limitation:** None for fresh-frame/stale-source health conflation. Native timestamps measure local observation age, not certified upstream age; historical observations are preserved.
 
 ### A1-023 — Bearer text redaction leaves token suffix in a synthetic message
 
@@ -895,6 +1065,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Prefer structured allowlisted public diagnostics and redact complete scheme+credential values before any serialization; apply one safe error contract at all outward boundaries.
 - **Changes authority semantics?:** NO; diagnostics only.
 - **Priority:** P2; P1 before remote use
+- **Disposition:** 🟢 CLOSED (2026-10-08).
+- **Remediation:** One shared outward diagnostic sanitizer consumes complete Bearer/Basic credentials before generic matching/bounding, scrubs selected nested containers/provider URLs and is applied to terminal/WS and independent REST copies without altering authority serialization.
+- **Evidence:** PR #29; `backend/app/diagnostics.py`, terminal/provider/API boundaries; `test_phase12_terminal.py` complete credentials, recursion, snapshot/event/REST/WS sentinel tests and `test_phase8_references.py` provider/classification cases.
+- **Residual limitation:** None for the synthetic token-suffix defect. Selected-field sanitization is not an independent security proof or completion of A1-009’s remote-release architecture.
 
 ### A1-024 — Normalized virtual-curve budgets intentionally decouple k from quoted capital
 
@@ -908,7 +1082,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Preserve explicit per-side budget/profile labels and document why curve scale does not directly allocate extra capital.
 - **Changes authority semantics?:** NO; changing this would be a new economic model and outside audit scope.
 - **Priority:** P3
-- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). Informational boundary; no runtime remediation required.
+- **Disposition:** 🔵 DOCUMENTED / ACKNOWLEDGED (2026-10-08).
+- **Remediation:** PR #30 documents virtual k/reserve geometry versus the explicit per-side base-quantity budget. No runtime remediation required.
+- **Evidence:** PR #30; `docs/AMM_MATH.md`, README informational boundaries; current `backend/app/amm/{liquidity_curve,discretizer,virtual_reserves}.py` and AMM/integration budget/floor tests.
+- **Residual limitation:** Intentional model boundary: k/total_liquidity is not TVL, custody or exchange margin.
 
 ### A1-025 — Scientific libraries belong in optional offline research unless justified
 
@@ -922,7 +1099,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** If a concrete need appears, add separate optional research tooling with exported immutable inputs and proposal-only outputs; no live auto-apply.
 - **Changes authority semantics?:** NO live authority; library outputs must never become signer/kill/position/capital truth.
 - **Priority:** P3
-- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). No scientific package is promoted into live authority; future use requires a concrete offline research workflow.
+- **Disposition:** 🔵 DOCUMENTED / ACKNOWLEDGED (2026-10-08).
+- **Remediation:** PR #30 documents optional offline scientific workflows with immutable inputs/proposal-only outputs and no live authority. Pandas/SciPy remain absent; current direct NumPy retention is the separate deferred policy in A1-017.
+- **Evidence:** PR #30; `docs/SIMULATION.md`, README informational boundaries, current `backend/pyproject.toml` and simulation static isolation tests.
+- **Residual limitation:** No new scientific workflow or calibrated predictive model is implemented. Scientific tooling never owns signing/risk/positions/accounting/kill/capital.
 
 ### A1-026 — Research vault and partial TESTNET accounting are not durable custody
 
@@ -936,7 +1116,10 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Keep current noncustodial/partial labels; define durable recovery and economic completeness only in a separately reviewed operational scope.
 - **Changes authority semantics?:** POTENTIALLY for future recovery authority; no change proposed in this audit.
 - **Priority:** P3 observation; production prerequisite
-- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). Current non-custodial/in-memory/partial scope is intentional; durable recovery or custody requires separate review.
+- **Disposition:** 🔵 DOCUMENTED / ACKNOWLEDGED (2026-10-08).
+- **Remediation:** PR #30 documents non-custodial/in-memory research accounting and partial TESTNET economics. No persistence or custody runtime was added.
+- **Evidence:** PR #30; `docs/ACCOUNTING.md`, README; current `backend/app/accounting/` and Phase 11 ledger/partial-economics/consistency tests.
+- **Residual limitation:** Durable journal/restart order recovery, economic account completeness and custody are separate future scope. Redis is ephemeral and does not close them.
 
 ### A1-027 — Semantic versions and decision fingerprints are not full evidence archives
 
@@ -950,9 +1133,14 @@ Priority definitions: P0 before serious reliance on affected transmission; P1 be
 - **Recommended remediation:** Document each identity scope and add immutable research provenance when needed; do not advance authority versions solely for display timestamp changes.
 - **Changes authority semantics?:** NO by default; enlarging material authority scope requires deliberate version compatibility review.
 - **Priority:** P3
-- **Disposition:** DOCUMENTED / ACKNOWLEDGED (2026-10-08). Identity scopes are documented; no authority version/fingerprint expansion is made by this closeout.
+- **Disposition:** 🔵 DOCUMENTED / ACKNOWLEDGED (2026-10-08).
+- **Remediation:** PR #30 documents semantic decision, evidence, observation, simulation and ledger identity scopes without changing material authority versions/fingerprints.
+- **Evidence:** PR #30; `Summary.md` identity-scope documentation, README, `docs/TERMINAL.md`; current agent/risk/simulation fingerprint and stability tests.
+- **Residual limitation:** No full immutable raw-evidence archive or automatic Git/dependency/build attestation is claimed.
 
 ## Informational closeout: A1-024 through A1-027
+
+> **Scope/date clarification:** this is the PR #30 informational closeout. Its statement that it did not add Redis describes that PR only; subsequent PRs #31/#32 added optional infrastructure, recorded below.
 
 A1-024 through A1-027 are informational findings rather than defect-remediation
 requests. Their current disposition is documentation/acknowledgement:
@@ -966,9 +1154,13 @@ This closeout does not change AMM economics, install research libraries, add
 persistence/custody, expand fingerprint materiality, add Redis, or create a new
 roadmap phase.
 
-## 23. Top Remediation Priorities
+## 23. Remediation Status and Current Priorities
 
-### Top five before serious TESTNET reliance
+### Original Audit 1.0 priority order
+
+The following order and immediate-hardening rationale are preserved as the original audit’s historical recommendation, not the current work queue. See current dispositions above and the remaining priorities below.
+
+#### Original top five before serious TESTNET reliance
 
 1. **A1-001:** normalize before final authority and bind the exact concrete wire request, preserving side/tick/size/capital invariants.
 2. **A1-002:** establish a material market identity that cannot silently change L2 content under the same sequence/time.
@@ -976,7 +1168,7 @@ roadmap phase.
 4. **A1-004:** disconnect and verify termination of owned SDK WebSocket resources on every lifecycle exit.
 5. **A1-006:** reconcile every standing order and count actual duplicate-slot exposure; halt uncertain orphan states.
 
-### Next five
+#### Original next five
 
 6. **A1-005:** bound/archive execution history and incrementally ingest/serialize it without losing authority evidence.
 7. **A1-009:** define/enforce authenticated remote operator and resource-admission boundaries **before any remote deployment**; this moves ahead of other work if remote exposure is the immediate goal.
@@ -986,17 +1178,89 @@ roadmap phase.
 
 A1-023 redaction is also a remote-release gate; A1-012 strict contracts, A1-019 lifecycle serialization and A1-010 observation scaling follow closely. Priorities reflect the affected use case, not an assertion that every local research limitation must be solved before any use.
 
+> **Subsequent disposition:** the A1-007/A1-010/A1-011/A1-012/A1-019/A1-022/A1-023 repairs above are now closed by PRs #19–#21/#26/#28/#29. They are preserved in this original order for history and are not current remediation instructions. A1-009's remote security gap remains distinct from the completed local boundary.
+
 **Immediate hardening:** yes. A separate hardening PR is justified, but it should be organized by stable audit IDs and invariants across Phase1/4.1/8/9/11/12. Calling all of it “Phase12.1” would incorrectly suggest only terminal fixes. If maintainers retain that milestone name, give each change its actual subsystem and finding ID. No fixes are included here. Do not start Phase13 before authority, lifecycle, acceptance and operational gates are resolved.
 
 Keep remediation reviewable: reproduce a specific failure, preserve cancellation availability/manual latch, validate exact normalized economics, add the missing meaningful regression case, then record real safe acceptance. Signed venue testing requires a separate explicit authorization; it was prohibited in this audit.
 
+### Current remaining priorities after remediation
+
+Only partial/deferred findings are listed here. Closed code repairs such as
+A1-002/A1-005/A1-007/A1-010–A1-012/A1-019/A1-022/A1-023 are not current
+implementation tasks. Priority depends on the intended deployment; remote
+security becomes immediate if remote exposure is contemplated.
+
+| Finding | Current status | Exact remaining gap | Category |
+|---|---|---|---|
+| A1-001 | 🟡 PARTIALLY CLOSED; code closed | Separately authorized signed TESTNET CREATE/REPLACE/cancel acceptance demonstrating actual venue economics/reconciliation; deterministic SDK wire checks already exist. | Signed venue acceptance |
+| A1-003/A1-004 | 🟡 PARTIALLY CLOSED; code closed | Real public Hyperliquid socket failure, bounded reconnect, exactly-once resubscription, fresh L2/perp recovery and repeated stop/switch thread/resource soak. | LIVE transport / environmental acceptance |
+| A1-006 | 🟡 PARTIALLY CLOSED; code closed | Real signed venue duplicate/orphan reconciliation, partial fills and cancellation/fill races without uncertain replacement creation. | Signed venue acceptance |
+| A1-009 | 🟡 PARTIALLY CLOSED; local-only boundary implemented | Reviewed remote operator authentication/roles, TLS/proxy/origin policy, per-operation rate/body/time budgets, audit identity/logging and secrets lifecycle before any remote deployment. Local guards are not authentication. | Remote security / deployment |
+| A1-016 | 🟡 PARTIALLY CLOSED; numerical/sampling code closed | Empirical cadence sensitivity, threshold and confidence calibration on appropriate data before live/predictive reliance; count-based units remain intentional. | Quantitative calibration |
+| A1-017 | 🟡 PARTIALLY CLOSED; removal deferred | Resolve the intentional unused direct NumPy retention policy in a future reviewed decision; establish resolved dependency reproducibility if that recommendation is to be closed. Do not repeat the superseded claim that merged PR #25 removed NumPy. | Dependency policy / reproducibility |
+
+Separate operational prerequisites do not create new A1 IDs:
+
+- **External providers:** successful authorized RedStone Live subscription/auth/failover and public RedStone HTTP, Kraken, CoinGecko and Hyperliquid freshness/reconnect/rate-limit checks remain unaccepted. The original section 5 environment-blocked attempts are not successes.
+- **Durability/economic completeness:** A1-026 is acknowledged current scope, not an open custody implementation request. Durable orders/fills/ledger/receipts, startup reconciliation and external account-movement attribution require separately defined future scope before a production claim.
+- **Redis:** real-server operational acceptance remains environment-blocked/pending; fakeredis is not live Redis. This is post-audit infrastructure validation, not financial authority or a new Audit 1.0 finding.
+- **Operational evidence:** independent security review, incident/recovery procedures and real performance/soak evidence are still prerequisites to production-oriented claims. This update implements no new phase and authorizes no live/signed tests.
+
 ## 24. Final Verdict
+
+### Original Audit 1.0 conclusion (2026-10-07)
+
+The two paragraphs below preserve the original conclusion and tone. Their unresolved-code list and NumPy recommendation are historical; the dated update immediately afterward is the current verdict.
 
 HyperAMM implements the planned integrated research stack, with appropriate architectural substitutions and several strong deterministic accounting/authority invariants. It is credible as local research infrastructure under the documented PAPER model. It is not a certified live market-making system: transmission binding, material market identity, socket recovery/teardown, anomalous standing orders, durable recovery, remote security and real provider/venue acceptance remain material gaps.
 
 The twelve-page terminal improves the textual mockup by removing unsupported economics and making actual layers visible. Its health/lineage/contract/observation limits need hardening before operators rely on it during live failures. Agent architecture is appropriately subordinate; statistical and failure-policy interpretations need more work. NumPy is currently unused core weight; optional Pandas/SciPy research may be useful only when a concrete workflow warrants it.
 
-### Explicit answers to all 48 requested audit questions
+### Post-remediation verdict — 2026-10-08 (America/Los_Angeles)
+
+HyperAMM remains credible local research infrastructure under its documented
+PAPER model. Substantial Audit 1.0 remediation is now implemented and supported
+by recorded local regression evidence: exact normalized venue-request binding,
+material L2 identity, supervised SDK recovery/owned-resource teardown, bounded
+execution history, actual duplicate-slot exposure/reconciliation, observation
+integrity, terminal ordering/envelope lineage, read-only getters, strict terminal
+contracts/recovery, documented optional-agent failure policy, execution-quality
+evidence, optimizer validation provenance, quantitative numerical/sampling
+hardening, documentation accuracy, serialized configuration lifecycle, source
+freshness and diagnostic sanitization. Those original code defects must no longer
+be presented as wholly unresolved.
+
+Dependency/compatibility review also landed, but **NumPy removal did not**:
+PR #25 intentionally retained the unused direct dependency and deferred the
+recommendation. Pandas/SciPy remain absent; future scientific workflows remain
+optional offline research without live authority. Count-based metrics have
+explicit units and extreme-value guards, not empirical/live calibration.
+
+The current unresolved readiness limits are real public transport/reconnect and
+teardown acceptance, external-provider protocol/freshness acceptance, separately
+authorized signed TESTNET lifecycle/reconciliation, empirical calibration,
+remote security and durable economic/restart recovery. A1-013’s soft optional
+policy and A1-024–A1-027’s design boundaries are acknowledged limitations, not
+claims of stronger implementations. Current deployment remains local,
+single-operator and single-worker; signed venue evidence is still distinct from
+SDK fixtures and local PAPER tests.
+
+PRs #31/#32 add optional **EPHEMERAL DISTRIBUTED INFRASTRUCTURE** for observations,
+resource admission, heartbeat and TTL research mirrors, plus read-only Redis
+operational health. Redis owns no execution/risk/FinalQuoteAuthorization,
+position/ledger/kill/custody/configuration or durable recovery truth. Reported
+fakeredis acceptance passed; real Redis acceptance remains environment-blocked.
+This does not establish remote or multi-worker production readiness.
+
+**IMPLEMENTED, LOCAL TESTED, FAKEREDIS TESTED, LIVE ACCEPTED, EXTERNAL PROVIDER
+ACCEPTED, SIGNED VENUE ACCEPTED and PRODUCTION READY are different evidence
+levels.** The current repository is not certified live market-making, HFT
+production, custodial, durably recoverable or a multi-worker production platform.
+
+### Original answers to all 48 requested audit questions (historical)
+
+These answers preserve the original baseline. In particular, answers 11–14, 17, 19–20, 22, 25–27, 29, 33–42 and 44–48 contain subsequently remediated/deferred claims; use the dated finding blocks, current priorities and current verdict for today’s disposition.
 
 | # | Question | Answer |
 |---|---|---|
@@ -1052,3 +1316,101 @@ The twelve-page terminal improves the textual mockup by removing unsupported eco
 ### Audit completion boundary
 
 Only `AUDIT_REPORT_1.0.md` is intended tracked content in this audit PR. No finding was fixed, production architecture changed, dependency manifest/lockfile altered, workflow added, scientific dependency added, signer invoked, signed TESTNET trade sent or mainnet capability added. Local services were stopped after acceptance; repository checks and PR publication are administrative completion of this audit, not a new phase.
+
+## Post-Audit Remediation Summary
+
+All PRs below were verified merged, and their relevant implementation and test
+assertions were inspected at the reviewed main commit. Closure describes the
+original defect and supported scope, not blanket production acceptance.
+
+| Stable A1 IDs | Merged PR | Current result |
+|---|---|---|
+| A1-001 | [#16](https://github.com/btorressz/hyperamm/pull/16) | Code closed: conservative normalized economics and concrete wire membership; signed venue acceptance pending. |
+| A1-002/A1-003/A1-004 | [#17](https://github.com/btorressz/hyperamm/pull/17) | A1-002 closed; SDK recovery/disconnect code closed, real public transport acceptance pending. |
+| A1-005/A1-006 | [#18](https://github.com/btorressz/hyperamm/pull/18) | History/incremental consumers closed; duplicate exposure/reconciliation code closed, signed venue acceptance pending. |
+| A1-007/A1-008 | [#19](https://github.com/btorressz/hyperamm/pull/19) | Closed: immutable matured markouts and exact retained price/time pairing. |
+| A1-009/A1-010 | [#20](https://github.com/btorressz/hyperamm/pull/20) | Local boundary enforced; remote security pending. Cached bounded canonical fanout closed. |
+| A1-011/A1-012 | [#21](https://github.com/btorressz/hyperamm/pull/21) | Closed: observational reads, derived strict contracts and invalid-stream recovery. |
+| A1-013/A1-014 | [#22](https://github.com/btorressz/hyperamm/pull/22) | Optional ERROR policy documented/tested; execution-quality provenance/churn/maturity defects closed. |
+| A1-015 | [#23](https://github.com/btorressz/hyperamm/pull/23) | Closed: dataset-identity/overlap classifications and unexpected-error propagation. |
+| A1-016 | [#24](https://github.com/btorressz/hyperamm/pull/24) | Sampling/numerical hardening closed; empirical calibration pending. |
+| A1-017 | [#25](https://github.com/btorressz/hyperamm/pull/25) | Compatibility review acknowledged; unused direct NumPy intentionally retained/removal deferred. |
+| A1-018/A1-019 | [#26](https://github.com/btorressz/hyperamm/pull/26) | Closed: current documentation repair and serialized fail-closed lifecycle. |
+| A1-020/A1-021 | [#27](https://github.com/btorressz/hyperamm/pull/27) | Closed: history watermark merging and backend envelope membership lineage; broader frontend checks later passed in #28. |
+| A1-022 | [#28](https://github.com/btorressz/hyperamm/pull/28) | Closed: source ages/health/history suppression on observational copies. |
+| A1-023 | [#29](https://github.com/btorressz/hyperamm/pull/29) | Closed: complete selected outward diagnostic sanitization. |
+| A1-024–A1-027 | [#30](https://github.com/btorressz/hyperamm/pull/30) | Informational documented/acknowledged: capital, research, custody/recovery and identity scopes. |
+
+### Recorded validation versus this documentation review
+
+PR #28 records **868 backend tests passed**, **72 frontend tests passed**,
+typecheck/build and unchanged-schema checks passed; this follows PR #27’s
+initial environment-blocked broader checks. PR #29 records **916 backend tests
+passed** and schema equality. PR #31 records **931 backend tests passed**, plus
+**35 focused Redis/Lua/lifespan/local-publisher/executor tests passed** and Python
+compilation/diff checks. These are historical merged-PR validation records,
+not reruns here. Original section 19’s **546** and older phase milestone counts
+remain valid historical evidence and are not globally replaced.
+
+The request supplies PR #32 acceptance as **17 updated Redis tests passed**,
+**933 full-backend tests passed**, Python compilation passed and
+`git diff --check` passed. PR #32’s merged source/tests verify the health behavior,
+but its GitHub PR body/comments do not contain those run counts; these numbers
+are attributed to the supplied acceptance record rather than represented as
+independently executed or recovered test logs. No backend/frontend suite rerun
+is required/performed for this Markdown-only update.
+
+## Post-Audit Infrastructure Update — Redis
+
+Merged [PR #31](https://github.com/btorressz/hyperamm/pull/31) added optional
+**EPHEMERAL DISTRIBUTED INFRASTRUCTURE**: terminal Pub/Sub, explicit-TTL latest
+snapshot cache, shared WebSocket admission, optional research admission, worker
+heartbeat and short-lived research status/result mirrors. Merged
+[PR #32](https://github.com/btorressz/hyperamm/pull/32), merge commit
+`5f3336999d62d9241bb8591b807f48a634f9812f`, adds read-only Redis operational status
+under `GET /api/v1/health`: enabled/required/research_enabled,
+DISABLED/CONNECTED/DEGRADED, sanitized last_error and UTC last_success_at.
+
+Health reports the last observed operation outcome; the GET does not probe Redis
+and CONNECTED does not guarantee every subscription/function is healthy.
+Degradation/recovery never changes financial authority or clears kill. Disabled
+mode creates no Redis client/tasks. Optional startup outage preserves the local
+engine/REST/kill/cancel while Redis-dependent admission fails closed; required
+mode fails startup clearly before engine services start. Relay snapshots retain
+engine process/session/sequence/time and cannot be re-dated after an outage.
+
+**Redis is NOT authority for execution, risk, FinalQuoteAuthorization, positions,
+accounting ledger, kill switch, custody, durable recovery or canonical strategy
+configuration.** Decision-critical market/reference/agent evidence remains local.
+Redis mirrors are lossy/expiring operational observations, not a durable database,
+leader election, remote job queue, exactly-once financial mechanism or restart
+recovery. PostgreSQL/durable storage remains future scope, not implemented here.
+LocalOnlyBoundary and the local/single-operator/single-worker deployment guard
+remain in force; Redis did not enable public or multi-worker production use.
+
+Current evidence: `backend/app/infrastructure/{redis,terminal_transport,research}.py`,
+`main.py`, `api/{health,websocket,simulation}.py`, optional Redis settings/extra,
+`docs/REDIS.md` and `docs/REDIS_DESIGN.md`; `test_redis_infrastructure.py` and
+`test_redis_lifespan.py` cover TTL/Lua leases, relays, loss/recovery, admission,
+contracts, diagnostics, cancellation and unchanged engine authority.
+
+### Redis acceptance status
+
+| Acceptance level | Status / evidence |
+|---|---|
+| **FAKEREDIS ACCEPTANCE** | **PASSED** in the supplied PR #32 record: updated Redis suites **17 tests passed**; full backend **933 passed**; Python compilation and `git diff --check` passed. Tests use fakeredis/Lua, not a live Redis server. |
+| **REAL REDIS ACCEPTANCE** | **ENVIRONMENT BLOCKED — PENDING** in that record: no `redis-server`, no `redis-cli`, no alternative local Redis server, and no Redis Docker image in cache. This task did not perform real Redis-server acceptance. |
+
+Real-server acceptance remains an operational/deployment validation item. It is
+not evidence Redis owns financial authority. Redis is a post-audit addition;
+there is no new A1 finding, no Audit 2.0 and no new roadmap phase.
+
+### Post-remediation update completion boundary
+
+Only `AUDIT_REPORT_1.0.md` changes in this PR. Original findings/IDs/severity,
+evidence/risk, tests/missing tests, recommendations, authority implications and
+historical priorities/verdict/acceptance records are preserved. Validation for
+this task consists of `git diff --check`, exact changed-file verification,
+original-finding field/ID preservation and stale-current-language review. No
+runtime/dependency/schema/test/workflow change, provider/live/signed venue test
+or real Redis acceptance was performed.
