@@ -31,6 +31,7 @@ from app.accounting import AccountingConfig, AccountingService
 from app.accounting.pnl import to_pnl_drawdown
 from app.accounting.vault import reserved_capital
 from app.terminal import TerminalService
+from app.infrastructure.terminal_transport import InProcessTerminalTransport
 
 log = logging.getLogger(__name__)
 
@@ -115,7 +116,9 @@ class HyperAmmRuntime:
         self.terminal_service = TerminalService()
         self._terminal_task = None
         self._terminal_latest = None
-        self._terminal_clients = set()
+        self.terminal_transport = InProcessTerminalTransport()
+        self._terminal_clients = self.terminal_transport.clients
+        self.terminal_distribution = None
         self.testnet.authority = self._execution_authority
         self._bind_paper(self.paper)
         self.paper.orders.observer = self.agent_telemetry.observe_orders
@@ -1072,16 +1075,10 @@ class HyperAmmRuntime:
         return deepcopy(self._terminal_latest)
 
     def subscribe_terminal(self):
-        if len(self._terminal_clients) >= 32:
-            raise RuntimeError("Local terminal client limit reached")
-        queue = asyncio.Queue(maxsize=1)
-        self._terminal_clients.add(queue)
-        if self._terminal_latest is not None:
-            queue.put_nowait(self._terminal_wire)
-        return queue
+        return self.terminal_transport.subscribe()
 
     def unsubscribe_terminal(self, queue):
-        self._terminal_clients.discard(queue)
+        self.terminal_transport.unsubscribe(queue)
 
     async def _publish_terminal_snapshot(self):
         snap = await self.market.snapshot()
@@ -1141,8 +1138,7 @@ class HyperAmmRuntime:
         import json
         self._terminal_wire = json.dumps(snapshot)
         self._terminal_latest = snapshot
-        for queue in self._terminal_clients:
-            if queue.full():
-                queue.get_nowait()
-            queue.put_nowait(self._terminal_wire)
+        self.terminal_transport.publish(self._terminal_wire)
+        if self.terminal_distribution is not None:
+            self.terminal_distribution.offer(self._terminal_wire)
         return snapshot

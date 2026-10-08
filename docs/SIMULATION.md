@@ -828,3 +828,15 @@ Phase 8 remains IN REVIEW.
 Phase 9 remains IMPLEMENTED / IN REVIEW.
 
 Phase 11 shared research accounting is IMPLEMENTED / IN REVIEW; Phase 12 remains PLANNED.
+
+## Optional Redis research coordination
+
+With Redis and `REDIS_RESEARCH_ENABLED=true`, the existing local `SimulationExecutor`
+is wrapped by renewable namespace-wide research admission and TTL job/status/result
+mirrors. HTTP APIs remain synchronous; contention returns 429 and unavailable
+admission returns 503. Detached request cancellation holds the slot until the real
+worker completes. Inputs are deep-copied and existing PAPER/DEMO isolation remains.
+Cached results include process/session, full input digest, code-owned engine version
+and result/dataset identity; cache data is never substituted into live strategy.
+No remote queue, cancellation endpoint, candidate deployment or durable research
+store is added. See [Redis semantics and limitations](REDIS.md).

@@ -276,3 +276,14 @@ cancellation. Terminal health is observational and cannot restore quote authorit
 The full REST/WebSocket inventory is listed in [README](../README.md#api-surface),
 including terminal history/events and vault/accounting summary, position, PnL,
 ledger and event routes. No new route or terminal contract is added by A1-019.
+
+## Optional Redis transport
+
+[Redis infrastructure](REDIS.md) can mirror the engine's existing serialized
+`phase12-v1` frames through Pub/Sub and a process/session TTL cache. The runtime
+still owns sequence, session and emission time; `TerminalService`, history and
+events are unchanged. Relays validate the full contract and identity, reject
+stale/duplicate/regressed observations and preserve original bytes. Redis mode
+adds shared expiring WS admission; local mode keeps its original 32-client cap.
+Loss degrades Redis observability/admission without changing trading authority.
+No Streams/replay, remote access or multi-worker deployment is enabled.

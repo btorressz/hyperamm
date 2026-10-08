@@ -393,3 +393,19 @@ and disconnects cancel tasks and release subscriptions. Sequence gaps can reflec
 coalescing, not missing trades. Process/session identity and history/event APIs
 retain their existing contract. Before the first publication, readers wait for
 the publisher; a domain change appears on its next publication.
+
+### Optional Redis infrastructure
+
+Redis is **EPHEMERAL DISTRIBUTED INFRASTRUCTURE** for terminal Pub/Sub, TTL
+snapshot caches, shared bounded WebSocket admission and operational heartbeat.
+Optional research coordination adds admission and TTL status/result mirrors around
+the existing local PAPER thread worker. `REDIS_ENABLED=false` is the default;
+install the backend `[redis]` extra to opt in. `REDIS_REQUIRED=true` fails startup
+clearly if Redis is unavailable. Redis-dependent admission fails closed during
+outages; local risk, kill/cancel, accounting and execution authority stay in process.
+
+The `phase12-v1` contract and local single-operator/single-worker deployment limits
+are unchanged. Redis does not enable remote deployment or distributed execution.
+PostgreSQL is the future durable operational layer and is not implemented here.
+See [Redis behavior and configuration](docs/REDIS.md) and the
+[repository-specific state inventory/design](docs/REDIS_DESIGN.md).
