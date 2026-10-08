@@ -6,8 +6,217 @@ from pydantic import ValidationError
 from app.config import Settings
 from app.runtime import HyperAmmRuntime
 from app.market_data.mock import MockMarketDataAdapter
+from app.references.models import ReferenceConsensus
 from app.terminal.models import TerminalSnapshot
-from app.terminal.service import TerminalService, aggregate_health, safe_text
+from app.terminal.service import TerminalService, aggregate_health, safe_text, age_sources
+
+
+THRESHOLDS = {"market": 5, "REDSTONE": 5, "REDSTONE_PUBLIC_HTTP": 60,
+              "KRAKEN": 5, "COINGECKO": 90}
+
+
+def retained_at(data, timestamp):
+    """Retain healthy T0 economics without another strategy/provider evaluation."""
+    data = copy.deepcopy(data)
+    data["strategy"]["config"]["perp_context_stale_after_seconds"] = 5
+    data["perp_context"].update(updated_at=timestamp.isoformat(), stale=False)
+    for provider, e in data["references"]["evidence"].items():
+        e.update(source_timestamp=timestamp.isoformat(), observed_at=timestamp.isoformat(),
+                 age_ms=0, healthy=True, stale=False, status="HEALTHY", simulated=False,
+                 transport="LIVE_WS" if provider in ("REDSTONE", "KRAKEN") else
+                 "REST" if provider == "COINGECKO" else "NATIVE")
+    for c in (data["reference_consensus"], data["references"]["consensus"]):
+        c.update(updated_at=timestamp.isoformat(), confidence_state="VERIFIED",
+                 eligible_providers=["REDSTONE", "HYPERLIQUID_ORACLE", "KRAKEN"])
+    return data
+
+
+def observe_at(data, now, thresholds=None):
+    service = TerminalService(clock=lambda: now)
+    snapshot = service.observe(data, data["diagnostics"],
+                               freshness_thresholds=thresholds or THRESHOLDS)
+    return snapshot, service.history.query()[0]
+
+
+@pytest.mark.asyncio
+async def test_retained_sources_age_at_fresh_terminal_emission_without_redeciding():
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    original = copy.deepcopy(data)
+    s, h = observe_at(data, t0 + timedelta(seconds=40))
+    assert s.emitted_at == t0 + timedelta(seconds=40)
+    assert s.perp_context["stale"]
+    assert s.system_health.subsystems["perp_context"].status == "DEGRADED"
+    assert h.strategy_reference_price is h.mark_price is h.oracle_price is None
+    kraken = s.references.evidence["KRAKEN"]
+    assert kraken.age_ms == 40000 and kraken.stale and not kraken.healthy
+    assert kraken.source_timestamp == t0 and kraken.observed_at == t0
+    assert kraken.status == "HEALTHY"  # Last provider state is distinct.
+    cg = s.references.evidence["COINGECKO"]
+    assert cg.age_ms == 40000 and cg.healthy and not cg.stale
+    assert s.reference_consensus == ReferenceConsensus.model_validate(original["reference_consensus"])
+    assert s.references.consensus == ReferenceConsensus.model_validate(original["references"]["consensus"])
+    assert s.reference_consensus.confidence_state == "VERIFIED"
+    assert s.references.consensus.confidence_state == "VERIFIED"
+    assert s.system_health.subsystems["reference_consensus"].status == "DEGRADED"
+    assert s.system_health.subsystems["redstone_transport"].status == "DEGRADED"
+    assert "Last provider state HEALTHY" in s.system_health.subsystems["redstone_transport"].reason
+    assert h.consensus_price is None
+    assert data == original
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("transport,stale", [("LIVE_WS", True), ("PUBLIC_HTTP", False)])
+async def test_redstone_uses_retained_transport_budget(transport, stale):
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    data["references"]["evidence"]["REDSTONE"]["transport"] = transport
+    s, _ = observe_at(data, t0 + timedelta(seconds=40))
+    red = s.references.evidence["REDSTONE"]
+    assert red.age_ms == 40000 and red.stale == stale and red.healthy != stale
+    assert red.transport == transport and red.source_timestamp == t0
+
+
+@pytest.mark.asyncio
+async def test_demo_evidence_uses_simulated_observation_budget_not_live_provider_budget():
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    for e in data["references"]["evidence"].values():
+        e.update(transport="DEMO", simulated=True)
+    s, _ = observe_at(data, t0 + timedelta(seconds=40))
+    assert all(e.stale and not e.healthy and e.age_ms == 40000
+               for e in s.references.evidence.values())
+
+
+@pytest.mark.asyncio
+async def test_native_context_and_midpoint_use_their_distinct_active_budgets():
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    data["strategy"]["config"]["perp_context_stale_after_seconds"] = 60
+    s, h = observe_at(data, t0 + timedelta(seconds=40))
+    assert not s.perp_context["stale"] and h.mark_price is not None
+    for provider in ("HYPERLIQUID_MARK", "HYPERLIQUID_ORACLE"):
+        assert s.references.evidence[provider].healthy
+        assert not s.references.evidence[provider].stale
+    assert s.references.evidence["HYPERLIQUID_MID"].stale
+
+
+@pytest.mark.asyncio
+async def test_new_provider_observed_at_does_not_refresh_retained_price_timestamp():
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    now = t0 + timedelta(seconds=40)
+    data["references"]["evidence"]["KRAKEN"]["observed_at"] = now.isoformat()
+    data["references"]["evidence"]["KRAKEN"]["age_ms"] = 0
+    s, _ = observe_at(data, now)
+    e = s.references.evidence["KRAKEN"]
+    assert e.observed_at == now and e.source_timestamp == t0
+    assert e.age_ms == 40000 and e.stale and not e.healthy
+
+
+@pytest.mark.asyncio
+async def test_fresh_degraded_consensus_and_unrelated_stale_tertiary_source():
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    for c in (data["reference_consensus"], data["references"]["consensus"]):
+        c["confidence_state"] = "DEGRADED"
+    data["references"]["evidence"]["COINGECKO"]["source_timestamp"] = (t0 - timedelta(seconds=100)).isoformat()
+    s, h = observe_at(data, t0 + timedelta(seconds=1))
+    assert s.references.evidence["COINGECKO"].stale
+    assert s.reference_consensus.confidence_state == "DEGRADED"
+    assert h.consensus_price == s.reference_consensus.consensus_price
+    assert h.mark_price is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("problem", ["missing", "future", "naive", "invalid"])
+async def test_invalid_source_times_cannot_gain_health_from_zero_age(problem):
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    bad = {"missing": None, "future": (t0 + timedelta(seconds=40)).isoformat(),
+           "naive": t0.replace(tzinfo=None).isoformat(), "invalid": "not-a-timestamp"}[problem]
+    data["perp_context"]["updated_at"] = bad
+    data["references"]["evidence"]["KRAKEN"]["source_timestamp"] = bad
+    # Invalid wire timestamps may fail contract validation; freshness must already
+    # fail closed before that validation rather than becoming healthy at age zero.
+    age_sources(data, t0, THRESHOLDS)
+    assert data["perp_context"]["stale"]
+    e = data["references"]["evidence"]["KRAKEN"]
+    assert e["age_ms"] == 0 and e["stale"] and not e["healthy"]
+    assert aggregate_health(data, t0).subsystems["reference_consensus"].status != "HEALTHY"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider,transport,offset,stale", [
+    ("KRAKEN", "LIVE_WS", 5, False), ("KRAKEN", "LIVE_WS", 5.001, True),
+    ("REDSTONE", "LIVE_WS", 2, False), ("REDSTONE", "PUBLIC_HTTP", 0.001, True),
+    ("HYPERLIQUID_ORACLE", "NATIVE", 0.001, True),
+])
+async def test_existing_provider_future_tolerance_is_preserved(provider, transport, offset, stale):
+    _, data = await frame()
+    t0 = datetime.now(timezone.utc)
+    data = retained_at(data, t0)
+    e = data["references"]["evidence"][provider]
+    e.update(transport=transport, source_timestamp=(t0 + timedelta(seconds=offset)).isoformat())
+    s, _ = observe_at(data, t0)
+    assert s.references.evidence[provider].stale == stale
+    assert s.references.evidence[provider].healthy != stale
+
+
+@pytest.mark.asyncio
+async def test_runtime_aging_publication_preserves_exact_authority_and_provider_state(monkeypatch):
+    rt, _ = await frame()
+    t0 = rt.perp_context.updated_at
+    # Populate provider state even in DEMO to detect accidental sampler mutation.
+    for provider in (rt.reference_service.redstone, rt.reference_service.kraken, rt.reference_service.coingecko):
+        provider.state.enabled = True
+        provider.state.accept("3000", t0, observed_at=t0)
+
+    def authority():
+        return copy.deepcopy({
+            "perp": rt.perp_context.model_dump(),
+            "perp_service": vars(rt.perp_context_service),
+            "references": rt.references.model_dump(),
+            "reference_version": rt.reference_service._version,
+            "reference_fingerprint": rt.reference_service._fingerprint,
+            "redstone_effective_version": rt.reference_service.redstone._effective_version,
+            "redstone_effective_fingerprint": rt.reference_service.redstone._effective_fingerprint,
+            "redstone_public_http": {k: v for k, v in vars(rt.reference_service.redstone.public_http.state).items()
+                                     if k != "on_update"},
+            "providers": [{k: v for k, v in vars(p.state).items() if k != "on_update"}
+                          for p in (rt.reference_service.redstone, rt.reference_service.kraken, rt.reference_service.coingecko)],
+            "risk": rt.risk_decision.model_dump(), "risk_version": rt.firewall.version,
+            "authorization": rt.authorization.model_dump(),
+            "authorization_fingerprint": rt.authorization.authorization_fingerprint,
+            "quote_fingerprint": rt.authorization.quote_fingerprint,
+        })
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("observation must not evaluate trading/provider services")
+
+    before = authority()
+    for service in (rt.perp_context_service, rt.reference_service, rt.reference_service.redstone,
+                    rt.reference_service.kraken, rt.reference_service.coingecko):
+        monkeypatch.setattr(service, "snapshot", forbidden)
+    monkeypatch.setattr(rt.reference_service.consensus_policy, "evaluate", forbidden)
+    rt.terminal_service.clock = lambda: t0 + timedelta(seconds=40)
+    queue = rt.subscribe_terminal()
+    await rt._publish_terminal_snapshot()
+    wire = json.loads(queue.get_nowait())
+    assert wire["emitted_at"] == (t0 + timedelta(seconds=40)).isoformat().replace("+00:00", "Z")
+    assert wire["perp_context"]["stale"] and not wire["references"]["evidence"]["KRAKEN"]["healthy"]
+    # Instance monkeypatch attributes are test instrumentation, not authority.
+    after = authority()
+    after["perp_service"].pop("snapshot", None)
+    assert before == after
+    rt.unsubscribe_terminal(queue)
 
 
 async def frame():

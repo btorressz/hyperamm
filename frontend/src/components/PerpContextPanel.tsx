@@ -7,7 +7,7 @@ export function PerpContextPanel({t}:{t:TerminalState}){
   if(!p)return <section className="panel perpPanel"><div className="panelHead"><b>Perpetual Market Context</b><span>Waiting for context</span></div><div className="perpEmpty">No normalized perp context is available.</div></section>
   const pos=p.position
   return <section className="panel perpPanel">
-    <div className="panelHead"><b>Perpetual Market Context</b><span>{p.source}{p.simulated?' · SIMULATED':''} · v{p.version}</span></div>
+    <div className="panelHead"><b>Perpetual Market Context</b><span>{p.source}{p.simulated?' · SIMULATED':''} · v{p.version} · {p.stale?'STALE · retained diagnostics':'FRESH'}</span></div>
     <div className="perpGrid">
       <div><span>Mark Price</span><b>${f(p.mark_price)}</b></div>
       <div><span>Oracle Price</span><b>${f(p.oracle_price)}</b></div>

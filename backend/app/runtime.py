@@ -1130,6 +1130,12 @@ class HyperAmmRuntime:
         snapshot = self.terminal_service.observe(data, diagnostics={
             "testnet_enabled": self.testnet.enabled,
             "reference_firewall_enabled": self.risk_config.enabled,
+        }, freshness_thresholds={
+            "market": self.market.stale_after_seconds,
+            "REDSTONE": self.settings.redstone_stale_after_seconds,
+            "REDSTONE_PUBLIC_HTTP": self.settings.redstone_public_http_stale_after_seconds,
+            "KRAKEN": self.settings.kraken_stale_after_seconds,
+            "COINGECKO": self.settings.coingecko_stale_after_seconds,
         }).model_dump(mode="json")
 
         import json

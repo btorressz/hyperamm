@@ -103,7 +103,8 @@ raw server logs are never exposed. Both terminal HTTP APIs are GET-only.
 market feed, perpetual context, references/consensus, RedStone transport, agents,
 risk, final authorization, execution, venue reconciliation, accounting,
 execution/accounting consistency and strategy. VERIFIED reference consensus and
-READY agents map to healthy evidence; warmup/insufficient/disabled/unavailable
+READY agents map to healthy evidence; VERIFIED consensus additionally requires
+its retained supporting sources to remain fresh at emission. Warmup/insufficient/disabled/unavailable
 states retain their actual meaning. PAPER venue reconciliation is explicitly
 inapplicable. Manual kill, risk HALT, blocked final authorization and accounting
 divergence remain visible. Any required missing evidence prevents an aggregate
@@ -176,6 +177,58 @@ panels. Buttons have focus/disabled/error states, controls have semantic labels,
 and critical statuses contain text rather than relying on color.
 
 ## Truth boundaries and limitations
+
+### Emission-time source provenance (Audit 1.0 A1-022)
+
+Terminal `emitted_at` freshness differs from source-data freshness, provider
+transport state, and the last reference/risk decision state. A current terminal
+WebSocket frame can carry stale retained market evidence. The terminal clock
+ages serialized observation copies before health aggregation, validation and
+history creation; it never evaluates providers/consensus or mutates trading
+objects, versions, final authorization or fingerprints.
+
+Perpetual context becomes observationally stale when `emitted_at - updated_at`
+exceeds the active strategy `perp_context_stale_after_seconds`. Reference
+`age_ms` is recomputed from the retained price's `source_timestamp`, never from
+the terminal frame timestamp or the old evaluation age. Existing thresholds apply:
+
+| Retained evidence | Observation stale threshold |
+|---|---|
+| RedStone LIVE_WS | `settings.redstone_stale_after_seconds` |
+| RedStone PUBLIC_HTTP | `settings.redstone_public_http_stale_after_seconds` |
+| Kraken | `settings.kraken_stale_after_seconds` |
+| CoinGecko | `settings.coingecko_stale_after_seconds` |
+| Hyperliquid native oracle / mark (including DEMO native context) | Active perp-context threshold |
+| Hyperliquid midpoint | Active market-data service threshold |
+| DEMO external reference evidence | Corresponding simulated market-observation threshold |
+
+Missing/invalid/naive timestamps cannot be fresh. Perp/native/DEMO/public HTTP
+future timestamps are stale; live external evidence retains the existing
+five-second provider clock-skew tolerance. Native Hyperliquid context age is
+local receive/observation age, not certified upstream exchange age.
+
+`status`, `transport`, and `transport_quality` retain the last provider state.
+`stale` and `healthy` describe source freshness at this emission. Thus retained
+`status=HEALTHY` can coexist with `stale=true`, `healthy=false`; the source table
+labels these separately and reports “Source age now”. The RedStone transport
+health row includes last known provider/transport state in its reason, while a
+HEALTHY observation also requires retained source freshness; a provider state
+alone does not establish current transport connectivity.
+Consensus confidence, statuses and price remain the last evaluated decision;
+no observational quorum/outlier calculation occurs. Current consensus support
+requires every retained `eligible_providers` input to be available and fresh.
+An aged-out VERIFIED decision remains VERIFIED but current consensus health is
+DEGRADED and its price is suppressed from new history and current-price surfaces.
+Fresh supported DEGRADED decisions can still supply a price.
+
+New history and live chart observations suppress stale mark, oracle and strategy
+reference prices with `None`/`null`, and suppress unsupported consensus prices.
+Header/Markets/current risk-price metrics follow the same boundary. Intentionally
+retained diagnostic values are labeled STALE. Old history remains unchanged;
+no values are interpolated. Backend sequence identity, response-watermark merge,
+bounded observations and controlled chart fitting from A1-020 remain intact.
+The `phase12-v1` schema is unchanged. Terminal health remains observational;
+execution callbacks retain their own freshness and authority checks.
 
 - History/events are in-memory current-session observations; no durable 24-hour
   statistics, persistence or fabricated historical candles.

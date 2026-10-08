@@ -229,7 +229,9 @@ export type PriceEvidence = {
   price: Decimalish | null;
   observed_at: string;
   source_timestamp: string | null;
+  /** Recomputed against terminal emitted_at; native HL age is observation age. */
   age_ms: number;
+  /** Source freshness at terminal emission, distinct from last provider status. */
   healthy: boolean;
   stale: boolean;
   status: string;

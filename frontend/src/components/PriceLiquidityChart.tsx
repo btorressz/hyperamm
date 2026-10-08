@@ -12,6 +12,7 @@ import { useTerminalHistory } from "../hooks/useTerminalHistory";
 import { useDisplayStore } from "../stores/display";
 import { boundedObservations, mergeHistory, chartData, needsFit, type ChartHistory, type Observation } from "../utils/terminalHistory";
 import { finite, timestamp } from "../utils/format";
+import { currentSourcePrices } from "../utils/freshness";
 import { Panel, Empty } from "./TerminalPrimitives";
 const lines = [
   ["mid_price", "Mid", "#66aaff"],
@@ -102,12 +103,7 @@ export function PriceLiquidityChart({ t }: { t: TerminalState }) {
       sequence: t.sequence, timestamp: t.emitted_at,
       mid_price: t.market.stale ? null : t.market.mid_price,
       fair_value: t.market.stale ? null : t.fair_value,
-      strategy_reference_price: t.perp_context?.stale
-        ? null
-        : t.perp_context?.strategy_reference_price,
-      mark_price: t.perp_context?.stale ? null : t.perp_context?.mark_price,
-      oracle_price: t.perp_context?.stale ? null : t.perp_context?.oracle_price,
-      consensus_price: t.reference_consensus?.consensus_price,
+      ...currentSourcePrices(t),
       best_bid: bids.length
         ? Math.max(...bids.map((q) => Number(q.price)))
         : null,

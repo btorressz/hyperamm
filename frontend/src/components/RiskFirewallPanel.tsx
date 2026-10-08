@@ -1,4 +1,5 @@
 import type { TerminalState } from "../types";
+import { currentSourcePrices } from "../utils/freshness";
 import { number as f, bps } from "../utils/format";
 const signed = (x: unknown, d = 2) =>
   x == null ? "—" : (Number(x) >= 0 ? "+" : "") + f(x, d);
@@ -35,7 +36,7 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
       <div className="panelHead">
         <b>Reference Sources</b>
         <span>
-          {refs.consensus.confidence_state} · v{refs.version}
+          Last decision {refs.consensus.confidence_state} · v{refs.version}
         </span>
       </div>
       <div className="tableWrap">
@@ -44,10 +45,11 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
             <tr>
               <th>Source</th>
               <th>Price</th>
-              <th>Age at evaluation</th>
-              <th>Status / transport</th>
-              <th>Deviation</th>
-              <th>Outlier</th>
+              <th>Source age now</th>
+              <th>Source freshness now</th>
+              <th>Last provider state / transport</th>
+              <th>Last evaluated deviation</th>
+              <th>Last decision outlier</th>
             </tr>
           </thead>
           <tbody>
@@ -59,8 +61,9 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
                     {label[k] ?? k}
                     {k === "REDSTONE" && e.transport ? " · " + e.transport : ""}
                   </td>
-                  <td>{e.price != null ? "$" + f(e.price) : "—"}</td>
+                  <td>{e.price != null ? "$" + f(e.price) + (e.stale ? " · STALE" : !e.healthy ? " · UNAVAILABLE" : "") : "—"}</td>
                   <td>{e.source_timestamp ? f(e.age_ms, 0) + " ms" : "—"}</td>
+                  <td>{e.stale ? "STALE" : e.healthy ? "FRESH" : "UNAVAILABLE"}</td>
                   <td>
                     <span className="statePill">
                       {e.status}
@@ -84,6 +87,7 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
 }
 
 export function RiskFirewallPanel({ t }: { t: TerminalState }) {
+  const current = currentSourcePrices(t);
   const d = t.risk_firewall?.decision,
     a = t.risk_authorization,
     c = t.reference_consensus;
@@ -97,7 +101,7 @@ export function RiskFirewallPanel({ t }: { t: TerminalState }) {
       </div>
       <div className="riskFirewallGrid">
         <div>
-          <span>Risk State</span>
+          <span>Last risk decision</span>
           <b>{d?.state ?? t.risk_firewall?.state ?? "—"}</b>
         </div>
         <div>
@@ -105,11 +109,11 @@ export function RiskFirewallPanel({ t }: { t: TerminalState }) {
           <b>{a?.authorized ? "AUTHORIZED" : "BLOCKED"}</b>
         </div>
         <div>
-          <span>Consensus</span>
-          <b>{c?.consensus_price != null ? "$" + f(c.consensus_price) : "—"}</b>
+          <span>Consensus (current sources)</span>
+          <b>{current.consensus_price != null ? "$" + f(current.consensus_price) : "—"}</b>
         </div>
         <div>
-          <span>Reference</span>
+          <span>Last consensus decision</span>
           <b>{c?.confidence_state ?? "—"}</b>
         </div>
         <div>

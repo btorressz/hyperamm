@@ -28,7 +28,7 @@ export function SystemHealth({
           : states
         ).map(([name, state]) => (
           <div key={name}>
-            <span>{name.replaceAll("_", " ")}</span>
+            <span>{name === "risk" ? "last risk decision" : name === "final_authorization" ? "last authorization" : name.replaceAll("_", " ")}</span>
             <Badge
               tone={
                 state.status === "HEALTHY"
