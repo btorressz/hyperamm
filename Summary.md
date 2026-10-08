@@ -11,8 +11,10 @@ local fixture acceptance and live/external-provider acceptance are separate gate
 Historical acceptance counts below describe their merge milestones, not the current
 suite. Phase 6–12 review status is not promoted by local tests; external provider,
 authority and operational limitations remain tracked in
-[Audit 1.0](AUDIT_REPORT_1.0.md). This change addresses A1-019 and A1-018 only.
-PAPER remains deterministic and crossing-only; TESTNET remains guarded. No mainnet,
+[Audit 1.0](AUDIT_REPORT_1.0.md). Recent hardening closed A1-018 through A1-023;
+A1-024 through A1-027 are informational scope boundaries documented rather than
+implemented as new runtime authority. PAPER remains deterministic and crossing-only;
+TESTNET remains guarded. No mainnet,
 custody or money movement is supported. History is bounded, in memory and limited
 to the current session.
 
@@ -50,6 +52,16 @@ The system remains intentionally focused on:
 **PAPER execution + guarded TESTNET research**
 
 and does **not** claim production-mainnet readiness.
+
+## Audit informational boundaries
+
+Audit 1.0 findings A1-024 through A1-027 are documented design boundaries rather
+than requests for new runtime behavior:
+
+- virtual `k` defines AMM curve geometry while configured per-side liquidity budgets define emitted quote capacity;
+- scientific libraries may support future offline research, but they do not own live signing, risk, position or capital authority;
+- vault/accounting state is non-custodial, in-memory research accounting with explicitly partial TESTNET economics;
+- semantic versions, decision fingerprints, observation sequences and simulation fingerprints each identify a declared scope rather than a complete raw-evidence or build-provenance archive.
 
 ---
 
