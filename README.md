@@ -8,8 +8,10 @@ local fixture acceptance and live/external-provider acceptance are separate gate
 Historical acceptance counts below describe their merge milestones, not the current
 suite. Phase 6–12 review status is not promoted by local tests; external provider,
 authority and operational limitations remain tracked in
-[Audit 1.0](AUDIT_REPORT_1.0.md). This change addresses A1-019 and A1-018 only.
-PAPER remains deterministic and crossing-only; TESTNET remains guarded. No mainnet,
+[Audit 1.0](AUDIT_REPORT_1.0.md). Recent hardening closed A1-018 through A1-023;
+A1-024 through A1-027 are informational scope boundaries documented rather than
+implemented as new runtime authority. PAPER remains deterministic and crossing-only;
+TESTNET remains guarded. No mainnet,
 custody or money movement is supported. History is bounded, in memory and limited
 to the current session.
 
@@ -194,6 +196,13 @@ Live Hyperliquid integration is intentionally not required by normal unit tests.
 ## Limitations
 
 Phase 8 adds deterministic multi-source reference integrity and institutional risk authorization. Phase 9 supervisory agents are implemented / in review. Phase 10 simulation is offline PAPER research with deterministic crossing-only fills and reuses Phase 11 accounting with optional simulated fees and deterministic funding intervals. It does not model exchange latency, queue priority, hidden liquidity, or stochastic fill probability. Accounting is an in-memory research session ledger; durable wallet custody and production mainnet trading remain out of scope.
+
+### Audit informational boundaries (A1-024–A1-027)
+
+- **AMM capital semantics (A1-024):** virtual reserves and `k` define curve geometry. `total_liquidity` is the explicit per-side base-asset quote budget; changing `k` alone does not imply more quoted capital, TVL or margin.
+- **Scientific-tooling boundary (A1-025):** current deterministic strategy/simulation authority does not depend on Pandas or SciPy. Future scientific tooling belongs in optional offline research with immutable exported inputs and proposal-only outputs, never signing/risk/position/capital authority.
+- **Accounting/custody boundary (A1-026):** the vault and ledger are non-custodial, in-memory research accounting. TESTNET economics remain partial where unsupported; deposits, withdrawals, shares and durable production-book recovery are outside current scope.
+- **Provenance boundary (A1-027):** semantic versions and fingerprints identify their declared material decision/input scopes. They are not complete raw-evidence archives, source-revision manifests or automatic Git/dependency provenance.
 
 ## Documentation
 
