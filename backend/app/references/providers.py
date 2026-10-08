@@ -1,9 +1,10 @@
 from __future__ import annotations
-import asyncio, json, random, re
+import asyncio, json, random
 from datetime import timedelta
 from decimal import Decimal
 import httpx
 from .models import *
+from app.diagnostics import sanitize_public_text
 
 class EvidenceState:
     def __init__(self,market,provider,source_type,source_id,stale_after_seconds,enabled,on_update=None,material_change_bps=Decimal("0.25"),transport=None,transport_quality=None):
@@ -264,14 +265,10 @@ class RedStoneProvider:
         limit=data.get("limit")
         if limit is not None and (not isinstance(limit,int) or isinstance(limit,bool) or limit<0):
             raise ValueError("RedStone error frame has invalid limit")
-        return code,self._safe_error(message),limit
+        return code,self._safe_error(message, max_length=None),limit
 
-    def _safe_error(self,value):
-        text=str(value)
-        if self.api_key:
-            text=text.replace(self.api_key,"[REDACTED]")
-        text=re.sub(r"(?i)(x-api-key|authorization)[^,}\n]*","[REDACTED HEADER]",text)
-        return text
+    def _safe_error(self,value, *, max_length=500):
+        return sanitize_public_text(value, secrets=(self.api_key,), max_length=max_length)
 
     def handle_error_frame(self,raw):
         code,message,limit=self.normalize_error(raw)
@@ -295,7 +292,7 @@ class RedStoneProvider:
         return {"x-api-key":self.api_key} if self.api_key else {}
 
     def classify_connection_error(self,exc):
-        text=self._safe_error(exc); lower=text.lower()
+        text=sanitize_public_text(exc, secrets=(self.api_key,), max_length=None); lower=text.lower()
         if "429" in lower or "rate limit" in lower or "connection limit" in lower:return ProviderStatus.DEGRADED
         if "403" in lower and ("rate" in lower or "limit" in lower):return ProviderStatus.DEGRADED
         if "401" in lower or "403" in lower or "unauthor" in lower or "forbidden" in lower:return ProviderStatus.ERROR

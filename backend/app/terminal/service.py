@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from uuid import uuid4
 import hashlib
 import json
-import re
 from decimal import Decimal
+from app.diagnostics import sanitize_public_text as safe_text, sanitize_public_payload as scrub_notices
 from .history import TerminalHistory
 from .models import (
     TerminalSnapshot,
@@ -22,37 +22,6 @@ CURRENT_EXECUTION_MAX = 100
 ACTIVE_ORDER_MAX = 200
 _PROCESS_ID = str(uuid4())
 _SEQUENCE = count(1)
-
-
-def safe_text(value):
-    """Only normalized messages, with credential-shaped values redacted."""
-    text = str(value)
-    text = re.sub(
-        r"(?i)(api[_-]?key|token|secret|private[_-]?key|authorization)(\s*[:=]\s*)[^\s,;]+",
-        r"\1\2[REDACTED]",
-        text,
-    )
-    text = re.sub(r"0x[0-9a-fA-F]{64}\b", "[REDACTED]", text)
-    text = re.sub(r"https?://[^\s]+", "[provider URL]", text)
-    return text[:500]
-
-
-def scrub_notices(value, key=None):
-    if isinstance(value, dict):
-        return {k: scrub_notices(v, k) for k, v in value.items()}
-    if isinstance(value, list):
-        return [scrub_notices(v, key) for v in value]
-    if isinstance(value, str) and key in {
-        "error",
-        "message",
-        "last_error",
-        "reason",
-        "reasons",
-        "last_reason",
-        "manual_kill_reason",
-    }:
-        return safe_text(value)
-    return value
 
 
 def observation_age(timestamp, now, *, future_tolerance_seconds=0):

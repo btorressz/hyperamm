@@ -424,3 +424,100 @@ async def test_current_payload_order_and_fill_bound_is_explicit():
     assert s.execution_summary["active_orders_truncated"]
     assert s.execution_summary["fill_count"] == 300
     assert s.execution_summary["filled_notional"] == "900000"
+
+
+PUBLIC_SECRET_CASES = [
+    "Authorization: Bearer SYNTHETIC_VALUE",
+    "authorization: bearer SYNTHETIC_VALUE",
+    "AUTHORIZATION = Bearer    SYNTHETIC_VALUE",
+    "Authorization: Basic SYNTHETIC_VALUE",
+    "Proxy-Authorization: Bearer SYNTHETIC_VALUE",
+    "Authorization=Bearer SYNTHETIC_VALUE",
+    "api_key=SYNTHETIC_VALUE", "api-key: SYNTHETIC_VALUE",
+    "x-api-key: SYNTHETIC_VALUE", "token=SYNTHETIC_VALUE",
+    "token: SYNTHETIC_VALUE", "access_token=SYNTHETIC_VALUE",
+    "secret=SYNTHETIC_VALUE", "client_secret = SYNTHETIC_VALUE",
+    "private_key: SYNTHETIC_VALUE",
+    "https://provider.invalid/?token=SYNTHETIC_VALUE",
+    "https://provider.invalid/?api_key=SYNTHETIC_VALUE",
+    "https://user:SYNTHETIC_VALUE@provider.invalid/path",
+    "wss://provider.invalid/?token=SYNTHETIC_VALUE",
+    '"Authorization": "Bearer SYNTHETIC_VALUE"',
+    "token='SYNTHETIC_VALUE with spaces'",
+    'Authorization: Bearer "SYNTHETIC_VALUE with spaces"',
+]
+
+
+@pytest.mark.parametrize("text", PUBLIC_SECRET_CASES)
+def test_public_diagnostic_complete_credential_redaction(text):
+    result = safe_text("retry failed; " + text + "; reconnect pending")
+    assert "SYNTHETIC_VALUE" not in json.dumps(result)
+    assert "retry failed" in result and "reconnect pending" in result
+    assert len(result) <= 500
+    assert safe_text(result) == result
+
+
+def test_authorization_value_is_entirely_redacted_before_bounding():
+    assert safe_text("Authorization: Bearer SYNTHETIC_VALUE") == "Authorization: [REDACTED]"
+    assert safe_text("Authorization=Bearer abc.def.ghi") == "Authorization=[REDACTED]"
+    assert len(safe_text("x" * 600)) == 500
+    assert "SYNTHETIC_VALUE" not in safe_text("x" * 480 + " Authorization: Bearer SYNTHETIC_VALUE")
+    assert "0x" + "a" * 64 not in safe_text("private key " + "0x" + "a" * 64)
+    assert safe_text(RuntimeError("rate limit; token=SYNTHETIC_VALUE")) == "rate limit; token=[REDACTED]"
+
+
+def test_diagnostic_container_recursion_preserves_domain_strings():
+    from app.diagnostics import sanitize_public_payload
+    payload = {"error": {"detail": "Authorization: Bearer SYNTHETIC_VALUE",
+                         "metadata": [{"unexpected": "token=SYNTHETIC_VALUE"}]},
+               "market": "token=market-name", "source_id": "https://source.invalid/id",
+               "fingerprint": "token=fingerprint", "transport": "LIVE_WS"}
+    original = copy.deepcopy(payload)
+    result = sanitize_public_payload(payload)
+    assert "SYNTHETIC_VALUE" not in json.dumps(result)
+    for field in ("market", "source_id", "fingerprint", "transport"):
+        assert result[field] == payload[field]
+    assert payload == original
+
+
+@pytest.mark.asyncio
+async def test_nested_diagnostic_snapshot_event_and_rest_serialization():
+    import httpx
+    from fastapi import FastAPI
+    from app.api import risk, terminal, strategy, agents, accounting
+    rt, data = await frame()
+    secret = "Authorization: Bearer SYNTHETIC_VALUE"
+    data["venue_reconciliation"]["error"] = {"detail": secret, "metadata": [{"opaque": secret}]}
+    data["strategy"]["last_error"] = secret
+    service = TerminalService()
+    snapshot = service.observe(data, data["diagnostics"])
+    snapshot_wire = json.dumps(snapshot.model_dump(mode="json"))
+    event_wire = json.dumps([e.model_dump(mode="json") for e in service.events(500)])
+    assert "SYNTHETIC_VALUE" not in snapshot_wire
+    assert "SYNTHETIC_VALUE" not in event_wire
+    assert service.events(500)
+    # Independent REST routes must not depend on prior terminal publication.
+    evidence = rt.references.evidence["REDSTONE"]
+    rt.references.evidence["REDSTONE"] = evidence.model_copy(update={"error": secret})
+    rt.strategy.last_error = secret
+    rt.risk.last_reason = secret
+    before = copy.deepcopy((rt.references, rt.strategy, rt.risk, rt.authorization))
+    rt.terminal_service = service
+    app = FastAPI()
+    app.state.runtime = rt
+    for module in (risk, terminal, strategy, agents, accounting):
+        app.include_router(module.router, prefix="/api/v1")
+    responses = {}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        for path in ("/references", "/risk/evidence", "/terminal/events", "/risk",
+                     "/risk/events", "/risk/authorization", "/strategy", "/agents", "/vault"):
+            response = await client.get("/api/v1" + path)
+            assert response.status_code == 200, response.text
+            assert "SYNTHETIC_VALUE" not in response.text
+            responses[path] = response.json()
+    assert "[REDACTED]" in json.dumps(responses["/references"])
+    queue = rt.subscribe_terminal()
+    await rt._publish_terminal_snapshot()
+    assert "SYNTHETIC_VALUE" not in queue.get_nowait()
+    rt.unsubscribe_terminal(queue)
+    assert (rt.references, rt.strategy, rt.risk, rt.authorization) == before

@@ -248,7 +248,7 @@ def test_redstone_handshake_severity_auth_rate_limit_and_error_sanitization():
     p.handle_error_frame({"type":"error","code":"PROVIDER_TEMPORARY","message":"temporary x-api-key: secret"})
     error=p.snapshot().error
     assert "secret" not in error
-    assert "x-api-key" not in error.lower()
+    assert "x-api-key: [REDACTED]" in error
 
 
 class FakeWebSocket:
@@ -437,3 +437,54 @@ def test_exact_signed_deviation_examples():
     assert deviation_bps(D("3003"),D("3000"))==D("10")
     assert deviation_bps(D("2997"),D("3000"))==D("-10")
     assert deviation_bps(D("3000"),D("3000"))==D("0")
+
+
+@pytest.mark.parametrize("message", [
+    "Authorization: Bearer SYNTHETIC_VALUE",
+    "x-api-key: SYNTHETIC_VALUE",
+    "https://provider.invalid/?token=SYNTHETIC_VALUE",
+    "https://provider.invalid/?api_key=SYNTHETIC_VALUE",
+    "unlabelled SYNTHETIC_VALUE",
+])
+@pytest.mark.parametrize("code,status", [
+    ("UNAUTHORIZED", ProviderStatus.ERROR),
+    ("RATE_LIMIT", ProviderStatus.DEGRADED),
+    ("INVALID_FEED", ProviderStatus.ERROR),
+    ("PROVIDER_TEMPORARY", ProviderStatus.DEGRADED),
+])
+def test_redstone_public_error_evidence_redacts_complete_credentials(message, code, status):
+    p = redstone_provider(api_key="SYNTHETIC_VALUE")
+    assert p.handle_error_frame({"type": "error", "code": code, "message": message}) == status
+    evidence = p.snapshot()
+    assert "SYNTHETIC_VALUE" not in evidence.error
+    assert "SYNTHETIC_VALUE" not in json.dumps(evidence.model_dump(mode="json"))
+    assert len(evidence.error) <= 500
+
+
+def test_public_provider_evidence_copy_scrubs_raw_error_without_mutation():
+    from app.diagnostics import sanitize_public_payload
+    p = redstone_provider()
+    evidence = p.snapshot().model_copy(update={"error": "Authorization: Bearer SYNTHETIC_VALUE"})
+    assert "SYNTHETIC_VALUE" not in json.dumps(sanitize_public_payload(evidence.model_dump(mode="json")))
+    assert evidence.error == "Authorization: Bearer SYNTHETIC_VALUE"
+
+
+@pytest.mark.asyncio
+async def test_redstone_connection_failure_public_evidence_is_safe():
+    def fail_connection(url, headers):
+        raise RuntimeError("HTTP 401 unauthorized; Authorization: Bearer SYNTHETIC_VALUE; "
+                           "x-api-key: SYNTHETIC_VALUE; https://provider.invalid/?token=SYNTHETIC_VALUE")
+    p = redstone_provider(api_key="SYNTHETIC_VALUE", websocket_factory=fail_connection)
+    await p._run()
+    evidence = p.snapshot()
+    assert evidence.status == ProviderStatus.ERROR
+    assert "SYNTHETIC_VALUE" not in evidence.error
+    assert "SYNTHETIC_VALUE" not in json.dumps(evidence.model_dump(mode="json"))
+
+
+def test_redstone_classification_is_not_truncated_with_public_message():
+    p = redstone_provider()
+    message = "x" * 600 + "; invalid subscription; Authorization: Bearer SYNTHETIC_VALUE"
+    assert p.handle_error_frame({"type": "error", "code": "UNKNOWN", "message": message}) == ProviderStatus.ERROR
+    assert len(p.snapshot().error) <= 500
+    assert p.classify_connection_error(RuntimeError("x" * 600 + "; HTTP 401 unauthorized")) == ProviderStatus.ERROR
