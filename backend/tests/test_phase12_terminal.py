@@ -304,7 +304,7 @@ async def test_health_never_bypasses_kill_or_consistency():
 async def test_verified_references_and_ready_agents_are_healthy():
     _, data = await frame()
     data["reference_consensus"]["confidence_state"] = "VERIFIED"
-    for k in ("regime", "toxic_flow", "execution_quality"):
+    for k in ("regime", "toxic_flow", "execution_quality", "liquidity_quality", "perp_crowding"):
         data["agents"][k]["health"] = "READY"
     health = aggregate_health(data)
     assert health.subsystems["reference_consensus"].status == "HEALTHY"

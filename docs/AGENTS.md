@@ -26,7 +26,10 @@ BASE STRATEGY QUOTES
 Phase 9 supervisory agents
         ├── Regime Agent
         ├── Toxic-Flow Agent
-        └── Execution-Quality Agent
+        ├── Execution-Quality Agent v2
+        ├── Liquidity-Quality Agent
+        ├── Perp-Crowding Agent
+        └── Predictive Adverse Selection (SHADOW, observational only)
         ↓
 deterministic AgentSupervisor
         ↓
@@ -154,7 +157,7 @@ Priority is deterministic:
 4. low volatility + low momentum → QUIET
 5. otherwise → NORMAL
 
-The recommendation is symmetric in v1.
+The Regime recommendation remains symmetric in v2.
 
 Conceptually:
 
@@ -513,3 +516,28 @@ DEMO/PAPER agent evidence is marked `simulated=true`.
 PAPER fill-derived toxic-flow and execution-quality metrics are simulated evidence and are displayed accordingly.
 
 No claim of real agent trading performance is made from simulated evidence.
+
+
+## Agent expansion v2
+
+The current expansion upgrades Regime, Toxic Flow and Execution Quality, adds
+Liquidity Quality and Perp Crowding, and introduces Predictive Adverse Selection
+in **ML SHADOW ONLY** mode. See the [implementation contracts](../backend/app/agents/README.md)
+for exact scores, multi-horizon/recency/notional formulas, lifecycle availability,
+bounded OI observations, feature schema, offline training and canonical model
+provenance. Earlier primary-horizon metrics remain backward-compatible; new
+horizon metrics are additive.
+
+The five deterministic/heuristic agents participate in conservative aggregation.
+SHADOW probabilities, model identity and timestamps are excluded from material
+quote-authority fingerprints. `affects_quotes=false` is enforced by the output
+contract; model changes cannot invalidate quote authorization. No trained model
+is shipped or fabricated. Offline optional logistic training is separate from
+runtime, and the simulator can evaluate an explicitly supplied validated artifact
+against frozen actual PAPER fill outcomes without changing strategy execution.
+
+Agent APIs now publish one coherent `AgentSystemSnapshot`, add read-only
+`/agents/evidence` and `/agents/models`, and filter events by validated agent name
+and a 1–250 limit. The frontend labels all six agents and makes shadow's lack of
+quote authority explicit. Agents recommend. Phase 8 decides.
+FinalQuoteAuthorization controls execution.

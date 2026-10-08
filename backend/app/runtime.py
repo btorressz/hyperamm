@@ -27,6 +27,8 @@ from app.risk.limits import validate_quotes, validate_execution_authority
 from app.risk.firewall import RiskFirewall, RiskFirewallConfig, RiskState, exposure_metrics
 from app.risk.authorization import authorize, fingerprint
 from app.agents import AgentConfig,AgentSupervisor,AgentTelemetryStore,build_agent_evidence,transform_quotes
+from app.agents.snapshot import AgentSystemSnapshot
+from app.agents.model_artifact import load_model_artifact
 from app.accounting import AccountingConfig, AccountingService
 from app.accounting.pnl import to_pnl_drawdown
 from app.accounting.vault import reserved_capital
@@ -80,6 +82,7 @@ class HyperAmmRuntime:
         self.agent_config = AgentConfig()
         self.agent_telemetry = AgentTelemetryStore()
         self.agent_supervisor = AgentSupervisor(self.agent_config)
+        self._install_predictive_artifact(self.agent_supervisor)
         self.accounting_config = AccountingConfig()
         self.accounting_service = AccountingService(settings.market, self.config.execution_mode.value, self.accounting_config)
         self.vault_snapshot = self.accounting_service.snapshot()
@@ -91,6 +94,7 @@ class HyperAmmRuntime:
         self.agent_quotes = []
         self.agent_evidence = None
         self.agent_decision = None
+        self._agent_snapshot = None
         self.last_actions = []
         self.references = None
         self.risk_decision = None
@@ -346,6 +350,7 @@ class HyperAmmRuntime:
         self.agent_quotes = []
         self.agent_evidence = None
         self.agent_decision = None
+        self._agent_snapshot = None
         self.authorization = None
         self.fair_value = None
         self.pool = None
@@ -609,6 +614,7 @@ class HyperAmmRuntime:
                     refs=refs,
                     history=self.market_history,
                     momentum_window=self.agent_config.regime_momentum_window_samples,
+                    market_snapshot=snap, config=self.agent_config, telemetry=self.agent_telemetry, observed_at=utcnow(), upstream_quotes=proposed,
                 )
                 agent_decision = self.agent_supervisor.evaluate(
                     evidence=agent_evidence,
@@ -672,6 +678,7 @@ class HyperAmmRuntime:
                 self.references = refs
                 self.agent_evidence = agent_evidence
                 self.agent_decision = agent_decision
+                self._agent_snapshot = AgentSystemSnapshot.capture(self.agent_config, agent_evidence, agent_decision, self.agent_telemetry, self.agent_supervisor)
                 self.agent_quotes = agent_candidate
                 self.risk_decision = risk_decision
                 self.authorization = authorization
@@ -881,6 +888,7 @@ class HyperAmmRuntime:
                 if context_changed:
                     telemetry = AgentTelemetryStore()
                     supervisor = AgentSupervisor(self.agent_config)
+                    self._install_predictive_artifact(supervisor)
                     paper = PaperExecutionAdapter()
                     self._bind_paper(paper)
                     paper.orders.observer = telemetry.observe_orders
@@ -929,6 +937,7 @@ class HyperAmmRuntime:
                     self.agent_quotes = []
                     self.agent_evidence = None
                     self.agent_decision = None
+                    self._agent_snapshot = None
                     if mode_changed:
                         self.market_history.clear()
                     references.wakeup = self._strategy_wakeup
@@ -1007,24 +1016,26 @@ class HyperAmmRuntime:
         async with self.execution_lock:
             return self.references.model_dump(mode="json") if self.references else None
 
+    def _install_predictive_artifact(self, supervisor):
+        path = self.settings.predictive_model_artifact_path
+        if path:
+            try:
+                supervisor.predictive_adverse_selection.install_artifact(load_model_artifact(path))
+            except Exception:
+                supervisor.predictive_adverse_selection.artifact_unavailable()
+
     def agents_payload(self):
-        return {
-            "config":self.agent_config.model_dump(mode="json"),
-            "evidence":self.agent_evidence.model_dump(mode="json") if self.agent_evidence else None,
-            "regime":self.agent_decision.regime.model_dump(mode="json") if self.agent_decision else None,
-            "toxic_flow":self.agent_decision.toxic_flow.model_dump(mode="json") if self.agent_decision else None,
-            "execution_quality":self.agent_decision.execution_quality.model_dump(mode="json") if self.agent_decision else None,
-            "supervisor":self.agent_decision.model_dump(mode="json") if self.agent_decision else None,
-            "agent_version":self.agent_decision.version if self.agent_decision else self.agent_supervisor.version,
-            "agent_fingerprint":self.agent_decision.fingerprint if self.agent_decision else self.agent_supervisor.fingerprint,
-            "telemetry":self.agent_telemetry.summary(),
-        }
+        snapshot = self._agent_snapshot
+        if snapshot is None:
+            snapshot = AgentSystemSnapshot.capture(self.agent_config, None, None,
+                self.agent_telemetry, self.agent_supervisor)
+        return snapshot.model_dump(mode="json")
 
     async def agents_summary(self):
         return self.agents_payload()
 
-    def agent_events_summary(self):
-        return self.agent_supervisor.event_payload()
+    def agent_events_summary(self, *, limit=250, agent=None):
+        return self.agent_supervisor.event_payload(limit=limit, agent=agent)
 
     def risk_firewall_payload(self):
         return {

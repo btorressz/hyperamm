@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    # Trusted local operator input. Never included in agent/public snapshots.
+    predictive_model_artifact_path: str | None = Field(default=None, repr=False, exclude=True)
     model_config = SettingsConfigDict(env_file="../.env", extra="ignore", case_sensitive=False)
 
     app_name: str = "HyperAMM"

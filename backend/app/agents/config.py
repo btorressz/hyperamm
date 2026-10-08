@@ -2,16 +2,27 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, model_validator
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from .models import PredictiveAgentMode
 
 
 class AgentConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     agents_enabled: bool = True
     regime_agent_enabled: bool = True
     toxic_flow_agent_enabled: bool = True
     execution_quality_agent_enabled: bool = True
+    liquidity_quality_agent_enabled: bool = True
+    perp_crowding_agent_enabled: bool = True
+    predictive_agent_enabled: bool = True
+    predictive_agent_mode: PredictiveAgentMode = PredictiveAgentMode.SHADOW
+    # Artifacts are injected from a trusted operator boundary, never loaded by GET/config.
+    predictive_min_confidence: Decimal = Field(default=Decimal("0.20"), ge=0, le=1)
 
-    agent_max_spread_multiplier: Decimal = Decimal("1.75")
+    agent_max_spread_multiplier: Decimal = Field(default=Decimal("1.75"), ge=1, le=10)
     agent_min_size_multiplier: Decimal = Decimal("0.35")
     agent_min_confidence: Decimal = Decimal("0.20")
 
@@ -21,10 +32,14 @@ class AgentConfig(BaseModel):
     regime_dislocation_bps: Decimal = Decimal("50")
     regime_spread_strength: Decimal = Decimal("0.40")
     regime_size_strength: Decimal = Decimal("0.30")
+    regime_funding_stress_threshold: Decimal = Field(default=Decimal("0.0005"), gt=0, le=1)
+    regime_basis_stress_threshold_bps: Decimal = Field(default=Decimal("30"), gt=0, le=10000)
 
     toxic_flow_window_fills: int = Field(default=100, ge=1, le=1000)
     toxic_flow_min_matured_fills: int = Field(default=5, ge=1, le=1000)
     toxic_flow_markout_horizon_seconds: float = Field(default=5.0, gt=0, le=3600)
+    toxic_flow_markout_horizons_seconds: tuple[Annotated[float, Field(gt=0, le=3600)], ...] = Field(default=(1.0, 5.0, 15.0), min_length=1, max_length=3)
+    toxic_flow_recency_half_life_seconds: Decimal = Field(default=Decimal("60"), gt=0, le=86400)
     toxic_flow_adverse_markout_bps: Decimal = Decimal("3")
     toxic_flow_spread_strength: Decimal = Decimal("0.50")
     toxic_flow_size_strength: Decimal = Decimal("0.60")
@@ -36,8 +51,32 @@ class AgentConfig(BaseModel):
     execution_quality_spread_strength: Decimal = Decimal("0.40")
     execution_quality_size_strength: Decimal = Decimal("0.40")
 
+    liquidity_depth_levels: int = Field(default=5, ge=1, le=50)
+    liquidity_thin_depth_base: Decimal = Field(default=Decimal("1"), gt=0, le=1000000000)
+    liquidity_imbalance_threshold: Decimal = Field(default=Decimal("0.65"), gt=0, le=1)
+    liquidity_instability_threshold_bps: Decimal = Field(default=Decimal("20"), gt=0, le=10000)
+    liquidity_wide_spread_threshold_bps: Decimal = Field(default=Decimal("25"), gt=0, le=10000)
+    liquidity_concentration_threshold: Decimal = Field(default=Decimal("0.85"), gt=0, le=1)
+    liquidity_reduced_max_levels: int = Field(default=2, ge=1, le=100)
+    liquidity_spread_strength: Decimal = Field(default=Decimal("0.35"), ge=0, le=1)
+    liquidity_size_strength: Decimal = Field(default=Decimal("0.40"), ge=0, le=1)
+
+    perp_observation_window: int = Field(default=30, ge=2, le=120)
+    perp_min_observation_span_seconds: Decimal = Field(default=Decimal("5"), gt=0, le=86400)
+    perp_max_observation_span_seconds: Decimal = Field(default=Decimal("900"), gt=0, le=86400)
+    crowding_funding_threshold: Decimal = Field(default=Decimal("0.0003"), gt=0, le=1)
+    crowding_basis_threshold_bps: Decimal = Field(default=Decimal("15"), gt=0, le=10000)
+    crowding_oi_change_threshold: Decimal = Field(default=Decimal("0.02"), gt=0, le=10)
+    crowding_spread_strength: Decimal = Field(default=Decimal("0.30"), ge=0, le=1)
+    crowding_size_strength: Decimal = Field(default=Decimal("0.40"), ge=0, le=1)
+
     @model_validator(mode="after")
     def validate_agent_config(self):
+        horizons = self.toxic_flow_markout_horizons_seconds
+        if tuple(sorted(set(horizons))) != horizons:
+            raise ValueError("markout horizons must be unique and increasing")
+        if self.perp_min_observation_span_seconds > self.perp_max_observation_span_seconds:
+            raise ValueError("perp observation span bounds are reversed")
         decimals = {
             "agent_max_spread_multiplier": self.agent_max_spread_multiplier,
             "agent_min_size_multiplier": self.agent_min_size_multiplier,

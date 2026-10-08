@@ -155,7 +155,7 @@ def aggregate_health(data, now=None):
         else "DEGRADED"
         if any(
             (agents.get(k) or {}).get("health") not in ("READY", "DISABLED")
-            for k in ("regime", "toxic_flow", "execution_quality")
+            for k in ("regime", "toxic_flow", "execution_quality", "liquidity_quality", "perp_crowding")
         )
         else "HEALTHY",
         "Supervisory only" if s else "No decision yet",

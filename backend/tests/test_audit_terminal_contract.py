@@ -24,7 +24,8 @@ def test_runtime_agent_telemetry_matches_generated_schema_and_fixtures():
     from app.runtime import HyperAmmRuntime
 
     schema = json.loads((ROOT/'frontend/src/contracts/terminal.schema.json').read_text())
-    telemetry = schema['properties']['agents']['properties']['telemetry']
+    agents = schema['$defs']['AgentSystemSnapshot']
+    telemetry = schema['$defs'][agents['properties']['telemetry']['$ref'].split('/')[-1]]
     assert telemetry['additionalProperties'] is False
     for mode, name in (('PAPER', 'terminal-valid.json'), ('TESTNET', 'terminal-unavailable.json')):
         rt = HyperAmmRuntime(Settings(_env_file=None, execution_mode=mode))

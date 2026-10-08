@@ -18,6 +18,9 @@ from app.strategy.inventory import build_inventory_state
 from app.strategy.models import ExecutionMode,StrategyConfig
 from app.strategy.quote_engine import QuoteEngine
 
+from app.agents.model_artifact import LogisticModelArtifact
+from app.research.ml.shadow_evaluation import ShadowEvaluationAccumulator
+
 from .config import SimulationConfig
 from .metrics import MetricsAccumulator
 from .models import SimulationDataset,SimulationResult,SimulationTracePoint,stable_fingerprint
@@ -61,6 +64,7 @@ class SimulationEngine:
         risk_config:RiskFirewallConfig,
         simulation_config:SimulationConfig,
         scenario:str|None=None,
+        predictive_model:LogisticModelArtifact|None=None,
     )->SimulationResult:
         frames=bounded_frames(dataset,simulation_config.max_frames)
         strategy=strategy_config.model_copy(deep=True)
@@ -79,6 +83,11 @@ class SimulationEngine:
         history=MarketPriceHistory(max_samples=max(1000,strategy.volatility_window_samples,agents.regime_momentum_window_samples))
         telemetry=AgentTelemetryStore()
         supervisor=AgentSupervisor(agents)
+        if predictive_model is not None:
+            supervisor.predictive_adverse_selection.install_artifact(predictive_model)
+            telemetry.register_horizons((float(predictive_model.provenance.markout_horizon_seconds),))
+        shadow_evaluation=ShadowEvaluationAccumulator()
+        active_prediction=None
         firewall=RiskFirewall(risk)
         quote_engine=QuoteEngine()
         risk_status=RiskStatus()
@@ -88,12 +97,16 @@ class SimulationEngine:
 
         def on_fill(fill):
             telemetry.observe_fill_from_references(fill,fill_refs)
+            shadow_evaluation.observe_fill(fill,telemetry.fill_identity(fill))
             accounting.ingest_fill(fill)
             accounting.observe_execution_fills(paper.fills.all(), retired_count=paper.fills.retired_count,
                                                duplicate_fills=paper.fills.duplicate_pending(accounting))
             paper.fills.acknowledge(fill, accounting, agent_consumed=True)
         paper.on_fill=on_fill
-        paper.orders.observer=telemetry.observe_orders
+        def observe_orders(observed):
+            telemetry.observe_orders(observed)
+            shadow_evaluation.observe_orders(observed,active_prediction)
+        paper.orders.observer=observe_orders
 
         current_authorization=None
         current_agent=None
@@ -140,6 +153,7 @@ class SimulationEngine:
             "dataset_fingerprint":dataset.fingerprint,
             "strategy":strategy,
             "agents":agents,
+            "observational_model_sha256":predictive_model.provenance.model_sha256 if predictive_model else None,
             "risk":risk,
             "accounting":accounting.config,
             "accounting_schema":"phase11-v1",
@@ -175,10 +189,12 @@ class SimulationEngine:
             agent_evidence=build_agent_evidence(
                 market_decision=market_decision,inventory=inventory,perp_context=frame.perp_context,
                 refs=refs,history=history,momentum_window=agents.regime_momentum_window_samples,
+                market_snapshot=frame.market,config=agents,telemetry=telemetry,observed_at=frame.timestamp,upstream_quotes=proposed,
             )
             agent_decision=supervisor.evaluate(
                 evidence=agent_evidence,telemetry=telemetry,history=history,execution_mode="PAPER"
             )
+            active_prediction=agent_decision.predictive_adverse_selection
             agent_quotes=transform_quotes(
                 proposed,agent_decision,center=inventory_decision.reservation_price,
                 tick_size=strategy.tick_size,size_precision=strategy.size_precision,
@@ -222,6 +238,7 @@ class SimulationEngine:
                 strategy.market,authorized,strategy.replace_tolerance_bps,strategy.size_tolerance
             )
             telemetry.observe_reconcile(actions,await paper.get_open_orders())
+            shadow_evaluation.mature(telemetry,history)
 
             # Immediate crossing fills, if any, belong to this frame and deterministic clock.
             inventory_after=build_inventory_state(
@@ -249,6 +266,11 @@ class SimulationEngine:
                     agent_regime=agent_decision.regime.state.value,
                     toxic_flow_state=agent_decision.toxic_flow.state.value,
                     execution_quality_state=agent_decision.execution_quality.state.value,
+                    liquidity_quality_state=agent_decision.liquidity_quality.state.value,
+                    perp_crowding_state=agent_decision.perp_crowding.state.value,
+                    predictive_state=agent_decision.predictive_adverse_selection.state.value,
+                    bid_adverse_probability=agent_decision.predictive_adverse_selection.metrics.bid_adverse_probability,
+                    ask_adverse_probability=agent_decision.predictive_adverse_selection.metrics.ask_adverse_probability,
                     risk_state=risk_decision.state.value,desired_quote_count=len(proposed),
                     agent_quote_count=len(agent_quotes),authorized_quote_count=len(authorized),
                     open_order_count=len(await paper.get_open_orders()),fill_count=paper.fills.version,
@@ -267,4 +289,5 @@ class SimulationEngine:
             fills=[f.model_dump(mode="json") for f in paper.fills.all()],
             vault=accounting.snapshot(),accounting_ledger=accounting.ledger.entries(500),
             accounting_fingerprint=accounting.fingerprint,
+            predictive_evaluation=shadow_evaluation.result() if predictive_model is not None else None,
         )

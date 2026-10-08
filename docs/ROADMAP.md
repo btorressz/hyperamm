@@ -11,7 +11,7 @@
 | 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; local commands have passed; substantive review/live calibration remain |
 | 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; local commands have passed; substantive review/live calibration remain |
 | 8 | IN REVIEW | Multi-source reference integrity + deterministic risk firewall implemented; local fixtures passed, external-provider acceptance pending |
-| 9 | IMPLEMENTED / IN REVIEW | Deterministic regime / toxic-flow / execution-quality supervisory agents merged; separate acceptance remains pending |
+| 9 | IMPLEMENTED / IN REVIEW | Expanded deterministic/heuristic supervision and optional predictive ML SHADOW; separate acceptance remains pending |
 | 10 | IMPLEMENTED / IN REVIEW | Deterministic production-stack simulation + bounded grid optimization; Phase 10.1 hardening and full local acceptance passed |
 | 11 | IMPLEMENTED / IN REVIEW | Deterministic research vault/accounting, shared runtime/simulation ledger, simulated fees/funding, capital authority and Vault observability; local acceptance passed |
 | 11.1 | ACCEPTED | High-water invariants and identity-based execution/accounting consistency hardening; local acceptance passed |
@@ -90,7 +90,11 @@ Phase 9 implementation adds deterministic Regime, Toxic-Flow and Execution-Quali
 
 The runtime uses one reference snapshot for agent evidence and the downstream Phase 8 firewall. Post-agent candidate quotes are the quotes used for Phase 8 projected-exposure evaluation. FinalQuoteAuthorization binds the agent version and material fingerprint, and stale agent authority rejects CREATE/REPLACE before transmission.
 
-Phase 9 also adds bounded fill/reconciliation telemetry, simulated PAPER markouts, explicit TESTNET fill-data limitations, read-only agent APIs, terminal/frontend explainability and focused regression/static tests.
+Phase 9 includes Regime/Toxic Flow/Execution Quality v2, multi-horizon immutable markouts, recorded PAPER lifecycle quality, Liquidity Quality and Perp Crowding with bounded source-timestamped OI/funding observations. Coherent typed snapshots, bounded/filterable read-only APIs and terminal cards distinguish HEURISTIC, DETERMINISTIC, SIMULATED and ML SHADOW evidence.
+
+The optional Predictive Adverse Selection classifier remains **SHADOW ONLY / NO QUOTE AUTHORITY**. Offline datasets share a canonical feature schema and explicit target/provenance; optional sklearn logistic training requires independent train/validation identity and disjoint windows. Validated JSON artifacts identify actual coefficients/schema/provenance by canonical SHA-256; no model is provided by default. Simulation can explicitly evaluate shadow predictions against mature PAPER labels. Shadow model identity is observational and cannot invalidate live quote authorization. ADVISORY/ACTIVE, automatic promotion and online training are absent; future advisory use requires separately reviewed validation, support, calibration and operator configuration.
+
+Agents recommend. Phase 8 decides. FinalQuoteAuthorization controls execution.
 
 Phase 8 remains IN REVIEW for external-provider acceptance. Historical Phase 9 local build/test gates have subsequently passed; Phase 9 remains IMPLEMENTED / IN REVIEW for substantive authority/provider review. Local commands alone do not promote it to COMPLETE. No GitHub Actions workflow is introduced.
 

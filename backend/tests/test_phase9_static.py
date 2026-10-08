@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import tomllib
 
 ROOT=Path(__file__).resolve().parents[2]
 AGENTS=ROOT/"backend"/"app"/"agents"
@@ -17,8 +18,19 @@ def test_agents_have_no_direct_execution_authority():
 
 def test_phase9_has_no_llm_or_model_framework_dependency():
     pyproject=(ROOT/"backend"/"pyproject.toml").read_text().lower()
-    for token in ("openai","anthropic","langchain","crewai","autogen","tensorflow","torch","scikit-learn"):
+    for token in ("openai","anthropic","langchain","crewai","autogen","tensorflow","torch"):
         assert token not in pyproject
+
+
+def test_ml_dependency_is_optional_and_training_has_no_execution_imports():
+    project=tomllib.loads((ROOT/"backend"/"pyproject.toml").read_text())["project"]
+    assert all("scikit-learn" not in d for d in project["dependencies"])
+    assert any("scikit-learn" in d for d in project["optional-dependencies"]["ml"])
+    for path in (ROOT/"backend"/"app"/"research"/"ml").glob("*.py"):
+        text=path.read_text()
+        for token in ("app.execution", "eth_account", "hyperliquid", "app.runtime", "app.risk", "app.accounting"):
+            assert token not in text
+    assert "research.ml.training" not in (ROOT/"backend"/"app"/"runtime.py").read_text()
 
 
 def test_no_agent_execution_endpoint_exists():

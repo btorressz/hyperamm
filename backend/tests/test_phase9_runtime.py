@@ -144,7 +144,7 @@ async def test_manual_kill_remains_absolute_with_agents_enabled():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("agent_name",["regime","toxic_flow","execution_quality"])
+@pytest.mark.parametrize("agent_name",["regime","toxic_flow","execution_quality","liquidity_quality","perp_crowding","predictive_adverse_selection"])
 async def test_agent_software_error_remains_neutral_while_phase8_still_halts(monkeypatch,agent_name):
     rt=HyperAmmRuntime(Settings(_env_file=None))
     snap=MockMarketDataAdapter().snapshot_for(1)

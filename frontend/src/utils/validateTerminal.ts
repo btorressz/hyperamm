@@ -4,7 +4,7 @@ import contract from "../contracts/terminal.schema.json";
 type Schema = {
   $ref?: string; $defs?: Record<string, Schema>; anyOf?: Schema[];
   const?: unknown; enum?: unknown[]; type?: string; format?: string; minLength?: number;
-  properties?: Record<string, Schema>; required?: string[];
+  properties?: Record<string, Schema>; required?: string[]; pattern?: string; maxLength?: number; minItems?: number; maxItems?: number;
   additionalProperties?: boolean | Schema; items?: Schema;
   minimum?: number; maximum?: number; exclusiveMinimum?: number; exclusiveMaximum?: number;
 };
@@ -28,6 +28,8 @@ function check(value: unknown, rule: Schema, path: string): void {
     case "string":
       if (typeof value !== "string") return fail();
       if (rule.minLength !== undefined && value.length < rule.minLength) fail();
+      if (rule.maxLength !== undefined && value.length > rule.maxLength) fail();
+      if (rule.pattern && !new RegExp(rule.pattern).test(value)) fail();
       if (rule.format === "sha256" && !/^[0-9a-f]{64}$/.test(value)) fail();
       if (rule.format === "decimal" && (!decimal.test(value) || !Number.isFinite(Number(value)))) fail();
       if (rule.format === "decimal") {
@@ -53,6 +55,7 @@ function check(value: unknown, rule: Schema, path: string): void {
       break;
     case "array":
       if (!Array.isArray(value)) return fail();
+      if ((rule.minItems !== undefined && value.length < rule.minItems) || (rule.maxItems !== undefined && value.length > rule.maxItems)) fail();
       value.forEach((item, i) => check(item, rule.items!, `${path}[${i}]`));
       break;
     case "object": {
