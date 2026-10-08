@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+from bisect import bisect_left
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -11,10 +12,12 @@ from app.execution.quote_reconciler import ReconcileActionType
 from app.market_data.history import MarketPriceHistory
 from app.market_data.models import utcnow
 from app.references.models import PriceEvidence, ReferenceSnapshot
-from .models import AgentEvidenceSnapshot, semantic_fingerprint
+from .models import AgentEvidenceSnapshot, AgentModel, semantic_fingerprint
+from .common import seconds
 
 
-class FillObservation(BaseModel):
+class FillObservation(AgentModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
     identity: str
     client_order_id: str
     market: str
@@ -31,8 +34,8 @@ class FillObservation(BaseModel):
     simulated: bool
 
 
-class MarkoutObservation(BaseModel):
-    model_config = ConfigDict(frozen=True)
+class MarkoutObservation(AgentModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
 
     fill_identity: str
     target_maturity_time: datetime
@@ -45,6 +48,27 @@ class MarkoutObservation(BaseModel):
     simulated: bool
 
 
+class OrderObservation(AgentModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+    client_order_id: str
+    side: str = Field(pattern="^(BID|ASK)$")
+    level_index: int | None = Field(default=None, ge=0, le=99)
+    size: Decimal = Field(gt=0)
+    filled_size: Decimal = Field(ge=0)
+    status: OrderStatus
+    created_at: datetime
+    updated_at: datetime
+
+
+class PerpObservation(AgentModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", allow_inf_nan=False)
+    market: str
+    source: str
+    timestamp: datetime
+    open_interest_base: Decimal = Field(ge=0)
+    funding_rate: Decimal
+
+
 class ReconcileObservation(BaseModel):
     keep_count: int = 0
     create_count: int = 0
@@ -54,7 +78,11 @@ class ReconcileObservation(BaseModel):
 
 
 class AgentTelemetryStore:
-    def __init__(self, *, max_fills: int = 500, max_reconcile_cycles: int = 250, max_orders: int = 1000):
+    def __init__(self, *, max_fills: int = 1000, max_reconcile_cycles: int = 1000, max_orders: int = 1000,
+                 markout_horizons=(1.0, 5.0, 15.0), max_perp_observations: int = 120):
+        if not (1 <= max_fills <= 1000 and 1 <= max_reconcile_cycles <= 1000 and
+                1 <= max_orders <= 1000 and 2 <= max_perp_observations <= 120):
+            raise ValueError("telemetry capacity outside bounded contract")
         self.max_fills=max_fills
         self._fills: deque[FillObservation]=deque()
         self._fill_ids:set[str]=set()
@@ -64,8 +92,14 @@ class AgentTelemetryStore:
         # KEEP cadence must not evict order-changing activity from the churn window.
         self._action_reconcile:deque[ReconcileObservation]=deque(maxlen=max_reconcile_cycles)
         self._order_statuses:dict[str,OrderStatus]={}
+        self._orders:dict[str,OrderObservation]={}
+        self._first_fill_times:dict[str,datetime]={}
         self._order_order:deque[str]=deque()
         self.max_orders=max_orders
+        self._horizons: set[float] = set()
+        self.register_horizons(markout_horizons)
+        self.evicted_unavailable_markouts = 0
+        self._perp: deque[PerpObservation] = deque(maxlen=max_perp_observations)
         self.version=0
 
     @staticmethod
@@ -106,6 +140,11 @@ class AgentTelemetryStore:
             return False
         if len(self._fills)>=self.max_fills:
             dropped=self._fills.popleft()
+            # Explicit terminal accounting before removing unresolved retained evidence.
+            self.evicted_unavailable_markouts += sum(
+                (dropped.identity, dropped.timestamp + timedelta(seconds=h)) not in self._markouts
+                for h in self._horizons
+            )
             self._fill_ids.discard(dropped.identity)
             self._markouts={key:value for key,value in self._markouts.items() if key[0]!=dropped.identity}
         simulated=fill.source.startswith("SIMULATED")
@@ -117,6 +156,8 @@ class AgentTelemetryStore:
             source=fill.source,simulated=simulated,
         ))
         self._fill_ids.add(identity)
+        if fill.client_order_id in self._orders:
+            self._first_fill_times.setdefault(fill.client_order_id, fill.timestamp)
         self.version+=1
         return True
 
@@ -128,11 +169,59 @@ class AgentTelemetryStore:
                 if len(self._order_order)>=self.max_orders:
                     old=self._order_order.popleft()
                     self._order_statuses.pop(old,None)
+                    self._orders.pop(old,None)
+                    self._first_fill_times.pop(old,None)
                 self._order_order.append(order.client_order_id)
             self._order_statuses[order.client_order_id]=order.status
-            changed=changed or previous!=order.status
+            retained = OrderObservation(**{name: getattr(order, name) for name in OrderObservation.model_fields})
+            changed=changed or previous!=order.status or self._orders.get(order.client_order_id)!=retained
+            self._orders[order.client_order_id] = retained
         if changed:self.version+=1
         return changed
+
+    def orders(self) -> list[OrderObservation]:
+        return list(self._orders.values())
+
+    def first_fill_times(self):
+        return dict(self._first_fill_times)
+
+    def register_horizons(self, horizons):
+        values = {float(h) for h in horizons}
+        if any(not Decimal(str(h)).is_finite() or not 0 < h <= 3600 for h in values):
+            raise ValueError("invalid markout horizon")
+        if len(self._horizons | values) > 8:
+            raise ValueError("telemetry supports at most eight retained markout horizons")
+        self._horizons.update(values)
+
+    def observe_perp(self, context) -> bool:
+        if context.stale or context.updated_at.tzinfo is None:
+            return False
+        observation = PerpObservation(market=context.market, source=context.source,
+            timestamp=context.updated_at, open_interest_base=context.open_interest_base,
+            funding_rate=context.funding_rate)
+        if self._perp and (self._perp[-1].market, self._perp[-1].source) != (observation.market, observation.source):
+            self._perp.clear()
+        if self._perp and observation.timestamp <= self._perp[-1].timestamp:
+            return False  # One source timestamp is one observation, regardless of polling cadence.
+        self._perp.append(observation)
+        self.version += 1
+        return True
+
+    def perp_changes(self, *, now, window, min_span_seconds, max_span_seconds):
+        selected = [p for p in list(self._perp)[-window:]
+                    if 0 <= seconds(now-p.timestamp) <= max_span_seconds]
+        result = dict(perp_observation_count=len(selected), open_interest_change_ratio=None,
+                      funding_rate_delta=None, perp_window_start=None, perp_window_end=None)
+        if len(selected) < 2:
+            return result
+        first, last = selected[0], selected[-1]
+        result.update(perp_window_start=first.timestamp, perp_window_end=last.timestamp)
+        if seconds(last.timestamp-first.timestamp) < min_span_seconds:
+            return result
+        result["funding_rate_delta"] = last.funding_rate-first.funding_rate
+        if first.open_interest_base > 0:
+            result["open_interest_change_ratio"] = (last.open_interest_base-first.open_interest_base)/first.open_interest_base
+        return result
 
     def observe_reconcile(self, actions, orders) -> None:
         counts={kind:0 for kind in ReconcileActionType}
@@ -167,8 +256,10 @@ class AgentTelemetryStore:
         return counts
 
     def markouts(self, history: MarketPriceHistory, *, horizon_seconds: float, window: int) -> tuple[list[MarkoutObservation],int]:
+        self.register_horizons((horizon_seconds,))
         fills=self.fills(window)
         observations=history.observations(max(2,len(history)))
+        timestamps=[obs.timestamp for obs in observations]
         matured=[]
         pending=0
         # Resolve all retained fills even when a consumer asks for a smaller window.
@@ -180,7 +271,8 @@ class AgentTelemetryStore:
             if history.evicted_through_timestamp is not None and history.evicted_through_timestamp>=target:
                 self._markouts[key]=None
                 continue
-            future=next((obs for obs in observations if obs.timestamp>=target),None)
+            index=bisect_left(timestamps,target)
+            future=observations[index] if index<len(observations) else None
             if future is None:
                 continue
             sign=Decimal("1") if fill.side=="BID" else Decimal("-1")
@@ -202,12 +294,22 @@ class AgentTelemetryStore:
                 matured.append(self._markouts[key])
         return matured,pending
 
+    def markout_terminally_unavailable(self, fill_identity, target):
+        return self._markouts.get((fill_identity,target), False) is None
+
+    def unavailable_markouts(self, *, horizon_seconds, window):
+        return sum(self._markouts.get((f.identity, f.timestamp+timedelta(seconds=horizon_seconds)), False) is None
+                   for f in self.fills(window))
+
     def summary(self) -> dict:
         statuses=self.order_status_counts()
         return {
             "version":self.version,
             "fill_observations":len(self._fills),
             "unavailable_markouts":sum(value is None for value in self._markouts.values()),
+            "evicted_unavailable_markouts": self.evicted_unavailable_markouts,
+            "perp_observations": len(self._perp),
+            "retained_markout_horizons": len(self._horizons),
             "reconcile_cycles":len(self._reconcile),
             "tracked_orders":len(self._order_statuses),
             "unknown_orders":statuses.get(OrderStatus.UNKNOWN.value,0),
@@ -227,6 +329,11 @@ def build_agent_evidence(
     refs,
     history: MarketPriceHistory,
     momentum_window: int,
+    market_snapshot=None,
+    config=None,
+    telemetry=None,
+    observed_at=None,
+    upstream_quotes=None,
 ) -> AgentEvidenceSnapshot:
     observations=history.observations(max(2,momentum_window))
     selected=observations[-momentum_window:]
@@ -240,7 +347,20 @@ def build_agent_evidence(
             raise ValueError("agent momentum history is not ordered")
         momentum=(last-first)/first*Decimal("10000")
     max_dev=refs.consensus.max_source_deviation_bps
-    versions=(market_decision.version,inventory.version,perp_context.version,refs.version)
+    observed_at = observed_at or (selected[-1].timestamp if selected else perp_context.updated_at)
+    book_metrics = _book_metrics(market_snapshot, config.liquidity_depth_levels if config else 5)
+    changes = {}
+    if telemetry is not None and config is not None:
+        telemetry.observe_perp(perp_context)
+        if not perp_context.stale:
+            changes = telemetry.perp_changes(now=observed_at, window=config.perp_observation_window,
+                min_span_seconds=config.perp_min_observation_span_seconds,
+                max_span_seconds=config.perp_max_observation_span_seconds)
+    instability = None
+    if len(selected) >= 2:
+        instability = max(abs((b.mid_price-a.mid_price)/a.mid_price)*Decimal("10000")
+                          for a,b in zip(selected,selected[1:]))
+    versions=(market_decision.version,inventory.version,perp_context.version,refs.version,book_metrics,changes)
     return AgentEvidenceSnapshot(
         market=inventory.market,
         market_version=market_decision.version,
@@ -264,6 +384,35 @@ def build_agent_evidence(
         reference_confidence=refs.consensus.confidence_state,
         max_reference_deviation_bps=max_dev,
         simulated=bool(perp_context.simulated or any(item.simulated for item in refs.evidence.values())),
-        updated_at=utcnow(),
+        **book_metrics, **changes,
+        upstream_available_levels=(max((len({q.level_index for q in upstream_quotes if q.side==side})
+            for side in ("BID","ASK")),default=0) if upstream_quotes is not None else None),
+        midpoint_instability_bps=instability, perp_stale=perp_context.stale,
+        updated_at=observed_at,
         version=_evidence_version(versions),
     )
+
+
+def _book_metrics(snapshot, levels):
+    """Top-N base quantities, BBO/span bps and maximum level share of total depth."""
+    if snapshot is None or snapshot.stale or snapshot.book is None or snapshot.mid_price is None:
+        return {}
+    bids, asks = snapshot.book.bids[:levels], snapshot.book.asks[:levels]
+    if not bids or not asks:
+        return {}
+    mid = snapshot.mid_price
+    for side in (bids, asks):
+        for level in side:
+            if not level.price.is_finite() or not level.size.is_finite() or level.price <= 0 or level.size <= 0:
+                raise ValueError("agent book evidence requires finite positive levels")
+    if mid <= 0 or not mid.is_finite() or bids[0].price >= asks[0].price:
+        raise ValueError("agent book evidence invalid midpoint or BBO")
+    bid_depth = sum((x.size for x in bids), Decimal(0))
+    ask_depth = sum((x.size for x in asks), Decimal(0))
+    total = bid_depth + ask_depth
+    return dict(spread_bps=(asks[0].price-bids[0].price)/mid*Decimal(10000),
+        top_n_bid_depth_base=bid_depth, top_n_ask_depth_base=ask_depth,
+        depth_imbalance=(bid_depth-ask_depth)/total,
+        depth_concentration=max(x.size for x in bids+asks)/total,
+        book_span_bps=(asks[-1].price-bids[-1].price)/mid*Decimal(10000),
+        liquidity_depth_levels=levels, book_timestamp=snapshot.latest_valid_update or snapshot.book.timestamp)

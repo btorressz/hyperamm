@@ -41,6 +41,46 @@ Hyperliquid public API / explicit demo feed
 
 The React terminal consumes Pydantic-normalized REST/WebSocket state only. It never receives private keys, seed phrases or raw SDK objects.
 
+## Expanded Phase 9 supervision and ML shadow boundary
+
+```text
+Strategy → Regime/Toxic Flow/Execution Quality v2 + Liquidity Quality + Perp Crowding
+→ AgentSupervisor (MAX spread / MIN side sizes / MIN level cap)
+→ bounded conservative transformation → Phase 8 RiskFirewall
+→ FinalQuoteAuthorization → Execution
+
+Offline normalized evidence → versioned feature dataset → optional logistic training
+→ validated JSON artifact + model/dataset provenance → ML SHADOW predictions
+→ API / terminal / isolated simulation evaluation only
+```
+
+Agents recommend. Phase 8 decides. FinalQuoteAuthorization controls execution.
+No execution, risk, kill, accounting, position or FinalQuoteAuthorization authority
+is delegated to an agent or machine-learning model. The existing Phase 5/6/7
+strategy mathematics and Phase 8 thresholds remain authoritative.
+
+`AgentEvidenceSnapshot` is frozen, finite and versioned. Book summaries contain
+base-unit depth, BBO/span bps, concentration and accepted midpoint instability.
+Perp changes require bounded retained observations with distinct source timestamps;
+a single OI value never implies OI change. PAPER lifecycle metrics use recorded
+order/fill timestamps; unavailable TESTNET fill/venue latency stays null.
+
+Predictive mode accepts DISABLED or SHADOW only. The fixed feature ordering is
+`passive-adverse-v1`, shared by training and inference. Optional sklearn training
+is offline; live inference accepts bounded inert JSON logistic coefficients,
+requires their SHA-256 identity/schema to validate and performs fixed-cost
+inference. Default SHADOW has no artifact and reports UNAVAILABLE. ML outputs
+and model identity are observational: they are excluded from material supervisor
+fingerprints and FinalQuoteAuthorization, avoiding quote-authorization churn.
+Simulation research identity includes the supplied observational model hash.
+
+`AgentSystemSnapshot` publishes a deep copy of one complete cycle. GET endpoints
+observe this publication and never invoke model loading, training, inference or
+network work. Agent events remain capped at 250 and filterable. The trusted local
+artifact path is setup configuration excluded from public payloads. No executable
+serialized model format is accepted. See [agent contracts](../backend/app/agents/README.md)
+for formulas, capacities, feature units and dataset provenance.
+
 ## A1-027 identity and provenance scopes
 
 HyperAMM deliberately uses several different identities. They are not

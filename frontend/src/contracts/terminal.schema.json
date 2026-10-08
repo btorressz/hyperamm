@@ -153,6 +153,8 @@
         "agent_max_spread_multiplier": {
           "default": "1.75",
           "format": "decimal",
+          "maximum": 10.0,
+          "minimum": 1.0,
           "title": "Agent Max Spread Multiplier",
           "type": "string"
         },
@@ -172,6 +174,46 @@
           "default": true,
           "title": "Agents Enabled",
           "type": "boolean"
+        },
+        "crowding_basis_threshold_bps": {
+          "default": "15",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 10000.0,
+          "title": "Crowding Basis Threshold Bps",
+          "type": "string"
+        },
+        "crowding_funding_threshold": {
+          "default": "0.0003",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Crowding Funding Threshold",
+          "type": "string"
+        },
+        "crowding_oi_change_threshold": {
+          "default": "0.02",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 10.0,
+          "title": "Crowding Oi Change Threshold",
+          "type": "string"
+        },
+        "crowding_size_strength": {
+          "default": "0.40",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Crowding Size Strength",
+          "type": "string"
+        },
+        "crowding_spread_strength": {
+          "default": "0.30",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Crowding Spread Strength",
+          "type": "string"
         },
         "execution_quality_agent_enabled": {
           "default": true,
@@ -216,15 +258,151 @@
           "title": "Execution Quality Window",
           "type": "integer"
         },
+        "liquidity_concentration_threshold": {
+          "default": "0.85",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Liquidity Concentration Threshold",
+          "type": "string"
+        },
+        "liquidity_depth_levels": {
+          "default": 5,
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Liquidity Depth Levels",
+          "type": "integer"
+        },
+        "liquidity_imbalance_threshold": {
+          "default": "0.65",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Liquidity Imbalance Threshold",
+          "type": "string"
+        },
+        "liquidity_instability_threshold_bps": {
+          "default": "20",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 10000.0,
+          "title": "Liquidity Instability Threshold Bps",
+          "type": "string"
+        },
+        "liquidity_quality_agent_enabled": {
+          "default": true,
+          "title": "Liquidity Quality Agent Enabled",
+          "type": "boolean"
+        },
+        "liquidity_reduced_max_levels": {
+          "default": 2,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Liquidity Reduced Max Levels",
+          "type": "integer"
+        },
+        "liquidity_size_strength": {
+          "default": "0.40",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Liquidity Size Strength",
+          "type": "string"
+        },
+        "liquidity_spread_strength": {
+          "default": "0.35",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Liquidity Spread Strength",
+          "type": "string"
+        },
+        "liquidity_thin_depth_base": {
+          "default": "1",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1000000000.0,
+          "title": "Liquidity Thin Depth Base",
+          "type": "string"
+        },
+        "liquidity_wide_spread_threshold_bps": {
+          "default": "25",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 10000.0,
+          "title": "Liquidity Wide Spread Threshold Bps",
+          "type": "string"
+        },
+        "perp_crowding_agent_enabled": {
+          "default": true,
+          "title": "Perp Crowding Agent Enabled",
+          "type": "boolean"
+        },
+        "perp_max_observation_span_seconds": {
+          "default": "900",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 86400.0,
+          "title": "Perp Max Observation Span Seconds",
+          "type": "string"
+        },
+        "perp_min_observation_span_seconds": {
+          "default": "5",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 86400.0,
+          "title": "Perp Min Observation Span Seconds",
+          "type": "string"
+        },
+        "perp_observation_window": {
+          "default": 30,
+          "maximum": 120,
+          "minimum": 2,
+          "title": "Perp Observation Window",
+          "type": "integer"
+        },
+        "predictive_agent_enabled": {
+          "default": true,
+          "title": "Predictive Agent Enabled",
+          "type": "boolean"
+        },
+        "predictive_agent_mode": {
+          "$ref": "#/$defs/PredictiveAgentMode",
+          "default": "SHADOW"
+        },
+        "predictive_min_confidence": {
+          "default": "0.20",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Predictive Min Confidence",
+          "type": "string"
+        },
         "regime_agent_enabled": {
           "default": true,
           "title": "Regime Agent Enabled",
           "type": "boolean"
         },
+        "regime_basis_stress_threshold_bps": {
+          "default": "30",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 10000.0,
+          "title": "Regime Basis Stress Threshold Bps",
+          "type": "string"
+        },
         "regime_dislocation_bps": {
           "default": "50",
           "format": "decimal",
           "title": "Regime Dislocation Bps",
+          "type": "string"
+        },
+        "regime_funding_stress_threshold": {
+          "default": "0.0005",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Regime Funding Stress Threshold",
           "type": "string"
         },
         "regime_min_samples": {
@@ -277,12 +455,36 @@
           "title": "Toxic Flow Markout Horizon Seconds",
           "type": "number"
         },
+        "toxic_flow_markout_horizons_seconds": {
+          "default": [
+            1.0,
+            5.0,
+            15.0
+          ],
+          "items": {
+            "exclusiveMinimum": 0,
+            "maximum": 3600,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Toxic Flow Markout Horizons Seconds",
+          "type": "array"
+        },
         "toxic_flow_min_matured_fills": {
           "default": 5,
           "maximum": 1000,
           "minimum": 1,
           "title": "Toxic Flow Min Matured Fills",
           "type": "integer"
+        },
+        "toxic_flow_recency_half_life_seconds": {
+          "default": "60",
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 86400.0,
+          "title": "Toxic Flow Recency Half Life Seconds",
+          "type": "string"
         },
         "toxic_flow_size_strength": {
           "default": "0.60",
@@ -309,6 +511,11 @@
         "regime_agent_enabled",
         "toxic_flow_agent_enabled",
         "execution_quality_agent_enabled",
+        "liquidity_quality_agent_enabled",
+        "perp_crowding_agent_enabled",
+        "predictive_agent_enabled",
+        "predictive_agent_mode",
+        "predictive_min_confidence",
         "agent_max_spread_multiplier",
         "agent_min_size_multiplier",
         "agent_min_confidence",
@@ -318,9 +525,13 @@
         "regime_dislocation_bps",
         "regime_spread_strength",
         "regime_size_strength",
+        "regime_funding_stress_threshold",
+        "regime_basis_stress_threshold_bps",
         "toxic_flow_window_fills",
         "toxic_flow_min_matured_fills",
         "toxic_flow_markout_horizon_seconds",
+        "toxic_flow_markout_horizons_seconds",
+        "toxic_flow_recency_half_life_seconds",
         "toxic_flow_adverse_markout_bps",
         "toxic_flow_spread_strength",
         "toxic_flow_size_strength",
@@ -329,7 +540,24 @@
         "execution_quality_poor_markout_bps",
         "execution_quality_max_churn_ratio",
         "execution_quality_spread_strength",
-        "execution_quality_size_strength"
+        "execution_quality_size_strength",
+        "liquidity_depth_levels",
+        "liquidity_thin_depth_base",
+        "liquidity_imbalance_threshold",
+        "liquidity_instability_threshold_bps",
+        "liquidity_wide_spread_threshold_bps",
+        "liquidity_concentration_threshold",
+        "liquidity_reduced_max_levels",
+        "liquidity_spread_strength",
+        "liquidity_size_strength",
+        "perp_observation_window",
+        "perp_min_observation_span_seconds",
+        "perp_max_observation_span_seconds",
+        "crowding_funding_threshold",
+        "crowding_basis_threshold_bps",
+        "crowding_oi_change_threshold",
+        "crowding_spread_strength",
+        "crowding_size_strength"
       ],
       "title": "AgentConfig",
       "type": "object"
@@ -342,6 +570,9 @@
             "REGIME",
             "TOXIC_FLOW",
             "EXECUTION_QUALITY",
+            "LIQUIDITY_QUALITY",
+            "PERP_CROWDING",
+            "PREDICTIVE_ADVERSE_SELECTION",
             "SUPERVISOR"
           ],
           "type": "string"
@@ -362,7 +593,24 @@
             "INSUFFICIENT_DATA",
             "GOOD",
             "NORMAL",
-            "POOR"
+            "POOR",
+            "INSUFFICIENT_DATA",
+            "HEALTHY",
+            "THIN",
+            "IMBALANCED",
+            "UNSTABLE",
+            "DISLOCATED",
+            "INSUFFICIENT_DATA",
+            "NEUTRAL",
+            "LONG_CROWDED",
+            "SHORT_CROWDED",
+            "BASIS_STRESSED",
+            "OI_EXPANSION",
+            "OI_UNWIND",
+            "DISABLED",
+            "UNAVAILABLE",
+            "PREDICTED",
+            "ERROR"
           ],
           "type": "string"
         },
@@ -384,7 +632,24 @@
                 "INSUFFICIENT_DATA",
                 "GOOD",
                 "NORMAL",
-                "POOR"
+                "POOR",
+                "INSUFFICIENT_DATA",
+                "HEALTHY",
+                "THIN",
+                "IMBALANCED",
+                "UNSTABLE",
+                "DISLOCATED",
+                "INSUFFICIENT_DATA",
+                "NEUTRAL",
+                "LONG_CROWDED",
+                "SHORT_CROWDED",
+                "BASIS_STRESSED",
+                "OI_EXPANSION",
+                "OI_UNWIND",
+                "DISABLED",
+                "UNAVAILABLE",
+                "PREDICTED",
+                "ERROR"
               ],
               "type": "string"
             },
@@ -432,10 +697,85 @@
           "title": "Book Imbalance",
           "type": "string"
         },
+        "book_span_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Book Span Bps"
+        },
+        "book_timestamp": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Book Timestamp"
+        },
+        "depth_concentration": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth Concentration"
+        },
+        "depth_imbalance": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": -1.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth Imbalance"
+        },
+        "evidence_schema_version": {
+          "default": "agents-evidence-v2",
+          "title": "Evidence Schema Version",
+          "type": "string"
+        },
         "funding_rate": {
           "format": "decimal",
           "title": "Funding Rate",
           "type": "string"
+        },
+        "funding_rate_delta": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Funding Rate Delta"
         },
         "history_sample_count": {
           "minimum": 0,
@@ -455,6 +795,13 @@
         "inventory_version": {
           "minimum": 0,
           "title": "Inventory Version",
+          "type": "integer"
+        },
+        "liquidity_depth_levels": {
+          "default": 0,
+          "maximum": 50,
+          "minimum": 0,
+          "title": "Liquidity Depth Levels",
           "type": "integer"
         },
         "mark_mid_basis_bps": {
@@ -506,6 +853,20 @@
           "default": null,
           "title": "Max Reference Deviation Bps"
         },
+        "midpoint_instability_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Midpoint Instability Bps"
+        },
         "momentum_bps": {
           "anyOf": [
             {
@@ -525,16 +886,67 @@
           "title": "Open Interest Base",
           "type": "string"
         },
+        "open_interest_change_ratio": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Open Interest Change Ratio"
+        },
         "oracle_price": {
           "exclusiveMinimum": 0.0,
           "format": "decimal",
           "title": "Oracle Price",
           "type": "string"
         },
+        "perp_observation_count": {
+          "default": 0,
+          "maximum": 120,
+          "minimum": 0,
+          "title": "Perp Observation Count",
+          "type": "integer"
+        },
+        "perp_stale": {
+          "default": false,
+          "title": "Perp Stale",
+          "type": "boolean"
+        },
         "perp_version": {
           "minimum": 0,
           "title": "Perp Version",
           "type": "integer"
+        },
+        "perp_window_end": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Perp Window End"
+        },
+        "perp_window_start": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Perp Window Start"
         },
         "realized_volatility": {
           "anyOf": [
@@ -567,10 +979,66 @@
           "title": "Simulated",
           "type": "boolean"
         },
+        "spread_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spread Bps"
+        },
+        "top_n_ask_depth_base": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top N Ask Depth Base"
+        },
+        "top_n_bid_depth_base": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top N Bid Depth Base"
+        },
         "updated_at": {
           "format": "date-time",
           "title": "Updated At",
           "type": "string"
+        },
+        "upstream_available_levels": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upstream Available Levels"
         },
         "version": {
           "minimum": 0,
@@ -586,6 +1054,7 @@
         }
       },
       "required": [
+        "evidence_schema_version",
         "market",
         "market_version",
         "inventory_version",
@@ -607,6 +1076,22 @@
         "mark_mid_basis_bps",
         "reference_confidence",
         "max_reference_deviation_bps",
+        "spread_bps",
+        "top_n_bid_depth_base",
+        "top_n_ask_depth_base",
+        "depth_imbalance",
+        "depth_concentration",
+        "book_span_bps",
+        "midpoint_instability_bps",
+        "liquidity_depth_levels",
+        "upstream_available_levels",
+        "book_timestamp",
+        "perp_observation_count",
+        "perp_window_start",
+        "perp_window_end",
+        "open_interest_change_ratio",
+        "funding_rate_delta",
+        "perp_stale",
         "simulated",
         "updated_at",
         "version"
@@ -660,6 +1145,17 @@
           "title": "Inventory Version",
           "type": "integer"
         },
+        "liquidity_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LiquidityQualityAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "market": {
           "minLength": 1,
           "title": "Market",
@@ -683,10 +1179,32 @@
           "default": null,
           "title": "Max Levels"
         },
+        "perp_crowding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PerpCrowdingAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "perp_version": {
           "minimum": 0,
           "title": "Perp Version",
           "type": "integer"
+        },
+        "predictive_adverse_selection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PredictiveAdverseSelectionAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "reasons": {
           "items": {
@@ -733,6 +1251,9 @@
         "regime",
         "toxic_flow",
         "execution_quality",
+        "liquidity_quality",
+        "perp_crowding",
+        "predictive_adverse_selection",
         "spread_multiplier",
         "bid_size_multiplier",
         "ask_size_multiplier",
@@ -748,6 +1269,200 @@
         "updated_at"
       ],
       "title": "AgentSupervisorDecision",
+      "type": "object"
+    },
+    "AgentSystemSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_fingerprint": {
+          "format": "sha256",
+          "title": "Agent Fingerprint",
+          "type": "string"
+        },
+        "agent_version": {
+          "minimum": 0,
+          "title": "Agent Version",
+          "type": "integer"
+        },
+        "config": {
+          "$ref": "#/$defs/AgentConfig"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentEvidenceSnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "execution_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionQualityAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "liquidity_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LiquidityQualityAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "perp_crowding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PerpCrowdingAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "predictive_adverse_selection": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PredictiveAdverseSelectionAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "regime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RegimeAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "supervisor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentSupervisorDecision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "telemetry": {
+          "$ref": "#/$defs/AgentTelemetrySummary"
+        },
+        "toxic_flow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToxicFlowAgentOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "config",
+        "evidence",
+        "regime",
+        "toxic_flow",
+        "execution_quality",
+        "liquidity_quality",
+        "perp_crowding",
+        "predictive_adverse_selection",
+        "supervisor",
+        "agent_version",
+        "agent_fingerprint",
+        "telemetry"
+      ],
+      "title": "AgentSystemSnapshot",
+      "type": "object"
+    },
+    "AgentTelemetrySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "evicted_unavailable_markouts": {
+          "minimum": 0,
+          "title": "Evicted Unavailable Markouts",
+          "type": "integer"
+        },
+        "fill_observations": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Fill Observations",
+          "type": "integer"
+        },
+        "perp_observations": {
+          "maximum": 120,
+          "minimum": 0,
+          "title": "Perp Observations",
+          "type": "integer"
+        },
+        "reconcile_cycles": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Reconcile Cycles",
+          "type": "integer"
+        },
+        "rejected_orders": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Rejected Orders",
+          "type": "integer"
+        },
+        "retained_markout_horizons": {
+          "maximum": 8,
+          "minimum": 0,
+          "title": "Retained Markout Horizons",
+          "type": "integer"
+        },
+        "tracked_orders": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Tracked Orders",
+          "type": "integer"
+        },
+        "unavailable_markouts": {
+          "maximum": 8000,
+          "minimum": 0,
+          "title": "Unavailable Markouts",
+          "type": "integer"
+        },
+        "unknown_orders": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Unknown Orders",
+          "type": "integer"
+        },
+        "version": {
+          "minimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version",
+        "fill_observations",
+        "unavailable_markouts",
+        "evicted_unavailable_markouts",
+        "perp_observations",
+        "retained_markout_horizons",
+        "reconcile_cycles",
+        "tracked_orders",
+        "unknown_orders",
+        "rejected_orders"
+      ],
+      "title": "AgentTelemetrySummary",
       "type": "object"
     },
     "AmmModel": {
@@ -867,6 +1582,11 @@
     "ExecutionQualityAgentOutput": {
       "additionalProperties": false,
       "properties": {
+        "affects_quotes": {
+          "default": true,
+          "title": "Affects Quotes",
+          "type": "boolean"
+        },
         "agent": {
           "const": "EXECUTION_QUALITY"
         },
@@ -898,6 +1618,11 @@
         },
         "health": {
           "$ref": "#/$defs/AgentHealth"
+        },
+        "implementation_version": {
+          "default": "v2",
+          "title": "Implementation Version",
+          "type": "string"
         },
         "max_levels": {
           "anyOf": [
@@ -959,6 +1684,8 @@
         "evidence_version",
         "version",
         "updated_at",
+        "implementation_version",
+        "affects_quotes",
         "state",
         "metrics"
       ],
@@ -968,6 +1695,19 @@
     "ExecutionQualityMetrics": {
       "additionalProperties": false,
       "properties": {
+        "ask_mean_markout_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ask Mean Markout Bps"
+        },
         "average_mature_markout_bps": {
           "anyOf": [
             {
@@ -994,10 +1734,37 @@
           "default": null,
           "title": "Average Spread Capture Bps"
         },
+        "bid_mean_markout_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bid Mean Markout Bps"
+        },
         "cancel_count": {
           "minimum": 0,
           "title": "Cancel Count",
           "type": "integer"
+        },
+        "cancel_to_fill_ratio": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cancel To Fill Ratio"
         },
         "create_count": {
           "minimum": 0,
@@ -1013,6 +1780,8 @@
           "anyOf": [
             {
               "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
               "type": "string"
             },
             {
@@ -1027,12 +1796,106 @@
           "title": "Keep Count",
           "type": "integer"
         },
+        "level_quality": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/LevelExecutionMetrics"
+          },
+          "maxItems": 200,
+          "title": "Level Quality",
+          "type": "array"
+        },
+        "mean_fill_distance_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Fill Distance Bps"
+        },
+        "mean_quote_lifetime_seconds": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Quote Lifetime Seconds"
+        },
+        "mean_time_to_fill_seconds": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Time To Fill Seconds"
+        },
+        "mean_time_to_first_fill_seconds": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Time To First Fill Seconds"
+        },
+        "partial_fill_ratio": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Partial Fill Ratio"
+        },
         "reconciliation_churn_ratio": {
           "format": "decimal",
           "maximum": 1.0,
           "minimum": 0.0,
           "title": "Reconciliation Churn Ratio",
           "type": "string"
+        },
+        "reconciliation_latency_seconds": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reconciliation Latency Seconds"
         },
         "reject_count": {
           "minimum": 0,
@@ -1044,10 +1907,38 @@
           "title": "Replace Count",
           "type": "integer"
         },
+        "replace_to_fill_ratio": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Replace To Fill Ratio"
+        },
         "unknown_order_count": {
           "minimum": 0,
           "title": "Unknown Order Count",
           "type": "integer"
+        },
+        "venue_acknowledgment_latency_seconds": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Venue Acknowledgment Latency Seconds"
         }
       },
       "required": [
@@ -1061,7 +1952,19 @@
         "create_count",
         "replace_count",
         "cancel_count",
-        "reconciliation_churn_ratio"
+        "reconciliation_churn_ratio",
+        "mean_time_to_first_fill_seconds",
+        "mean_time_to_fill_seconds",
+        "mean_quote_lifetime_seconds",
+        "partial_fill_ratio",
+        "cancel_to_fill_ratio",
+        "replace_to_fill_ratio",
+        "bid_mean_markout_bps",
+        "ask_mean_markout_bps",
+        "mean_fill_distance_bps",
+        "level_quality",
+        "reconciliation_latency_seconds",
+        "venue_acknowledgment_latency_seconds"
       ],
       "title": "ExecutionQualityMetrics",
       "type": "object"
@@ -1376,6 +2279,87 @@
       "title": "HealthStatus",
       "type": "string"
     },
+    "HorizonMarkoutMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "ask_adverse_rate": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ask Adverse Rate"
+        },
+        "bid_adverse_rate": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bid Adverse Rate"
+        },
+        "horizon_seconds": {
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 3600.0,
+          "title": "Horizon Seconds",
+          "type": "string"
+        },
+        "matured_fills": {
+          "minimum": 0,
+          "title": "Matured Fills",
+          "type": "integer"
+        },
+        "mean_markout_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Markout Bps"
+        },
+        "pending_markouts": {
+          "minimum": 0,
+          "title": "Pending Markouts",
+          "type": "integer"
+        },
+        "unavailable_markouts": {
+          "minimum": 0,
+          "title": "Unavailable Markouts",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "horizon_seconds",
+        "matured_fills",
+        "pending_markouts",
+        "unavailable_markouts",
+        "mean_markout_bps",
+        "bid_adverse_rate",
+        "ask_adverse_rate"
+      ],
+      "title": "HorizonMarkoutMetrics",
+      "type": "object"
+    },
     "ImbalanceState": {
       "enum": [
         "BALANCED",
@@ -1526,6 +2510,69 @@
       "title": "InventoryState",
       "type": "object"
     },
+    "LevelExecutionMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "fill_rate": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fill Rate"
+        },
+        "filled_order_count": {
+          "minimum": 0,
+          "title": "Filled Order Count",
+          "type": "integer"
+        },
+        "level_index": {
+          "minimum": 0,
+          "title": "Level Index",
+          "type": "integer"
+        },
+        "mean_markout_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Markout Bps"
+        },
+        "order_count": {
+          "minimum": 0,
+          "title": "Order Count",
+          "type": "integer"
+        },
+        "side": {
+          "pattern": "^(BID|ASK)$",
+          "title": "Side",
+          "type": "string"
+        }
+      },
+      "required": [
+        "side",
+        "level_index",
+        "order_count",
+        "filled_order_count",
+        "fill_rate",
+        "mean_markout_bps"
+      ],
+      "title": "LevelExecutionMetrics",
+      "type": "object"
+    },
     "LiquidationEvidence": {
       "additionalProperties": false,
       "properties": {
@@ -1584,6 +2631,236 @@
       ],
       "title": "LiquidationEvidence",
       "type": "object"
+    },
+    "LiquidityQualityAgentOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "affects_quotes": {
+          "default": true,
+          "title": "Affects Quotes",
+          "type": "boolean"
+        },
+        "agent": {
+          "const": "LIQUIDITY_QUALITY"
+        },
+        "ask_size_multiplier": {
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Ask Size Multiplier",
+          "type": "string"
+        },
+        "bid_size_multiplier": {
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Bid Size Multiplier",
+          "type": "string"
+        },
+        "confidence": {
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "string"
+        },
+        "evidence_version": {
+          "minimum": 0,
+          "title": "Evidence Version",
+          "type": "integer"
+        },
+        "health": {
+          "$ref": "#/$defs/AgentHealth"
+        },
+        "implementation_version": {
+          "default": "v2",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "max_levels": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Levels"
+        },
+        "metrics": {
+          "$ref": "#/$defs/LiquidityQualityMetrics"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "spread_multiplier": {
+          "format": "decimal",
+          "minimum": 1.0,
+          "title": "Spread Multiplier",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/LiquidityQualityState"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent",
+        "health",
+        "confidence",
+        "spread_multiplier",
+        "bid_size_multiplier",
+        "ask_size_multiplier",
+        "max_levels",
+        "reasons",
+        "simulated",
+        "evidence_version",
+        "version",
+        "updated_at",
+        "implementation_version",
+        "affects_quotes",
+        "state",
+        "metrics"
+      ],
+      "title": "LiquidityQualityAgentOutput",
+      "type": "object"
+    },
+    "LiquidityQualityMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "ask_depth_base": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ask Depth Base"
+        },
+        "bid_depth_base": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bid Depth Base"
+        },
+        "book_span_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Book Span Bps"
+        },
+        "concentration_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Concentration Score",
+          "type": "string"
+        },
+        "imbalance_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Imbalance Score",
+          "type": "string"
+        },
+        "instability_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Instability Score",
+          "type": "string"
+        },
+        "spread_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spread Bps"
+        },
+        "thin_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Thin Score",
+          "type": "string"
+        }
+      },
+      "required": [
+        "thin_score",
+        "imbalance_score",
+        "instability_score",
+        "concentration_score",
+        "spread_bps",
+        "bid_depth_base",
+        "ask_depth_base",
+        "book_span_bps"
+      ],
+      "title": "LiquidityQualityMetrics",
+      "type": "object"
+    },
+    "LiquidityQualityState": {
+      "enum": [
+        "INSUFFICIENT_DATA",
+        "HEALTHY",
+        "THIN",
+        "IMBALANCED",
+        "UNSTABLE",
+        "DISLOCATED"
+      ],
+      "title": "LiquidityQualityState",
+      "type": "string"
     },
     "MarketAdaptationDecision": {
       "additionalProperties": false,
@@ -1916,6 +3193,159 @@
       "title": "MarketSnapshot",
       "type": "object"
     },
+    "ModelProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "feature_schema_version": {
+          "pattern": "^[A-Za-z0-9_.-]{1,60}$",
+          "title": "Feature Schema Version",
+          "type": "string"
+        },
+        "library_version": {
+          "pattern": "^[A-Za-z0-9_.-]{1,40}$",
+          "title": "Library Version",
+          "type": "string"
+        },
+        "market": {
+          "minLength": 1,
+          "pattern": "^[A-Z0-9-]{1,20}$",
+          "title": "Market",
+          "type": "string"
+        },
+        "markout_horizon_seconds": {
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 3600.0,
+          "title": "Markout Horizon Seconds",
+          "type": "string"
+        },
+        "model_name": {
+          "pattern": "^[A-Za-z0-9_.-]{1,80}$",
+          "title": "Model Name",
+          "type": "string"
+        },
+        "model_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Model Sha256",
+          "type": "string"
+        },
+        "model_type": {
+          "pattern": "^LOGISTIC_REGRESSION$",
+          "title": "Model Type",
+          "type": "string"
+        },
+        "model_version": {
+          "pattern": "^[A-Za-z0-9_.-]{1,40}$",
+          "title": "Model Version",
+          "type": "string"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "target_definition": {
+          "default": "signed_markout_bps < 0, conditional on observed fill",
+          "title": "Target Definition",
+          "type": "string"
+        },
+        "trained_at": {
+          "format": "date-time",
+          "title": "Trained At",
+          "type": "string"
+        },
+        "training_config_fingerprint": {
+          "format": "sha256",
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Training Config Fingerprint",
+          "type": "string"
+        },
+        "training_dataset_fingerprint": {
+          "format": "sha256",
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Training Dataset Fingerprint",
+          "type": "string"
+        },
+        "training_sample_count": {
+          "maximum": 100000,
+          "minimum": 2,
+          "title": "Training Sample Count",
+          "type": "integer"
+        },
+        "training_window_end": {
+          "format": "date-time",
+          "title": "Training Window End",
+          "type": "string"
+        },
+        "training_window_start": {
+          "format": "date-time",
+          "title": "Training Window Start",
+          "type": "string"
+        },
+        "validation_dataset_fingerprint": {
+          "format": "sha256",
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Validation Dataset Fingerprint",
+          "type": "string"
+        },
+        "validation_metrics": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "format": "decimal",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxProperties": 10,
+          "title": "Validation Metrics",
+          "type": "object"
+        },
+        "validation_sample_count": {
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Validation Sample Count",
+          "type": "integer"
+        },
+        "validation_window_end": {
+          "format": "date-time",
+          "title": "Validation Window End",
+          "type": "string"
+        },
+        "validation_window_start": {
+          "format": "date-time",
+          "title": "Validation Window Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_name",
+        "model_version",
+        "model_type",
+        "model_sha256",
+        "feature_schema_version",
+        "training_dataset_fingerprint",
+        "validation_dataset_fingerprint",
+        "training_config_fingerprint",
+        "trained_at",
+        "training_window_start",
+        "training_window_end",
+        "validation_window_start",
+        "validation_window_end",
+        "training_sample_count",
+        "validation_sample_count",
+        "validation_metrics",
+        "library_version",
+        "market",
+        "simulated",
+        "markout_horizon_seconds",
+        "target_definition"
+      ],
+      "title": "ModelProvenance",
+      "type": "object"
+    },
     "OrderBookSnapshot": {
       "additionalProperties": false,
       "properties": {
@@ -1970,6 +3400,204 @@
         "REJECTED"
       ],
       "title": "OrderStatus",
+      "type": "string"
+    },
+    "PerpCrowdingAgentOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "affects_quotes": {
+          "default": true,
+          "title": "Affects Quotes",
+          "type": "boolean"
+        },
+        "agent": {
+          "const": "PERP_CROWDING"
+        },
+        "ask_size_multiplier": {
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Ask Size Multiplier",
+          "type": "string"
+        },
+        "bid_size_multiplier": {
+          "exclusiveMinimum": 0.0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "title": "Bid Size Multiplier",
+          "type": "string"
+        },
+        "confidence": {
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "string"
+        },
+        "evidence_version": {
+          "minimum": 0,
+          "title": "Evidence Version",
+          "type": "integer"
+        },
+        "health": {
+          "$ref": "#/$defs/AgentHealth"
+        },
+        "implementation_version": {
+          "default": "v2",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "max_levels": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Levels"
+        },
+        "metrics": {
+          "$ref": "#/$defs/PerpCrowdingMetrics"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "spread_multiplier": {
+          "format": "decimal",
+          "minimum": 1.0,
+          "title": "Spread Multiplier",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/PerpCrowdingState"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent",
+        "health",
+        "confidence",
+        "spread_multiplier",
+        "bid_size_multiplier",
+        "ask_size_multiplier",
+        "max_levels",
+        "reasons",
+        "simulated",
+        "evidence_version",
+        "version",
+        "updated_at",
+        "implementation_version",
+        "affects_quotes",
+        "state",
+        "metrics"
+      ],
+      "title": "PerpCrowdingAgentOutput",
+      "type": "object"
+    },
+    "PerpCrowdingMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "basis_stress_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Basis Stress Score",
+          "type": "string"
+        },
+        "funding_rate_delta": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Funding Rate Delta"
+        },
+        "long_crowding_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Long Crowding Score",
+          "type": "string"
+        },
+        "observation_count": {
+          "default": 0,
+          "maximum": 120,
+          "minimum": 0,
+          "title": "Observation Count",
+          "type": "integer"
+        },
+        "oi_change_ratio": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Oi Change Ratio"
+        },
+        "short_crowding_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Short Crowding Score",
+          "type": "string"
+        }
+      },
+      "required": [
+        "long_crowding_score",
+        "short_crowding_score",
+        "basis_stress_score",
+        "oi_change_ratio",
+        "funding_rate_delta",
+        "observation_count"
+      ],
+      "title": "PerpCrowdingMetrics",
+      "type": "object"
+    },
+    "PerpCrowdingState": {
+      "enum": [
+        "INSUFFICIENT_DATA",
+        "NEUTRAL",
+        "LONG_CROWDED",
+        "SHORT_CROWDED",
+        "BASIS_STRESSED",
+        "OI_EXPANSION",
+        "OI_UNWIND"
+      ],
+      "title": "PerpCrowdingState",
       "type": "string"
     },
     "PerpMarketContext": {
@@ -2046,6 +3674,7 @@
         "provider_mid_price": {
           "anyOf": [
             {
+              "exclusiveMinimum": 0.0,
               "format": "decimal",
               "type": "string"
             },
@@ -2630,6 +4259,250 @@
       ],
       "title": "PnlDrawdown",
       "type": "object"
+    },
+    "PredictiveAdverseSelectionAgentOutput": {
+      "additionalProperties": false,
+      "properties": {
+        "affects_quotes": {
+          "const": false,
+          "default": false,
+          "title": "Affects Quotes",
+          "type": "boolean"
+        },
+        "agent": {
+          "const": "PREDICTIVE_ADVERSE_SELECTION"
+        },
+        "ask_size_multiplier": {
+          "default": "1",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "title": "Ask Size Multiplier",
+          "type": "string"
+        },
+        "bid_size_multiplier": {
+          "default": "1",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "title": "Bid Size Multiplier",
+          "type": "string"
+        },
+        "confidence": {
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "string"
+        },
+        "evidence_version": {
+          "minimum": 0,
+          "title": "Evidence Version",
+          "type": "integer"
+        },
+        "feature_schema_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Feature Schema Version"
+        },
+        "health": {
+          "$ref": "#/$defs/AgentHealth"
+        },
+        "implementation_version": {
+          "default": "v2",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "max_levels": {
+          "default": null,
+          "title": "Max Levels",
+          "type": "null"
+        },
+        "metrics": {
+          "$ref": "#/$defs/PredictiveAdverseSelectionMetrics"
+        },
+        "mode": {
+          "$ref": "#/$defs/PredictiveAgentMode"
+        },
+        "model_provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "simulated": {
+          "title": "Simulated",
+          "type": "boolean"
+        },
+        "spread_multiplier": {
+          "default": "1",
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 1.0,
+          "title": "Spread Multiplier",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/PredictiveAdverseSelectionState"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "agent",
+        "health",
+        "confidence",
+        "spread_multiplier",
+        "bid_size_multiplier",
+        "ask_size_multiplier",
+        "max_levels",
+        "reasons",
+        "simulated",
+        "evidence_version",
+        "version",
+        "updated_at",
+        "implementation_version",
+        "affects_quotes",
+        "mode",
+        "state",
+        "metrics",
+        "model_provenance",
+        "feature_schema_version"
+      ],
+      "title": "PredictiveAdverseSelectionAgentOutput",
+      "type": "object"
+    },
+    "PredictiveAdverseSelectionMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "ask_adverse_probability": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ask Adverse Probability"
+        },
+        "bid_adverse_probability": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bid Adverse Probability"
+        },
+        "inference_confidence": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inference Confidence"
+        },
+        "last_inference_time": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Inference Time"
+        },
+        "markout_horizon_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "format": "decimal",
+              "maximum": 3600.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markout Horizon Seconds"
+        }
+      },
+      "required": [
+        "bid_adverse_probability",
+        "ask_adverse_probability",
+        "inference_confidence",
+        "markout_horizon_seconds",
+        "last_inference_time"
+      ],
+      "title": "PredictiveAdverseSelectionMetrics",
+      "type": "object"
+    },
+    "PredictiveAdverseSelectionState": {
+      "enum": [
+        "DISABLED",
+        "UNAVAILABLE",
+        "PREDICTED",
+        "ERROR"
+      ],
+      "title": "PredictiveAdverseSelectionState",
+      "type": "string"
+    },
+    "PredictiveAgentMode": {
+      "enum": [
+        "DISABLED",
+        "SHADOW"
+      ],
+      "title": "PredictiveAgentMode",
+      "type": "string"
     },
     "PriceEvidence": {
       "additionalProperties": false,
@@ -3534,6 +5407,11 @@
     "RegimeAgentOutput": {
       "additionalProperties": false,
       "properties": {
+        "affects_quotes": {
+          "default": true,
+          "title": "Affects Quotes",
+          "type": "boolean"
+        },
         "agent": {
           "const": "REGIME"
         },
@@ -3542,6 +5420,14 @@
           "format": "decimal",
           "maximum": 1.0,
           "title": "Ask Size Multiplier",
+          "type": "string"
+        },
+        "basis_stress_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Basis Stress Score",
           "type": "string"
         },
         "bid_size_multiplier": {
@@ -3556,6 +5442,14 @@
           "maximum": 1.0,
           "minimum": -1.0,
           "title": "Book Imbalance",
+          "type": "string"
+        },
+        "book_pressure_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Book Pressure Score",
           "type": "string"
         },
         "confidence": {
@@ -3573,8 +5467,29 @@
           "title": "Evidence Version",
           "type": "integer"
         },
+        "funding_stress_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Funding Stress Score",
+          "type": "string"
+        },
         "health": {
           "$ref": "#/$defs/AgentHealth"
+        },
+        "implementation_version": {
+          "default": "v2",
+          "title": "Implementation Version",
+          "type": "string"
+        },
+        "inventory_stress_score": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Inventory Stress Score",
+          "type": "string"
         },
         "max_levels": {
           "anyOf": [
@@ -3635,6 +5550,14 @@
         "state": {
           "$ref": "#/$defs/MarketRegime"
         },
+        "trend_strength": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Trend Strength",
+          "type": "string"
+        },
         "updated_at": {
           "format": "date-time",
           "title": "Updated At",
@@ -3666,12 +5589,19 @@
         "evidence_version",
         "version",
         "updated_at",
+        "implementation_version",
+        "affects_quotes",
         "state",
         "direction",
         "momentum_bps",
         "realized_volatility",
         "volatility_score",
-        "book_imbalance"
+        "book_imbalance",
+        "trend_strength",
+        "funding_stress_score",
+        "basis_stress_score",
+        "book_pressure_score",
+        "inventory_stress_score"
       ],
       "title": "RegimeAgentOutput",
       "type": "object"
@@ -4742,6 +6672,11 @@
     "ToxicFlowAgentOutput": {
       "additionalProperties": false,
       "properties": {
+        "affects_quotes": {
+          "default": true,
+          "title": "Affects Quotes",
+          "type": "boolean"
+        },
         "agent": {
           "const": "TOXIC_FLOW"
         },
@@ -4773,6 +6708,11 @@
         },
         "health": {
           "$ref": "#/$defs/AgentHealth"
+        },
+        "implementation_version": {
+          "default": "v2",
+          "title": "Implementation Version",
+          "type": "string"
         },
         "max_levels": {
           "anyOf": [
@@ -4834,6 +6774,8 @@
         "evidence_version",
         "version",
         "updated_at",
+        "implementation_version",
+        "affects_quotes",
         "state",
         "metrics"
       ],
@@ -4855,11 +6797,57 @@
           "title": "Adverse Fill Rate",
           "type": "string"
         },
+        "ask_adverse_rate": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ask Adverse Rate"
+        },
+        "ask_confidence": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Ask Confidence",
+          "type": "string"
+        },
         "ask_toxic_flow_score": {
           "format": "decimal",
           "maximum": 1.0,
           "minimum": 0.0,
           "title": "Ask Toxic Flow Score",
+          "type": "string"
+        },
+        "bid_adverse_rate": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bid Adverse Rate"
+        },
+        "bid_confidence": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Bid Confidence",
           "type": "string"
         },
         "bid_toxic_flow_score": {
@@ -4868,6 +6856,67 @@
           "minimum": 0.0,
           "title": "Bid Toxic Flow Score",
           "type": "string"
+        },
+        "horizons": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/HorizonMarkoutMetrics"
+          },
+          "maxItems": 4,
+          "title": "Horizons",
+          "type": "array"
+        },
+        "lower_quantile_markout_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Quantile Markout Bps"
+        },
+        "markout_15s_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markout 15S Bps"
+        },
+        "markout_1s_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markout 1S Bps"
+        },
+        "markout_5s_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Markout 5S Bps"
         },
         "matured_fills": {
           "minimum": 0,
@@ -4900,6 +6949,34 @@
           "default": null,
           "title": "Mean Signed Markout Bps"
         },
+        "median_markout_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Median Markout Bps"
+        },
+        "notional_weighted_toxicity": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notional Weighted Toxicity"
+        },
         "overall_toxic_flow_score": {
           "format": "decimal",
           "maximum": 1.0,
@@ -4912,10 +6989,47 @@
           "title": "Pending Markouts",
           "type": "integer"
         },
+        "recency_weighted_toxicity": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Recency Weighted Toxicity",
+          "type": "string"
+        },
         "total_fills": {
           "minimum": 0,
           "title": "Total Fills",
           "type": "integer"
+        },
+        "toxicity_persistence": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Toxicity Persistence",
+          "type": "string"
+        },
+        "upper_quantile_markout_bps": {
+          "anyOf": [
+            {
+              "format": "decimal",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Quantile Markout Bps"
+        },
+        "weighted_adverse_severity": {
+          "default": 0,
+          "format": "decimal",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Weighted Adverse Severity",
+          "type": "string"
         }
       },
       "required": [
@@ -4928,7 +7042,22 @@
         "mean_adverse_markout_bps",
         "bid_toxic_flow_score",
         "ask_toxic_flow_score",
-        "overall_toxic_flow_score"
+        "overall_toxic_flow_score",
+        "horizons",
+        "markout_1s_bps",
+        "markout_5s_bps",
+        "markout_15s_bps",
+        "bid_adverse_rate",
+        "ask_adverse_rate",
+        "weighted_adverse_severity",
+        "median_markout_bps",
+        "lower_quantile_markout_bps",
+        "upper_quantile_markout_bps",
+        "recency_weighted_toxicity",
+        "notional_weighted_toxicity",
+        "toxicity_persistence",
+        "bid_confidence",
+        "ask_confidence"
       ],
       "title": "ToxicFlowMetrics",
       "type": "object"
@@ -5568,125 +7697,7 @@
       "type": "array"
     },
     "agents": {
-      "additionalProperties": false,
-      "properties": {
-        "agent_fingerprint": {
-          "format": "sha256",
-          "type": "string"
-        },
-        "agent_version": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "config": {
-          "$ref": "#/$defs/AgentConfig"
-        },
-        "evidence": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AgentEvidenceSnapshot"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "execution_quality": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ExecutionQualityAgentOutput"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "regime": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/RegimeAgentOutput"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "supervisor": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/AgentSupervisorDecision"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "telemetry": {
-          "additionalProperties": false,
-          "properties": {
-            "fill_observations": {
-              "minimum": 0,
-              "type": "integer"
-            },
-            "reconcile_cycles": {
-              "minimum": 0,
-              "type": "integer"
-            },
-            "rejected_orders": {
-              "minimum": 0,
-              "type": "integer"
-            },
-            "tracked_orders": {
-              "minimum": 0,
-              "type": "integer"
-            },
-            "unavailable_markouts": {
-              "minimum": 0,
-              "type": "integer"
-            },
-            "unknown_orders": {
-              "minimum": 0,
-              "type": "integer"
-            },
-            "version": {
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          "required": [
-            "version",
-            "fill_observations",
-            "unavailable_markouts",
-            "reconcile_cycles",
-            "tracked_orders",
-            "unknown_orders",
-            "rejected_orders"
-          ],
-          "type": "object"
-        },
-        "toxic_flow": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ToxicFlowAgentOutput"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "config",
-        "evidence",
-        "regime",
-        "toxic_flow",
-        "execution_quality",
-        "supervisor",
-        "agent_version",
-        "agent_fingerprint",
-        "telemetry"
-      ],
-      "type": "object"
+      "$ref": "#/$defs/AgentSystemSnapshot"
     },
     "authorized_quotes": {
       "items": {
@@ -5812,7 +7823,6 @@
             "ask_size_multiplier": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Ask Size Multiplier",
                   "type": "string"
                 },
@@ -5824,7 +7834,6 @@
             "bid_size_multiplier": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Bid Size Multiplier",
                   "type": "string"
                 },
@@ -5834,7 +7843,6 @@
               ]
             },
             "deviation_base": {
-              "format": "decimal",
               "title": "Deviation Base",
               "type": "string"
             },
@@ -5861,14 +7869,12 @@
               ]
             },
             "inventory_ratio": {
-              "format": "decimal",
               "title": "Inventory Ratio",
               "type": "string"
             },
             "inventory_ratio_effective": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Inventory Ratio Effective",
                   "type": "string"
                 },
@@ -5885,7 +7891,6 @@
             "market_fair_value": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Market Fair Value",
                   "type": "string"
                 },
@@ -5895,14 +7900,12 @@
               ]
             },
             "position_base": {
-              "format": "decimal",
               "title": "Position Base",
               "type": "string"
             },
             "price_skew_bps": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Price Skew Bps",
                   "type": "string"
                 },
@@ -5914,7 +7917,6 @@
             "reference_price": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Reference Price",
                   "type": "string"
                 },
@@ -5926,7 +7928,6 @@
             "reservation_price": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Reservation Price",
                   "type": "string"
                 },
@@ -5949,7 +7950,6 @@
               "type": "boolean"
             },
             "target_base": {
-              "format": "decimal",
               "title": "Target Base",
               "type": "string"
             },
@@ -6018,14 +8018,12 @@
           "additionalProperties": false,
           "properties": {
             "funding_rate": {
-              "format": "decimal",
               "title": "Funding Rate",
               "type": "string"
             },
             "funding_score": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Funding Score",
                   "type": "string"
                 },
@@ -6037,7 +8035,6 @@
             "funding_shift_bps": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Funding Shift Bps",
                   "type": "string"
                 },
@@ -6047,17 +8044,14 @@
               ]
             },
             "mark_mid_basis_bps": {
-              "format": "decimal",
               "title": "Mark Mid Basis Bps",
               "type": "string"
             },
             "mark_oracle_basis_bps": {
-              "format": "decimal",
               "title": "Mark Oracle Basis Bps",
               "type": "string"
             },
             "mark_price": {
-              "format": "decimal",
               "title": "Mark Price",
               "type": "string"
             },
@@ -6067,32 +8061,26 @@
               "type": "string"
             },
             "market_fair_value": {
-              "format": "decimal",
               "title": "Market Fair Value",
               "type": "string"
             },
             "market_mid": {
-              "format": "decimal",
               "title": "Market Mid",
               "type": "string"
             },
             "open_interest_base": {
-              "format": "decimal",
               "title": "Open Interest Base",
               "type": "string"
             },
             "open_interest_notional": {
-              "format": "decimal",
               "title": "Open Interest Notional",
               "type": "string"
             },
             "oracle_mid_basis_bps": {
-              "format": "decimal",
               "title": "Oracle Mid Basis Bps",
               "type": "string"
             },
             "oracle_price": {
-              "format": "decimal",
               "title": "Oracle Price",
               "type": "string"
             },
@@ -6109,7 +8097,6 @@
             "premium": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "type": "string"
                 },
                 {
@@ -6122,7 +8109,6 @@
             "provider_mid_price": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "type": "string"
                 },
                 {
@@ -6135,7 +8121,6 @@
             "reference_shift_bps": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Final Reference Shift Bps",
                   "type": "string"
                 },
@@ -6165,7 +8150,6 @@
             "strategy_reference_price": {
               "anyOf": [
                 {
-                  "format": "decimal",
                   "title": "Final Reference Price",
                   "type": "string"
                 },

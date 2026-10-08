@@ -301,13 +301,17 @@ See [Reference Integrity](docs/REFERENCE_INTEGRITY.md) and [Risk Firewall](docs/
 
 ## Phase 9 — Deterministic Supervisory Agents
 
-Phase 9 inserts a bounded, deterministic supervisory layer after Phase 6 strategy adaptation and before the Phase 8 firewall. The Regime, Toxic-Flow and Execution-Quality agents consume normalized existing evidence only. Their supervisor can widen spreads, reduce side sizes or trim existing levels; it cannot execute orders, restore suppressed liquidity, clear the manual kill switch or override Phase 8.
+Phase 9 inserts a bounded, deterministic supervisory layer after Phase 6 strategy adaptation and before the Phase 8 firewall. Regime v2, multi-horizon Toxic-Flow v2, Execution-Quality v2, Liquidity Quality and Perp Crowding consume normalized existing evidence only. Their supervisor can widen spreads, reduce side sizes or trim existing levels; it cannot execute orders, restore suppressed liquidity, clear the manual kill switch or override Phase 8.
 
-FinalQuoteAuthorization now binds agent version and fingerprint in addition to the existing market, inventory, perp, reference and risk authority.
+FinalQuoteAuthorization binds the material deterministic/heuristic agent version and fingerprint in addition to the existing market, inventory, perp, reference and risk authority. Predictive Adverse Selection is **ML SHADOW ONLY**, with conditional BID/ASK adverse-fill probabilities and `affects_quotes=false`; shadow predictions and model changes do not alter quotes or execution authority.
 
 PAPER fill telemetry is explicitly simulated. TESTNET fill-quality metrics remain unavailable where authoritative fill detail does not exist; no slippage or markout is fabricated.
 
-See [Supervisory Agents](docs/AGENTS.md).
+Offline research adds a canonical `passive-adverse-v1` feature schema, leakage-aware datasets with independent train/validation identities, optional scikit-learn logistic training (`pip install -e '.[test,ml]'` from `backend`), bounded JSON artifacts with SHA-256 provenance, and side/horizon calibration reports. Normal backend installation does not require ML dependencies. The terminal labels heuristic/deterministic/ML SHADOW evidence, and agent APIs publish one coherent cycle snapshot with bounded event filters. No artifact is supplied by default.
+
+Agents recommend. Phase 8 decides. FinalQuoteAuthorization controls execution.
+
+See [Supervisory Agents](docs/AGENTS.md) and the [agent implementation and ML contracts](backend/app/agents/README.md).
 
 
 ## Phase 10 — Strategy Optimization + Deterministic Simulation

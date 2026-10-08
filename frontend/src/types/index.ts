@@ -310,6 +310,8 @@ export type AgentRecommendation = {
   evidence_version: number;
   version: number;
   updated_at: string;
+  implementation_version: string;
+  affects_quotes: boolean;
 };
 export type RegimeAgentOutput = AgentRecommendation & {
   state: string;
@@ -318,6 +320,11 @@ export type RegimeAgentOutput = AgentRecommendation & {
   realized_volatility: Decimalish | null;
   volatility_score: Decimalish;
   book_imbalance: Decimalish;
+  trend_strength: Decimalish;
+  funding_stress_score: Decimalish;
+  basis_stress_score: Decimalish;
+  book_pressure_score: Decimalish;
+  inventory_stress_score: Decimalish;
 };
 export type ToxicFlowAgentOutput = AgentRecommendation & {
   state: string;
@@ -332,6 +339,21 @@ export type ToxicFlowAgentOutput = AgentRecommendation & {
     bid_toxic_flow_score: Decimalish;
     ask_toxic_flow_score: Decimalish;
     overall_toxic_flow_score: Decimalish;
+    horizons: { horizon_seconds: Decimalish; matured_fills: number; pending_markouts: number; unavailable_markouts: number; mean_markout_bps: Decimalish | null; bid_adverse_rate: Decimalish | null; ask_adverse_rate: Decimalish | null }[];
+    markout_1s_bps: Decimalish | null;
+    markout_5s_bps: Decimalish | null;
+    markout_15s_bps: Decimalish | null;
+    median_markout_bps: Decimalish | null;
+    lower_quantile_markout_bps: Decimalish | null;
+    upper_quantile_markout_bps: Decimalish | null;
+    bid_adverse_rate: Decimalish | null;
+    ask_adverse_rate: Decimalish | null;
+    weighted_adverse_severity: Decimalish;
+    recency_weighted_toxicity: Decimalish;
+    notional_weighted_toxicity: Decimalish | null;
+    toxicity_persistence: Decimalish;
+    bid_confidence: Decimalish;
+    ask_confidence: Decimalish;
   };
 };
 export type ExecutionQualityAgentOutput = AgentRecommendation & {
@@ -348,7 +370,41 @@ export type ExecutionQualityAgentOutput = AgentRecommendation & {
     replace_count: number;
     cancel_count: number;
     reconciliation_churn_ratio: Decimalish;
+    mean_time_to_first_fill_seconds: Decimalish | null;
+    mean_time_to_fill_seconds: Decimalish | null;
+    mean_quote_lifetime_seconds: Decimalish | null;
+    partial_fill_ratio: Decimalish | null;
+    cancel_to_fill_ratio: Decimalish | null;
+    replace_to_fill_ratio: Decimalish | null;
+    bid_mean_markout_bps: Decimalish | null;
+    ask_mean_markout_bps: Decimalish | null;
+    mean_fill_distance_bps: Decimalish | null;
+    level_quality: { side: string; level_index: number; order_count: number; filled_order_count: number; fill_rate: Decimalish | null; mean_markout_bps: Decimalish | null }[];
+    reconciliation_latency_seconds: Decimalish | null;
+    venue_acknowledgment_latency_seconds: Decimalish | null;
   };
+};
+export type LiquidityQualityAgentOutput = AgentRecommendation & {
+  state: string;
+  metrics: { thin_score: Decimalish; imbalance_score: Decimalish; instability_score: Decimalish; concentration_score: Decimalish; spread_bps: Decimalish | null; bid_depth_base: Decimalish | null; ask_depth_base: Decimalish | null; book_span_bps: Decimalish | null };
+};
+export type PerpCrowdingAgentOutput = AgentRecommendation & {
+  state: string;
+  metrics: { long_crowding_score: Decimalish; short_crowding_score: Decimalish; basis_stress_score: Decimalish; oi_change_ratio: Decimalish | null; funding_rate_delta: Decimalish | null; observation_count: number };
+};
+export type ModelProvenance = {
+  model_name: string; model_version: string; model_type: string; model_sha256: string;
+  feature_schema_version: string; training_dataset_fingerprint: string; validation_dataset_fingerprint: string;
+  training_config_fingerprint: string; trained_at: string; training_window_start: string; training_window_end: string;
+  validation_window_start: string; validation_window_end: string; training_sample_count: number;
+  validation_sample_count: number; validation_metrics: Record<string, Decimalish | null>; library_version: string;
+  market: string; simulated: boolean; markout_horizon_seconds: Decimalish; target_definition: string;
+};
+export type PredictiveAdverseSelectionAgentOutput = AgentRecommendation & {
+  mode: 'DISABLED' | 'SHADOW'; state: string; affects_quotes: false;
+  metrics: { bid_adverse_probability: Decimalish | null; ask_adverse_probability: Decimalish | null;
+    inference_confidence: Decimalish | null; markout_horizon_seconds: Decimalish | null; last_inference_time: string | null };
+  model_provenance: ModelProvenance | null; feature_schema_version: string | null;
 };
 export type AgentSupervisorDecision = {
   market: string;
@@ -356,6 +412,9 @@ export type AgentSupervisorDecision = {
   regime: RegimeAgentOutput;
   toxic_flow: ToxicFlowAgentOutput;
   execution_quality: ExecutionQualityAgentOutput;
+  liquidity_quality: LiquidityQualityAgentOutput | null;
+  perp_crowding: PerpCrowdingAgentOutput | null;
+  predictive_adverse_selection: PredictiveAdverseSelectionAgentOutput | null;
   spread_multiplier: Decimalish;
   bid_size_multiplier: Decimalish;
   ask_size_multiplier: Decimalish;
@@ -376,6 +435,9 @@ export type AgentsState = {
   regime: RegimeAgentOutput | null;
   toxic_flow: ToxicFlowAgentOutput | null;
   execution_quality: ExecutionQualityAgentOutput | null;
+  liquidity_quality: LiquidityQualityAgentOutput | null;
+  perp_crowding: PerpCrowdingAgentOutput | null;
+  predictive_adverse_selection: PredictiveAdverseSelectionAgentOutput | null;
   supervisor: AgentSupervisorDecision | null;
   agent_version: number;
   agent_fingerprint: string;
@@ -383,6 +445,9 @@ export type AgentsState = {
     version: number;
     fill_observations: number;
     unavailable_markouts: number;
+    evicted_unavailable_markouts: number;
+    perp_observations: number;
+    retained_markout_horizons: number;
     reconcile_cycles: number;
     tracked_orders: number;
     unknown_orders: number;

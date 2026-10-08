@@ -840,3 +840,44 @@ Cached results include process/session, full input digest, code-owned engine ver
 and result/dataset identity; cache data is never substituted into live strategy.
 No remote queue, cancellation endpoint, candidate deployment or durable research
 store is added. See [Redis semantics and limitations](REDIS.md).
+
+
+## Agent expansion and predictive shadow evaluation
+
+The simulator reuses the production v2 Regime/Toxic Flow/Execution Quality agents
+and the new Liquidity Quality and Perp Crowding agents. Their conservative
+recommendations still pass through Phase 8 and FinalQuoteAuthorization. The
+code-owned simulation version is `phase10.1-v3`; deterministic evidence changes
+are reflected in research run identity.
+
+Predictive ML is **SHADOW ONLY**. Programmatic research may explicitly supply a
+validated `LogisticModelArtifact` to `SimulationEngine.run(predictive_model=...)`.
+It cannot change quotes, fills, accounting or risk outcomes, and cannot auto-apply
+optimizer output or promote itself. Each frame's trace includes state and side
+probabilities; a prediction binds at order creation and then to an actual PAPER
+fill. Mature labels share the production immutable first-eligible midpoint
+selection, rather than rebinding later fills/prices. Pending labels stay pending
+when replay ends. The bounded report keeps up to 1000 fill predictions and order
+bindings, reports discarded prediction counts, and identifies its retained
+cohort. Side/horizon accuracy, precision, recall, AUC, Brier, calibration error
+and ten probability buckets compare predictions with actual matured markouts;
+buckets below minimum support are flagged. No profitability follows from these
+classifier metrics or deterministic PAPER matching.
+
+`app.research.ml.dataset.build_dataset` constructs one configurable-horizon
+conditional adverse-fill target from typed evidence/fills/history. Features
+are selected at or before the fill, targets only from later observations.
+Duplicate identities cannot inflate sample counts. Dataset hashes cover source
+fingerprints, time bounds including label maturity, market, target, sample count,
+simulated/live classification and `passive-adverse-v1` feature schema. Independent
+train/validation claims require distinct dataset/sample identities and disjoint
+feature-to-label windows. Required missing features reject dataset construction
+or inference rather than being silently imputed.
+
+Optional `pip install -e '.[test,ml]'` provides scikit-learn LogisticRegression.
+Training has no runtime hook or execution-adapter imports and exports a bounded
+JSON coefficient artifact with strict model/dataset/config provenance. NumPy and
+SciPy usage stays transitive inside optional sklearn research; they do not enter
+AMM, risk, order sizing, accounting or final authorization. The ordinary backend
+install works without sklearn. See [complete agent and offline ML contracts](../backend/app/agents/README.md)
+for CLI usage, normalization, fingerprint scope and retained evidence formulas.

@@ -4,7 +4,8 @@ from decimal import Decimal
 
 from app.execution.models import OrderStatus
 from .config import AgentConfig
-from .models import AgentHealth,ExecutionQualityAgentOutput,ExecutionQualityMetrics,ExecutionQualityState
+from .models import AgentHealth,ExecutionQualityAgentOutput,ExecutionQualityMetrics,ExecutionQualityState,LevelExecutionMetrics
+from .common import mean, seconds
 
 
 def spread_capture_bps(side:str,fill_price:Decimal,reference_price:Decimal)->Decimal:
@@ -67,6 +68,7 @@ class ExecutionQualityAgent:
             average_spread_capture_bps=average_capture,average_mature_markout_bps=average_markout,
             reject_count=rejected,unknown_order_count=unknown,keep_count=keep,create_count=create,
             replace_count=replace,cancel_count=cancel,reconciliation_churn_ratio=churn,
+            **lifecycle_metrics(telemetry, fills, markouts, execution_mode),
         )
         simulated=execution_mode=="PAPER" and bool(fills) and all(f.simulated for f in fills)
         base=dict(agent="EXECUTION_QUALITY",simulated=simulated or evidence.simulated,evidence_version=evidence.version,version=self.version)
@@ -131,3 +133,37 @@ class ExecutionQualityAgent:
             spread_multiplier=spread,bid_size_multiplier=size,ask_size_multiplier=size,
             reasons=reasons,state=state,metrics=metrics,
         ))
+
+
+def lifecycle_metrics(telemetry, fills, markouts, execution_mode):
+    """PAPER timestamps describe simulated lifecycle, never venue/ack latency."""
+    if execution_mode != "PAPER":
+        return {}
+    orders = telemetry.orders()
+    by_order = {o.client_order_id: o for o in orders}
+    by_fill = {f.identity: f for f in fills}
+    first_fill = telemetry.first_fill_times()
+    first_times = [seconds(t-by_order[cid].created_at) for cid,t in first_fill.items()
+                   if cid in by_order and t >= by_order[cid].created_at]
+    complete_times = [seconds(o.updated_at-o.created_at) for o in orders
+                      if o.status == OrderStatus.FILLED and o.updated_at >= o.created_at]
+    closed = [o for o in orders if o.status in {OrderStatus.FILLED, OrderStatus.CANCELLED, OrderStatus.REPLACED, OrderStatus.REJECTED}]
+    lifetimes = [seconds(o.updated_at-o.created_at) for o in closed if o.updated_at >= o.created_at]
+    filled_count = sum(o.filled_size > 0 for o in orders)
+    levels = []
+    for side,level in sorted({(o.side,o.level_index) for o in orders if o.level_index is not None}):
+        group = [o for o in orders if (o.side,o.level_index) == (side,level)]
+        ids = {o.client_order_id for o in group}
+        filled = sum(o.filled_size > 0 for o in group)
+        level_markouts = [m.signed_markout_bps for m in markouts if by_fill[m.fill_identity].client_order_id in ids]
+        levels.append(LevelExecutionMetrics(side=side,level_index=level,order_count=len(group),
+            filled_order_count=filled,fill_rate=Decimal(filled)/len(group),mean_markout_bps=mean(level_markouts)))
+    distances = [abs(spread_capture_bps(f.side,f.price,f.reference_price)) for f in fills if f.reference_price is not None]
+    return dict(mean_time_to_first_fill_seconds=mean(first_times),mean_time_to_fill_seconds=mean(complete_times),
+        mean_quote_lifetime_seconds=mean(lifetimes),
+        partial_fill_ratio=Decimal(sum(0 < o.filled_size < o.size for o in orders))/len(orders) if orders else None,
+        cancel_to_fill_ratio=Decimal(sum(o.status == OrderStatus.CANCELLED for o in orders))/filled_count if filled_count else None,
+        replace_to_fill_ratio=Decimal(sum(o.status == OrderStatus.REPLACED for o in orders))/filled_count if filled_count else None,
+        bid_mean_markout_bps=mean(m.signed_markout_bps for m in markouts if m.side == "BID"),
+        ask_mean_markout_bps=mean(m.signed_markout_bps for m in markouts if m.side == "ASK"),
+        mean_fill_distance_bps=mean(distances),level_quality=tuple(levels))

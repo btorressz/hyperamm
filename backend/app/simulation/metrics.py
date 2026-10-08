@@ -20,6 +20,8 @@ class MetricsAccumulator:
         self.regime=Counter()
         self.toxic=Counter()
         self.execution=Counter()
+        self.liquidity=Counter()
+        self.crowding=Counter()
 
     def record(
         self,*,authorized_quotes,inventory,risk_decision,agent_decision,equity:Decimal,drawdown_pct:Decimal,actions
@@ -39,6 +41,8 @@ class MetricsAccumulator:
         self.regime[agent_decision.regime.state.value]+=1
         self.toxic[agent_decision.toxic_flow.state.value]+=1
         self.execution[agent_decision.execution_quality.state.value]+=1
+        self.liquidity[agent_decision.liquidity_quality.state.value]+=1
+        self.crowding[agent_decision.perp_crowding.state.value]+=1
 
     def finalize(self,*,paper,market:str,vault,telemetry,history,agent_config,frame_count:int)->SimulationMetrics:
         fills=paper.fills.all()
@@ -79,4 +83,5 @@ class MetricsAccumulator:
             risk_halt_fraction=Decimal(self.risk.get("HALT",0))/Decimal(frame_count),
             agent_regime_counts=dict(self.regime),toxic_flow_state_counts=dict(self.toxic),
             execution_quality_state_counts=dict(self.execution),
+            liquidity_quality_state_counts=dict(self.liquidity),perp_crowding_state_counts=dict(self.crowding),
         )

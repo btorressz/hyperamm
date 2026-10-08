@@ -14,6 +14,8 @@ from app.market_data.perp_context import PerpMarketContext, PerpPositionContext
 from app.strategy.perp_policy import PerpReferenceDecision
 from app.agents.models import AgentEvidenceSnapshot, AgentSupervisorDecision, RegimeAgentOutput, ToxicFlowAgentOutput, ExecutionQualityAgentOutput, AgentEvent
 from app.agents.config import AgentConfig
+from app.agents.snapshot import AgentSystemSnapshot
+from app.agents.models import LiquidityQualityAgentOutput, PerpCrowdingAgentOutput, PredictiveAdverseSelectionAgentOutput, LiquidityQualityState, PerpCrowdingState, PredictiveAdverseSelectionState
 from app.risk.firewall import RiskDecision, RiskFirewallConfig, RiskEvent, ExposureMetrics, PnlDrawdown
 from app.risk.authorization import FinalQuoteAuthorization
 from app.accounting.models import PnlBreakdown, AccountingNotice, ExecutionAccountingConsistency
@@ -57,7 +59,7 @@ def build_contract():
     auth= {'anyOf':[model(FinalQuoteAuthorization),obj(authorized={'const':False},risk_state=riskstate,reasons=array(STR))]}
     p=schema['properties']
     p.update(inventory=nullable(obj(**inv)),market_adaptation=nullable(model(MarketAdaptationDecision)),perp_context=nullable(obj(**perp)),
-      agents=obj(config=model(AgentConfig),evidence=nullable(model(AgentEvidenceSnapshot)),regime=nullable(model(RegimeAgentOutput)),toxic_flow=nullable(model(ToxicFlowAgentOutput)),execution_quality=nullable(model(ExecutionQualityAgentOutput)),supervisor=nullable(model(AgentSupervisorDecision)),agent_version=INT,agent_fingerprint=STR,telemetry=obj(**{k:INT for k in ('version','fill_observations','unavailable_markouts','reconcile_cycles','tracked_orders','unknown_orders','rejected_orders')})),
+      agents=model(AgentSystemSnapshot),
       agent_events=array(model(AgentEvent)),risk_firewall=obj(manual_kill_active=BOOL,manual_kill_reason=nullable(STR),config=model(RiskFirewallConfig),state=riskstate,decision=nullable(model(RiskDecision))),risk_authorization=auth,risk_events=array(model(RiskEvent)),projected_exposure=nullable(model(ExposureMetrics)),pnl_drawdown=nullable(model(PnlDrawdown)),
       accounting=obj(config=model(AccountingConfig),accounting_version=INT,accounting_fingerprint=STR,ledger_version=INT,ledger_fingerprint=STR,retention_policy=STR,execution_accounting=model(ExecutionAccountingConsistency),pnl=model(PnlBreakdown),events=array(model(AccountingNotice))),
       reconciliation=array(model(ReconcileAction)),venue_reconciliation=obj(last_reconciled_at=nullable(TIME),error=nullable(STR)),
@@ -76,10 +78,10 @@ def build_contract():
     defs['LiquidationEvidence']['properties']['status']=enum('FLAT','UNAVAILABLE','BREACHED','AVAILABLE')
     defs['AgentEvidenceSnapshot']['properties']['reference_confidence']=defs['ReferenceConsensus']['properties']['confidence_state']
     defs['AgentEvidenceSnapshot']['properties']['market_adaptation_regime']=enum(*(x.value for x in VolatilityRegime))
-    for cls, name in [(RegimeAgentOutput,'REGIME'),(ToxicFlowAgentOutput,'TOXIC_FLOW'),(ExecutionQualityAgentOutput,'EXECUTION_QUALITY')]:
+    for cls, name in [(RegimeAgentOutput,'REGIME'),(ToxicFlowAgentOutput,'TOXIC_FLOW'),(ExecutionQualityAgentOutput,'EXECUTION_QUALITY'),(LiquidityQualityAgentOutput,'LIQUIDITY_QUALITY'),(PerpCrowdingAgentOutput,'PERP_CROWDING'),(PredictiveAdverseSelectionAgentOutput,'PREDICTIVE_ADVERSE_SELECTION')]:
         defs[cls.__name__]['properties']['agent']={'const':name}
-    defs['AgentEvent']['properties']['agent']=enum('REGIME','TOXIC_FLOW','EXECUTION_QUALITY','SUPERVISOR')
-    defs['AgentEvent']['properties']['new_state']=enum('MATERIAL_CHANGE',*(x.value for cls in (MarketRegime,ToxicFlowState,ExecutionQualityState) for x in cls))
+    defs['AgentEvent']['properties']['agent']=enum('REGIME','TOXIC_FLOW','EXECUTION_QUALITY','LIQUIDITY_QUALITY','PERP_CROWDING','PREDICTIVE_ADVERSE_SELECTION','SUPERVISOR')
+    defs['AgentEvent']['properties']['new_state']=enum('MATERIAL_CHANGE',*(x.value for cls in (MarketRegime,ToxicFlowState,ExecutionQualityState,LiquidityQualityState,PerpCrowdingState,PredictiveAdverseSelectionState) for x in cls))
     defs['AgentEvent']['properties']['previous_state']=nullable(defs['AgentEvent']['properties']['new_state'])
     for name in ('QuoteLevel','StrategyOrder','Fill','PriceEvidence'):
         for key in ('price','size'):
@@ -113,22 +115,25 @@ def build_contract():
         if isinstance(node,list):
             for item in node: normalize(item)
         elif isinstance(node,dict):
-            if node.get('type')=='string' and 'pattern' in node:
-                node.pop('pattern'); node['format']='decimal'
             if node.get('type')=='object' and 'properties' in node:
                 node['required']=list(node['properties'])
                 node['additionalProperties']=False
             for value in list(node.values()): normalize(value)
     def bounds(wire, valid):
         if not isinstance(wire,dict) or not isinstance(valid,dict): return
-        if wire.get('type')=='string' and 'pattern' in wire:
-            numeric=next((v for v in valid.get('anyOf',[]) if v.get('type')=='number'), {})
+        if wire.get('type')=='string':
+            numeric=valid if valid.get('type')=='number' else next((v for v in valid.get('anyOf',[]) if v.get('type')=='number'), {})
+            if numeric:
+                wire.pop('pattern',None)
+                wire['format']='decimal'
             for key in ('minimum','maximum','exclusiveMinimum','exclusiveMaximum'):
                 if key in numeric: wire[key]=numeric[key]
         for key, value in wire.get('properties',{}).items():
             bounds(value,valid.get('properties',{}).get(key,{}))
         if 'items' in wire: bounds(wire['items'],valid.get('items',{}))
+        if isinstance(wire.get('additionalProperties'),dict): bounds(wire['additionalProperties'],valid.get('additionalProperties',{}))
         for a,b in zip(wire.get('anyOf',[]),valid.get('anyOf',[])): bounds(a,b)
+    bounds(schema,TerminalSnapshot.model_json_schema(mode="validation"))
     for name,wire in defs.items(): bounds(wire,validation.get(name,{}))
     normalize(schema)
     return schema

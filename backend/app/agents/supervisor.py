@@ -6,11 +6,17 @@ from decimal import Decimal
 from app.amm.discretizer import normalize_price,normalize_size
 from .config import AgentConfig
 from .execution_quality import ExecutionQualityAgent
+from .liquidity_quality import LiquidityQualityAgent
+from .perp_crowding import PerpCrowdingAgent
+from .predictive_adverse_selection import PredictiveAdverseSelectionAgent
 from .models import (
     AgentEvent,AgentHealth,AgentSupervisorDecision,
     ExecutionQualityAgentOutput,ExecutionQualityMetrics,ExecutionQualityState,
     MarketRegime,RegimeAgentOutput,RegimeDirection,
     ToxicFlowAgentOutput,ToxicFlowMetrics,ToxicFlowState,
+    LiquidityQualityAgentOutput,LiquidityQualityMetrics,LiquidityQualityState,
+    PerpCrowdingAgentOutput,PerpCrowdingMetrics,PerpCrowdingState,
+    PredictiveAdverseSelectionAgentOutput,PredictiveAdverseSelectionState,PredictiveAgentMode,
     recommendation_signature,semantic_fingerprint,utcnow,
 )
 from .regime import RegimeAgent
@@ -58,6 +64,9 @@ class AgentSupervisor:
         self.regime=RegimeAgent(config)
         self.toxic_flow=ToxicFlowAgent(config)
         self.execution_quality=ExecutionQualityAgent(config)
+        self.liquidity_quality=LiquidityQualityAgent(config)
+        self.perp_crowding=PerpCrowdingAgent(config)
+        self.predictive_adverse_selection=PredictiveAdverseSelectionAgent(config)
         self.version=0
         self.fingerprint=semantic_fingerprint({"enabled":config.agents_enabled,"initial":True})
         self._signature=None
@@ -79,13 +88,26 @@ class AgentSupervisor:
         except Exception as exc:toxic=_neutral_toxic(evidence,f"toxic-flow agent error: {exc}")
         try:execution=self.execution_quality.evaluate(evidence,telemetry,history,execution_mode)
         except Exception as exc:execution=_neutral_execution(evidence,f"execution-quality agent error: {exc}")
+        try:liquidity=self.liquidity_quality.evaluate(evidence)
+        except Exception as exc:liquidity=_neutral_new(evidence,"LIQUIDITY_QUALITY",f"liquidity-quality agent error: {exc}")
+        try:crowding=self.perp_crowding.evaluate(evidence)
+        except Exception as exc:crowding=_neutral_new(evidence,"PERP_CROWDING",f"perp-crowding agent error: {exc}")
+        # This output is observational. Never bind it into material authority below.
+        try:predictive=self.predictive_adverse_selection.evaluate(evidence)
+        except Exception:predictive=PredictiveAdverseSelectionAgentOutput(
+            agent="PREDICTIVE_ADVERSE_SELECTION",health=AgentHealth.ERROR,confidence=Decimal(0),
+            mode=PredictiveAgentMode.SHADOW,state=PredictiveAdverseSelectionState.ERROR,
+            spread_multiplier=Decimal(1),bid_size_multiplier=Decimal(1),ask_size_multiplier=Decimal(1),
+            reasons=["SHADOW inference error; no quote authority"],simulated=evidence.simulated,
+            evidence_version=evidence.version,version=0,updated_at=evidence.updated_at)
+        material_agents=(regime,toxic,execution,liquidity,crowding)
 
         enabled=self.config.agents_enabled
         if enabled:
-            spread=max(regime.spread_multiplier,toxic.spread_multiplier,execution.spread_multiplier)
-            bid=min(regime.bid_size_multiplier,toxic.bid_size_multiplier,execution.bid_size_multiplier)
-            ask=min(regime.ask_size_multiplier,toxic.ask_size_multiplier,execution.ask_size_multiplier)
-            levels=[x.max_levels for x in (regime,toxic,execution) if x.max_levels is not None]
+            spread=max(x.spread_multiplier for x in material_agents)
+            bid=min(x.bid_size_multiplier for x in material_agents)
+            ask=min(x.ask_size_multiplier for x in material_agents)
+            levels=[x.max_levels for x in material_agents if x.max_levels is not None]
             max_levels=min(levels) if levels else None
         else:
             spread=Decimal("1");bid=Decimal("1");ask=Decimal("1");max_levels=None
@@ -93,16 +115,14 @@ class AgentSupervisor:
         spread=max(Decimal("1"),min(self.config.agent_max_spread_multiplier,spread))
         bid=max(self.config.agent_min_size_multiplier,min(Decimal("1"),bid))
         ask=max(self.config.agent_min_size_multiplier,min(Decimal("1"),ask))
-        reasons=[
-            f"REGIME: {'; '.join(regime.reasons)}",
-            f"TOXIC_FLOW: {'; '.join(toxic.reasons)}",
-            f"EXECUTION_QUALITY: {'; '.join(execution.reasons)}",
-        ]
+        reasons=[f"{x.agent}: {'; '.join(x.reasons)}" for x in material_agents]
         decision_material={
             "enabled":enabled,
             "regime":recommendation_signature(regime),
             "toxic_flow":recommendation_signature(toxic),
             "execution_quality":recommendation_signature(execution),
+            "liquidity_quality":recommendation_signature(liquidity),
+            "perp_crowding":recommendation_signature(crowding),
             "spread_multiplier":spread,
             "bid_size_multiplier":bid,
             "ask_size_multiplier":ask,
@@ -118,18 +138,34 @@ class AgentSupervisor:
         self._record_state("REGIME",regime.state.value,regime.reasons)
         self._record_state("TOXIC_FLOW",toxic.state.value,toxic.reasons)
         self._record_state("EXECUTION_QUALITY",execution.state.value,execution.reasons)
+        self._record_state("LIQUIDITY_QUALITY",liquidity.state.value,liquidity.reasons)
+        self._record_state("PERP_CROWDING",crowding.state.value,crowding.reasons)
+        self._record_state("PREDICTIVE_ADVERSE_SELECTION",predictive.state.value,predictive.reasons)
 
         return AgentSupervisorDecision(
             market=evidence.market,enabled=enabled,regime=regime,toxic_flow=toxic,
-            execution_quality=execution,spread_multiplier=spread,bid_size_multiplier=bid,
+            execution_quality=execution,liquidity_quality=liquidity,perp_crowding=crowding,
+            predictive_adverse_selection=predictive,spread_multiplier=spread,bid_size_multiplier=bid,
             ask_size_multiplier=ask,max_levels=max_levels,reasons=reasons,
             market_version=evidence.market_version,inventory_version=evidence.inventory_version,
             perp_version=evidence.perp_version,reference_version=evidence.reference_version,
             simulated=evidence.simulated,version=self.version,fingerprint=fingerprint,updated_at=utcnow(),
         )
 
-    def event_payload(self):
-        return [event.model_dump(mode="json") for event in self.events]
+    def event_payload(self, *, limit=250, agent=None):
+        if not 1 <= limit <= 250:
+            raise ValueError("agent event limit must be in [1,250]")
+        selected=[event for event in self.events if agent is None or event.agent==agent]
+        return [event.model_dump(mode="json") for event in selected[-limit:]]
+
+
+def _neutral_new(evidence, name, reason):
+    base=dict(agent=name,health=AgentHealth.ERROR,confidence=Decimal(0),
+        spread_multiplier=Decimal(1),bid_size_multiplier=Decimal(1),ask_size_multiplier=Decimal(1),
+        reasons=[reason],simulated=evidence.simulated,evidence_version=evidence.version,version=0)
+    if name=="LIQUIDITY_QUALITY":
+        return LiquidityQualityAgentOutput(**base,state=LiquidityQualityState.INSUFFICIENT_DATA,metrics=LiquidityQualityMetrics())
+    return PerpCrowdingAgentOutput(**base,state=PerpCrowdingState.INSUFFICIENT_DATA,metrics=PerpCrowdingMetrics())
 
 
 def transform_quotes(quotes,decision:AgentSupervisorDecision,*,center,tick_size,size_precision):

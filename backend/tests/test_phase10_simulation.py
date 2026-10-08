@@ -59,7 +59,7 @@ async def test_code_owned_engine_version_is_visible_and_fingerprint_bound(monkey
                 agent_config=AgentConfig(),risk_config=RiskFirewallConfig(),
                 simulation_config=SimulationConfig(max_frames=3))
     first=await SimulationEngine().run(**kwargs)
-    assert first.engine_version==version.SIMULATION_ENGINE_VERSION=="phase10.1-v2"
+    assert first.engine_version==version.SIMULATION_ENGINE_VERSION=="phase10.1-v3"
     monkeypatch.setattr(version,"SIMULATION_ENGINE_VERSION","test-implementation-v2")
     second=await SimulationEngine().run(**kwargs)
     assert second.engine_version=="test-implementation-v2"
@@ -231,6 +231,8 @@ def test_exact_pnl_equity_and_drawdown_math():
         regime=SimpleNamespace(state=SimpleNamespace(value="NORMAL")),
         toxic_flow=SimpleNamespace(state=SimpleNamespace(value="NORMAL")),
         execution_quality=SimpleNamespace(state=SimpleNamespace(value="NORMAL")),
+        liquidity_quality=SimpleNamespace(state=SimpleNamespace(value="HEALTHY")),
+        perp_crowding=SimpleNamespace(state=SimpleNamespace(value="NEUTRAL")),
     )
     inventory=SimpleNamespace(position_base=D("0"),inventory_ratio=D("0"))
     acc.record(authorized_quotes=[],inventory=inventory,risk_decision=risk,agent_decision=agent,equity=D("1100"),drawdown_pct=D("0"),actions=[])

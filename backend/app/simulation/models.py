@@ -10,6 +10,7 @@ from pydantic import BaseModel,ConfigDict,Field,computed_field,model_validator
 from app.market_data.models import MarketSnapshot
 from app.market_data.perp_context import PerpMarketContext
 from app.accounting.models import LedgerEntry, VaultSnapshot
+from app.research.ml.shadow_evaluation import ShadowEvaluationResult
 
 
 def _canonical(value):
@@ -124,6 +125,11 @@ class SimulationTracePoint(BaseModel):
     agent_regime:str
     toxic_flow_state:str
     execution_quality_state:str
+    liquidity_quality_state:str|None=None
+    perp_crowding_state:str|None=None
+    predictive_state:str|None=None
+    bid_adverse_probability:Decimal|None=None
+    ask_adverse_probability:Decimal|None=None
     risk_state:str
     desired_quote_count:int
     agent_quote_count:int
@@ -163,6 +169,8 @@ class SimulationMetrics(BaseModel):
     agent_regime_counts:dict[str,int]
     toxic_flow_state_counts:dict[str,int]
     execution_quality_state_counts:dict[str,int]
+    liquidity_quality_state_counts:dict[str,int]=Field(default_factory=dict)
+    perp_crowding_state_counts:dict[str,int]=Field(default_factory=dict)
 
 
 class SimulationResult(BaseModel):
@@ -180,6 +188,7 @@ class SimulationResult(BaseModel):
     vault:VaultSnapshot|None=None
     accounting_ledger:tuple[LedgerEntry,...]=()
     accounting_fingerprint:str|None=None
+    predictive_evaluation:ShadowEvaluationResult|None=None
 
 
 class ScoreComponents(BaseModel):
