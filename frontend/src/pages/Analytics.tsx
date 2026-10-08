@@ -52,6 +52,7 @@ export function SessionCharts() {
               >
                 <HistoryChart
                   points={h.data.points}
+                  fitKey={`${h.data.session_id}:${h.data.range}`}
                   lines={lines as HistoryLine[]}
                 />
               </Panel>

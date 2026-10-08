@@ -31,7 +31,7 @@ export function Strategy({ t }: { t: TerminalState }) {
                 t.risk_authorization.authorized ? "AUTHORIZED" : "BLOCKED",
               ],
               [
-                "Fingerprint",
+                "Final authorization envelope",
                 fingerprint(t.risk_authorization.authorization_fingerprint),
               ],
             ]}

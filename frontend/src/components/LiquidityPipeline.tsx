@@ -1,3 +1,4 @@
+import { authorizationLineage } from "../utils/authorizationLineage";
 import { useState } from "react";
 import type { TerminalState, Quote } from "../types";
 import { price, quantity, bps, number, fingerprint } from "../utils/format";
@@ -25,7 +26,8 @@ export function LiquidityPipeline({ t }: { t: TerminalState }) {
       quotes.find((x) => x.side === q.side && x.level_index === q.level_index),
     strategy = match(t.strategy_quotes),
     agent = match(t.agent_quotes),
-    final = match(t.authorized_quotes),
+    lineage = authorizationLineage(t, q),
+    final = lineage.final,
     resting = t.orders.find(
       (o) =>
         o.side === q.side &&
@@ -83,7 +85,7 @@ export function LiquidityPipeline({ t }: { t: TerminalState }) {
       "Final authorized",
       final?.price,
       final?.size,
-      final ? "SURVIVED · " + final.state : "SUPPRESSED / BLOCKED",
+      lineage.status,
     ],
     [
       "Resting CLOB",
@@ -110,8 +112,11 @@ export function LiquidityPipeline({ t }: { t: TerminalState }) {
           </select>
         </label>
         <span>
-          Final distance {bps(final?.distance_bps)} · authorization{" "}
-          {fingerprint(final?.authorization_fingerprint)}
+          Final distance {bps(final?.distance_bps)} · {lineage.status}
+          {lineage.status === "AUTHORIZED" && <>
+            <br />Authorized ladder fingerprint: {fingerprint(lineage.ladder)}
+            <br />Final authorization envelope: {fingerprint(lineage.envelope)}
+          </>}
         </span>
       </div>
       <div className="tableWrap">

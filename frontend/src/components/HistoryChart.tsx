@@ -8,6 +8,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import type { HistoryPoint } from "../types";
+import { boundedObservations, needsFit } from "../utils/terminalHistory";
 import { finite } from "../utils/format";
 export type HistoryLine = {
   key: keyof HistoryPoint;
@@ -18,15 +19,18 @@ export function HistoryChart({
   points,
   lines,
   height = 220,
+  fitKey = "initial",
 }: {
   points: HistoryPoint[];
   lines: HistoryLine[];
   height?: number;
+  fitKey?: string;
 }) {
   const container = useRef<HTMLDivElement>(null),
     chart = useRef<IChartApi | null>(null),
     series = useRef<Map<string, ISeriesApi<"Line">>>(new Map()),
-    setup = useRef(lines);
+    setup = useRef(lines),
+    fitted = useRef<string | null>(null);
   useEffect(() => {
     if (!container.current) return;
     const c = createChart(container.current, {
@@ -48,6 +52,7 @@ export function HistoryChart({
       rightPriceScale: { borderColor: "#223246" },
     });
     chart.current = c;
+    fitted.current = null;
     for (const line of setup.current)
       series.current.set(
         line.key,
@@ -72,7 +77,7 @@ export function HistoryChart({
   useEffect(() => {
     for (const line of lines) {
       const values = new Map<number, number | null>();
-      for (const p of points) {
+      for (const p of boundedObservations(points, 1000)) {
         const time = Math.floor(Date.parse(p.timestamp) / 1000),
           value = finite(p[line.key]);
         if (Number.isFinite(time)) values.set(time, value);
@@ -89,8 +94,11 @@ export function HistoryChart({
             ),
         );
     }
-    chart.current?.timeScale().fitContent();
-  }, [points, lines]);
+    if (needsFit(fitted.current, fitKey, points.length > 0)) {
+      chart.current?.timeScale().fitContent();
+      fitted.current = fitKey;
+    }
+  }, [points, lines, fitKey, height]);
   return (
     <div
       ref={container}

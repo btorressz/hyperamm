@@ -7,9 +7,10 @@ import {
   type IChartApi,
   type UTCTimestamp,
 } from "lightweight-charts";
-import type { TerminalState, HistoryRange, HistoryPoint } from "../types";
+import type { TerminalState, HistoryRange } from "../types";
 import { useTerminalHistory } from "../hooks/useTerminalHistory";
 import { useDisplayStore } from "../stores/display";
+import { boundedObservations, mergeHistory, chartData, needsFit, type ChartHistory, type Observation } from "../utils/terminalHistory";
 import { finite, timestamp } from "../utils/format";
 import { Panel, Empty } from "./TerminalPrimitives";
 const lines = [
@@ -35,10 +36,9 @@ export function PriceLiquidityChart({ t }: { t: TerminalState }) {
     ref = useRef<HTMLDivElement>(null),
     chart = useRef<IChartApi | null>(null),
     series = useRef(new Map<string, ISeriesApi<"Line">>()),
-    lastTimes = useRef(new Map<string, number>()),
-    retained = useRef(
-      new Map<string, Array<{ time: UTCTimestamp; value?: number }>>(),
-    );
+    retained = useRef<ChartHistory>({ session: t.session_id, range, points: [] }),
+    fitted = useRef<string | null>(null),
+    limit = useDisplayStore(s => s.historySize);
   useEffect(() => {
     if (history.data && !history.data.available_ranges.includes(range))
       setRange("session");
@@ -64,6 +64,7 @@ export function PriceLiquidityChart({ t }: { t: TerminalState }) {
       },
     });
     chart.current = c;
+    fitted.current = null;
     for (const [key, label, color] of lines)
       series.current.set(
         key,
@@ -86,38 +87,19 @@ export function PriceLiquidityChart({ t }: { t: TerminalState }) {
     };
   }, []);
   useEffect(() => {
-    if (history.data?.session_id !== t.session_id) return;
-    lastTimes.current.clear();
-    for (const [key] of lines) {
-      const values = new Map<number, number | null>();
-      for (const p of history.data.points) {
-        const time = Math.floor(Date.parse(p.timestamp) / 1000);
-        if (Number.isFinite(time)) values.set(time, finite(p[key]));
-      }
-      const data = [...values]
-        .sort((a, b) => a[0] - b[0])
-        .map(([time, value]) =>
-          value === null
-            ? { time: time as UTCTimestamp }
-            : { time: time as UTCTimestamp, value },
-        );
-      retained.current.set(key, data);
-      series.current.get(key)?.setData(data);
-      if (data.length) lastTimes.current.set(key, Number(data.at(-1)!.time));
-    }
-    chart.current?.timeScale().fitContent();
-  }, [history.data, t.session_id]);
-  useEffect(() => {
     for (const [key] of lines)
       series.current.get(key)?.applyOptions({ visible: visible.includes(key) });
   }, [visible]);
   useEffect(() => {
-    const time = Math.floor(Date.parse(t.emitted_at) / 1000);
-    if (!Number.isFinite(time)) return;
+    if (retained.current.session !== t.session_id || retained.current.range !== range) {
+      retained.current = { session: t.session_id, range, points: [] };
+      fitted.current = null;
+    }
     const auth = t.risk_authorization.authorized ? t.authorized_quotes : [],
       bids = auth.filter((q) => q.side === "BID"),
       asks = auth.filter((q) => q.side === "ASK");
-    const point: Partial<HistoryPoint> = {
+    const point: Observation = {
+      sequence: t.sequence, timestamp: t.emitted_at,
       mid_price: t.market.stale ? null : t.market.mid_price,
       fair_value: t.market.stale ? null : t.fair_value,
       strategy_reference_price: t.perp_context?.stale
@@ -133,31 +115,24 @@ export function PriceLiquidityChart({ t }: { t: TerminalState }) {
         ? Math.min(...asks.map((q) => Number(q.price)))
         : null,
     };
+    retained.current = { ...retained.current, points: boundedObservations([
+      ...retained.current.points, point,
+    ], limit) };
+    if (history.data) retained.current = mergeHistory(retained.current, history.data, limit);
     for (const [key] of lines) {
-      if (time < (lastTimes.current.get(key) ?? 0)) continue;
-      const value = finite(point[key]);
-      series.current
-        .get(key)
-        ?.update(
-          value === null
-            ? { time: time as UTCTimestamp }
-            : { time: time as UTCTimestamp, value },
-        );
-      const data = retained.current.get(key) ?? [];
-      const next =
-        value === null
-          ? { time: time as UTCTimestamp }
-          : { time: time as UTCTimestamp, value };
-      if (data.at(-1)?.time === time) data[data.length - 1] = next;
-      else data.push(next);
-      if (data.length > 1000) {
-        data.splice(0, data.length - 1000);
-        series.current.get(key)?.setData(data);
-      }
-      retained.current.set(key, data);
-      lastTimes.current.set(key, time);
+      series.current.get(key)?.setData(chartData(retained.current.points, key).map(p => {
+        const value = finite(p.value), time = p.time as UTCTimestamp;
+        return value === null ? { time } : { time, value };
+      }));
     }
-  }, [t]);
+    const fitKey = JSON.stringify([t.session_id, range]);
+    // Wait for range history before fitting so an explicit range change includes its data.
+    if (history.data?.session_id === t.session_id && history.data.range === range &&
+        needsFit(fitted.current, fitKey, retained.current.points.length > 0)) {
+      chart.current?.timeScale().fitContent();
+      fitted.current = fitKey;
+    }
+  }, [t, history.data, range, limit]);
   return (
     <Panel
       title="Price & authorized liquidity"
