@@ -41,6 +41,31 @@ Hyperliquid public API / explicit demo feed
 
 The React terminal consumes Pydantic-normalized REST/WebSocket state only. It never receives private keys, seed phrases or raw SDK objects.
 
+## A1-027 identity and provenance scopes
+
+HyperAMM deliberately uses several different identities. They are not
+interchangeable and none should be described as a complete evidence archive unless
+its contract explicitly says so:
+
+| Identity | What it means | What it does **not** mean |
+|---|---|---|
+| Market/perp/reference/agent/risk/accounting versions | Monotonic identity for declared material state/decision changes | Every raw provider packet, timestamp refresh or full historical evidence stream |
+| FinalQuoteAuthorization fingerprints | Canonical hashes over the fields bound by the authorization contract | A complete archive of all upstream wire messages or external source revisions |
+| Terminal `process_id` / `session_id` / `sequence` | Observation-process, context-session and emitted-observation ordering | Exchange order identity, economic-event identity or proof that every upstream packet was archived |
+| Simulation dataset/run fingerprints | Deterministic semantic dataset/config/result identity for the declared research contract | Automatic Git commit, dependency lock, compiler or machine provenance |
+| Accounting ledger fingerprint chain | Integrity linkage inside the active research ledger/session | Durable custody, database persistence or cross-restart reconstruction |
+
+Unchanged material decisions may legitimately retain a semantic version while
+display/receive timestamps advance. Conversely, a new terminal observation
+sequence does not require a new trading-authority version. Do not advance
+authority versions solely to capture UI timestamps or observability refreshes.
+
+If future research requires reproducible full-evidence provenance, add an immutable
+research record that explicitly captures the desired source revisions, inputs and
+environment metadata. Expanding the material fields of an existing authority hash
+is a compatibility/authority change and requires deliberate review rather than a
+documentation-only adjustment.
+
 ## Runtime
 
 `HyperAmmRuntime` composes services without merging their responsibilities. A strategy refresh reads one normalized snapshot, computes fair value, recenters virtual reserves while preserving `k`, builds quotes, applies risk validation, and reconciles against currently resting strategy orders. PAPER fills are deterministic touch/cross simulations and are explicitly labeled `SIMULATED PAPER FILL`.
