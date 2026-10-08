@@ -56,6 +56,7 @@ export type Quote = {
   risk_spread_multiplier?: Decimalish | null;
   risk_size_multiplier?: Decimalish | null;
   risk_state?: string | null;
+  /** Deprecated and unused; authorization belongs to the ladder envelope. */
   authorization_fingerprint?: string | null;
 };
 export type StrategyConfig = {

@@ -67,4 +67,6 @@ class QuoteLevel(BaseModel):
     risk_spread_multiplier: Decimal | None = None
     risk_size_multiplier: Decimal | None = None
     risk_state: str | None = None
+    # Deprecated, unused per-level surface; retained for canonical quote byte compatibility.
+    # Authorization belongs to FinalQuoteAuthorization; never populate this field.
     authorization_fingerprint: str | None = None

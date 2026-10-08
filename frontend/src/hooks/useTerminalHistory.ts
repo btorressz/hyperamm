@@ -8,7 +8,13 @@ export function useTerminalHistory(range: HistoryRange = "session") {
     limit = useDisplayStore((s) => s.historySize);
   return useQuery({
     queryKey: ["terminal-history", session, range, limit],
-    queryFn: () => api.terminalHistory(range, limit),
+    queryFn: async () => {
+      const history = await api.terminalHistory(range, limit);
+      // A reset while the GET is in flight must not seed another session's cache.
+      if (history.session_id !== session || history.range !== range)
+        throw new Error("History session/range changed during request");
+      return history;
+    },
     refetchInterval: 5000,
     enabled: !!session,
   });

@@ -56,7 +56,7 @@ export function Risk({ t }: { t: TerminalState }) {
             ["Vault drawdown", percentage(t.vault.drawdown_pct)],
             ["Accounting consistency", t.vault.execution_accounting.status],
             [
-              "Authorization fingerprint",
+              "Final authorization envelope",
               fingerprint(t.risk_authorization.authorization_fingerprint),
             ],
           ]}
