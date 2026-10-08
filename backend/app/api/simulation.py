@@ -12,6 +12,7 @@ from app.simulation import OptimizationObjectiveConfig,SimulationConfig,Simulati
 from app.simulation.optimizer import HARD_MAX_CANDIDATES
 from app.simulation.scenarios import ScenarioName
 from app.simulation.executor import ResearchBusyError
+from app.infrastructure.research import ResearchUnavailableError
 
 
 router=APIRouter(tags=["simulation"])
@@ -66,6 +67,8 @@ async def run_simulation(request:SimulationRunRequest,http_request:Request,rt=De
             simulation=request.simulation.model_copy(deep=True),
         )
         return result.model_dump(mode="json")
+    except ResearchUnavailableError as exc:
+        raise HTTPException(status_code=503,detail=str(exc)) from exc
     except ResearchBusyError as exc:
         raise HTTPException(status_code=429,detail=str(exc)) from exc
     except ValueError as exc:
@@ -87,6 +90,8 @@ async def optimize(request:OptimizationRequest,http_request:Request,rt=Depends(r
             objective=request.objective.model_copy(deep=True),max_candidates=request.max_candidates,frames=request.frames,top_n=request.top_n,
         )
         return result.model_dump(mode="json")
+    except ResearchUnavailableError as exc:
+        raise HTTPException(status_code=503,detail=str(exc)) from exc
     except ResearchBusyError as exc:
         raise HTTPException(status_code=429,detail=str(exc)) from exc
     except ValueError as exc:

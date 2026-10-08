@@ -331,3 +331,14 @@ runtime service startup also fails closed if a transport start raises.
 Current implementation is PAPER/guarded TESTNET research, not production readiness.
 See [Audit 1.0](../AUDIT_REPORT_1.0.md) for outstanding authority, lineage and
 provider limitations. Historical phase acceptance does not close those findings.
+
+## Optional ephemeral infrastructure
+
+[Redis infrastructure](REDIS.md) adds terminal distribution and WS/research
+resource coordination alongside the existing authoritative engine. The
+[pre-implementation inventory](REDIS_DESIGN.md) distinguishes AUTHORITATIVE,
+DURABLE-FUTURE, EPHEMERAL-DISTRIBUTABLE and LOCAL-CACHE state. Redis never supplies
+execution locks, market/risk evidence, decision-critical agent telemetry,
+FinalQuoteAuthorization, accounting/positions, canonical config or the kill latch.
+Future PostgreSQL persistence is explicitly not implemented. Local deployment
+and one engine/one worker remain required.

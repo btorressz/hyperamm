@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -47,6 +47,25 @@ class Settings(BaseSettings):
     coingecko_stale_after_seconds: float = Field(default=90.0, gt=0, le=3600)
 
     cors_origins: str = "http://localhost:5173"
+
+    redis_enabled: bool = False
+    redis_required: bool = False
+    redis_url: str = Field(default="redis://127.0.0.1:6379/0", repr=False)
+    redis_namespace: str = Field(default="hyperamm", min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    redis_terminal_channel: str = Field(default="terminal", min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    redis_default_ttl_seconds: int = Field(default=30, ge=10, le=300)
+    redis_worker_heartbeat_ttl_seconds: int = Field(default=15, ge=10, le=300)
+    redis_operation_timeout_seconds: float = Field(default=1, gt=0, le=5)
+    redis_research_enabled: bool = False
+
+    @model_validator(mode="after")
+    def redis_options(self):
+        from urllib.parse import urlsplit
+        if (self.redis_required or self.redis_research_enabled) and not self.redis_enabled:
+            raise ValueError("Redis required/research modes require redis_enabled")
+        if self.redis_enabled and urlsplit(self.redis_url).scheme not in {"redis", "rediss"}:
+            raise ValueError("Redis URL must use redis or rediss")
+        return self
 
     @property
     def cors_origin_list(self) -> list[str]:
