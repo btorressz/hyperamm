@@ -26,6 +26,21 @@ DETERMINISTIC
 
 It is not a live optimizer, autonomous trader, production execution simulator, or profitability guarantee.
 
+## A1-025 scientific-tooling boundary
+
+The current deterministic simulation and bounded optimizer do not require Pandas
+or SciPy to produce authoritative runtime decisions, and no scientific-library
+output is permitted to become signing, kill-switch, position, accounting-capital
+or Phase 8 authorization truth.
+
+If a concrete future workflow benefits from NumPy/Pandas/SciPy—for example dataset
+alignment, offline sensitivity analysis, calibration or uncertainty studies—it
+belongs in an **optional offline research path**. That path should consume exported
+immutable inputs, emit proposal/research outputs, record dataset identity and
+holdout assumptions, and require explicit review before any configuration is
+applied. Installing a scientific package by itself does not validate crossing-only
+fill economics, create out-of-sample evidence or justify live auto-application.
+
 ## Architecture
 
 Phase 10 deliberately reuses the production strategy stack:
