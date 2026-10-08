@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import re
+from datetime import datetime, timezone
 from urllib.parse import urlsplit, unquote
 from uuid import uuid4
 
@@ -45,12 +46,27 @@ class RedisInfrastructure:
         self.client = client
         self._owns_client = client is None
         self.last_error = None
+        self.last_success_at = None
+        self.connected = False
         self.worker_id = uuid4().hex
+
+    def health(self):
+        """Last observed operation state, never execution permission or a probe."""
+        return {
+            "enabled": self.settings.redis_enabled,
+            "required": self.settings.redis_required,
+            "status": ("DISABLED" if not self.settings.redis_enabled else
+                       "CONNECTED" if self.connected else "DEGRADED"),
+            "research_enabled": self.settings.redis_research_enabled,
+            "last_error": self.last_error,
+            "last_success_at": self.last_success_at,
+        }
 
     def key(self, *parts):
         return ":".join((self.settings.redis_namespace, *parts))
 
     def diagnose(self, exc):
+        self.connected = False
         url = self.settings.redis_url
         parsed = urlsplit(url)
         secrets = (url, unquote(parsed.password or ""), unquote(parsed.username or ""))
@@ -64,6 +80,9 @@ class RedisInfrastructure:
                 raise InfrastructureUnavailable()
             result = await asyncio.wait_for(getattr(self.client, method)(*args, **kwargs),
                                             self.settings.redis_operation_timeout_seconds)
+            self.connected = True
+            self.last_success_at = datetime.now(timezone.utc)
+            self.last_error = None
             return result
         except Exception as exc:
             self.diagnose(exc)
@@ -90,6 +109,7 @@ class RedisInfrastructure:
                 raise RuntimeError("Required Redis infrastructure unavailable at startup") from None
 
     async def close(self):
+        self.connected = False
         if self.client is not None and self._owns_client:
             try:
                 await asyncio.wait_for(self.client.aclose(), self.settings.redis_operation_timeout_seconds)

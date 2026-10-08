@@ -23,10 +23,12 @@ async def lifespan(app: FastAPI):
     app.state.runtime = HyperAmmRuntime(settings)
     app.state.simulation_executor = SimulationExecutor()
     app.state.terminal_relay = None
+    app.state.redis_infrastructure = None
     infrastructure = None
     try:
         if settings.redis_enabled:
             infrastructure = RedisInfrastructure(settings)
+            app.state.redis_infrastructure = infrastructure
             await infrastructure.start()
             identity = lambda: (app.state.runtime.terminal_service.process_id,
                                 app.state.runtime.terminal_service.session_id)

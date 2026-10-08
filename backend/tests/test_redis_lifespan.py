@@ -31,6 +31,10 @@ def test_disabled_mode_does_not_construct_a_redis_client(monkeypatch):
     monkeypatch.setattr(main, "RedisInfrastructure", unexpected)
     with TestClient(main.app) as client:
         assert main.app.state.terminal_relay is None
+        assert client.get("/api/v1/health").json()["redis"] == {
+            "enabled": False, "required": False, "status": "DISABLED",
+            "research_enabled": False, "last_error": None, "last_success_at": None,
+        }
         with client.websocket_connect("/ws/terminal") as ws:
             payload = ws.receive_json()
             assert payload["contract_version"] == "phase12-v1"
@@ -83,3 +87,39 @@ def test_required_redis_fails_before_engine_services_start(monkeypatch):
             pass
     rt.start_services.assert_not_awaited()
     assert not main.app.state.terminal_relay
+
+
+def test_health_is_read_only_sanitized_and_reports_recovery(monkeypatch):
+    server = wire_infrastructure(monkeypatch, required=True)
+    with TestClient(main.app) as client:
+        infra = main.app.state.redis_infrastructure
+        # Stop background observers so each HTTP response has a deterministic
+        # last-operation state. The local DEMO/PAPER runtime remains running.
+        client.portal.call(main.app.state.terminal_relay.close)
+        health = client.get("/api/v1/health").json()["redis"]
+        assert health["status"] == "CONNECTED"
+        assert health["enabled"] and health["required"] and health["research_enabled"]
+        assert health["last_success_at"] is not None
+        server.connected = False
+        assert client.post("/api/v1/simulation/run", json={"frames": 3}).status_code == 503
+        infra.diagnose(RuntimeError(
+            "redis://user:SYNTHETIC_VALUE@localhost:6379 "
+            "Authorization: Bearer SYNTHETIC_VALUE"))
+        call = infra.call
+        with monkeypatch.context() as context:
+            context.setattr(infra, "call", AsyncMock(side_effect=AssertionError("health probed Redis")))
+            response = client.get("/api/v1/health")
+            assert response.status_code == 200
+            assert response.json()["status"] == "ok"
+            assert response.json()["redis"]["status"] == "DEGRADED"
+            assert response.json()["redis"]["last_error"]
+            assert "SYNTHETIC_VALUE" not in response.text
+            infra.call.assert_not_awaited()
+        assert client.post("/api/v1/risk/kill").status_code == 200
+        assert main.app.state.runtime.risk.kill_switch_active
+        server.connected = True
+        client.portal.call(call, "ping")
+        recovered = client.get("/api/v1/health").json()["redis"]
+        assert recovered["status"] == "CONNECTED"
+        assert recovered["last_error"] is None
+        assert main.app.state.runtime.risk.kill_switch_active
