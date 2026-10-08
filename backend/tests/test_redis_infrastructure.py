@@ -319,3 +319,40 @@ def test_disabled_mode_and_required_mode_validation():
         Settings(_env_file=None, redis_enabled=True, redis_url="https://example.com")
     with pytest.raises(ValueError):
         Settings(_env_file=None, redis_namespace="unbounded:key")
+
+
+@pytest.mark.asyncio
+async def test_health_requires_success_and_tracks_sanitized_failure_and_recovery(caplog):
+    server = fakeredis.FakeServer()
+    client = fakeredis.aioredis.FakeRedis(server=server, decode_responses=True)
+    infra = RedisInfrastructure(Settings(_env_file=None, redis_enabled=True,
+        redis_required=True, redis_research_enabled=True,
+        redis_url="redis://user:SYNTHETIC_VALUE@localhost:6379"), client)
+    try:
+        assert infra.health()["status"] == "DEGRADED"
+        assert infra.health()["last_success_at"] is None
+        await infra.start()
+        connected = infra.health()
+        assert connected["status"] == "CONNECTED"
+        assert connected["required"] and connected["research_enabled"]
+        assert connected["last_success_at"].tzinfo == timezone.utc
+        server.connected = False
+        with pytest.raises(InfrastructureUnavailable):
+            await infra.call("ping")
+        assert infra.health()["status"] == "DEGRADED"
+        assert infra.health()["last_success_at"] == connected["last_success_at"]
+        infra.diagnose(RuntimeError(
+            "redis://user:SYNTHETIC_VALUE@localhost:6379 "
+            "Authorization: Bearer SYNTHETIC_VALUE"))
+        assert "SYNTHETIC_VALUE" not in repr(infra.health())
+        assert "SYNTHETIC_VALUE" not in caplog.text
+        server.connected = True
+        await infra.call("ping")
+        recovered = infra.health()
+        assert recovered["status"] == "CONNECTED"
+        assert recovered["last_error"] is None
+        assert recovered["last_success_at"] >= connected["last_success_at"]
+        await infra.close()
+        assert infra.health()["status"] == "DEGRADED"
+    finally:
+        await client.aclose()

@@ -130,6 +130,18 @@ replaced. No heartbeat/lease is an execution authorization or leader election.
 
 ## Failure and authority boundaries
 
+`GET /api/v1/health` includes a read-only `redis` object: `enabled`, `required`,
+`research_enabled`, `status` (`DISABLED`, `CONNECTED`, `DEGRADED`), sanitized
+`last_error`, and UTC `last_success_at` (null before the first success).
+Enabled infrastructure starts DEGRADED until an actual Redis operation succeeds;
+an operation/subscriber failure marks it DEGRADED, and a later successful operation
+clears the error and records recovery. Shutdown clears the connected state.
+This is the last observed operation outcome, not a live probe or a guarantee that
+every Redis function/subscription is healthy. The timestamp lets operators assess
+recency; the health request itself performs no Redis I/O. The overall API status
+stays `ok` during Redis degradation. This status never enters the terminal contract,
+risk firewall, authorization, kill switch, execution or accounting paths.
+
 Disabled mode creates no Redis client/tasks and preserves local publication and
 simulation behavior. Optional startup unavailability logs a sanitized degradation,
 starts the local engine normally and retries distribution. Local cached publication,
