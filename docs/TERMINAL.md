@@ -56,6 +56,15 @@ notices per authority. `execution_summary` retains full runtime status counts,
 PAPER fill count and actual gross filled notional. An explicit truncation flag
 warns if the active-order view is capped. TESTNET fill aggregates are null.
 `diagnostics` contains only testnet-enabled and firewall-enabled booleans.
+
+Public diagnostic fields (`error`, `message`, reasons, and warnings) in terminal
+snapshots/events and corresponding REST observations use a shared sanitizer
+before outward serialization. Within those
+selected fields, nested metadata strings are sanitized too. Complete labeled
+credentials, including Authorization scheme + credential values, are redacted;
+provider URLs are replaced with `[provider URL]`. Public diagnostic text remains
+bounded to 500 characters. Domain identifiers and fingerprints are preserved;
+this boundary does not mutate the underlying trading or risk decisions.
 No ledger, chart-history collection, simulation trace, optimizer results,
 credentials, signed payloads or environment dump is streamed.
 

@@ -1,3 +1,4 @@
+from app.diagnostics import sanitize_public_payload
 from fastapi import APIRouter, Depends, Query
 
 from app.dependencies import runtime
@@ -8,7 +9,7 @@ router = APIRouter(tags=["accounting"])
 
 @router.get("/vault")
 async def vault(rt=Depends(runtime)):
-    return await rt.vault_summary()
+    return sanitize_public_payload(await rt.vault_summary())
 
 
 @router.get("/accounting/pnl")
@@ -35,4 +36,4 @@ async def ledger(limit: int = Query(default=100, ge=1, le=500), rt=Depends(runti
 
 @router.get("/accounting/events")
 async def events(limit: int = Query(default=100, ge=1, le=500), rt=Depends(runtime)):
-    return [event.model_dump(mode="json") for event in rt.accounting_service.events(limit)]
+    return sanitize_public_payload([event.model_dump(mode="json") for event in rt.accounting_service.events(limit)])
