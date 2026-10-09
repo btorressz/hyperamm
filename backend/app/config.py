@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     coingecko_poll_interval_seconds: float = Field(default=20.0, gt=0, le=3600)
     coingecko_stale_after_seconds: float = Field(default=90.0, gt=0, le=3600)
 
+    yfinance_reference_enabled: bool = False
+    yfinance_symbol: str = "ETH-USD"
+    yfinance_stale_after_seconds: float = Field(default=30, gt=0, le=300)
+
     cors_origins: str = "http://localhost:5173"
 
     redis_enabled: bool = False

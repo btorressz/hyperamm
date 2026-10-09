@@ -62,6 +62,15 @@ export const api = {
   marketAdaptation: () => request("/market-adaptation"),
   perpContext: () => request("/perp-context"),
   references: () => request("/references"),
+  referenceObservations: () => request<{
+    market: string; authority: "NONE";
+    observations: Array<{
+      provider: string; symbol: string; role: string; authority: string;
+      price: string | null; source_timestamp: string | null; age_ms: number;
+      healthy: boolean; stale: boolean; status: string; error: string | null;
+      deviations_bps: Record<string, string | null>;
+    }>;
+  }>("/references/observations"),
   agents: () => request("/agents"),
   agentEvents: () => request("/agents/events"),
   riskEvidence: () => request("/risk/evidence"),

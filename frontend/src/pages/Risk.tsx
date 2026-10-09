@@ -1,3 +1,4 @@
+import { YahooObservationPanel } from "../components/YahooObservationPanel";
 import { ControlActions } from "../components/QuickStrategyControl";
 import { Panel, Metrics } from "../components/TerminalPrimitives";
 import { percentage, fingerprint } from "../utils/format";
@@ -88,6 +89,7 @@ export function Risk({ t }: { t: TerminalState }) {
         <ReferenceSourcesPanel t={t} />
         <RiskFirewallPanel t={t} />
       </div>
+      <YahooObservationPanel />
     </>
   );
 }

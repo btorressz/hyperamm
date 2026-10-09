@@ -419,36 +419,84 @@ class KrakenProvider:
     def snapshot(self):return self.state.snapshot()
 
 class CoinGeckoProvider:
+    """Tertiary reference; enabled credentials are sent only to an allowlisted host."""
     def __init__(self,*,market,enabled,coin_id,api_key,api_base_url,poll_interval_seconds,stale_after_seconds,on_update=None,client=None):
-        self.coin_id=coin_id;self.api_key=api_key;self.api_base_url=api_base_url.rstrip("/");self.poll_interval_seconds=poll_interval_seconds;self.client=client;self.owns_client=client is None
-        self.state=EvidenceState(market,ProviderId.COINGECKO,SourceType.AGGREGATOR_REFERENCE,coin_id,stale_after_seconds,enabled,on_update,Decimal("1"));self.task=None;self.closing=False
+        self.coin_id=coin_id;self.api_key=api_key;self.api_base_url=(api_base_url or "").rstrip("/")
+        self.poll_interval_seconds=poll_interval_seconds;self.client=client;self.owns_client=client is None
+        self.state=EvidenceState(market,ProviderId.COINGECKO,SourceType.AGGREGATOR_REFERENCE,coin_id,stale_after_seconds,enabled,on_update,Decimal("1"))
+        self.task=None;self.closing=False;self.failures=0
+
+    def validate_configuration(self):
+        from urllib.parse import urlsplit
+        if not self.state.enabled:return None
+        if not isinstance(self.coin_id,str) or not self.coin_id or not self.coin_id.isascii() or not all(c.islower() or c.isdigit() or c=="-" for c in self.coin_id):
+            raise ValueError("CoinGecko configured coin ID must be a lowercase slug")
+        if not isinstance(self.api_key,str) or not self.api_key.strip():
+            raise ValueError("CoinGecko enabled Demo/Pro requires API key")
+        if not 0<self.poll_interval_seconds<=3600 or not 0<self.state.stale_after_seconds<=3600:
+            raise ValueError("CoinGecko polling or staleness limits invalid")
+        try:
+            url=urlsplit(self.api_base_url)
+            host=url.hostname
+            port=url.port
+        except ValueError as exc:
+            raise ValueError("CoinGecko API URL invalid") from exc
+        if (url.scheme!="https" or url.netloc not in {"api.coingecko.com","pro-api.coingecko.com"}
+            or host not in {"api.coingecko.com","pro-api.coingecko.com"} or port is not None
+            or url.username or url.password or url.query or url.fragment or url.path!="/api/v3"):
+            raise ValueError("CoinGecko API URL must be the official HTTPS Demo/Pro endpoint")
+        return "x-cg-pro-api-key" if host=="pro-api.coingecko.com" else "x-cg-demo-api-key"
+
     def headers(self):
-        if not self.api_key:return {}
-        return {("x-cg-pro-api-key" if "pro-api.coingecko.com" in self.api_base_url else "x-cg-demo-api-key"):self.api_key}
+        key=self.validate_configuration()
+        return {key:self.api_key} if key else {}
+
     def normalize(self,payload):
-        if not isinstance(payload,dict) or not self.coin_id or not isinstance(payload.get(self.coin_id),dict):raise ValueError("CoinGecko missing configured coin ID")
+        if not isinstance(payload,dict) or not self.coin_id or not isinstance(payload.get(self.coin_id),dict):
+            raise ValueError("CoinGecko missing configured coin ID")
         item=payload[self.coin_id]
         if item.get("last_updated_at") is None:raise ValueError("CoinGecko missing last_updated_at")
         return decimal_price(item.get("usd"),"CoinGecko USD price"),parse_timestamp(item["last_updated_at"],"CoinGecko last_updated_at")
+
     def ingest(self,payload,observed_at=None):
         p,t=self.normalize(payload);return self.state.accept(p,t,observed_at,self.coin_id)
+
     async def poll_once(self):
-        if self.client is None:self.client=httpx.AsyncClient(timeout=10)
-        r=await self.client.get(f"{self.api_base_url}/simple/price",params={"ids":self.coin_id,"vs_currencies":"usd","include_last_updated_at":"true","precision":"full"},headers=self.headers())
-        if r.status_code==429:self.state.set_status(ProviderStatus.DEGRADED,"CoinGecko rate limited (429)");return
-        r.raise_for_status();self.ingest(r.json())
+        if not self.state.enabled:return False
+        try:headers=self.headers()
+        except ValueError as exc:
+            self.state.set_status(ProviderStatus.ERROR,str(exc));return False
+        try:
+            if self.client is None:self.client=httpx.AsyncClient(timeout=10,follow_redirects=False)
+            r=await self.client.get(f"{self.api_base_url}/simple/price",params={"ids":self.coin_id,"vs_currencies":"usd","include_last_updated_at":"true","precision":"full"},headers=headers)
+            if r.status_code==429 or r.status_code>=500:
+                self.state.set_status(ProviderStatus.DEGRADED,"CoinGecko temporarily unavailable");self.failures+=1;return True
+            if r.status_code>=400:
+                self.state.set_status(ProviderStatus.ERROR,f"CoinGecko HTTP {r.status_code}");return False
+            self.ingest(r.json());self.failures=0;return True
+        except (httpx.RequestError,TimeoutError):
+            self.state.set_status(ProviderStatus.DEGRADED,"CoinGecko network unavailable")
+        except (ValueError,TypeError):
+            self.state.set_status(ProviderStatus.DEGRADED,"CoinGecko response invalid")
+        except Exception:
+            self.state.set_status(ProviderStatus.DEGRADED,"CoinGecko transport unavailable")
+        self.failures+=1;return True
+
     async def start(self):
         if not self.state.enabled or self.task:return
-        if not self.coin_id:self.state.set_status(ProviderStatus.ERROR,"CoinGecko enabled but coin ID mapping missing");return
+        try:self.validate_configuration()
+        except ValueError as exc:
+            self.state.set_status(ProviderStatus.ERROR,str(exc));return
         self.closing=False;self.task=asyncio.create_task(self._run(),name="coingecko-reference")
+
     async def _run(self):
         while not self.closing:
-            try:await self.poll_once()
+            try:
+                if not await self.poll_once():break
+                delay=min(300,max(self.poll_interval_seconds,backoff(self.failures-1,rand=0))) if self.failures else self.poll_interval_seconds
+                await asyncio.sleep(delay)
             except asyncio.CancelledError:break
-            except httpx.HTTPStatusError as exc:self.state.set_status(ProviderStatus.ERROR,f"CoinGecko HTTP {exc.response.status_code}")
-            except Exception as exc:self.state.set_status(ProviderStatus.DEGRADED,str(exc))
-            try:await asyncio.sleep(self.poll_interval_seconds)
-            except asyncio.CancelledError:break
+
     async def stop(self):
         self.closing=True
         if self.task:
@@ -457,4 +505,5 @@ class CoinGeckoProvider:
             except asyncio.CancelledError:pass
             self.task=None
         if self.client is not None and self.owns_client:await self.client.aclose();self.client=None
+
     def snapshot(self):return self.state.snapshot()

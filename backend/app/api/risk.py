@@ -13,6 +13,10 @@ async def risk(rt=Depends(runtime)):
 async def references(rt=Depends(runtime)):
     return sanitize_public_payload(await rt.references_summary())
 
+@router.get("/references/observations")
+async def references_observations(rt=Depends(runtime)):
+    return sanitize_public_payload(await rt.references_observations_summary())
+
 @router.get("/risk/evidence")
 async def evidence(rt=Depends(runtime)):
     return sanitize_public_payload(await rt.risk_evidence_summary())
