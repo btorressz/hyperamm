@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 export function Panel({
   title,
   meta,
@@ -10,10 +10,11 @@ export function Panel({
   children: ReactNode;
   className?: string;
 }) {
+  const titleId = useId();
   return (
-    <section className={`panel ${className}`}>
+    <section className={`panel ${className}`} aria-labelledby={titleId}>
       <div className="panelHead">
-        <b>{title}</b>
+        <h2 id={titleId}>{title}</h2>
         <span>{meta}</span>
       </div>
       {children}
@@ -34,4 +35,36 @@ export function Metrics({ items }: { items: Array<[string, ReactNode]> }) {
 }
 export function Empty({ children }: { children: ReactNode }) {
   return <p className="emptyEvidence">{children}</p>;
+}
+
+export function Loading({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="loading panel" role="status" aria-live="polite">
+      <h2>{title}</h2>
+      <p>{children}</p>
+    </section>
+  );
+}
+
+export function StatusBanner({
+  children,
+  tone = "warn",
+}: {
+  children: ReactNode;
+  tone?: "warn" | "bad";
+}) {
+  return (
+    <div
+      className={`alert ${tone === "bad" ? "dangerText" : ""}`}
+      role={tone === "bad" ? "alert" : "status"}
+    >
+      {children}
+    </div>
+  );
 }

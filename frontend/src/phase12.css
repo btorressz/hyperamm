@@ -33,123 +33,6 @@ h2 {
   color: #95acc1;
   margin: 10px 0;
 }
-.app {
-  display: flex;
-}
-.sidebar {
-  position: sticky;
-  top: 0;
-  flex: 0 0 210px;
-  width: 210px;
-  padding: 20px 10px;
-  z-index: 8;
-}
-main {
-  flex: 1;
-  width: 0;
-  min-width: 0;
-}
-.sidebar.collapsed {
-  width: 68px;
-  flex-basis: 68px;
-}
-.sidebar.collapsed .brandCopy,
-.sidebar.collapsed .navLabel,
-.sidebar.collapsed .sideFooter span,
-.sidebar.collapsed .sideFooter small {
-  display: none;
-}
-.sidebar.collapsed .brand {
-  padding-left: 5px;
-}
-.brand {
-  padding-bottom: 28px;
-}
-.brand small {
-  font-size: 8px;
-}
-.collapseButton {
-  position: absolute;
-  right: 9px;
-  top: 72px;
-  padding: 0 6px !important;
-  height: 21px;
-}
-.nav {
-  justify-content: flex-start;
-  gap: 11px;
-  height: 40px;
-  font-size: 11px;
-}
-.navIcon {
-  color: #607c94;
-  font-size: 18px;
-  width: 20px;
-  text-align: center;
-}
-.nav.active .navIcon {
-  color: #61aaff;
-}
-.navLabel {
-  white-space: normal;
-}
-.sideFooter {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  line-height: 1.4;
-}
-.sideFooter b {
-  color: #b6cada;
-  font-size: 9px;
-}
-.sideFooter small {
-  font-size: 8px;
-}
-.topbar {
-  height: auto;
-  min-height: 90px;
-  padding: 13px 20px;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-.headerMarket {
-  min-width: 165px;
-}
-.marketTitle span {
-  font-size: 19px;
-  color: #e8f3ff;
-  font-variant-numeric: tabular-nums;
-}
-.headerContext {
-  display: flex;
-  gap: 20px;
-  flex: 1;
-}
-.headerContext div {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 65px;
-}
-.headerContext small {
-  font-size: 9px;
-  color: #6d879f;
-}
-.headerContext b {
-  font-size: 12px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-.headerBadges {
-  flex-wrap: wrap;
-  max-width: 490px;
-  gap: 5px;
-}
-.headerKill {
-  font-weight: 700;
-  font-size: 9px !important;
-}
 .truthBanner {
   background: #211e14;
   border-bottom: 1px solid #4f442a;
@@ -157,11 +40,6 @@ main {
   font-size: 9px;
   letter-spacing: 0.06em;
   padding: 6px 20px;
-}
-.content {
-  padding: 20px;
-  max-width: 2200px;
-  margin: auto;
 }
 .operatorTitle {
   display: flex;
@@ -538,198 +416,142 @@ th {
 .agentPanel {
   margin-top: 12px;
 }
-@media (min-width: 1440px) {
-  .dashboardTop {
+@media (min-width: 1440px) {.dashboardTop {
     grid-template-columns: minmax(0, 2.4fr) minmax(250px, 1fr) minmax(
         220px,
         0.8fr
       );
   }
+
+
 }
-@media (max-width: 1439px) {
-  .sidebar {
-    flex-basis: 190px;
-    width: 190px;
-  }
-  .topbar {
-    gap: 12px;
-  }
-  .headerBadges {
-    max-width: none;
-  }
-  .headerContext {
-    gap: 15px;
-  }
-  .dashboardTop {
+@media (max-width: 1439px) {.dashboardTop {
     grid-template-columns: minmax(0, 1.7fr) minmax(240px, 1fr);
   }
-  .dashboardTop > section:last-child {
+.dashboardTop > section:last-child {
     grid-column: 1/-1;
   }
-  .dashboardTop > section:last-child .terminalMetrics {
+.dashboardTop > section:last-child .terminalMetrics {
     grid-template-columns: repeat(4, 1fr);
   }
-  .dashboardTop > section:last-child .compactActions {
+.dashboardTop > section:last-child .compactActions {
     display: flex;
   }
-  .terminalKpis {
+.terminalKpis {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  .dashboardSecondary {
+.dashboardSecondary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .dashboardSecondary > section:nth-child(2) {
+.dashboardSecondary > section:nth-child(2) {
     grid-column: 1/-1;
     grid-row: 2;
   }
-  .dashboardSecondary > section:nth-child(2) .terminalMetrics {
+.dashboardSecondary > section:nth-child(2) .terminalMetrics {
     grid-template-columns: repeat(4, 1fr);
   }
-  .dashboardBottom {
+.dashboardBottom {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .dashboardBottom > section:last-child {
+.dashboardBottom > section:last-child {
     grid-column: 1/-1;
   }
-  .dashboardBottom .healthGrid {
+.dashboardBottom .healthGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .midGrid,
+.midGrid,
   .bottomGrid,
   .topGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+
 }
-@media (max-width: 1099px) {
-  .sidebar {
-    width: 68px;
-    flex-basis: 68px;
-  }
-  .brandCopy,
-  .navLabel,
-  .sideFooter span,
-  .sideFooter small,
-  .collapseButton {
-    display: none;
-  }
-  .brand {
-    padding-left: 5px;
-  }
-  .nav {
-    padding: 0 10px;
-  }
-  .headerContext {
-    flex-basis: 100%;
-  }
-  .content {
-    padding: 14px;
-  }
-  .headerBadges {
-    gap: 5px;
-  }
-  .operatorTitle {
+@media (max-width: 1099px) {.operatorTitle {
     align-items: flex-start;
     gap: 10px;
     flex-direction: column;
   }
-  .dashboardTop,
+.dashboardTop,
   .marketColumns,
   .pageGrid {
     grid-template-columns: 1fr;
   }
-  .dashboardTop > section:last-child {
+.dashboardTop > section:last-child {
     grid-column: auto;
   }
-  .twoColumns,
+.twoColumns,
   .midGrid,
   .bottomGrid,
   .topGrid {
     grid-template-columns: 1fr;
   }
-  .healthGrid {
+.healthGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .agentDiagnostics {
+.agentDiagnostics {
     grid-template-columns: 1fr;
   }
-  .formGrid {
+.formGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .vaultMetrics {
+.vaultMetrics {
     grid-template-columns: repeat(3, 1fr);
   }
+
+
 }
-@media (max-width: 767px) {
-  .topbar {
-    position: static;
-    padding: 12px;
-  }
-  .headerContext {
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .content {
-    padding: 10px;
-  }
-  .dashboardSecondary,
+@media (max-width: 767px) {.dashboardSecondary,
   .dashboardBottom {
     grid-template-columns: 1fr;
   }
-  .dashboardSecondary > section:nth-child(2) {
+.dashboardSecondary > section:nth-child(2) {
     grid-column: auto;
     grid-row: auto;
   }
-  .dashboardBottom > section:last-child {
+.dashboardBottom > section:last-child {
     grid-column: auto;
   }
-  .dashboardSecondary > section:nth-child(2) .terminalMetrics {
+.dashboardSecondary > section:nth-child(2) .terminalMetrics {
     grid-template-columns: repeat(2, 1fr);
   }
-  .terminalKpis {
+.terminalKpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .dashboardTop > section:last-child .terminalMetrics {
+.dashboardTop > section:last-child .terminalMetrics {
     grid-template-columns: repeat(2, 1fr);
   }
-  .dashboardBottom .healthGrid,
+.dashboardBottom .healthGrid,
   .healthGrid {
     grid-template-columns: 1fr;
   }
-  .formGrid,
+.formGrid,
   .riskList {
     grid-template-columns: 1fr;
   }
-  .vaultMetrics {
+.vaultMetrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .riskHero {
+.riskHero {
     flex-wrap: wrap;
     gap: 12px;
   }
-  .truthBanner {
+.truthBanner {
     padding: 7px 10px;
   }
-  .terminalMetrics strong {
+.terminalMetrics strong {
     font-size: 11px;
   }
-  .marketTitle {
-    font-size: 15px;
-  }
-  .headerContext b {
-    font-size: 11px;
-  }
-  .sidebar {
-    height: 100dvh;
-  }
-  .simMetrics,
+.simMetrics,
   .agentGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .riskFirewallGrid {
+.riskFirewallGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
+
+}
 .connectionNote {
   padding: 6px 20px;
   color: #7b94aa;

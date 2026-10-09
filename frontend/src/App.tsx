@@ -1,6 +1,12 @@
 import { displayedTerminal } from "./utils/freshness";
 import { TerminalDiagnostics } from "./components/TerminalDiagnostics";
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
 import "./styles.css";
@@ -11,6 +17,11 @@ import "./phase8.css";
 import "./phase9.css";
 import "./phase11.css";
 import "./phase12.css";
+import "./phase13.css";
+import { usePageNavigation } from "./hooks/usePageNavigation";
+import { useMobileNavigation } from "./hooks/useMobileNavigation";
+import type { PageName } from "./utils/navigation";
+import { Loading, StatusBanner } from "./components/TerminalPrimitives";
 import { useTerminalSocket } from "./hooks/useTerminalSocket";
 import { useTerminalStore } from "./stores/terminal";
 import { useDisplayStore } from "./stores/display";
@@ -45,17 +56,33 @@ export default function App() {
   const s = useTerminalStore(),
     t = s.terminal ? displayedTerminal(s.terminal, nowMs) : null,
     dense = useDisplayStore((d) => d.dense);
-  const [page, setPage] = useState("Dashboard");
+  const page = usePageNavigation();
+  const mobile = useMobileNavigation();
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const closeNavigation = useCallback(() => setNavigationOpen(false), []);
+  const pageContent = useRef<HTMLDivElement>(null);
+  const previousPage = useRef(page);
+  useEffect(() => {
+    document.title = `${page} · HyperAMM`;
+    if (previousPage.current !== page) {
+      previousPage.current = page;
+      closeNavigation();
+      pageContent.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
+  }, [page, closeNavigation]);
+  useEffect(() => {
+    if (!mobile) closeNavigation();
+  }, [mobile, closeNavigation]);
   let content: ReactNode;
   if (!t)
     content = (
-      <div className="loading panel">
-        <h2>Connecting to HyperAMM…</h2>
-        <p>Waiting for a valid backend terminal snapshot.</p>
-      </div>
+      <Loading title="Connecting to HyperAMM…">
+        Waiting for a valid backend terminal snapshot.
+      </Loading>
     );
   else {
-    const pages: Record<string, ReactNode> = {
+    const pages: Record<PageName, ReactNode> = {
       Dashboard: <Dashboard t={t} />,
       Markets: <Markets t={t} />,
       Strategy: <Strategy t={t} />,
@@ -73,29 +100,47 @@ export default function App() {
   }
   return (
     <div className={`app ${dense ? "dense" : ""}`}>
-      <Sidebar page={page} setPage={setPage} t={t} ws={s.wsState} />
-      <main>
-        <Header t={t} ws={s.wsState} />
+      <a
+        className="skipLink"
+        href="#page-content"
+        onClick={(event) => {
+          event.preventDefault();
+          pageContent.current?.focus();
+        }}
+      >
+        Skip to workspace
+      </a>
+      <Sidebar
+        page={page}
+        t={t}
+        ws={s.wsState}
+        mobile={mobile}
+        open={navigationOpen}
+        onClose={closeNavigation}
+      />
+      <main inert={mobile && navigationOpen}>
+        <Header
+          t={t}
+          ws={s.wsState}
+          navigationOpen={navigationOpen}
+          onOpenNavigation={() => setNavigationOpen(true)}
+        />
         {health.isError && (
-          <div className="alert" role="alert">
+          <StatusBanner tone="bad">
             Backend health endpoint unavailable.
-          </div>
+          </StatusBanner>
         )}
         {s.payloadError && (
-          <div className="alert dangerText" role="alert">
-            {s.payloadError}
-          </div>
+          <StatusBanner tone="bad">{s.payloadError}</StatusBanner>
         )}
         {s.wsState !== "connected" && t && (
-          <div className="alert" role="status">
+          <StatusBanner>
             TERMINAL STALE · {s.wsState.toUpperCase()} · displaying last valid
             snapshot. Reconnect attempts {s.reconnectAttempts}.
-          </div>
+          </StatusBanner>
         )}
         {s.connectionNotice && (
-          <div className="alert" role="status">
-            {s.connectionNotice}
-          </div>
+          <StatusBanner>{s.connectionNotice}</StatusBanner>
         )}
         {t?.market.simulated && (
           <div className="truthBanner">
@@ -106,14 +151,21 @@ export default function App() {
           </div>
         )}
         {t?.market.stale && (
-          <div className="alert">MARKET STALE · backend feed evidence</div>
+          <StatusBanner>MARKET STALE · backend feed evidence</StatusBanner>
         )}
         {t?.strategy.last_error && (
-          <div className="alert">Strategy notice: {t.strategy.last_error}</div>
+          <StatusBanner>Strategy notice: {t.strategy.last_error}</StatusBanner>
         )}
         <div className="content">
           <TerminalDiagnostics nowMs={nowMs} />
-          <TerminalBoundary key={page}>{content}</TerminalBoundary>
+          <div
+            id="page-content"
+            ref={pageContent}
+            tabIndex={-1}
+            aria-label={`${page} workspace`}
+          >
+            <TerminalBoundary key={page}>{content}</TerminalBoundary>
+          </div>
         </div>
       </main>
     </div>
