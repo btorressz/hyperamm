@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { Panel } from "./TerminalPrimitives";
 
-type ReferenceObservation = {
+export type ReferenceObservation = {
   provider: string; symbol: string; role: string; authority: string;
   price: string | null; source_timestamp: string | null; age_ms: number;
   healthy: boolean; stale: boolean; status: string; error: string | null;
@@ -24,13 +24,18 @@ export function YahooObservationPanel() {
     const timer = setInterval(() => { void update(); }, 10000);
     return () => { mounted = false; clearInterval(timer); };
   }, []);
-  const deviation = data?.deviations_bps.yahoo_vs_core_consensus_bps;
+  return <YahooObservationView data={data} error={error} />;
+}
+
+export function YahooObservationView({ data, error }: { data: ReferenceObservation | null; error: boolean }) {
+  const usable = data?.healthy && !data.stale && data.status === "HEALTHY";
+  const deviation = usable ? data?.deviations_bps.yahoo_vs_core_consensus_bps : null;
   return <Panel title="Yahoo Finance · Observational Only" meta="Research / local data · Authority NONE">
     <p className="muted">Not execution-authoritative. Not evidence of institutional provider acceptance.</p>
     {error ? <p>Observation diagnostics unavailable.</p> : !data ? <p>Loading observation diagnostics…</p> :
       <div className="riskList">
         <p>Symbol <b>{data.symbol}</b></p>
-        <p>Price <b>{data.healthy && data.price != null ? "$" + Number(data.price).toLocaleString() : "Unavailable"}</b></p>
+        <p>Price <b>{usable && data.price != null ? "$" + Number(data.price).toLocaleString() : "Unavailable"}</b></p>
         <p>Source timestamp <b>{data.source_timestamp ?? "—"}</b></p>
         <p>Source age at poll <b>{data.source_timestamp ? data.age_ms + " ms" : "—"}</b></p>
         <p>Status <b>{data.status}{data.stale ? " · STALE" : ""}</b></p>

@@ -22,6 +22,7 @@ from app.accounting.models import PnlBreakdown, AccountingNotice, ExecutionAccou
 from app.accounting.config import AccountingConfig
 from app.execution.quote_reconciler import ReconcileAction
 from app.references.models import ProviderStatus
+from app.references.consensus import MATERIAL_PROVIDERS
 from app.agents.models import MarketRegime, ToxicFlowState, ExecutionQualityState
 from app.strategy.market_adaptation import VolatilityRegime
 
@@ -74,6 +75,9 @@ def build_contract():
     for key,cls in [('agent_regime',RegimeAgentOutput),('agent_toxic_flow_state',ToxicFlowAgentOutput),('agent_execution_quality_state',ExecutionQualityAgentOutput)]:
         q[key]=nullable(defs[cls.__name__]['properties']['state'])
     defs['ReferenceConsensus']['properties']['confidence_state']=enum('VERIFIED','DEGRADED','CONFLICTED','INSUFFICIENT')
+    # PriceEvidence is also used by the separate observations REST API. Its
+    # shared enum must not expand the material phase12-v1 streaming contract.
+    defs['ProviderId']['enum']=[provider.value for provider in MATERIAL_PROVIDERS]
     defs['ReferenceConsensus']['properties']['source_statuses']['additionalProperties']=enum(*(x.value for x in ProviderStatus))
     defs['LiquidationEvidence']['properties']['status']=enum('FLAT','UNAVAILABLE','BREACHED','AVAILABLE')
     defs['AgentEvidenceSnapshot']['properties']['reference_confidence']=defs['ReferenceConsensus']['properties']['confidence_state']

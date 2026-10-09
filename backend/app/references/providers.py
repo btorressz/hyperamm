@@ -23,7 +23,10 @@ class EvidenceState:
         self._last_source_timestamp=source_timestamp
         if self.latest and self.latest.price is not None:
             d=abs((price-self.latest.price)/self.latest.price*Decimal("10000"))
-            if d<self.material_change_bps:
+            # Zero deadband means accept every changed price, not that an exact
+            # same-price observation is an economic change. Timestamp ordering
+            # above still rejects duplicates and regressions before recovery.
+            if price==self.latest.price or d<self.material_change_bps:
                 recovered=self.status!=ProviderStatus.HEALTHY
                 if recovered: self.version+=1
                 # An identical price is a new observation of that exact price. A
