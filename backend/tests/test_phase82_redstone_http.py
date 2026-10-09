@@ -416,7 +416,9 @@ def test_fastapi_serializes_single_effective_http_evidence_without_live_credenti
         r=client.get("/api/v1/references")
         assert r.status_code==200
         payload=r.json()
-        assert set(payload["evidence"])=={p.value for p in ProviderId}
+        from app.references.consensus import MATERIAL_PROVIDERS
+        assert set(payload["evidence"])=={p.value for p in MATERIAL_PROVIDERS}
+        assert ProviderId.YAHOO_FINANCE.value not in payload["evidence"]
         e=payload["evidence"]["REDSTONE"]
         assert e["transport"]=="PUBLIC_HTTP" and e["transport_quality"]=="FALLBACK"
         assert e["status"]=="HEALTHY" and e["price"]=="3000"

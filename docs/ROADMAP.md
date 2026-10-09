@@ -11,6 +11,7 @@
 | 6 | IN REVIEW | Deterministic realized-volatility and top-N L2 market adaptation implemented; local commands have passed; substantive review/live calibration remain |
 | 7 | IN REVIEW | Hyperliquid-native perp context and bounded vAMM reference pricing implemented; local commands have passed; substantive review/live calibration remain |
 | 8 | IN REVIEW | Multi-source reference integrity + deterministic risk firewall implemented; local fixtures passed, external-provider acceptance pending |
+| 8.3.1 | LOCALLY ACCEPTED — targeted gate | Six post-merge provider/schema/static regressions resolved; observational isolation fixture-tested; A2-005 and live-provider acceptance remain open |
 | 9 | IMPLEMENTED / IN REVIEW | Expanded deterministic/heuristic supervision and optional predictive ML SHADOW; separate acceptance remains pending |
 | 10 | IMPLEMENTED / IN REVIEW | Deterministic production-stack simulation + bounded grid optimization; Phase 10.1 hardening and full local acceptance passed |
 | 11 | IMPLEMENTED / IN REVIEW | Deterministic research vault/accounting, shared runtime/simulation ledger, simulated fees/funding, capital authority and Vault observability; local acceptance passed |
@@ -297,4 +298,149 @@ Optional Yahoo personal research observation: install `pip install -e '.[yahoo]'
 
 The separately polled `GET /api/v1/references/observations` endpoint and Risk-page card expose observational health, source age, prices and available signed comparison bps. Unavailable comparisons remain null. **Yahoo is excluded from CORE, ALL, the material reference snapshot, economic version/fingerprint, quorum, outlier decisions, risk, agents, authorization, accounting and execution.** It cannot replace RedStone, Kraken or Hyperliquid evidence or authorize trades. The Phase 12 streaming contract remains unchanged.
 
-**Licensing and acceptance:** Yahoo data is for permitted local personal/research observation only. Do not redistribute it publicly or use it for commercial trading without appropriate rights. Live CoinGecko and Yahoo connections, real schemas and reconnect acceptance have not been verified by this PR execution environment. Fixture tests are provided but need local execution. Historical Audit 2.0 issues A2-001–A2-005 are unchanged. No Actions files, Docker, PostgreSQL, Pyth, signing changes or new trading authority.
+**Licensing and acceptance:** Yahoo data is for permitted local personal/research observation only. Do not redistribute it publicly or use it for commercial trading without appropriate rights. Live CoinGecko and Yahoo connections, real schemas and reconnect acceptance remain pending. Phase 8.3.1 fixture and local command results are recorded in the roadmap; they do not establish live-provider acceptance. Historical Audit 2.0 issues A2-001–A2-005 are unchanged. No Actions files, Docker, PostgreSQL, signing changes or new trading authority. No additional oracle providers were introduced; unsupported oracle integrations remain prohibited.
+
+## Phase 8.3.1 — Post-Merge Regression & Acceptance Closure
+
+Acceptance recorded on **2026-10-08 (America/Los_Angeles)**. Fetched main before
+editing and rechecked before delivery: `21aa5bfc00360741b6c92466d4cce6f1ee0628df`.
+GitHub metadata confirms merged PR #36 is the latest relevant implementation;
+its 17-file diff, Audit 2.0, reference/architecture/roadmap and backend/frontend
+contracts were reviewed. Work started clean on
+`phase8/8-3-1-post-merge-acceptance`. Audit Reports 1.0 and 2.0 remain byte-for-byte
+unchanged; **A2-001 through A2-005 are not closed**.
+
+### Six reported regressions — verified dispositions
+
+| Finding | Before | Corrected behavior / evidence |
+|---|---|---|
+| Yahoo timestamp/version | Zero deadband treated an unchanged-price newer tick as a price change | Exact equality refreshes legitimate source time without price-version churn; replay/regression cannot refresh or recover health; actual changed price and health recovery retain version semantics |
+| RedStone evidence enumeration | Test assumed every registered identity was a material row | Test uses explicit six-row `MATERIAL_PROVIDERS`; singular RedStone effective transport remains intact; Yahoo stays in observations only |
+| Generated terminal schema | Shared enum added Yahoo to generated material provider types | Generator uses the six material identities; regeneration produces the existing schema exactly, with no committed schema/fixture changes |
+| Phase 8 static scan | Negative scope statement contained prohibited token | Generic wording in README and three docs; restriction and scanner retained |
+| Phase 9 static scan | Same four documentation matches | Existing static test passes unchanged |
+| Phase 10 static scan | Same four documentation matches | Existing static test passes unchanged; no `.github/` directory |
+
+**IMPLEMENTED:** bounded fixes above and safer stale/unhealthy Yahoo display.
+No authority, reserve economics, quote budgets, risk limits, signing permissions,
+provider hierarchy or infrastructure changes. No Phase 12.1 or Phase 13 work.
+
+**TESTED WITH FIXTURES:** 33 new backend cases in
+`tests/test_phase831_acceptance.py`. Source-time/version and positive material
+deadband tests complement PR #36's invalid/future/stale/mapping tests. CoinGecko
+tests cover official Demo/Pro headers, required configuration/no-request failure,
+the exact simple-price query, redirect non-following, sanitized network/decoding
+errors, stale source classification, bounded ten-poll retry schedules and owned
+client shutdown. Invalid enabled configuration leaves PAPER safely HALTed when
+quorum is unavailable, with no order and no manual kill mutation.
+
+The Yahoo non-authority matrix uses actual `ReferenceService`, runtime quote
+generation, `AgentSupervisor`, `RiskFirewall`, authorization, pre-transmission
+checks, `OrderManager`, PAPER adapter/fills and accounting. Identical material
+inputs and frozen clocks compare DISABLED, HEALTHY, DEGRADED, STALE, ERROR,
+UNAVAILABLE, +50%/-50% observations, replay and connection recovery, both with
+and without manual kill. Entire material snapshots (including consensus/counts,
+outliers/confidence), versions/fingerprints, agent/risk/authorization decisions,
+fair value, quote prices/sizes, CREATE/KEEP/REPLACE/CANCEL, fills, ledger/vault and
+capital authority remain equal. Observational responses vary independently.
+Real ASGI REST serialization and published terminal payloads exclude credentials;
+Yahoo is present only in the observations API. Reconnect fixtures verify
+resubscription and drainage of listener/watchdog/socket resources.
+
+Nine new frontend cases cover healthy/disabled/degraded/stale/error/unavailable
+display, explicit Authority NONE, response failures and rejection of Yahoo in
+material terminal evidence. All original 75 cases remain. This is fixture/render
+and command acceptance; no new interactive browser acceptance is claimed.
+
+### Local command results and limitations
+
+**LOCALLY ACCEPTED — targeted Phase 8.3.1 gate**, Python **3.12.14**, Linux,
+Node **24.19.0**, npm **11.9.0**. No tests were removed, suppressed, deselected or
+marked xfail to obtain these results.
+
+| Check | Exact outcome |
+|---|---|
+| Clean PR #36 baseline, requested eight focused files | **163 passed, 6 failed, 0 skipped, 1 warning; 1.23s** — all six reports reproduced |
+| Corrected requested eight files plus new acceptance file | **202 passed, 0 failed, 0 skipped, 1 warning; 2.14s** |
+| New acceptance file alone | **33 passed, 0 failed, 0 skipped; 1.60s** |
+| Full extra-enabled backend, first run | **1048 passed, 0 failed, 0 skipped, 1 warning; 53.00s** |
+| Full backend after final reconciliation assertions | **1048 passed, 0 failed, 0 skipped, 1 warning; 37.65s** |
+| Ten named A2-005 tests, independent run | **9 passed, 1 failed, 0 skipped, 1 warning; 2.02s** — `test_api.py::test_terminal_state_includes_market_adaptation_after_runtime_tick`, `concurrent.futures.CancelledError` |
+| Separate default `.[test]` install, Yahoo absent, provider/new acceptance files | **56 passed, 0 failed, 0 skipped; 1.43s**; pip check passed |
+| Complete extras install / pip check / compileall | Passed; no broken requirements |
+| Real Uvicorn DEMO/PAPER startup, six read-only REST routes, graceful shutdown | Passed; health/references/observations/risk/evidence/authorization HTTP 200; Yahoo DISABLED / Authority NONE; no strategy started |
+| `npm ci --cache /workspace/hyperamm/work/npm-cache` | Passed; scratch cache used after unwritable default cache |
+| `npm test` | Passed, all **5 test files** |
+| Explicit Node case reporter | **84 passed, 0 failed, 0 skipped** (75 existing + 9 new); 24.92s |
+| `npm run typecheck` / `npm run build` | Passed; Vite 7.3.6, 145 modules, 3.27s |
+| `npm audit --json` | **0 vulnerabilities** |
+| Generator/schema equality and valid/unavailable fixtures | Passed; checked-in schema unchanged |
+| `git diff --check`, scope/static checks | Passed; audit/dependency/lock files unchanged |
+
+Commands from repository root (the dedicated interpreters live in `work/`):
+
+```bash
+python -m venv work/venv
+work/venv/bin/python -m pip install -e 'backend[test,ml,redis,yahoo]'
+cd backend
+../work/venv/bin/python -m pip check
+../work/venv/bin/python -m compileall -q app
+../work/venv/bin/python -m pytest tests/test_phase8_provider_observations.py tests/test_phase8_references.py tests/test_phase82_redstone_http.py tests/test_phase8_authorization.py tests/test_audit_terminal_contract.py tests/test_phase8_static.py tests/test_phase9_static.py tests/test_phase10_static.py tests/test_phase831_acceptance.py -q
+../work/venv/bin/python -m pytest tests/test_phase831_acceptance.py -q
+../work/venv/bin/python -m pytest -q
+cd ..
+python -m venv work/default-venv
+work/default-venv/bin/python -m pip install -e 'backend[test]'
+cd backend
+../work/default-venv/bin/python -m pip check
+../work/default-venv/bin/python -m pytest tests/test_phase8_provider_observations.py tests/test_phase831_acceptance.py -q
+cd ../frontend
+npm ci --cache /workspace/hyperamm/work/npm-cache
+npm test
+npm run typecheck
+npm run build
+npm audit --json --cache /workspace/hyperamm/work/npm-cache
+NODE_PATH=/workspace/hyperamm/frontend/node_modules TERMINAL_TEST_BUILD=/workspace/hyperamm/work/frontend-tests node --test --test-isolation=none --test-reporter=tap tests/terminal.test.cjs tests/audit-lineage.test.cjs tests/freshness.test.cjs tests/agents.test.cjs tests/yahoo.test.cjs
+cd ..
+git diff --check
+```
+
+Independent WebSocket command from repository root:
+
+```bash
+work/venv/bin/python -m pytest \
+  backend/tests/test_api.py::test_terminal_state_includes_market_adaptation_after_runtime_tick \
+  backend/tests/test_api.py::test_terminal_state_includes_perp_context_after_runtime_tick \
+  backend/tests/test_api.py::test_phase8_terminal_serialization_and_secrets_absent \
+  backend/tests/test_api.py::test_phase9_agents_api_and_terminal_state \
+  backend/tests/test_audit_local_publisher.py::test_two_websockets_share_cached_observation_and_cleanup \
+  backend/tests/test_audit_local_publisher.py::test_local_loopback_request_and_browser_origin_work \
+  backend/tests/test_phase11_api_static.py::test_terminal_websocket_has_compact_accounting_without_full_ledger \
+  backend/tests/test_phase12_websocket.py::test_websocket_sequence_compact_fields_and_disconnect \
+  backend/tests/test_redis_lifespan.py::test_disabled_mode_does_not_construct_a_redis_client \
+  backend/tests/test_redis_lifespan.py::test_redis_websocket_relay_and_research_keep_existing_contracts -q
+```
+
+All ten named tests ran without suppression. Full-suite passing runs do **not**
+establish reproducible backend acceptance: the independent CancelledError and
+the user's **999 passed / 16 failed** MacBook record remain evidence. The ten
+reported failures remain the Phase 12.1 acceptance scope; this Linux run neither
+reproduces all ten nor closes A2-005. **Full backend acceptance remains pending.**
+
+Warning: upstream Starlette/httpx TestClient deprecation. Vite retains non-fatal
+TanStack Query `use client` notices; no EPIPE occurred in this production build,
+but Phase 12.1's reported Vite behavior remains pending. Initial sandbox-only
+TestClient runs stalled and were terminated; final tests used permitted loopback
+access. Dependency constraints were not changed: extras resolved Starlette 1.7.0,
+FastAPI 0.143.0, httpx 0.28.1, Pydantic 2.14.0, Redis 6.4.0 (default-only install
+8.1.0). No dependency root cause is claimed.
+
+**EXTERNAL ACCEPTANCE PENDING:** actual `yfinance==1.7.0` import and its
+AsyncWebSocket/subscribe/listen/close/context interfaces were inspected. Live
+subscription, decoded provider messages, source freshness, reconnect and cleanup
+were not verified. CoinGecko credentials are unavailable; CoinGecko and Yahoo
+hosts are absent from the configured restricted network allowlist, so no live
+request was attempted and no successful response is simulated. Commercial
+data-use/redistribution rights, signed venue acceptance and MacBook regression
+acceptance are separate outstanding gates. Yahoo's local personal/research-only
+licensing restriction remains documented.

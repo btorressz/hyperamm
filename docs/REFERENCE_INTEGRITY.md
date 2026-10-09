@@ -319,6 +319,31 @@ HL mid        <-> HL oracle
 
 Provider versions advance on materially changed economic or health state. Replayed/older observations do not advance. Newer observations below the configured material movement threshold can refresh freshness without forcing quote churn.
 
+Phase 8.3.1 makes exact price equality independent of the deadband: even with
+Yahoo's zero threshold, a legitimately newer unchanged-price observation updates
+the actual source timestamp and receipt/age fields, returns `False` for price
+change, and retains the price version. Every genuinely changed Yahoo price is
+accepted at zero deadband. Duplicate timestamps (including conflicting prices)
+and older timestamps return `False` without changing price, freshness or health.
+Missing timestamps are never fabricated; stale frames and timestamps more than
+five seconds ahead are rejected during Yahoo normalization. A new source frame
+can recover degraded/error health, incrementing the provider's health version;
+source-age-derived STALE recovers through the actual new timestamp without a
+price-version increment. These are observational provider fields, never material
+reference or authorization authority.
+
+RedStone/Kraken/CoinGecko retain their positive deadbands. The exact-equality
+branch already applied to them, so their behavior is unchanged: an identical
+new tick can refresh its own timestamp, while a suppressed different price
+cannot lend freshness to the retained price. Regression fixtures cover all three.
+
+`MATERIAL_PROVIDERS` lists the six existing material snapshot/terminal rows:
+CORE plus CoinGecko, Hyperliquid mid and mark. `ALL` remains the four consensus
+comparison sources, and CORE remains the three quorum roles. The broader
+`ProviderId` registry additionally names Yahoo for the separate observation API.
+It does not add a material row or vote. The terminal generator uses the explicit
+material list, preserving the existing checked-in `phase12-v1` schema exactly.
+
 `ReferenceSnapshot.version` changes when the normalized reference state materially changes. Final execution authority binds to that version.
 
 ## DEMO and LIVE PAPER
@@ -335,4 +360,4 @@ Optional Yahoo personal research observation: install `pip install -e '.[yahoo]'
 
 The separately polled `GET /api/v1/references/observations` endpoint and Risk-page card expose observational health, source age, prices and available signed comparison bps. Unavailable comparisons remain null. **Yahoo is excluded from CORE, ALL, the material reference snapshot, economic version/fingerprint, quorum, outlier decisions, risk, agents, authorization, accounting and execution.** It cannot replace RedStone, Kraken or Hyperliquid evidence or authorize trades. The Phase 12 streaming contract remains unchanged.
 
-**Licensing and acceptance:** Yahoo data is for permitted local personal/research observation only. Do not redistribute it publicly or use it for commercial trading without appropriate rights. Live CoinGecko and Yahoo connections, real schemas and reconnect acceptance have not been verified by this PR execution environment. Fixture tests are provided but need local execution. Historical Audit 2.0 issues A2-001–A2-005 are unchanged. No Actions files, Docker, PostgreSQL, Pyth, signing changes or new trading authority.
+**Licensing and acceptance:** Yahoo data is for permitted local personal/research observation only. Do not redistribute it publicly or use it for commercial trading without appropriate rights. Live CoinGecko and Yahoo connections, real schemas and reconnect acceptance remain pending. Phase 8.3.1 fixture and local command results are recorded in the roadmap; they do not establish live-provider acceptance. Historical Audit 2.0 issues A2-001–A2-005 are unchanged. No Actions files, Docker, PostgreSQL, signing changes or new trading authority. No additional oracle providers were introduced; unsupported oracle integrations remain prohibited.

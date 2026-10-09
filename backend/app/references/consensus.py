@@ -4,6 +4,9 @@ from .models import *
 
 CORE=[ProviderId.REDSTONE,ProviderId.HYPERLIQUID_ORACLE,ProviderId.KRAKEN]
 ALL=[*CORE,ProviderId.COINGECKO]
+# Material snapshot/terminal rows include venue mid and mark diagnostics too.
+# Registered observational identities are deliberately outside this contract.
+MATERIAL_PROVIDERS=(*ALL,ProviderId.HYPERLIQUID_MID,ProviderId.HYPERLIQUID_MARK)
 
 def _price(e,p):
     x=e.get(p.value)
