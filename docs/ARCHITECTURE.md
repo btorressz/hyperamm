@@ -392,3 +392,22 @@ Optional Yahoo personal research observation: install `pip install -e '.[yahoo]'
 The separately polled `GET /api/v1/references/observations` endpoint and Risk-page card expose observational health, source age, prices and available signed comparison bps. Unavailable comparisons remain null. **Yahoo is excluded from CORE, ALL, the material reference snapshot, economic version/fingerprint, quorum, outlier decisions, risk, agents, authorization, accounting and execution.** It cannot replace RedStone, Kraken or Hyperliquid evidence or authorize trades. The Phase 12 streaming contract remains unchanged.
 
 **Licensing and acceptance:** Yahoo data is for permitted local personal/research observation only. Do not redistribute it publicly or use it for commercial trading without appropriate rights. Live CoinGecko and Yahoo connections, real schemas and reconnect acceptance remain pending. Phase 8.3.1 fixture and local command results are recorded in the roadmap; they do not establish live-provider acceptance. Historical Audit 2.0 issues A2-001–A2-005 are unchanged. No Actions files, Docker, PostgreSQL, signing changes or new trading authority. No additional oracle providers were introduced; unsupported oracle integrations remain prohibited.
+
+## Phase 12.1 terminal connection ownership
+
+One AnyIO task group owns each terminal connection's send, disconnect and optional
+lease-loss monitors. The first terminal condition stops its siblings; all children
+are joined before bounded shielded lease/socket cleanup and subscription release.
+The local one-slot transport stops admission/publication and signals connected
+clients during runtime shutdown; its sentinel is internal and never a terminal
+message. The one runtime publisher and existing execution/venue-lock ordering
+remain authoritative. Redis leases coordinate admission only, release once under
+concurrent closure, and retain TTL recovery during outages. Stopped transports
+cannot publish cached observations into a new runtime session.
+
+TestClient's context exit cancels an AnyIO scope after sending disconnect. Mixing
+raw asyncio cancellation with an unshielded cleanup gather allowed an unmarked
+cancellation to escape that scope, explaining the intermittent A2-005 portal
+future failures. The supported version matrices, real proxy/browser observations,
+expected development disconnect diagnostics and pending macOS/external Redis
+checks are recorded in [Phase 12.1 acceptance](ROADMAP.md#phase-121--backend-websocket--local-runtime-reliability).

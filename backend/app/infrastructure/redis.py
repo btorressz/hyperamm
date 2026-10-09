@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import anyio
 import json
 import logging
 import re
@@ -141,8 +142,12 @@ class RedisLease:
         self.infrastructure, self.key, self.token, self.ttl = infrastructure, key, token, ttl
         self.lost = asyncio.Event()
         self._task = None
+        self._closed = False
+        self._close_lock = asyncio.Lock()
 
     def start(self):
+        if self._task is not None or self._closed:
+            raise RuntimeError("Redis lease already started or closed")
         self._task = asyncio.create_task(self._renew(), name="redis-admission-renewal")
         return self
 
@@ -159,10 +164,16 @@ class RedisLease:
             return
 
     async def close(self):
-        if self._task:
-            self._task.cancel()
-            await asyncio.gather(self._task, return_exceptions=True)
-        try:
-            await self.infrastructure.call("zrem", self.key, self.token)
-        except InfrastructureUnavailable:
-            pass  # Expiry recovers abandoned capacity.
+        with anyio.fail_after(6, shield=True):
+            async with self._close_lock:
+                if self._closed:
+                    return
+                if self._task:
+                    self._task.cancel()
+                    await asyncio.gather(self._task, return_exceptions=True)
+                    self._task = None
+                try:
+                    await self.infrastructure.call("zrem", self.key, self.token)
+                except InfrastructureUnavailable:
+                    pass  # Expiry recovers abandoned capacity; diagnose in call().
+                self._closed = True

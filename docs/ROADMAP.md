@@ -17,6 +17,7 @@
 | 11 | IMPLEMENTED / IN REVIEW | Deterministic research vault/accounting, shared runtime/simulation ledger, simulated fees/funding, capital authority and Vault observability; local acceptance passed |
 | 11.1 | ACCEPTED | High-water invariants and identity-based execution/accounting consistency hardening; local acceptance passed |
 | 12 | IMPLEMENTED / IN REVIEW | Full React operator terminal, versioned observation contracts, bounded history/events, health and lineage; local acceptance passed |
+| 12.1 | LINUX ACCEPTED / MACOS PENDING | Structured WebSocket cancellation, bounded subscriber/lease shutdown, reproducible test matrices and real browser/proxy acceptance; cross-platform A2-005 closure pending |
 
 ## Phase 6 extension points
 
@@ -444,3 +445,268 @@ request was attempted and no successful response is simulated. Commercial
 data-use/redistribution rights, signed venue acceptance and MacBook regression
 acceptance are separate outstanding gates. Yahoo's local personal/research-only
 licensing restriction remains documented.
+
+## Phase 12.1 — Backend, WebSocket & Local Runtime Reliability
+
+**LINUX ACCEPTANCE PASSED / MACOS ACCEPTANCE PENDING.** Targeted A2-005
+implementation and available-environment acceptance passed on 2026-10-08.
+Cross-platform closure remains pending the user's macOS Python 3.12.14 runs.
+The historical audit reports and earlier failure records are preserved.
+
+### Preflight and before/after
+
+Fetched current `main` at **b960f91ad580fb3ccd760e06b99d1f27cb9492df**, verified
+PR #37's merge, and branched as `phase12/12-1-websocket-runtime-reliability`.
+Reviewed Audit 2.0 A2-005, Phase 12 publisher/contracts/tests, architecture,
+roadmap, local runtime/Redis documentation, and frontend proxy/socket/store/
+validator. The initial checkout was clean; unrelated work was not changed.
+
+The user's previous Mac baseline was **999 passed / 16 failed / 1 warning**,
+including ten WebSocket teardown failures and six subsequently corrected
+Phase 8.3.1 regressions. PR #37's Linux full-suite pass did not establish
+repeatability: its separate ten-test run was **9 passed / 1 failed**.
+This investigation reproduced current-main failures independently:
+
+| Unchanged main check | Observed result |
+| --- | --- |
+| Exact ten historical tests | **9 passed, 1 failed, 0 skipped, 1 warning; 1.99s** |
+| Full default installation | **1046 passed, 1 failed, 1 skipped, 1 warning; 32.93s** |
+| Each historical test in its own original-main process | **7 passed / 3 failed processes**; perp-context, agent-state and nested local-client teardown failures |
+| Minimal cancellation tracing of the ten tests | **9 passed, 1 failed**; unmarked `CancelledError()` escaped handler cleanup |
+
+The isolated failure was market-adaptation terminal context exit; the full-suite
+failure was nested Redis terminal context exit. Frames had already been received.
+One default-only skip is optional offline ML training when sklearn is absent;
+it is unrelated to WebSockets and runs with the ML extra.
+
+### Root cause and ownership correction
+
+Starlette `WebSocketTestSession.__exit__` sends a disconnect, calls its AnyIO
+cancel scope, then reads the portal future. The previous handler cancelled raw
+`asyncio.create_task` children and awaited an unshielded `asyncio.gather` in
+`finally`. A trace on unchanged main caught **`CancelledError()` without AnyIO's
+scope marker at websocket.py's cleanup gather (old line 73)**. Other orderings
+raised the marked cancellation instead and passed. AnyIO distinguishes its own
+scope cancellation from native asyncio cancellation; the unmarked exception
+escapes Starlette's scope and cancels the portal future, producing
+`concurrent.futures.CancelledError`. This is an application ownership/cleanup
+race exposed by the TestClient implementation, rather than connection admission
+or failed initial-frame establishment. Installing a different HTTP client is
+unnecessary to correct it.
+
+`backend/app/api/websocket.py` now owns send, receive and lease-loss operations
+in one AnyIO task group. The first terminal condition cancels siblings, and group
+exit joins them before resource release. Expected disconnect and the existing
+five-second send timeout terminate the connection; unexpected errors propagate.
+Native parent cancellation is preserved. Bounded, shielded cleanup releases the
+lease and closes only a still-owned accepted connection, then detaches the local
+subscription. No close follows an observed peer disconnect. Cleanup failure
+preserves both the original failure and cleanup failure in an exception group.
+
+`terminal_transport.py` stops admission/publication, clears cached wire, and
+signals shutdown through the existing one-slot queues. The internal sentinel
+never enters `phase12-v1`. Shutdown waits up to twelve seconds for handlers to
+release ownership; slow sends retain their five-second budget and owned cleanup
+has a six-second budget. `runtime.py` stops its one observation publisher and
+signals local/relay subscribers before existing economic service shutdown, then
+awaits subscriber drain. Runtime lifespans create new sessions; a stopped runtime
+cannot be restarted into an old session. The existing venue reconciliation and
+execution-lock ordering remain intact. `main.py` attempts infrastructure closure
+even when relay closure raises.
+
+`redis.py` makes lease shutdown shielded, bounded and idempotent under concurrent
+close calls, joins renewal before one release attempt, and rejects duplicate
+renewal start. Failed release still reports infrastructure degradation and relies
+on the existing token TTL. Redis subscription startup uses a bounded shielded
+`finally` release when admission cannot complete. Relay duplicate start is
+rejected; closing joins all three relay/heartbeat workers even if subscriber
+drain fails. Existing outage/reconnect, capacity, stale-cache, session/process,
+sequence/time and fail-closed tests remain in force. Redis remains ephemeral
+observation/resource infrastructure and has no trading authority.
+
+The only dependency declaration addition is **`anyio>=4,<5`**, because application
+code now directly uses AnyIO's structured concurrency and shielding APIs.
+Existing transitive versions were retained; no dependency downgrade or httpx2
+workaround was applied.
+
+### Verified dependency matrix
+
+Each installation used a separate Python **3.12.14** Linux virtual environment.
+
+| Dependency | `.[test]` | `.[test,ml,redis]` | `.[test,ml,redis,yahoo]` |
+| --- | --- | --- | --- |
+| FastAPI | 0.143.0 | 0.143.0 | 0.143.0 |
+| Starlette | 1.7.0 | 1.7.0 | 1.7.0 |
+| AnyIO | 4.15.1 | 4.15.1 | 4.15.1 |
+| httpx / httpcore | 0.28.1 / 1.0.9 | same | same |
+| httpx2 | absent | absent | absent |
+| pytest / pytest-asyncio | 8.4.2 / 0.26.0 | same | same |
+| Uvicorn / websockets | 0.54.0 / 15.0.1 | same | same |
+| redis / fakeredis | 8.1.0 / 2.39.0 | 6.4.0 / 2.39.0 | 6.4.0 / 2.39.0 |
+| sklearn / yfinance | absent / absent | 1.9.1 / absent | 1.9.1 / 1.7.0 |
+
+Both Redis client combinations pass. Fakeredis brings a Redis client into the
+test environment, but disabled application mode never constructs an
+infrastructure client or lease. Default mode does not require a running Redis
+service. `pip check` and `compileall -q app` pass in every matrix environment.
+The remaining single warning is upstream Starlette's httpx TestClient
+deprecation. It is documented and does not imply httpx2 solves the race.
+These are tested combinations, not a claim that every version in the declared
+ranges has been tested or that Linux establishes macOS compatibility.
+
+### Regression and repeatability acceptance
+
+`backend/tests/test_phase121_websocket_reliability.py` adds **21 cases**: nested
+clients closing in both orders with/without Redis, early and blocked-send
+disconnect, AnyIO level cancellation with an event-gated child drain, native parent
+cancellation propagation, unexpected send errors, transport disconnect without
+duplicate close, accept failure, lease loss, concurrent lease release, repeated
+lifespans with connected clients, post-shutdown admission rejection, unchanged
+real PAPER orders/accounting/authorization under reconnect (including manual
+kill), cancellation during accept with real fakeredis capacity, duplicate relay
+start/identity replay, and preservation of original plus cleanup errors.
+Synchronization uses events and bounded deadlines; sleeps do not make race tests
+pass. Replaying the event-gated cancellation test against the original handler
+fails. The accept-cancellation test additionally checks actual Redis capacity release.
+Existing local-only and forwarded-header security tests remain unchanged.
+
+| Final verification | Result |
+| --- | --- |
+| New regression file | **21 passed, 0 failed, 0 skipped, 1 warning** |
+| Focused existing + new WebSocket files | **66 passed, 0 failed, 0 skipped, 1 warning** |
+| Each of the exact ten historical tests, separately | **10/10 processes passed** |
+| Ten historical tests together, ten fresh processes | **100 passed total**, no failure/timeout; normal/reverse/seeded shuffled orders |
+| New regression file, ten fresh processes | **210 passed total**, no failure/timeout |
+| Full default suite, three fresh processes | **1068 passed, 0 failed, 1 skipped, 1 warning per run** |
+| Full extended installation | **1069 passed, 0 failed, 0 skipped, 1 warning** |
+| Full complete optional installation | **1069 passed, 0 failed, 0 skipped, 1 warning** |
+| Frontend locked installation / tests | **84 passed, 0 failed, 0 skipped** |
+| TypeScript / production build | Passed; Vite **7.3.6**, Node **24.19.0**, npm **11.9.0** |
+| Generated terminal schema equality | Passed; `phase12-v1` and committed schema unchanged |
+| Historical audit bytes / scope / diff whitespace | Preserved / reviewed / passed |
+
+No test was weakened, skipped for cancellation, or marked xfail. No automatic
+rerun plugin was used. Two initial new-test fixture assertions were corrected to
+seed real market evidence and respect authorization's intentional null value
+under manual kill. One initial sandbox-only full-suite launch was stopped and
+replaced with a proper loopback-enabled invocation; it is not counted as a pass.
+
+### Vite EPIPE and real integration
+
+A real Uvicorn backend and Vite frontend ran on `127.0.0.1:8000` and
+`localhost:5173`, using DEMO/PAPER with testnet-order submission disabled.
+The four requested REST routes (`health`, `references`, `risk`, `vault`) returned
+200 through Vite. An independent websockets client completed **24 sequential
+connections and two pairs of simultaneous clients**, received valid shared
+session/process frames, and closed cleanly. The actual compiled frontend socket
+controller, using Node's real WebSocket implementation, started before the backend,
+retained its valid-frame timestamp while disconnected, then recovered only from
+valid new-process evidence after a backend-process restart. Services stopped
+gracefully and backend logs contained no unexpected exception.
+
+Actual headless **Chromium 151.0.7922.173** UI acceptance also passed: five page
+refreshes, three local tabs, tab closure, Uvicorn stop/start while the page remained
+open, visible disconnected state with unchanged last-valid timestamp, a new-session
+frame/restart notice, and a real Vite hot update of the existing socket module.
+Direct inspection of the real runtime confirmed zero clients after tabs closed
+and shutdown, completed publisher/venue tasks, and clean repeated lifespans.
+There were no browser page exceptions. A nonfatal browser resource 404 was logged
+but not identified by page-response monitoring; it is not counted as an all-clean
+browser console. An initial browser harness used Promise-valued polling predicates
+and failed its evidence assertion; synchronous store polling corrected the harness
+and the actual checks subsequently passed.
+
+**EPIPE was reproduced independently after A2-005 was fixed.** Vite logged
+`write EPIPE` during deliberate browser refresh/remount/connection replacement,
+while the backend continued delivering valid terminal frames and clients cleaned
+up. Its bundled proxy writes an upgrade response and pipes the browser/upstream
+sockets; close cleanup ends the partner socket, so in-flight writes to an abandoned
+socket can fail. Development React StrictMode mounts/unmounts the socket effect;
+the existing cleanup closes that obsolete connection. Backend absence produced
+`ECONNREFUSED`; stopping/restarting or abandoning active sockets also produced
+`ECONNRESET`. These are observed transport-disconnection diagnostics, separate
+from the unmarked cancellation escaping TestClient cleanup. No evidence required
+a frontend reconnect or proxy change: existing obsolete-socket guards, one retry
+timer, bounded backoff, watchdog cleanup, invalid-frame timestamp protection and
+provider freshness tests passed. Proxy logs remain enabled. An EPIPE on a stable
+active connection, loss of valid recovery, leaked client, or backend exception
+still requires investigation; this record does not classify every EPIPE as benign.
+
+### Exact Linux and macOS verification
+
+For each dependency matrix, create a separate Python 3.12 environment, install
+the indicated extras, and run the same commands; do not mutate one installation
+between matrix results:
+
+```bash
+cd backend
+python3.12 -m venv ../work/phase121-default
+source ../work/phase121-default/bin/activate
+python -m pip install -e '.[test]'
+python -m pip check
+python -m compileall -q app
+python -m pytest -q
+python -m pytest -q tests/test_api.py tests/test_audit_local_publisher.py \
+  tests/test_phase11_api_static.py tests/test_phase12_websocket.py \
+  tests/test_redis_lifespan.py tests/test_phase121_websocket_reliability.py
+```
+
+For the user's Mac, confirm `python --version` is **3.12.14**, then use this exact
+repeatability block from `backend/` in the supported virtualenv:
+
+```bash
+historical=(
+  tests/test_api.py::test_terminal_state_includes_market_adaptation_after_runtime_tick
+  tests/test_api.py::test_terminal_state_includes_perp_context_after_runtime_tick
+  tests/test_api.py::test_phase8_terminal_serialization_and_secrets_absent
+  tests/test_api.py::test_phase9_agents_api_and_terminal_state
+  tests/test_audit_local_publisher.py::test_two_websockets_share_cached_observation_and_cleanup
+  tests/test_audit_local_publisher.py::test_local_loopback_request_and_browser_origin_work
+  tests/test_phase11_api_static.py::test_terminal_websocket_has_compact_accounting_without_full_ledger
+  tests/test_phase12_websocket.py::test_websocket_sequence_compact_fields_and_disconnect
+  tests/test_redis_lifespan.py::test_disabled_mode_does_not_construct_a_redis_client
+  tests/test_redis_lifespan.py::test_redis_websocket_relay_and_research_keep_existing_contracts
+)
+for run in {1..10}; do python -m pytest -q "${historical[@]}" || break; done
+for run in {1..10}; do
+  python -m pytest -q tests/test_phase121_websocket_reliability.py || break
+done
+for run in {1..3}; do python -m pytest -q || break; done
+```
+
+Use the extended `.[test,ml,redis]` and complete `.[test,ml,redis,yahoo]` extras in
+separately named environments as above. Capture versions with `python -m pip
+freeze` and preserve every failed run/trace; do not count only a later green run.
+In two local shells, start:
+
+```bash
+# Backend shell, from backend/ with the chosen virtualenv activated
+MARKET_DATA_MODE=DEMO EXECUTION_MODE=PAPER \
+ENABLE_HYPERLIQUID_TESTNET_ORDERS=false \
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Frontend shell, from frontend/
+npm ci
+npm test
+npm run typecheck
+npm run build
+npm run dev
+```
+
+Visit `http://localhost:5173`; verify the four REST routes and valid terminal
+frames, refresh five times, use two additional tabs and close them. Stop the
+backend with Ctrl-C while one tab stays open: require disconnected/stale state
+without a new valid-frame timestamp. Restart it and require valid new session/
+process evidence before connected/current state returns. Check invalid payloads
+and stale providers cannot become fresh merely because the socket opens. Close
+all tabs and gracefully stop both services. Record backend/Vite logs and exact
+versions, correlate EPIPE with deliberate closes, and report unexplained errors
+while an active connection should be healthy.
+
+**Pending:** the user's Mac full/ten-test repeatability and browser/proxy checks;
+external Redis service connection/outage/reconnect/shutdown (no real Redis server
+was available here). Fakeredis acceptance does not establish external Redis
+acceptance. Live providers and signed exchange acceptance remain outside this
+milestone. Trading mathematics, risk/kill, final authorization, signing, PAPER
+settlement/accounting and the terminal schema are unchanged. A2-005's targeted
+Linux correction is accepted; full cross-platform closure is not claimed.

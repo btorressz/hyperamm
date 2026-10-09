@@ -47,10 +47,12 @@ async def lifespan(app: FastAPI):
             try:
                 await app.state.runtime.stop_services()
             finally:
-                if app.state.terminal_relay is not None:
-                    await app.state.terminal_relay.close()
-                if infrastructure is not None:
-                    await infrastructure.close()
+                try:
+                    if app.state.terminal_relay is not None:
+                        await app.state.terminal_relay.close()
+                finally:
+                    if infrastructure is not None:
+                        await infrastructure.close()
 
 
 app = FastAPI(title="HyperAMM API", version="0.12.0", lifespan=lifespan)
