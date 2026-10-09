@@ -2,8 +2,10 @@
 
 Implementation and Linux fixture acceptance apply to the Phase 12.2 feature
 branch, based on verified main `70a13c04a69924830487c934513e39d363ae653c`.
-The PR must remain draft and unmerged. macOS, external providers, external Redis
-and signed venue acceptance are separate gates.
+PR #39 is **MERGED** into main at
+`777b59f42273442bc3387220e9eecfd5fc2da1ad`. The evidence below records its
+original branch acceptance. macOS, external providers, external Redis and signed
+venue acceptance remain separate gates.
 
 ## Linux environments and commands
 
@@ -143,14 +145,12 @@ before switching branches. Do not discard modifications.
 cd ~/Desktop/hyperamm
 git status
 git fetch origin
-# For merged-main/PR #38 acceptance:
+# For merged Phase 12.1/12.2 acceptance:
 git switch main
 git pull --ff-only origin main
 git log -1 --oneline
-# For this still-unmerged Phase 12.2 PR, instead select its feature branch:
-# git switch --track origin/phase12/12-2-amm-core-quote-hardening
-# If it already exists locally: git switch phase12/12-2-amm-core-quote-hardening
-# git pull --ff-only origin phase12/12-2-amm-core-quote-hardening
+# PR #39 is merged; current main includes Phase 12.2.
+# Its feature branch is retained only for historical comparison.
 ```
 
 Use the established Python 3.12 environment and confirm **3.12.14** before testing:
