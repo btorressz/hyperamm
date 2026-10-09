@@ -15,9 +15,9 @@ export function OrderTable({
           <tr>
             <th>Time</th>
             <th>Side</th>
-            <th>Price</th>
-            <th>Size</th>
-            <th>Filled</th>
+            <th className="numeric">Price</th>
+            <th className="numeric">Size</th>
+            <th className="numeric">Filled</th>
             <th>Source / status</th>
             <th>Reconciliation</th>
           </tr>
@@ -30,9 +30,9 @@ export function OrderTable({
                 <td className={o.side === "BID" ? "bidText" : "askText"}>
                   {o.side}
                 </td>
-                <td>{price(o.price)}</td>
-                <td>{quantity(o.size)}</td>
-                <td>{quantity(o.filled_size)}</td>
+                <td className="numeric">{price(o.price)}</td>
+                <td className="numeric">{quantity(o.size)}</td>
+                <td className="numeric">{quantity(o.filled_size)}</td>
                 <td>
                   {o.fill_source ?? t.strategy.config.execution_mode} ·{" "}
                   {o.status}

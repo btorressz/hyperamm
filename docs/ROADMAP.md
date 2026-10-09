@@ -19,6 +19,10 @@
 | 12 | IMPLEMENTED / IN REVIEW | Full React operator terminal, versioned observation contracts, bounded history/events, health and lineage; local acceptance passed |
 | 12.1 | LINUX ACCEPTED / MACOS PENDING | Structured WebSocket cancellation, bounded subscriber/lease shutdown, reproducible test matrices and real browser/proxy acceptance; cross-platform A2-005 closure pending |
 | 12.2 | LINUX ACCEPTED / MACOS & LIVE PENDING | Executable price-distance integrity, strategy precision/feasibility and effective-price depth; logical slots preserved, stronger collapse policy deferred |
+| 12.3 | MERGED / LINUX ACCEPTED / MACOS PENDING | Terminal freshness, process/session integrity and bounded replay protection; prior external/soak gates remain |
+| 13.1 | IMPLEMENTED / LOCAL ACCEPTANCE PASSED / DRAFT REVIEW | Shared institutional design, persistent navigation, responsive accessible shell; no backend authority changes |
+| 13.2 | PLANNED | Trading workspace, Dashboard/Markets/Strategy/AMM Settings/Risk/Execution UX; follows 13.1 review/merge |
+| 13.3 | PLANNED | Agents/Vault/Analytics/Simulation/Logs/Settings UX and final acceptance; follows 13.2 review/merge |
 
 ## Phase 6 extension points
 
@@ -832,3 +836,60 @@ Phase 12.1 remains **MERGED / LINUX ACCEPTED / MACOS PENDING**; cross-platform
 PENDING / LIVE AND SIGNED ACCEPTANCE PENDING**; the **A2-003 operational collapse
 policy remains deferred**. Phase 12.3 macOS, external-provider/Redis and long-running
 clock/reconnect soak acceptance remain separate environmental gates.
+
+
+## Phase 13.1 — Design Foundation
+
+**IMPLEMENTED / LINUX REGRESSION AND LOCAL BROWSER ACCEPTED / DRAFT REVIEW.**
+Starting base: `68949b04edb1099828f8bf5f9deca0afe4b85e62`, fetched current main
+and independently verified PRs #38, #39 and #40 merged. PR #40's merged status
+supersedes the historical draft wording in the Phase 12.3 record above; historical
+acceptance records and audit reports are preserved.
+
+Dark terminal design retained with shared palette/spacing/control/table tokens,
+more readable labels, semantic named panels, shared loading/error/status states,
+right-aligned order-table values, consistent original SVG navigation icons and
+compact responsive observation diagnostics. Superseded shell CSS was consolidated;
+existing page-specific charts, controls, financial precision and data provenance
+remain. Typed native hash routes support twelve pages, bookmarks, reload and
+browser history. Sidebar collapse is saved; the smaller-screen drawer supports
+keyboard trapping, Escape/close, focus return and an inert background. Header
+kill remains immediate/sticky; historical prices and strategy/risk observations
+cannot present themselves as current.
+
+Exact implementation files, visual audit, screenshots, commands, accessibility
+scope, initial failures and limitations are in [Phase 13.1 acceptance](PHASE131_ACCEPTANCE.md).
+Final frontend **164 passed** (149 preserved + 15 new), 0 failed/skipped; TypeScript
+and build passed. Complete Python 3.12.14 backend `.[test,ml,redis,yahoo]`: **1125
+passed**, 0 failed/skipped, 1 upstream warning; focused suite **84 passed**.
+`pip check`, compileall, audit/schema/dependency/integrity preservation and diff
+checks passed. No backend application implementation or contract changed; the
+old static Vault-navigation assertion now checks route/link/page wiring.
+
+Actual Uvicorn/Vite/Chromium 151 DEMO/PAPER: **72 page/viewport checks** across
+1920, 1440, 1366, 1024, 768 and 390px widths, no document overflow, reachable kill,
+refresh/history/collapse/preferences and mobile keyboard workflows. Existing
+settings unsaved/422/Reset/valid Save, simulation without deployment, Start/Kill/
+confirmed Resume leaving strategy stopped all passed. Separate actual backend
+stop/restart preserves accepted evidence and historical labeling; ancient and
+retired-process frames reject. Zero browser page exceptions; expected resource
+404/invalid-request 422 and development disconnect diagnostics are documented.
+This is scoped accessibility/local browser acceptance, not full WCAG, macOS,
+provider, signed venue or extended soak acceptance. **Do not merge automatically.**
+
+## Phase 13.2 — Trading Workspace UX
+
+**PLANNED / NOT IMPLEMENTED.** Dashboard command center, Markets/order book,
+Strategy quote lineage, logically grouped AMM controls and backend-supported
+preview, Risk and Execution workflow improvements. Create its separate draft
+against merged 13.1, or an explicitly reviewed dependent branch with the correct
+base. No independently mergeable dependent draft is claimed.
+
+## Phase 13.3 — Research & Operational UX
+
+**PLANNED / NOT IMPLEMENTED.** Supervisory Agents, Vault/accounting, Analytics,
+Simulation & Optimization, Logs and Settings, then full twelve-page product
+acceptance. Follows 13.2 merge/review or an explicitly reviewed dependent branch.
+Phases 14/15 remain excluded. Full Phase 13 and the three-PR sequence are not
+complete at this initial Phase 13.1 delivery. Phase 12 macOS, external-provider/
+Redis, signed venue, long-running soak and A2-003/A2-005 gates remain as recorded.

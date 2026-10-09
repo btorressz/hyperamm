@@ -5,7 +5,17 @@ import { api } from "../api/client";
 import { price, percentage, quantity } from "../utils/format";
 import type { TerminalState } from "../types";
 import { currentSourcePrices } from "../utils/freshness";
-export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
+export function Header({
+  t,
+  ws,
+  navigationOpen,
+  onOpenNavigation,
+}: {
+  t: TerminalState | null;
+  ws: string;
+  navigationOpen: boolean;
+  onOpenNavigation: () => void;
+}) {
   const [error, setError] = useState("");
   const kill = async () => {
     try {
@@ -15,16 +25,35 @@ export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
       setError(String(e));
     }
   };
-  const observationCurrent = ws === "connected" && !!t && !terminalEnvelopeFailure(t.emitted_at, Date.now());
+  const observationCurrent =
+    ws === "connected" &&
+    !!t &&
+    !terminalEnvelopeFailure(t.emitted_at, Date.now());
   const current = currentSourcePrices(t, observationCurrent);
-  const p = !observationCurrent || t?.perp_context?.stale ? null : t?.perp_context;
+  const p =
+    !observationCurrent || t?.perp_context?.stale ? null : t?.perp_context;
   return (
     <header className="topbar">
+      <button
+        className="mobileNavToggle"
+        aria-label="Open navigation"
+        aria-controls="terminal-navigation"
+        aria-expanded={navigationOpen}
+        onClick={onOpenNavigation}
+      >
+        ☰ <span>Pages</span>
+      </button>
       <div className="headerMarket">
         <div className="eyebrow">PERPETUAL MARKET</div>
         <div className="marketTitle">
           {t?.market.market ?? "—"}-PERP{" "}
-          <span>{price(t?.market.mid_price)}</span>
+          <span>
+            {price(
+              observationCurrent && !t?.market.stale
+                ? t?.market.mid_price
+                : null,
+            )}
+          </span>
         </div>
       </div>
       <div className="headerContext">
@@ -45,9 +74,19 @@ export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
           <b>{quantity(p?.open_interest_base)}</b>
         </div>
       </div>
-      <div className="headerBadges">
-        <Badge tone={ws === "connected" ? "good" : "warn"}>
-          TERMINAL {ws.toUpperCase()}
+      <div
+        className="headerBadges"
+        aria-label={
+          observationCurrent
+            ? "Current terminal status"
+            : "Last snapshot status"
+        }
+      >
+        <Badge tone={observationCurrent ? "good" : "warn"}>
+          TERMINAL{" "}
+          {ws === "connected" && !observationCurrent
+            ? "STALE"
+            : ws.toUpperCase()}
         </Badge>
         <Badge tone={t?.market.mode === "LIVE" ? "blue" : "warn"}>
           {t?.market.mode ?? "UNAVAILABLE"}
@@ -57,11 +96,16 @@ export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
             ? "GUARDED TESTNET"
             : (t?.strategy.config.execution_mode ?? "—")}
         </Badge>
-        <Badge tone={t?.strategy.running ? "good" : "neutral"}>
-          {t?.strategy.running ? "RUNNING" : "STOPPED"}
+        <Badge
+          tone={observationCurrent && t?.strategy.running ? "good" : "neutral"}
+        >
+          {!t
+            ? "STRATEGY —"
+            : `${!observationCurrent ? "LAST · " : ""}${t.strategy.running ? "RUNNING" : "STOPPED"}`}
         </Badge>
         <Badge tone={t?.risk_firewall.state === "HALT" ? "bad" : "warn"}>
-          RISK {t?.risk_firewall.state ?? "—"}
+          {!observationCurrent && t ? "LAST · " : ""}RISK{" "}
+          {t?.risk_firewall.state ?? "—"}
         </Badge>
         <button
           className="dangerBtn headerKill"

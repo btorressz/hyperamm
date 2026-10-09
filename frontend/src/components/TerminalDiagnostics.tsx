@@ -6,7 +6,7 @@ export function TerminalDiagnostics({ nowMs }: { nowMs: number }) {
   const age = t ? envelopeAgeMs(t.emitted_at, nowMs) : null;
   const current = s.wsState === "connected" && age !== null && t !== null && !terminalEnvelopeFailure(t.emitted_at, nowMs);
   const short = (id: string | undefined) => id ? id.slice(0, 8) : "—";
-  return <Panel title="Terminal observation" meta={current ? "CURRENT · OBSERVATIONAL" : "HISTORICAL / WAITING"}>
+  return <Panel className="terminalObservation" title="Terminal observation" meta={current ? "CURRENT · OBSERVATIONAL" : "HISTORICAL / WAITING"}>
     <Metrics items={[
       ["Connection", s.wsState.toUpperCase()],
       ["Envelope", age === null ? "WAITING" : `${current ? "FRESH" : "HISTORICAL"} · ${(age / 1000).toFixed(1)}s${age < 0 ? " (clock skew)" : " old"}`],

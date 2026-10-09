@@ -74,7 +74,10 @@ def test_read_only_accounting_routes_and_active_vault_ui():
         if path.startswith("/api/v1/accounting") or path == "/api/v1/vault":
             assert route.methods == {"GET"}
     sidebar = (root / "frontend/src/components/Sidebar.tsx").read_text()
-    assert "['Vault','active']" in sidebar
+    navigation = (root / "frontend/src/utils/navigation.ts").read_text()
+    assert '{ name: "Vault", slug: "vault"' in navigation
+    assert "terminalPages.map" in sidebar and "href={pageHref(name)}" in sidebar
+    assert 'Vault: <Vault t={t} />' in (root / "frontend/src/App.tsx").read_text()
     ui = "\n".join((root / path).read_text() for path in (
         "frontend/src/pages/Vault.tsx", "frontend/src/components/VaultSummary.tsx", "frontend/src/components/AccountingLedger.tsx"))
     assert "PAPER / SIMULATED" in ui and "TESTNET /" in ui and "Unavailable" in ui
