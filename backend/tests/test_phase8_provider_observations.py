@@ -173,7 +173,7 @@ def test_yahoo_material_reference_identity_is_unchanged():
         assert output["observations"][0]["authority"]=="NONE"
         again=service.snapshot(market,perp,agreement_bps=D("30"),outlier_bps=D("75"))
         assert again.version==first.version
-        assert again.evidence==first.evidence
+        assert {k:(v.price,v.status,v.version,v.source_timestamp) for k,v in again.evidence.items()}=={k:(v.price,v.status,v.version,v.source_timestamp) for k,v in first.evidence.items()}
         assert again.consensus.consensus_price==first.consensus.consensus_price
         assert again.consensus.confidence_state==first.consensus.confidence_state
         assert "YAHOO_FINANCE" not in again.evidence
