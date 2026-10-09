@@ -23,6 +23,7 @@ dependencies = [
 test = ["pytest>=8.3,<9", "pytest-asyncio>=0.24,<1", "fakeredis[lua]>=2.31,<3"]
 redis = ["redis>=5.2,<7"]
 ml = ["scikit-learn>=1.6,<2"]
+yahoo = ["yfinance>=0.2.66,<1.0"]
 
 [tool.setuptools.packages.find]
 where=["."]
