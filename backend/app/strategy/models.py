@@ -6,6 +6,9 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 from app.amm.models import AmmModel
 from app.market_data.models import MarketDataMode
+from app.amm.numeric import numeric_guard, quantize_size
+from app.amm.virtual_reserves import initialize_virtual_pool
+from app.amm.liquidity_curve import sample_curve
 
 
 class ExecutionMode(StrEnum):
@@ -66,6 +69,7 @@ class StrategyConfig(BaseModel):
     max_perp_reference_shift_bps: Decimal = Field(default=Decimal("50"), ge=0, le=Decimal("1000"))
 
     @model_validator(mode="after")
+    @numeric_guard
     def bounds(self):
         if self.concentration_upper_bps <= self.concentration_lower_bps:
             raise ValueError("concentration_upper_bps must exceed lower bound")
@@ -85,6 +89,19 @@ class StrategyConfig(BaseModel):
         )
         if any(not getattr(self, name).is_finite() for name in decimal_fields):
             raise ValueError("strategy decimal configuration must be finite")
+        minimum = quantize_size(self.base_order_size, self.size_precision, minimum=True)
+        if minimum * Decimal(self.levels_per_side) > self.total_liquidity:
+            raise ValueError("Normalized minimum order sizes exceed the configured per-side liquidity budget")
+        # Check curve movement and allocated sizes at the configured reserve
+        # reference. A side budget can have more digits than each executable
+        # order; quantizing the entire budget would reject feasible ladders.
+        pool = initialize_virtual_pool(self.virtual_base_reserve, self.virtual_quote_reserve)
+        points = sample_curve(pool, pool.reference_price, self.levels_per_side, self.max_distance_bps,
+                              self.amm_model, self.concentration_factor,
+                              self.concentration_lower_bps, self.concentration_upper_bps)
+        variable = self.total_liquidity - minimum * Decimal(self.levels_per_side)
+        for point in points:
+            quantize_size(minimum + variable * point.weight, self.size_precision)
         if self.hard_inventory_limit_base <= self.soft_inventory_limit_base:
             raise ValueError("hard_inventory_limit_base must exceed soft_inventory_limit_base")
         if self.min_inventory_size_multiplier > Decimal("1"):
