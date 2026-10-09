@@ -511,6 +511,9 @@ class HyperAmmRuntime:
             except asyncio.CancelledError:
                 pass
             self._terminal_task = None
+        self.terminal_transport.begin_close()
+        if self.terminal_distribution is not None:
+            self.terminal_distribution.local.begin_close()
         await self.stop_strategy()
         async with self.execution_lock:
             self.lifecycle_state = "STOPPED"
@@ -527,6 +530,9 @@ class HyperAmmRuntime:
         if self._venue_task:
             await self._venue_task
         await self.testnet.close()
+        await self.terminal_transport.close()
+        if self.terminal_distribution is not None:
+            await self.terminal_distribution.local.close()
         if errors:
             raise RuntimeError("runtime transport shutdown unconfirmed") from errors[0]
 

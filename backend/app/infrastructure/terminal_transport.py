@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import anyio
 from datetime import datetime, timezone
 
 from app.terminal.models import TerminalSnapshot
@@ -12,8 +13,13 @@ class InProcessTerminalTransport:
     def __init__(self):
         self.clients = set()
         self.latest = None
+        self.closed = False
+        self._empty = asyncio.Event()
+        self._empty.set()
 
     def publish(self, wire):
+        if self.closed:
+            return
         self.latest = wire
         for queue in self.clients:
             if queue.full():
@@ -21,16 +27,34 @@ class InProcessTerminalTransport:
             queue.put_nowait(wire)
 
     def subscribe(self):
+        if self.closed:
+            raise RuntimeError("Terminal transport stopped")
         if len(self.clients) >= 32:
             raise RuntimeError("Local terminal client limit reached")
         queue = asyncio.Queue(maxsize=1)
         self.clients.add(queue)
+        self._empty.clear()
         if self.latest is not None:
             queue.put_nowait(self.latest)
         return queue
 
     def unsubscribe(self, queue):
         self.clients.discard(queue)
+        if not self.clients:
+            self._empty.set()
+
+    def begin_close(self):
+        self.closed = True
+        self.latest = None
+        for queue in self.clients:
+            if queue.full():
+                queue.get_nowait()
+            queue.put_nowait(None)
+
+    async def close(self):
+        self.begin_close()
+        # A blocked send has a five-second budget; cleanup has bounded Redis I/O.
+        await asyncio.wait_for(self._empty.wait(), timeout=12)
 
 
 class RedisTerminalTransport:
@@ -90,6 +114,7 @@ class RedisTerminalTransport:
         lease = await self.infrastructure.acquire("terminal-clients", 32)
         if lease is None:
             raise RuntimeError("Shared terminal client limit reached")
+        registered = False
         try:
             if self.local.latest is not None:
                 try:
@@ -97,16 +122,21 @@ class RedisTerminalTransport:
                 except ValueError:
                     self.local.latest = None
             queue = self.local.subscribe()
-            return queue, lease.start()
-        except BaseException:
-            await lease.close()
-            raise
+            lease.start()
+            registered = True
+            return queue, lease
+        finally:
+            if not registered:
+                with anyio.fail_after(6, shield=True):
+                    await lease.close()
 
     async def unsubscribe(self, queue, lease):
         self.local.unsubscribe(queue)
         await lease.close()
 
     async def start(self):
+        if self._tasks or self.local.closed:
+            raise RuntimeError("Redis terminal transport already started or stopped")
         self._tasks = [asyncio.create_task(fn(), name=name) for fn, name in (
             (self._publish, "redis-terminal-publisher"),
             (self._receive, "redis-terminal-subscriber"),
@@ -114,10 +144,13 @@ class RedisTerminalTransport:
         )]
 
     async def close(self):
-        for task in self._tasks:
-            task.cancel()
-        await asyncio.gather(*self._tasks, return_exceptions=True)
-        self._tasks.clear()
+        try:
+            await self.local.close()
+        finally:
+            for task in self._tasks:
+                task.cancel()
+            await asyncio.gather(*self._tasks, return_exceptions=True)
+            self._tasks.clear()
 
     async def _publish(self):
         while True:

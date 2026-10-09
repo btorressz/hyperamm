@@ -8,6 +8,7 @@ version = "0.4.0"
 description = "Adaptive virtual AMM and CLOB market-making engine for Hyperliquid"
 requires-python = ">=3.12"
 dependencies = [
+  "anyio>=4,<5",
   "fastapi>=0.115,<1",
   "uvicorn[standard]>=0.32,<1",
   "pydantic>=2.10,<3",
