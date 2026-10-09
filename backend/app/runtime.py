@@ -1016,6 +1016,10 @@ class HyperAmmRuntime:
         async with self.execution_lock:
             return self.references.model_dump(mode="json") if self.references else None
 
+    async def references_observations_summary(self):
+        async with self.execution_lock:
+            return self.reference_service.observations(self.references)
+
     def _install_predictive_artifact(self, supervisor):
         path = self.settings.predictive_model_artifact_path
         if path:
