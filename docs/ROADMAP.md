@@ -714,8 +714,9 @@ Linux correction is accepted; full cross-platform closure is not claimed.
 
 ## Phase 12.2 — AMM Core Hardening & Quote Integrity
 
-**IMPLEMENTED / FIXTURE TESTED / LINUX ACCEPTED; MACOS ACCEPTANCE PENDING;
-LIVE ACCEPTANCE PENDING.** Dedicated branch:
+**MERGED / FIXTURE TESTED / LINUX ACCEPTED; MACOS ACCEPTANCE PENDING;
+LIVE ACCEPTANCE PENDING.** PR #39 merged at
+`777b59f42273442bc3387220e9eecfd5fc2da1ad`. Dedicated implementation branch:
 `phase12/12-2-amm-core-quote-hardening`. Starting main was freshly verified as
 `70a13c04a69924830487c934513e39d363ae653c`, including merged PR #38.
 PRs #36–#38, Audit 2.0 A2-001–A2-005, architecture, existing tests and authority
@@ -755,3 +756,79 @@ Phase 12.1 remains **MERGED / LINUX PASSED / MACOS PENDING USER VERIFICATION**;
 cross-platform A2-005 closure remains **PENDING**. No Phase 12.1 infrastructure,
 Phase 12.3 freshness work, new AMM, execution permission or dashboard redesign
 is introduced.
+
+## Phase 12.3 — Frontend Freshness, Session Integrity & Replay Protection
+
+**IMPLEMENTED / LINUX REGRESSION AND LOCAL BROWSER ACCEPTED; DRAFT PR;
+MACOS ACCEPTANCE PENDING.** Based on freshly fetched main
+`777b59f42273442bc3387220e9eecfd5fc2da1ad`; PRs #38 and #39 verified merged.
+See [Phase 12.3 acceptance and policy](PHASE123_ACCEPTANCE.md) for exact commands,
+results, limitations and reproduction evidence.
+
+**A2-004 CLOSED in the scoped frontend acceptance.** Before editing, the original
+schema/store path accepted 2001 and 2099 advancing observations and A→B→A session
+replay, set `connected`, cleared errors and advanced the arrival-time watermark.
+The same cases now reject without replacing accepted evidence or retiring the
+active identity. Historical audit reports remain unchanged.
+
+- Envelope acceptance requires the full generated schema, then emission age
+  **≤5000 ms** and future skew **≤2000 ms**. Boundaries are inclusive. This matches
+  the existing ~one-second publisher and five-second watchdog for localhost.
+  Malformed types, timezones and impossible dates remain schema failures. Full
+  ISO fractions are compared so microsecond regression/skew cannot hide behind
+  browser millisecond truncation. No adaptive clock-skew training is used.
+- Same-process sequences must strictly increase, including session changes;
+  gaps are allowed and noticed. Emission times must not regress; equal instants
+  and equivalent timezone offsets are allowed. A previously unseen valid process
+  may reset ordering. A valid session/process transition retires prior identity.
+- FIFO histories retain **64 process/session pairs** and independently **64 retired
+  processes**. Process retirement blocks an unknown session from resurrecting the
+  process and survives same-process session churn. Eviction is finite: emission
+  age and active-process sequence/time guards remain, but an evicted process with
+  fabricated fresh evidence is not authenticated or indefinitely blocked. Memory
+  survives socket reconnect, not browser refresh or a new tab.
+- Store acceptance returns an explicit result. Only acceptance advances snapshot,
+  sequence, emission/arrival watermarks and connected state or resets retry delay.
+  Handshake alone stays connecting. Rejected streams cannot renew the watchdog;
+  it checks both accepted arrival time and emission age. One controller owns the
+  shared store across replacements; obsolete open/message/error/close callbacks
+  and repeated close events cannot create state changes or duplicate retry loops.
+  Cleanup clears timers; retry remains 1.5/3/6/10 seconds, capped at 10 seconds.
+- Dashboard diagnostics expose connection, envelope age, shortened identity,
+  accepted time/sequence, reconnect attempts, six categorized rejection counters,
+  latest error and recovery notice. Counters saturate at **65535**; rejected payloads
+  are not retained. Retained disconnected/error/connecting observations are
+  historical; header/risk current prices are withheld. Source ages keep advancing
+  in a display-only projection; provider timestamps, source decisions, risk and authorization are not rewritten. Provider
+  health is explicitly **at emission**, separate from terminal connection health;
+  historical System Health loses live green indicators. Backend authorization is
+  labeled the last backend authorization. Yahoo remains observational-only.
+
+| Completed Linux acceptance | Result |
+| --- | --- |
+| `npm ci` (workspace cache) | Passed; declarations and lockfile unchanged |
+| `npm test` | **149 passed**, 0 failed/skipped; **95 historical + 54 new** |
+| Historical frontend modules separately | **95 passed**, 0 failed/skipped |
+| New integrity module, three final fresh-process runs | **54 passed per run**, 0 failed/skipped |
+| TypeScript / production build | Passed |
+| Complete backend `.[test,ml,redis,yahoo]` | **1125 passed**, 0 failed/skipped; 1 upstream warning |
+| Three required terminal/WebSocket backend modules | **26 passed**; 1 upstream warning |
+| `pip check` / compileall / generated schema equality | Passed; `phase12-v1` unchanged |
+| Real Uvicorn/Vite/Chromium DEMO/PAPER | Startup before backend; advancing frames; three reloads; three tabs/closure; abrupt backend loss; historical retention; new-process restart; controlled timestamp/session/process rejection; source invariance; clean final shutdown |
+
+The browser produced zero page exceptions and zero control POSTs. Backend-absent
+health/proxy failures, StrictMode early socket closure and a resource 404 are
+recorded in the detailed acceptance; browser console is not claimed wholly clean.
+Expected Vite disconnect EPIPE/ECONNRESET/ECONNREFUSED diagnostics remain visible.
+No persistent intended-active streaming failure was observed.
+
+No backend implementation, execution/accounting authority, AMM mathematics,
+Phase 12.2 normalization, provider quorum, RiskFirewall, kill switch,
+FinalQuoteAuthorization or signing rules changed. No real venue orders were sent.
+No `.github`, Actions, Docker, database, new provider/agent, MAINNET or Phase 13 work.
+
+Phase 12.1 remains **MERGED / LINUX ACCEPTED / MACOS PENDING**; cross-platform
+**A2-005 remains PENDING**. Phase 12.2 remains **MERGED / LINUX ACCEPTED / MACOS
+PENDING / LIVE AND SIGNED ACCEPTANCE PENDING**; the **A2-003 operational collapse
+policy remains deferred**. Phase 12.3 macOS, external-provider/Redis and long-running
+clock/reconnect soak acceptance remain separate environmental gates.

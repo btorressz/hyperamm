@@ -1,3 +1,4 @@
+import { useTerminalStore } from "../stores/terminal";
 import type { TerminalState } from "../types";
 import { TerminalKpis } from "../components/TerminalKpis";
 import { PriceLiquidityChart } from "../components/PriceLiquidityChart";
@@ -12,6 +13,7 @@ import { Panel, Metrics } from "../components/TerminalPrimitives";
 import { number } from "../utils/format";
 export function Dashboard({ t }: { t: TerminalState }) {
   const a = t.agents;
+  const current = useTerminalStore(s => s.wsState === "connected");
   return (
     <>
       <div className="operatorTitle">
@@ -24,7 +26,7 @@ export function Dashboard({ t }: { t: TerminalState }) {
           {t.strategy.config.execution_mode === "PAPER"
             ? "PAPER / SIMULATED"
             : "GUARDED TESTNET"}{" "}
-          · current session
+          · {current ? "current session" : "historical snapshot"}
         </span>
       </div>
       <div className="dashboardTop">

@@ -1,3 +1,4 @@
+import { useTerminalStore } from "../stores/terminal";
 import type { TerminalState } from "../types";
 import { Panel } from "./TerminalPrimitives";
 import { Badge } from "./Badge";
@@ -8,11 +9,12 @@ export function SystemHealth({
   t: TerminalState;
   compact?: boolean;
 }) {
+  const current = useTerminalStore(s => s.wsState === "connected");
   const states = Object.entries(t.system_health.subsystems);
   return (
     <Panel
       title="System health"
-      meta={`${t.system_health.status} · OBSERVATIONAL`}
+      meta={`${t.system_health.status} · ${current ? "AT EMISSION" : "HISTORICAL"} · OBSERVATIONAL`}
     >
       <div className="healthGrid">
         {(compact
@@ -31,14 +33,14 @@ export function SystemHealth({
             <span>{name === "risk" ? "last risk decision" : name === "final_authorization" ? "last authorization" : name.replaceAll("_", " ")}</span>
             <Badge
               tone={
-                state.status === "HEALTHY"
+                current && state.status === "HEALTHY"
                   ? "good"
                   : state.status === "HALTED"
                     ? "bad"
                     : "warn"
               }
             >
-              {state.status}
+              {current ? state.status : `HISTORICAL ${state.status}`}
             </Badge>
             <small>{state.reason}</small>
           </div>

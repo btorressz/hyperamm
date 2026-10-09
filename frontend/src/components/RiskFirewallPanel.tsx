@@ -1,3 +1,5 @@
+import { useTerminalStore } from "../stores/terminal";
+import { terminalEnvelopeFailure } from "../utils/terminalIntegrity";
 import type { TerminalState } from "../types";
 import { currentSourcePrices } from "../utils/freshness";
 import { number as f, bps } from "../utils/format";
@@ -46,7 +48,7 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
               <th>Source</th>
               <th>Price</th>
               <th>Source age now</th>
-              <th>Source freshness now</th>
+              <th>Source freshness at emission</th>
               <th>Last provider state / transport</th>
               <th>Last evaluated deviation</th>
               <th>Last decision outlier</th>
@@ -63,7 +65,7 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
                   </td>
                   <td>{e.price != null ? "$" + f(e.price) + (e.stale ? " · STALE" : !e.healthy ? " · UNAVAILABLE" : "") : "—"}</td>
                   <td>{e.source_timestamp ? f(e.age_ms, 0) + " ms" : "—"}</td>
-                  <td>{e.stale ? "STALE" : e.healthy ? "FRESH" : "UNAVAILABLE"}</td>
+                  <td>{e.stale ? "STALE" : e.healthy ? "FRESH AT EMISSION" : "UNAVAILABLE"}</td>
                   <td>
                     <span className="statePill">
                       {e.status}
@@ -87,7 +89,8 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
 }
 
 export function RiskFirewallPanel({ t }: { t: TerminalState }) {
-  const current = currentSourcePrices(t);
+  const connected = useTerminalStore(s => s.wsState === "connected");
+  const current = currentSourcePrices(t, connected && !terminalEnvelopeFailure(t.emitted_at, Date.now()));
   const d = t.risk_firewall?.decision,
     a = t.risk_authorization,
     c = t.reference_consensus;
@@ -105,7 +108,7 @@ export function RiskFirewallPanel({ t }: { t: TerminalState }) {
           <b>{d?.state ?? t.risk_firewall?.state ?? "—"}</b>
         </div>
         <div>
-          <span>Authorization</span>
+          <span>Last backend authorization</span>
           <b>{a?.authorized ? "AUTHORIZED" : "BLOCKED"}</b>
         </div>
         <div>

@@ -1,3 +1,4 @@
+import { terminalEnvelopeFailure } from "../utils/terminalIntegrity";
 import { useState } from "react";
 import { Badge } from "./Badge";
 import { api } from "../api/client";
@@ -14,8 +15,9 @@ export function Header({ t, ws }: { t: TerminalState | null; ws: string }) {
       setError(String(e));
     }
   };
-  const p = t?.perp_context?.stale ? null : t?.perp_context;
-  const current = currentSourcePrices(t);
+  const observationCurrent = ws === "connected" && !!t && !terminalEnvelopeFailure(t.emitted_at, Date.now());
+  const current = currentSourcePrices(t, observationCurrent);
+  const p = !observationCurrent || t?.perp_context?.stale ? null : t?.perp_context;
   return (
     <header className="topbar">
       <div className="headerMarket">

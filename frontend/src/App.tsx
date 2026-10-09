@@ -1,4 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { displayedTerminal } from "./utils/freshness";
+import { TerminalDiagnostics } from "./components/TerminalDiagnostics";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
 import "./styles.css";
@@ -34,8 +36,14 @@ export default function App() {
     queryFn: api.health,
     refetchInterval: 10000,
   });
+  const [, setNowMs] = useState(Date.now());
+  const nowMs = Date.now();
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
   const s = useTerminalStore(),
-    t = s.terminal,
+    t = s.terminal ? displayedTerminal(s.terminal, nowMs) : null,
     dense = useDisplayStore((d) => d.dense);
   const [page, setPage] = useState("Dashboard");
   let content: ReactNode;
@@ -104,6 +112,7 @@ export default function App() {
           <div className="alert">Strategy notice: {t.strategy.last_error}</div>
         )}
         <div className="content">
+          <TerminalDiagnostics nowMs={nowMs} />
           <TerminalBoundary key={page}>{content}</TerminalBoundary>
         </div>
       </main>
