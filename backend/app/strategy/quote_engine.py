@@ -11,9 +11,15 @@ from .market_adaptation import MarketAdaptationDecision, MarketAdaptationPolicy
 from .perp_policy import PerpContextPolicy, PerpReferenceDecision
 from app.market_data.perp_context import PerpMarketContext
 from .models import StrategyConfig
+from app.amm.numeric import numeric_guard
+
+
+class StrategyFeasibilityError(ValueError):
+    """Known preflight failure before the active runtime is mutated."""
 
 
 class QuoteEngine:
+    @numeric_guard
     def generate(self, config: StrategyConfig, snapshot: MarketSnapshot) -> tuple[object, object, list[QuoteLevel]]:
         """Generate the accepted neutral Phase 4.1 ladder."""
         fair = calculate_fair_value(snapshot)
@@ -28,6 +34,7 @@ class QuoteEngine:
         )
         return fair, pool, quotes
 
+    @numeric_guard
     def generate_at_reference(
         self, config: StrategyConfig, snapshot: MarketSnapshot, reference_price
     ) -> tuple[object, object, list[QuoteLevel]]:

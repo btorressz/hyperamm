@@ -316,6 +316,7 @@ class HyperAmmRuntime:
             raise RuntimeError("risk decision changed after quote authorization; recompute before transmission")
         if fingerprint(self.quotes) != self.authorization.quote_fingerprint:
             raise RuntimeError("authorized quote ladder fingerprint mismatch")
+        validate_quotes(self.quotes, current_market, self.risk, final_venue=True)
         if request is not None and self.config.execution_mode == ExecutionMode.TESTNET:
             matches=[q for q in self.quotes if q.side == request.side and q.level_index == request.level_index]
             if (request.market != self.config.market or len(matches) != 1
@@ -860,6 +861,31 @@ class HyperAmmRuntime:
             # A failed stop may leave a transport alive. Restart is required;
             # never create another graph on top of uncertain transport ownership.
             self._require_lifecycle()
+            # Feasibility must precede invalidation, cancellation or staging.
+            # model_copy callers receive the same static checks as HTTP input.
+            validated = StrategyConfig.model_validate(new_config.model_dump())
+            if any(type(getattr(new_config, name)) is not type(getattr(validated, name))
+                   for name in StrategyConfig.model_fields):
+                new_config = validated
+            async with self.execution_lock:
+                if (new_config.market == self.config.market
+                        and new_config.market_data_mode == self.config.market_data_mode):
+                    snapshot = await self.market.snapshot()
+                    try:
+                        fair = calculate_fair_value(snapshot)
+                    except ValueError:
+                        pass  # Unavailable market evidence; static checks still apply.
+                    else:
+                        from app.strategy.perp_policy import PerpContextPolicy
+                        reference = fair
+                        if new_config.perp_context_enabled and self.perp_context_service._context is not None:
+                            context = self.perp_context_service.snapshot(fair)
+                            reference = PerpContextPolicy(new_config).decision(fair, context).final_reference_price
+                        try:
+                            self.quote_engine.generate_at_reference(new_config, snapshot, reference)
+                        except ValueError as exc:
+                            from app.strategy.quote_engine import StrategyFeasibilityError
+                            raise StrategyFeasibilityError(str(exc)) from exc
             staged = []
             try:
                 async with self.execution_lock:

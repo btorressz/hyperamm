@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { TerminalState, Quote } from "../types";
 import { finite, number, quantity } from "../utils/format";
 import { Panel, Empty } from "./TerminalPrimitives";
+import { effectiveLiquidity } from "../utils/effectiveLiquidity";
+import { EffectiveLiquidity } from "./EffectiveLiquidity";
 export function QuoteDistribution({
   quotes,
   x = "price",
@@ -9,10 +11,12 @@ export function QuoteDistribution({
   quotes: Quote[];
   x?: "price" | "distance_bps";
 }) {
-  const points = quotes
-    .map((q) => ({ q, x: finite(q[x]), y: finite(q.size) }))
+  const depth = effectiveLiquidity(quotes);
+  if (!depth.available) return <Empty>Effective liquidity unavailable: invalid quote evidence.</Empty>;
+  const points = depth.price_groups
+    .map((q) => ({ q, x: finite(q[x]), y: finite(q.quantity) }))
     .filter(
-      (p): p is { q: Quote; x: number; y: number } =>
+      (p): p is { q: typeof depth.price_groups[number]; x: number; y: number } =>
         p.x !== null && p.y !== null,
     );
   if (!points.length) return <Empty>No quote evidence for this stage.</Empty>;
@@ -26,7 +30,7 @@ export function QuoteDistribution({
       <svg
         viewBox="0 0 710 215"
         role="img"
-        aria-label={`Backend quote size against ${x === "price" ? "price" : "distance in basis points"}`}
+        aria-label={`Aggregate quote size at executable tick against ${x === "price" ? "price" : "distance in basis points"}`}
       >
         <line x1="50" x2="665" y1="170" y2="170" stroke="#32485e" />
         <line x1="50" x2="50" y1="30" y2="170" stroke="#32485e" />
@@ -45,9 +49,9 @@ export function QuoteDistribution({
           </g>
         ))}
         {points.map(({ q, x: pos, y }) => (
-          <g key={`${q.side}-${q.level_index}`}>
+          <g key={`${q.side}-${q.price}`}>
             <title>
-              {q.side} L{q.level_index}: {number(pos)} / size {quantity(y)}
+              {`${q.side} levels ${q.level_indices.join(", ")}: ${number(pos)} / aggregate size ${quantity(y)} / notional ${q.notional}`}
             </title>
             <rect
               x={
@@ -75,7 +79,7 @@ export function QuoteDistribution({
       <div className="chartLegend">
         <span className="bidText">● BID</span>
         <span className="askText">● ASK</span>
-        <span>Size in base units · backend quote evidence</span>
+        <span>Aggregate size in base units · one bar per side and executable tick</span>
       </div>
     </div>
   );
@@ -83,7 +87,7 @@ export function QuoteDistribution({
 export function LiquidityDistributionChart({ t }: { t: TerminalState }) {
   const [stage, setStage] = useState("Authorized");
   const quotes =
-    stage === "Raw AMM"
+    stage === "Neutral AMM"
       ? t.strategy_quotes
           .filter((q) => q.neutral_price != null && q.neutral_size != null)
           .map((q) => ({
@@ -97,11 +101,11 @@ export function LiquidityDistributionChart({ t }: { t: TerminalState }) {
   return (
     <Panel title="AMM liquidity distribution" meta={stage}>
       <div className="segmented chartToolbar">
-        {["Raw AMM", "Strategy", "Authorized"].map((s) => (
+        {["Neutral AMM", "Strategy", "Authorized"].map((s) => (
           <button
             key={s}
             disabled={
-              s === "Raw AMM" &&
+              s === "Neutral AMM" &&
               !t.strategy_quotes.some((q) => q.neutral_price != null)
             }
             aria-pressed={s === stage}
@@ -112,9 +116,11 @@ export function LiquidityDistributionChart({ t }: { t: TerminalState }) {
         ))}
       </div>
       <QuoteDistribution quotes={quotes} />
+      <EffectiveLiquidity quotes={quotes} configured={t.strategy.config.levels_per_side} stage={stage} />
       <p className="muted panelNote">
-        Raw lineage covers retained strategy levels; upstream suppressed levels
-        are unavailable.
+        Neutral AMM lineage shows tick-normalized CLOB quotes, separate from
+        mathematical curve sampling. It covers retained strategy levels;
+        upstream suppressed levels are unavailable.
       </p>
     </Panel>
   );
