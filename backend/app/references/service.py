@@ -10,6 +10,7 @@ from .models import (
     deviation_bps, utcnow,
 )
 from .providers import CoinGeckoProvider, KrakenProvider, RedStoneProvider
+from .yahoo import YahooFinanceProvider
 
 
 class ReferenceService:
@@ -46,15 +47,21 @@ class ReferenceService:
             poll_interval_seconds=settings.coingecko_poll_interval_seconds,
             stale_after_seconds=settings.coingecko_stale_after_seconds,on_update=changed,
         )
+        self.yahoo=YahooFinanceProvider(market=market,enabled=settings.yfinance_reference_enabled,symbol=settings.yfinance_symbol,stale_after_seconds=settings.yfinance_stale_after_seconds)
         self.consensus_policy=ReferenceConsensusPolicy()
         self._version=0; self._fingerprint=None
 
     async def start(self):
+        await self.yahoo.start()
         if self.mode==MarketDataMode.DEMO:return
         await self.redstone.start(); await self.kraken.start(); await self.coingecko.start()
 
     async def stop(self):
+        await self.yahoo.stop()
         await self.redstone.stop(); await self.kraken.stop(); await self.coingecko.stop()
+
+    def observations(self,material=None):
+        return {"market":self.market,"authority":"NONE","observations":[self.yahoo.observation(material)]}
 
     @staticmethod
     def _evidence(*,market,provider,source_type,price,timestamp,version,simulated=False,source_id=None):
