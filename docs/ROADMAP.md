@@ -18,6 +18,7 @@
 | 11.1 | ACCEPTED | High-water invariants and identity-based execution/accounting consistency hardening; local acceptance passed |
 | 12 | IMPLEMENTED / IN REVIEW | Full React operator terminal, versioned observation contracts, bounded history/events, health and lineage; local acceptance passed |
 | 12.1 | LINUX ACCEPTED / MACOS PENDING | Structured WebSocket cancellation, bounded subscriber/lease shutdown, reproducible test matrices and real browser/proxy acceptance; cross-platform A2-005 closure pending |
+| 12.2 | LINUX ACCEPTED / MACOS & LIVE PENDING | Executable price-distance integrity, strategy precision/feasibility and effective-price depth; logical slots preserved, stronger collapse policy deferred |
 
 ## Phase 6 extension points
 
@@ -710,3 +711,47 @@ acceptance. Live providers and signed exchange acceptance remain outside this
 milestone. Trading mathematics, risk/kill, final authorization, signing, PAPER
 settlement/accounting and the terminal schema are unchanged. A2-005's targeted
 Linux correction is accepted; full cross-platform closure is not claimed.
+
+## Phase 12.2 — AMM Core Hardening & Quote Integrity
+
+**IMPLEMENTED / FIXTURE TESTED / LINUX ACCEPTED; MACOS ACCEPTANCE PENDING;
+LIVE ACCEPTANCE PENDING.** Dedicated branch:
+`phase12/12-2-amm-core-quote-hardening`. Starting main was freshly verified as
+`70a13c04a69924830487c934513e39d363ae653c`, including merged PR #38.
+PRs #36–#38, Audit 2.0 A2-001–A2-005, architecture, existing tests and authority
+contracts were reviewed before implementation. Both historical audit files are
+preserved; no historical test was weakened or marked xfail.
+
+| Finding | Scoped implementation and verified disposition |
+| --- | --- |
+| A2-001 | Executable compiler distance replaces stale mathematical distance; independent final and pre-transmission fair-value distance enforcement in PAPER and guarded TESTNET. The exact 3000 / 2000-tick / .2-bps counterexample is rejected; spoofed distance and reference metadata cannot bypass it. Scoped defect closed in Linux fixture acceptance; signed/live acceptance pending. |
+| A2-002 | Shared rounded minimum, per-side budget and representable curve/allocation checks; atomic current-context compilation preflight; sanitized 422 for known infeasibility. Tiny-distance matrix and extreme quantization failures are rejected; representable larger side budgets remain valid and risk-bound. Scoped defects closed in Linux acceptance; future market/venue feasibility is not promised. |
+| A2-003 | Side/price counts, quantities, notionals, logical-index lineage and aggregate chart depth. Default policy is **PRESERVE LOGICAL SLOTS + OBSERVE EFFECTIVE PRICES**. Diagnostic portion accepted; whole finding remains open pending an operational reject/trim/coalesce decision. |
+
+The new backend acceptance module has **56 cases**, including a 240-combination
+matrix covering both existing AMM models (160 ordinary compilations; 80 tiny
+unrepresentable configurations rejected). Tests cover rounded floor feasibility,
+coarse/exact/tiny ticks, crossed or falsified quotes, current versus missing
+preflight evidence, API 200/422, no partial update, NORMAL/WIDEN/REDUCE/HALT,
+inventory/adaptation/agent restrictions, same-price reconciliation, cohort PAPER
+fills, accounting idempotence and manual kill. Existing reference and full
+execution/authorization suites continue to pass.
+
+The 100-slot/two-price fixture has 50 slots on each side, 4.9975 base quantity
+per side, 14,992.00025 BID notional and 14,992.99975 ASK notional at 2999.9/3000.1.
+Observation leaves fingerprints unchanged: first reconcile creates 100 independent
+slots; identical reconcile keeps all 100 IDs; changed economics and removal still
+produce ordinary replacement/cancellation. Suppressed quotes are absent from
+later-stage depth. Proposal totals do not assert actually resting order status.
+
+Frontend acceptance retains all 84 historical cases and adds **11**, covering
+exact decimal aggregation, equivalent tick spellings, high-precision distinct
+prices, collapse and invalid/absent evidence, suppression, aggregate bars and
+read-only warnings. Terminal schema equality, TypeScript and production build pass.
+
+See [Phase 12.2 verification and Mac instructions](PHASE122_ACCEPTANCE.md) for
+exact commands, versions, completed counts, initial failures and limitations.
+Phase 12.1 remains **MERGED / LINUX PASSED / MACOS PENDING USER VERIFICATION**;
+cross-platform A2-005 closure remains **PENDING**. No Phase 12.1 infrastructure,
+Phase 12.3 freshness work, new AMM, execution permission or dashboard redesign
+is introduced.

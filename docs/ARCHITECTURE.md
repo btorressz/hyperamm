@@ -411,3 +411,46 @@ cancellation to escape that scope, explaining the intermittent A2-005 portal
 future failures. The supported version matrices, real proxy/browser observations,
 expected development disconnect diagnostics and pending macOS/external Redis
 checks are recorded in [Phase 12.1 acceptance](ROADMAP.md#phase-121--backend-websocket--local-runtime-reliability).
+
+## Phase 12.2 executable integrity and effective depth
+
+The compiler's `QuoteLevel.distance_bps` is measured from its actual normalized
+price to the AMM compilation reference. Mathematical sampling distances remain
+in `CurvePoint.distance_bps`. With the full policy pipeline, inventory/adaptation,
+agents and risk retain their existing market-fair-distance semantics. These
+references are intentionally distinct:
+
+| Reference | Responsibility |
+| --- | --- |
+| Validated market fair value | Existing global `RiskStatus.max_quote_distance_bps` ceiling; independently recalculated at final validation and before transmission |
+| Bounded perpetual strategy reference | Virtual reserve recentering and AMM sampling center |
+| Inventory reservation | Inventory skew and subsequent widening geometry |
+| External reference consensus | Firewall integrity, exposure and capital evidence; does not replace the compiler's center |
+
+`max_distance_bps` controls mathematical curve sampling; tick rounding can move
+an executable price farther out. It does not replace the independent final risk
+ceiling. PAPER and venue-normalized TESTNET both validate actual price economics,
+finite positive sides/sizes, uncrossed prices and aggregate notional. Quotes still
+require the established FinalQuoteAuthorization and domain fingerprints.
+
+Static strategy validation shares upward baseline quantization with the compiler,
+checks the per-side rounded floor budget, and samples representable reserve
+movement and allocated sizes at the configured virtual reserve reference. It does
+not quantize the entire side budget as though it were one order. Decimal arithmetic
+failures become specific validation errors; global precision remains unchanged.
+A same-context update dry-runs neutral compilation using current accepted fair
+value and available perp reference before cancelling orders or staging services.
+Without fresh matching market/perp evidence, the available static/fair-only checks
+apply; this is not proof of future venue feasibility. Final runtime checks remain
+mandatory. Known preflight failures return 422 without changing active authority;
+existing transport lifecycle failures retain their distinct restart-required policy.
+
+`GET /api/v1/amm/curve` adds observational `effective_liquidity` for separate
+strategy, agent and authorized ladders. Each `(side, Decimal price)` group reports
+quantity, notional and contributing level indices; Decimal economics are serialized
+as strings. No resting venue depth is inferred from these proposals. The terminal
+wire schema is unchanged. React groups its supplied ladder with exact decimal
+arithmetic, displays aggregate bars and count-based warnings, and labels neutral
+AMM lineage as normalized CLOB quotes rather than mathematical samples. Logical
+slots, client IDs, reconciliation and authorization fingerprints are unchanged by
+observation. The stronger collapsed-slot execution policy remains deferred.
