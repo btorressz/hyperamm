@@ -45,13 +45,13 @@ export function Strategy({ t }: { t: TerminalState }) {
       </div>
       <PerpContextPanel t={t} />
       {[
-        ["Pre-agent strategy", t.strategy_quotes],
-        ["Post-agent", t.agent_quotes],
-        ["Final authorized", t.authorized_quotes],
-      ].map(([label, quotes]) => (
+        ["Pre-agent strategy", t.strategy_quotes, "STRATEGY"],
+        ["Post-agent", t.agent_quotes, "AGENT"],
+        ["Final authorized", t.authorized_quotes, "AUTHORIZED"],
+      ].map(([label, quotes, stage]) => (
         <div key={String(label)}>
           <h2>{String(label)}</h2>
-          <QuoteLadder quotes={quotes as typeof t.quotes} orders={t.orders} />
+          <QuoteLadder quotes={quotes as typeof t.quotes} orders={t.orders} stage={stage as "STRATEGY" | "AGENT" | "AUTHORIZED"} />
         </div>
       ))}
     </div>
