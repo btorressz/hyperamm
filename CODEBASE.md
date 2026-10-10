@@ -725,3 +725,55 @@ AbortSignal and check accepted terminal evidence again after completion. Ledger
 responses additionally match mode/market/version/fingerprint at request and render.
 No previous-session placeholder is shown. Identical genesis fingerprints alone
 cannot prove session provenance; this residual wire limitation is documented.
+
+## Phase 13.3.2 — Analytics and isolated research studio
+
+Implemented on freshly fetched `8085c5810ce72169f63a0a6c3a0619741b518852`, with
+PRs #43–#45 verified merged. This extends the historical inventories above;
+[local acceptance](docs/PHASE1332_ACCEPTANCE.md) records actual tests, screenshots
+and remaining gates. Backend application/contracts/economics remain unchanged.
+
+| Source | Responsibility |
+| --- | --- |
+| [`Analytics.tsx`](frontend/src/pages/Analytics.tsx) | Backend session overview, range preferences/retention, four chart views, execution explanations and returned-observation distributions; exports the session-default shared Vault charts. |
+| [`HistoryChart.tsx`](frontend/src/components/HistoryChart.tsx) | Existing Lightweight Charts with reconciled series/segments, signed baseline plots, units, exact readouts/tables, finite display coordinates and time or explicitly labeled frame axis. Missing values split contiguous series; resize/unmount cleans observers. |
+| [`useTerminalHistory.ts`](frontend/src/hooks/useTerminalHistory.ts) | Abortable process/session/connection-epoch/range/size keyed reads, completion freshness/session checks and same-identity historical freeze; no previous-session placeholders. |
+| [`terminalHistory.ts`](frontend/src/utils/terminalHistory.ts) | Preserved sequence/second-bucket compaction; backend-range availability fallback, bounded response checks, sample counts and once-only finite percentage coordinates. |
+| [`StateDistribution.tsx`](frontend/src/components/StateDistribution.tsx) | Shared sample-count meters for returned session observations or reported simulated frame-state counts; no duration/causal claims. |
+| [`Simulation.tsx`](frontend/src/pages/Simulation.tsx) | Backend catalog/descriptions, whole-frame validation, existing grids, captured request headers, one active submission, actionable errors and read-only result/provenance workflow. |
+| [`SimulationPanel.tsx`](frontend/src/components/SimulationPanel.tsx) | Exact reported economic metrics and expandable execution/inventory/lifecycle/state evidence; backend return percent distinguished from fractional drawdown/rates. |
+| [`SimulationTrace.tsx`](frontend/src/components/simulation/SimulationTrace.tsx) | Six separate units/series views from bounded actual response trace plus original frame timestamp/state details. Backend sequence is frame identity; same-second frames never collapse into terminal history. |
+| [`CandidateComparison.tsx`](frontend/src/components/simulation/CandidateComparison.tsx) | Baseline/backend-ranked candidates, two selectors, separate strategy/agent updates, training/validation aggregates and scenario scores, full identities, missing scores and rejected reasons. |
+| [`simulationResearch.ts`](frontend/src/utils/simulationResearch.ts) | Unchanged preset grids, validation bounds, synchronous request gate/generation retirement, unique-sequence trace bounds and display-only metric units. |
+| [`phase1332.css`](frontend/src/phase1332.css) | Scoped Analytics/Simulation presentation using the existing dark palette and responsive research primitives. |
+| [`analytics-simulation.test.cjs`](frontend/tests/analytics-simulation.test.cjs) | 48 focused range/session/series/gap/unit/trace/comparison/error regressions; registered in the existing runner. |
+| [`browser-phase1332.py`](frontend/tests/browser-phase1332.py) | Optional local Uvicorn/Vite/Chromium acceptance, read-only browser fixtures, actual backend restart, real PAPER research and chart observer cleanup. |
+
+`App.tsx` gives Analytics a process/session keyed mount and historical prop.
+`useResearchSession` also accepts a missing terminal for shared history startup;
+its synchronous epoch and existing ledger/event checks remain intact. The API
+client adds history AbortSignal and research-specific error advice while preserving
+existing 429 handling. No new endpoint or terminal parsing relaxation.
+
+Analytics ranges use server `available_ranges`, not browser-clock filtering.
+Unavailable saved ranges temporarily use SESSION without overwriting display
+preferences; response samples and retention totals are separately labeled. REST
+history has a session ID but **no process ID**; a client process/connection key is
+an attribution safeguard, not authenticated server process identity. Vault retains
+its session-default charts, accounting consistency/provenance and all Phase 13.3.1
+safeguards. Agents/Vault/Dashboard are not redesigned in this phase.
+
+Trace plotting uses display-only frame sequence coordinates and retains original
+backend timestamps. Coordinate numbers never feed financial calculations; metric
+values keep exact Decimal strings. `return_pct` already has percent units; other
+reported fractional rates are scaled once. Simulation/optimizer results remain
+isolated PAPER research, separate from runtime history. Backend ranking/objective,
+fill assumptions, allowlists, risk/signing/accounting and live configuration are
+unchanged; no candidate deployment, saved strategy registry or durable notebooks.
+
+Final frontend **310 passed**, typecheck/build passed; backend **1124 passed,
+1 known generated-schema failure**, with **173 focused passed**. Local Chromium
+**72 route/viewport checks + 26 workflows**, including actual PAPER results,
+restart and shared Vault charts, pass with zero page exceptions. These scoped
+13.3C/D results do not complete 13.3E/F/full G, Phase 13.2A–E, macOS, external
+providers/Redis, signed TESTNET or extended soak. Dedicated draft PR only.

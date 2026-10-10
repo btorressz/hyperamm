@@ -1,0 +1,3152 @@
+{
+  "engine_version": "phase10.1-v3",
+  "baseline": {
+    "label": "BASELINE",
+    "strategy_updates": {},
+    "agent_updates": {},
+    "configuration_fingerprint": "1b3951430b13f6fa3376836c89fad709c06fe962582f2a287a3e244cff8d2004",
+    "training": [
+      {
+        "scenario": "TREND_UP",
+        "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "run_fingerprint": "8c4f06b944a71697885f3fe8ed3d49c1252d36419e6870f6ed1abe3a97833105",
+        "metrics": {
+          "frame_count": 20,
+          "starting_equity": "100000",
+          "ending_equity": "100000.0000000000",
+          "session_pnl": "0E-10",
+          "return_pct": "0E-10",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0E-10",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "buy_fill_count": 0,
+          "sell_fill_count": 0,
+          "quoted_notional": "378050.28148",
+          "filled_notional": "0",
+          "fill_activity_ratio": "0E+5",
+          "ending_inventory_base": "0",
+          "max_abs_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "keep_count": 0,
+          "create_count": 16,
+          "replace_count": 304,
+          "cancel_count": 0,
+          "reconciliation_churn_ratio": "0.95",
+          "risk_state_counts": {
+            "NORMAL": 20
+          },
+          "risk_halt_fraction": "0",
+          "agent_regime_counts": {
+            "WARMING_UP": 7,
+            "TRENDING": 13
+          },
+          "toxic_flow_state_counts": {
+            "INSUFFICIENT_DATA": 20
+          },
+          "execution_quality_state_counts": {
+            "INSUFFICIENT_DATA": 20
+          },
+          "liquidity_quality_state_counts": {
+            "HEALTHY": 20
+          },
+          "perp_crowding_state_counts": {
+            "INSUFFICIENT_DATA": 5,
+            "NEUTRAL": 15
+          }
+        },
+        "score": {
+          "return_contribution": "0E-10",
+          "drawdown_penalty": "0",
+          "inventory_penalty": "0.00",
+          "adverse_markout_penalty": "0",
+          "churn_penalty": "2375.0000",
+          "halt_penalty": "0",
+          "final_score": "-2375.0000000000"
+        }
+      },
+      {
+        "scenario": "TREND_DOWN",
+        "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "run_fingerprint": "7863c010392e063c95596e122324cb0ab83b9c68554f59057159de9fc134f6e4",
+        "metrics": {
+          "frame_count": 20,
+          "starting_equity": "100000",
+          "ending_equity": "100000.0000000000",
+          "session_pnl": "0E-10",
+          "return_pct": "0E-10",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0E-10",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "buy_fill_count": 0,
+          "sell_fill_count": 0,
+          "quoted_notional": "374721.93591",
+          "filled_notional": "0",
+          "fill_activity_ratio": "0E+5",
+          "ending_inventory_base": "0",
+          "max_abs_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "keep_count": 0,
+          "create_count": 16,
+          "replace_count": 304,
+          "cancel_count": 0,
+          "reconciliation_churn_ratio": "0.95",
+          "risk_state_counts": {
+            "NORMAL": 20
+          },
+          "risk_halt_fraction": "0",
+          "agent_regime_counts": {
+            "WARMING_UP": 7,
+            "TRENDING": 13
+          },
+          "toxic_flow_state_counts": {
+            "INSUFFICIENT_DATA": 20
+          },
+          "execution_quality_state_counts": {
+            "INSUFFICIENT_DATA": 20
+          },
+          "liquidity_quality_state_counts": {
+            "HEALTHY": 20
+          },
+          "perp_crowding_state_counts": {
+            "INSUFFICIENT_DATA": 5,
+            "NEUTRAL": 15
+          }
+        },
+        "score": {
+          "return_contribution": "0E-10",
+          "drawdown_penalty": "0",
+          "inventory_penalty": "0.00",
+          "adverse_markout_penalty": "0",
+          "churn_penalty": "2375.0000",
+          "halt_penalty": "0",
+          "final_score": "-2375.0000000000"
+        }
+      },
+      {
+        "scenario": "HIGH_VOLATILITY",
+        "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+        "run_fingerprint": "57735e3ffc5f8c2ad4d68648847d8aa6a4dcac40384ec7d148dec867c4bc8a84",
+        "metrics": {
+          "frame_count": 20,
+          "starting_equity": "100000",
+          "ending_equity": "99598.15380452500000000000000",
+          "session_pnl": "-401.8461954749999999999999972",
+          "return_pct": "-0.4018461954749999999999999972",
+          "realized_pnl": "-397.7841899999999999999999972",
+          "unrealized_pnl": "-4.0620054750",
+          "max_drawdown_pct": "0.004695613352800051362143968745",
+          "fill_count": 86,
+          "buy_fill_count": 40,
+          "sell_fill_count": 46,
+          "quoted_notional": "197103.58621",
+          "filled_notional": "110049.99371",
+          "fill_activity_ratio": "0.5583358264864317407084076819",
+          "ending_inventory_base": "-0.0913",
+          "max_abs_inventory_base": "3.9996",
+          "max_inventory_utilization": "0.39996",
+          "mean_spread_capture_bps": "-118.5379667523983311594976399",
+          "mean_mature_markout_bps": "-91.80489163312325644851275022",
+          "adverse_fill_rate": "0.7894736842105263157894736842",
+          "keep_count": 0,
+          "create_count": 96,
+          "replace_count": 92,
+          "cancel_count": 6,
+          "reconciliation_churn_ratio": "0.5051546391752577319587628866",
+          "risk_state_counts": {
+            "NORMAL": 20
+          },
+          "risk_halt_fraction": "0",
+          "agent_regime_counts": {
+            "WARMING_UP": 7,
+            "QUIET": 1,
+            "TRENDING": 1,
+            "HIGH_VOLATILITY": 11
+          },
+          "toxic_flow_state_counts": {
+            "INSUFFICIENT_DATA": 6,
+            "NORMAL": 1,
+            "ELEVATED": 13
+          },
+          "execution_quality_state_counts": {
+            "INSUFFICIENT_DATA": 1,
+            "POOR": 19
+          },
+          "liquidity_quality_state_counts": {
+            "HEALTHY": 9,
+            "UNSTABLE": 11
+          },
+          "perp_crowding_state_counts": {
+            "INSUFFICIENT_DATA": 5,
+            "NEUTRAL": 15
+          }
+        },
+        "score": {
+          "return_contribution": "-40.18461954749999999999999972",
+          "drawdown_penalty": "46.95613352800051362143968745",
+          "inventory_penalty": "999.9000000",
+          "adverse_markout_penalty": "91.80489163312325644851275022",
+          "churn_penalty": "1262.886597938144329896907216",
+          "halt_penalty": "0",
+          "final_score": "-2441.732242646768099966859653"
+        }
+      }
+    ],
+    "validation": [
+      {
+        "scenario": "MEAN_REVERTING",
+        "dataset_fingerprint": "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+        "run_fingerprint": "04aacd1590c8acb2120154cea1193c47523c844278291dbf5db319d0b91e976e",
+        "metrics": {
+          "frame_count": 20,
+          "starting_equity": "100000",
+          "ending_equity": "100000.000000",
+          "session_pnl": "0.000000",
+          "return_pct": "0.000000",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0.000000",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "buy_fill_count": 0,
+          "sell_fill_count": 0,
+          "quoted_notional": "395686.47200",
+          "filled_notional": "0",
+          "fill_activity_ratio": "0E+5",
+          "ending_inventory_base": "0",
+          "max_abs_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "keep_count": 0,
+          "create_count": 16,
+          "replace_count": 304,
+          "cancel_count": 0,
+          "reconciliation_churn_ratio": "0.95",
+          "risk_state_counts": {
+            "NORMAL": 20
+          },
+          "risk_halt_fraction": "0",
+          "agent_regime_counts": {
+            "WARMING_UP": 7,
+            "NORMAL": 5,
+            "QUIET": 1,
+            "TRENDING": 7
+          },
+          "toxic_flow_state_counts": {
+            "INSUFFICIENT_DATA": 20
+          },
+          "execution_quality_state_counts": {
+            "INSUFFICIENT_DATA": 20
+          },
+          "liquidity_quality_state_counts": {
+            "HEALTHY": 20
+          },
+          "perp_crowding_state_counts": {
+            "INSUFFICIENT_DATA": 5,
+            "NEUTRAL": 15
+          }
+        },
+        "score": {
+          "return_contribution": "0.000000",
+          "drawdown_penalty": "0",
+          "inventory_penalty": "0.00",
+          "adverse_markout_penalty": "0",
+          "churn_penalty": "2375.0000",
+          "halt_penalty": "0",
+          "final_score": "-2375.000000"
+        }
+      },
+      {
+        "scenario": "FLASH_MOVE",
+        "dataset_fingerprint": "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0",
+        "run_fingerprint": "30271fc77cf3204945810bb7ddbfe717990af77cf49272167c97993db7b342a5",
+        "metrics": {
+          "frame_count": 20,
+          "starting_equity": "100000",
+          "ending_equity": "99506.22988947200000000000000",
+          "session_pnl": "-493.7701105280000000000000012",
+          "return_pct": "-0.4937701105280000000000000012",
+          "realized_pnl": "0",
+          "unrealized_pnl": "-493.7701105280000000000000012",
+          "max_drawdown_pct": "0.006605256364321098956628547852",
+          "fill_count": 8,
+          "buy_fill_count": 8,
+          "sell_fill_count": 0,
+          "quoted_notional": "252980.52212",
+          "filled_notional": "10684.05821",
+          "fill_activity_ratio": "0.04223273049034214713636705336",
+          "ending_inventory_base": "3.5792",
+          "max_abs_inventory_base": "3.5792",
+          "max_inventory_utilization": "0.35792",
+          "mean_spread_capture_bps": "-585.3723404255319148936170212",
+          "mean_mature_markout_bps": "-502.648977776795175926784263",
+          "adverse_fill_rate": "1",
+          "keep_count": 0,
+          "create_count": 18,
+          "replace_count": 182,
+          "cancel_count": 6,
+          "reconciliation_churn_ratio": "0.9126213592233009708737864078",
+          "risk_state_counts": {
+            "NORMAL": 20
+          },
+          "risk_halt_fraction": "0",
+          "agent_regime_counts": {
+            "WARMING_UP": 7,
+            "NORMAL": 2,
+            "TRENDING": 1,
+            "HIGH_VOLATILITY": 10
+          },
+          "toxic_flow_state_counts": {
+            "INSUFFICIENT_DATA": 15,
+            "TOXIC": 5
+          },
+          "execution_quality_state_counts": {
+            "INSUFFICIENT_DATA": 10,
+            "POOR": 10
+          },
+          "liquidity_quality_state_counts": {
+            "HEALTHY": 10,
+            "UNSTABLE": 10
+          },
+          "perp_crowding_state_counts": {
+            "INSUFFICIENT_DATA": 5,
+            "NEUTRAL": 15
+          }
+        },
+        "score": {
+          "return_contribution": "-49.37701105280000000000000012",
+          "drawdown_penalty": "66.05256364321098956628547852",
+          "inventory_penalty": "894.8000000",
+          "adverse_markout_penalty": "502.648977776795175926784263",
+          "churn_penalty": "2281.553398058252427184466020",
+          "halt_penalty": "0",
+          "final_score": "-3794.431950531058592677535762"
+        }
+      }
+    ],
+    "training_score": "-2397.244080882256033322286551",
+    "training_aggregate": {
+      "mean_objective_score": "-2397.244080882256033322286551",
+      "worst_objective_score": "-2441.732242646768099966859653",
+      "mean_session_pnl": "-133.9487318249999999999999991",
+      "mean_return_pct": "-0.1339487318249999999999999991",
+      "mean_max_drawdown_pct": "0.001565204450933350454047989582",
+      "worst_drawdown_pct": "0.004695613352800051362143968745",
+      "max_inventory_utilization": "0.39996",
+      "mean_markout_bps": "-91.80489163312325644851275022",
+      "mean_churn_ratio": "0.8017182130584192439862542957",
+      "mean_halt_fraction": "0",
+      "risk_normal_fraction": "1",
+      "risk_widen_fraction": "0",
+      "risk_reduce_fraction": "0",
+      "risk_halt_fraction": "0"
+    },
+    "validation_score": "-3084.715975265529296338767881",
+    "validation_aggregate": {
+      "mean_objective_score": "-3084.715975265529296338767881",
+      "worst_objective_score": "-3794.431950531058592677535762",
+      "mean_session_pnl": "-246.8850552640000000000000006",
+      "mean_return_pct": "-0.2468850552640000000000000006",
+      "mean_max_drawdown_pct": "0.003302628182160549478314273926",
+      "worst_drawdown_pct": "0.006605256364321098956628547852",
+      "max_inventory_utilization": "0.35792",
+      "mean_markout_bps": "-502.648977776795175926784263",
+      "mean_churn_ratio": "0.931310679611650485436893204",
+      "mean_halt_fraction": "0",
+      "risk_normal_fraction": "1",
+      "risk_widen_fraction": "0",
+      "risk_reduce_fraction": "0",
+      "risk_halt_fraction": "0"
+    },
+    "score_delta": "0",
+    "baseline_delta": {
+      "mean_objective_score": "0",
+      "worst_objective_score": "0",
+      "mean_session_pnl": "0",
+      "mean_return_pct": "0",
+      "mean_max_drawdown_pct": "0",
+      "worst_drawdown_pct": "0",
+      "max_inventory_utilization": "0",
+      "mean_markout_bps": "0",
+      "mean_churn_ratio": "0",
+      "mean_halt_fraction": "0",
+      "risk_normal_fraction": "0",
+      "risk_widen_fraction": "0",
+      "risk_reduce_fraction": "0",
+      "risk_halt_fraction": "0",
+      "objective_score": "0"
+    },
+    "training_dataset_fingerprints": [
+      "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+      "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+      "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+    ],
+    "validation_dataset_fingerprints": [
+      "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+      "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0"
+    ],
+    "validation_overlap": false,
+    "independent_holdout": true,
+    "validation_classification": "INDEPENDENT_HOLDOUT"
+  },
+  "requested_candidate_count": 8,
+  "candidate_count": 8,
+  "rejected_candidates": [],
+  "ranked_candidates": [
+    {
+      "label": "CANDIDATE_2",
+      "strategy_updates": {
+        "concentration_factor": "6",
+        "levels_per_side": 6
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.5"
+      },
+      "configuration_fingerprint": "1baad50928182fb63979ea3978f20427d48525ff90aa084fefaf0c6259c689b9",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "9abde8cc36ec55e9e1f0677d5aa21efc1cfc02ff3b2df7aec740a24fb510088f",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "377313.63337",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "f087fd27e6fca303868f6fde72c6adf76ead94fec020f5f153f86c13cad8e570",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "373981.09635",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "abb42fca0386dd5682eabdd508bb5baac6a4e6dd5bd53c049e3263cb9180eb03",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99628.32749335000000000000000",
+            "session_pnl": "-371.6725066499999999999999995",
+            "return_pct": "-0.3716725066499999999999999995",
+            "realized_pnl": "-366.0895099999999999999999995",
+            "unrealized_pnl": "-5.5829966500",
+            "max_drawdown_pct": "0.004475400235360740489540454760",
+            "fill_count": 69,
+            "buy_fill_count": 32,
+            "sell_fill_count": 37,
+            "quoted_notional": "203617.06054",
+            "filled_notional": "113959.91277",
+            "fill_activity_ratio": "0.5596776245947863244799595121",
+            "ending_inventory_base": "-0.1582",
+            "max_abs_inventory_base": "3.9997",
+            "max_inventory_utilization": "0.39997",
+            "mean_spread_capture_bps": "-125.8908354975528114161020643",
+            "mean_mature_markout_bps": "-90.33629138274262431544364131",
+            "adverse_fill_rate": "0.7796610169491525423728813559",
+            "keep_count": 0,
+            "create_count": 77,
+            "replace_count": 75,
+            "cancel_count": 4,
+            "reconciliation_churn_ratio": "0.5064102564102564102564102564",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-37.16725066499999999999999995",
+            "drawdown_penalty": "44.75400235360740489540454760",
+            "inventory_penalty": "999.9250000",
+            "adverse_markout_penalty": "90.33629138274262431544364131",
+            "churn_penalty": "1266.025641025641025641025641",
+            "halt_penalty": "0",
+            "final_score": "-2438.208185426991054851873830"
+          }
+        }
+      ],
+      "validation": [
+        {
+          "scenario": "MEAN_REVERTING",
+          "dataset_fingerprint": "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+          "run_fingerprint": "368dcf78a6e7317310b8baa19dd2cc02b784731610dbcbe76b6769bb707a2a72",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.000000",
+            "session_pnl": "0.000000",
+            "return_pct": "0.000000",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0.000000",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "393260.43166",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 5,
+              "QUIET": 1,
+              "TRENDING": 7
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0.000000",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.000000"
+          }
+        },
+        {
+          "scenario": "FLASH_MOVE",
+          "dataset_fingerprint": "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0",
+          "run_fingerprint": "b00a64ed57ea7753ffe5d2d752a8b31b4191cb4445c2411d3f4867cf462428b2",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99510.82113509500000000000000",
+            "session_pnl": "-489.1788649049999999999999990",
+            "return_pct": "-0.4891788649049999999999999990",
+            "realized_pnl": "0",
+            "unrealized_pnl": "-489.1788649049999999999999990",
+            "max_drawdown_pct": "0.006605503819280713674498239199",
+            "fill_count": 6,
+            "buy_fill_count": 6,
+            "sell_fill_count": 0,
+            "quoted_notional": "258484.59584",
+            "filled_notional": "10680.32109",
+            "fill_activity_ratio": "0.04131898481335823033004766308",
+            "ending_inventory_base": "3.5795",
+            "max_abs_inventory_base": "3.5795",
+            "max_inventory_utilization": "0.35795",
+            "mean_spread_capture_bps": "-580.7919621749408983451536643",
+            "mean_mature_markout_bps": "-498.5323533980691303560682148",
+            "adverse_fill_rate": "1",
+            "keep_count": 0,
+            "create_count": 14,
+            "replace_count": 146,
+            "cancel_count": 4,
+            "reconciliation_churn_ratio": "0.9146341463414634146341463415",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 2,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 10
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 15,
+              "TOXIC": 5
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 10,
+              "POOR": 10
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 10,
+              "UNSTABLE": 10
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-48.91788649049999999999999990",
+            "drawdown_penalty": "66.05503819280713674498239199",
+            "inventory_penalty": "894.8750000",
+            "adverse_markout_penalty": "498.5323533980691303560682148",
+            "churn_penalty": "2286.585365853658536585365854",
+            "halt_penalty": "0",
+            "final_score": "-3794.965643935034803686416461"
+          }
+        }
+      ],
+      "training_score": "-2396.069395142330351617291277",
+      "training_aggregate": {
+        "mean_objective_score": "-2396.069395142330351617291277",
+        "worst_objective_score": "-2438.208185426991054851873830",
+        "mean_session_pnl": "-123.8908355499999999999999998",
+        "mean_return_pct": "-0.1238908355499999999999999998",
+        "mean_max_drawdown_pct": "0.001491800078453580163180151587",
+        "worst_drawdown_pct": "0.004475400235360740489540454760",
+        "max_inventory_utilization": "0.39997",
+        "mean_markout_bps": "-90.33629138274262431544364131",
+        "mean_churn_ratio": "0.802136752136752136752136752",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": "-3084.982821967517401843208230",
+      "validation_aggregate": {
+        "mean_objective_score": "-3084.982821967517401843208230",
+        "worst_objective_score": "-3794.965643935034803686416461",
+        "mean_session_pnl": "-244.5894324524999999999999995",
+        "mean_return_pct": "-0.2445894324524999999999999995",
+        "mean_max_drawdown_pct": "0.003302751909640356837249119600",
+        "worst_drawdown_pct": "0.006605503819280713674498239199",
+        "max_inventory_utilization": "0.35795",
+        "mean_markout_bps": "-498.5323533980691303560682148",
+        "mean_churn_ratio": "0.932317073170731707317073171",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "score_delta": "1.174685739925681704995274",
+      "baseline_delta": {
+        "mean_objective_score": "1.174685739925681704995274",
+        "worst_objective_score": "3.524057219777045114985823",
+        "mean_session_pnl": "10.0578962749999999999999993",
+        "mean_return_pct": "0.0100578962749999999999999993",
+        "mean_max_drawdown_pct": "-0.000073404372479770290867837995",
+        "worst_drawdown_pct": "-0.000220213117439310872603513985",
+        "max_inventory_utilization": "0.00001",
+        "mean_markout_bps": "1.46860025038063213306910891",
+        "mean_churn_ratio": "0.0004185390783328927658824563",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "0",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0",
+        "objective_score": "1.174685739925681704995274"
+      },
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [
+        "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+        "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0"
+      ],
+      "validation_overlap": false,
+      "independent_holdout": true,
+      "validation_classification": "INDEPENDENT_HOLDOUT"
+    },
+    {
+      "label": "CANDIDATE_6",
+      "strategy_updates": {
+        "concentration_factor": "10",
+        "levels_per_side": 6
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.5"
+      },
+      "configuration_fingerprint": "6decd3646fd22ebccee7aa838aa50c6d82ec6c05a03e8722a991faa79ecc2267",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "bd538f3be124ad1ef501c29f6eb406c31613fe79827007183aba737dabdbb143",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "377313.63337",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "157a36eeb0a00a526bb0686aed1e9f8916c5fdbdc5c64a44133089ba818e236e",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "373981.09635",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "6405abc5d860471a9d6cec9c1dfbbb2f059bcfcb451fa11b6b38513085711f2f",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99628.32749335000000000000000",
+            "session_pnl": "-371.6725066499999999999999995",
+            "return_pct": "-0.3716725066499999999999999995",
+            "realized_pnl": "-366.0895099999999999999999995",
+            "unrealized_pnl": "-5.5829966500",
+            "max_drawdown_pct": "0.004475400235360740489540454760",
+            "fill_count": 69,
+            "buy_fill_count": 32,
+            "sell_fill_count": 37,
+            "quoted_notional": "203617.06054",
+            "filled_notional": "113959.91277",
+            "fill_activity_ratio": "0.5596776245947863244799595121",
+            "ending_inventory_base": "-0.1582",
+            "max_abs_inventory_base": "3.9997",
+            "max_inventory_utilization": "0.39997",
+            "mean_spread_capture_bps": "-125.8908354975528114161020643",
+            "mean_mature_markout_bps": "-90.33629138274262431544364131",
+            "adverse_fill_rate": "0.7796610169491525423728813559",
+            "keep_count": 0,
+            "create_count": 77,
+            "replace_count": 75,
+            "cancel_count": 4,
+            "reconciliation_churn_ratio": "0.5064102564102564102564102564",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-37.16725066499999999999999995",
+            "drawdown_penalty": "44.75400235360740489540454760",
+            "inventory_penalty": "999.9250000",
+            "adverse_markout_penalty": "90.33629138274262431544364131",
+            "churn_penalty": "1266.025641025641025641025641",
+            "halt_penalty": "0",
+            "final_score": "-2438.208185426991054851873830"
+          }
+        }
+      ],
+      "validation": [
+        {
+          "scenario": "MEAN_REVERTING",
+          "dataset_fingerprint": "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+          "run_fingerprint": "7246f0d358b4e67e8d3121b904e58245a3e712a14f9a0b31a14ef8b4cb11c389",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.000000",
+            "session_pnl": "0.000000",
+            "return_pct": "0.000000",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0.000000",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "393260.43166",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 5,
+              "QUIET": 1,
+              "TRENDING": 7
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0.000000",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.000000"
+          }
+        },
+        {
+          "scenario": "FLASH_MOVE",
+          "dataset_fingerprint": "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0",
+          "run_fingerprint": "c0661b14929733afa9597d3a4bbc702ec6598fa22ad5e0c3916b07685de9fe30",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99510.82113509500000000000000",
+            "session_pnl": "-489.1788649049999999999999990",
+            "return_pct": "-0.4891788649049999999999999990",
+            "realized_pnl": "0",
+            "unrealized_pnl": "-489.1788649049999999999999990",
+            "max_drawdown_pct": "0.006605503819280713674498239199",
+            "fill_count": 6,
+            "buy_fill_count": 6,
+            "sell_fill_count": 0,
+            "quoted_notional": "258484.59584",
+            "filled_notional": "10680.32109",
+            "fill_activity_ratio": "0.04131898481335823033004766308",
+            "ending_inventory_base": "3.5795",
+            "max_abs_inventory_base": "3.5795",
+            "max_inventory_utilization": "0.35795",
+            "mean_spread_capture_bps": "-580.7919621749408983451536643",
+            "mean_mature_markout_bps": "-498.5323533980691303560682148",
+            "adverse_fill_rate": "1",
+            "keep_count": 0,
+            "create_count": 14,
+            "replace_count": 146,
+            "cancel_count": 4,
+            "reconciliation_churn_ratio": "0.9146341463414634146341463415",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 2,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 10
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 15,
+              "TOXIC": 5
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 10,
+              "POOR": 10
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 10,
+              "UNSTABLE": 10
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-48.91788649049999999999999990",
+            "drawdown_penalty": "66.05503819280713674498239199",
+            "inventory_penalty": "894.8750000",
+            "adverse_markout_penalty": "498.5323533980691303560682148",
+            "churn_penalty": "2286.585365853658536585365854",
+            "halt_penalty": "0",
+            "final_score": "-3794.965643935034803686416461"
+          }
+        }
+      ],
+      "training_score": "-2396.069395142330351617291277",
+      "training_aggregate": {
+        "mean_objective_score": "-2396.069395142330351617291277",
+        "worst_objective_score": "-2438.208185426991054851873830",
+        "mean_session_pnl": "-123.8908355499999999999999998",
+        "mean_return_pct": "-0.1238908355499999999999999998",
+        "mean_max_drawdown_pct": "0.001491800078453580163180151587",
+        "worst_drawdown_pct": "0.004475400235360740489540454760",
+        "max_inventory_utilization": "0.39997",
+        "mean_markout_bps": "-90.33629138274262431544364131",
+        "mean_churn_ratio": "0.802136752136752136752136752",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": "-3084.982821967517401843208230",
+      "validation_aggregate": {
+        "mean_objective_score": "-3084.982821967517401843208230",
+        "worst_objective_score": "-3794.965643935034803686416461",
+        "mean_session_pnl": "-244.5894324524999999999999995",
+        "mean_return_pct": "-0.2445894324524999999999999995",
+        "mean_max_drawdown_pct": "0.003302751909640356837249119600",
+        "worst_drawdown_pct": "0.006605503819280713674498239199",
+        "max_inventory_utilization": "0.35795",
+        "mean_markout_bps": "-498.5323533980691303560682148",
+        "mean_churn_ratio": "0.932317073170731707317073171",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "score_delta": "1.174685739925681704995274",
+      "baseline_delta": {
+        "mean_objective_score": "1.174685739925681704995274",
+        "worst_objective_score": "3.524057219777045114985823",
+        "mean_session_pnl": "10.0578962749999999999999993",
+        "mean_return_pct": "0.0100578962749999999999999993",
+        "mean_max_drawdown_pct": "-0.000073404372479770290867837995",
+        "worst_drawdown_pct": "-0.000220213117439310872603513985",
+        "max_inventory_utilization": "0.00001",
+        "mean_markout_bps": "1.46860025038063213306910891",
+        "mean_churn_ratio": "0.0004185390783328927658824563",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "0",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0",
+        "objective_score": "1.174685739925681704995274"
+      },
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [
+        "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+        "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0"
+      ],
+      "validation_overlap": false,
+      "independent_holdout": true,
+      "validation_classification": "INDEPENDENT_HOLDOUT"
+    },
+    {
+      "label": "CANDIDATE_4",
+      "strategy_updates": {
+        "concentration_factor": "6",
+        "levels_per_side": 8
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.5"
+      },
+      "configuration_fingerprint": "159522a8bfcef143da8617ce80a5273880a257621aa2d5a67ea846da826eef8a",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "a5d66bef2d05253df8814cfffc5a2fa29b80a68cbed23c5f876ea49d999ccd70",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "378050.05423",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "1423dc1cacb755f26fe2773d10a3af64b31ae25f7232770fa01c1d61ec8fc1cf",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "374721.68179",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "c43a70973ccec0da61606e7658d7d073f0e7843ae659da14f78c66cfc325094f",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99607.56892452500000000000000",
+            "session_pnl": "-392.4310754749999999999999976",
+            "return_pct": "-0.3924310754749999999999999976",
+            "realized_pnl": "-388.5060199999999999999999976",
+            "unrealized_pnl": "-3.9250554750",
+            "max_drawdown_pct": "0.004603406210813961316241781716",
+            "fill_count": 86,
+            "buy_fill_count": 40,
+            "sell_fill_count": 46,
+            "quoted_notional": "197101.05152",
+            "filled_notional": "110045.04479",
+            "fill_activity_ratio": "0.5583178980596845879272557216",
+            "ending_inventory_base": "-0.0913",
+            "max_abs_inventory_base": "3.9996",
+            "max_inventory_utilization": "0.39996",
+            "mean_spread_capture_bps": "-116.1835981839483503497212792",
+            "mean_mature_markout_bps": "-90.76297432349219080206861312",
+            "adverse_fill_rate": "0.7763157894736842105263157895",
+            "keep_count": 0,
+            "create_count": 96,
+            "replace_count": 92,
+            "cancel_count": 6,
+            "reconciliation_churn_ratio": "0.5051546391752577319587628866",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-39.24310754749999999999999976",
+            "drawdown_penalty": "46.03406210813961316241781716",
+            "inventory_penalty": "999.9000000",
+            "adverse_markout_penalty": "90.76297432349219080206861312",
+            "churn_penalty": "1262.886597938144329896907216",
+            "halt_penalty": "0",
+            "final_score": "-2438.826741917276133861393646"
+          }
+        }
+      ],
+      "validation": [
+        {
+          "scenario": "MEAN_REVERTING",
+          "dataset_fingerprint": "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+          "run_fingerprint": "33e15423076abf408a39289e63f76976a77830ee169d0125fc65c601dc131b8f",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.000000",
+            "session_pnl": "0.000000",
+            "return_pct": "0.000000",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0.000000",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "395686.27205",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 5,
+              "QUIET": 1,
+              "TRENDING": 7
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0.000000",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.000000"
+          }
+        },
+        {
+          "scenario": "FLASH_MOVE",
+          "dataset_fingerprint": "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0",
+          "run_fingerprint": "1ea13212ae98617e04069fedddd35440c8773a8ce9444708710649becd8bc14b",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99508.33644947200000000000000",
+            "session_pnl": "-491.6635505279999999999999991",
+            "return_pct": "-0.4916635505279999999999999991",
+            "realized_pnl": "0",
+            "unrealized_pnl": "-491.6635505279999999999999991",
+            "max_drawdown_pct": "0.006605117320851494514768660125",
+            "fill_count": 8,
+            "buy_fill_count": 8,
+            "sell_fill_count": 0,
+            "quoted_notional": "252981.99181",
+            "filled_notional": "10681.95165",
+            "fill_activity_ratio": "0.04222415822396793390161109745",
+            "ending_inventory_base": "3.5792",
+            "max_abs_inventory_base": "3.5792",
+            "max_inventory_utilization": "0.35792",
+            "mean_spread_capture_bps": "-583.2890070921985815602836879",
+            "mean_mature_markout_bps": "-500.7729504630719080502362014",
+            "adverse_fill_rate": "1",
+            "keep_count": 0,
+            "create_count": 18,
+            "replace_count": 182,
+            "cancel_count": 6,
+            "reconciliation_churn_ratio": "0.9126213592233009708737864078",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 2,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 10
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 15,
+              "TOXIC": 5
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 10,
+              "POOR": 10
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 10,
+              "UNSTABLE": 10
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-49.16635505279999999999999991",
+            "drawdown_penalty": "66.05117320851494514768660125",
+            "inventory_penalty": "894.8000000",
+            "adverse_markout_penalty": "500.7729504630719080502362014",
+            "churn_penalty": "2281.553398058252427184466020",
+            "halt_penalty": "0",
+            "final_score": "-3792.343876782639280382388822"
+          }
+        }
+      ],
+      "training_score": "-2396.275580639092044620464549",
+      "training_aggregate": {
+        "mean_objective_score": "-2396.275580639092044620464549",
+        "worst_objective_score": "-2438.826741917276133861393646",
+        "mean_session_pnl": "-130.8103584916666666666666659",
+        "mean_return_pct": "-0.1308103584916666666666666659",
+        "mean_max_drawdown_pct": "0.001534468736937987105413927239",
+        "worst_drawdown_pct": "0.004603406210813961316241781716",
+        "max_inventory_utilization": "0.39996",
+        "mean_markout_bps": "-90.76297432349219080206861312",
+        "mean_churn_ratio": "0.8017182130584192439862542957",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": "-3083.671938391319640191194411",
+      "validation_aggregate": {
+        "mean_objective_score": "-3083.671938391319640191194411",
+        "worst_objective_score": "-3792.343876782639280382388822",
+        "mean_session_pnl": "-245.8317752639999999999999996",
+        "mean_return_pct": "-0.2458317752639999999999999996",
+        "mean_max_drawdown_pct": "0.003302558660425747257384330062",
+        "worst_drawdown_pct": "0.006605117320851494514768660125",
+        "max_inventory_utilization": "0.35792",
+        "mean_markout_bps": "-500.7729504630719080502362014",
+        "mean_churn_ratio": "0.931310679611650485436893204",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "score_delta": "0.968500243163988701822002",
+      "baseline_delta": {
+        "mean_objective_score": "0.968500243163988701822002",
+        "worst_objective_score": "2.905500729491966105466007",
+        "mean_session_pnl": "3.1383733333333333333333332",
+        "mean_return_pct": "0.0031383733333333333333333332",
+        "mean_max_drawdown_pct": "-0.000030735713995363348634062343",
+        "worst_drawdown_pct": "-0.000092207141986090045902187029",
+        "max_inventory_utilization": "0.00000",
+        "mean_markout_bps": "1.04191730963106564644413710",
+        "mean_churn_ratio": "0E-28",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "0",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0",
+        "objective_score": "0.968500243163988701822002"
+      },
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [
+        "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+        "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0"
+      ],
+      "validation_overlap": false,
+      "independent_holdout": true,
+      "validation_classification": "INDEPENDENT_HOLDOUT"
+    },
+    {
+      "label": "CANDIDATE_8",
+      "strategy_updates": {
+        "concentration_factor": "10",
+        "levels_per_side": 8
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.5"
+      },
+      "configuration_fingerprint": "f3dca1466e0edce8a0d29a1e7aea2b3eecac393607f1d56e2a363079644fd981",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "7c447bcdd5444db12a1cb4b7ccac0605e8c535e27c78edd6c01f615ae957cde7",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "378050.05423",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "980d42099ffe4d9b98179734962c3d828468876bb1a629e8bf0390f61b8c7f71",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "374721.68179",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "6611e3d810888be94d951a85fbd5685e1a922ccd809db3aeb67e51f9511d1894",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99607.56892452500000000000000",
+            "session_pnl": "-392.4310754749999999999999976",
+            "return_pct": "-0.3924310754749999999999999976",
+            "realized_pnl": "-388.5060199999999999999999976",
+            "unrealized_pnl": "-3.9250554750",
+            "max_drawdown_pct": "0.004603406210813961316241781716",
+            "fill_count": 86,
+            "buy_fill_count": 40,
+            "sell_fill_count": 46,
+            "quoted_notional": "197101.05152",
+            "filled_notional": "110045.04479",
+            "fill_activity_ratio": "0.5583178980596845879272557216",
+            "ending_inventory_base": "-0.0913",
+            "max_abs_inventory_base": "3.9996",
+            "max_inventory_utilization": "0.39996",
+            "mean_spread_capture_bps": "-116.1835981839483503497212792",
+            "mean_mature_markout_bps": "-90.76297432349219080206861312",
+            "adverse_fill_rate": "0.7763157894736842105263157895",
+            "keep_count": 0,
+            "create_count": 96,
+            "replace_count": 92,
+            "cancel_count": 6,
+            "reconciliation_churn_ratio": "0.5051546391752577319587628866",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-39.24310754749999999999999976",
+            "drawdown_penalty": "46.03406210813961316241781716",
+            "inventory_penalty": "999.9000000",
+            "adverse_markout_penalty": "90.76297432349219080206861312",
+            "churn_penalty": "1262.886597938144329896907216",
+            "halt_penalty": "0",
+            "final_score": "-2438.826741917276133861393646"
+          }
+        }
+      ],
+      "validation": [
+        {
+          "scenario": "MEAN_REVERTING",
+          "dataset_fingerprint": "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+          "run_fingerprint": "e745a91c866167f8bb8f68cbc9c420423d38a9d0cc889e48a4b4d03467fe21e4",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.000000",
+            "session_pnl": "0.000000",
+            "return_pct": "0.000000",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0.000000",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "395686.27205",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 5,
+              "QUIET": 1,
+              "TRENDING": 7
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0.000000",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.000000"
+          }
+        },
+        {
+          "scenario": "FLASH_MOVE",
+          "dataset_fingerprint": "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0",
+          "run_fingerprint": "8bc9492a31e2fa4bebe9ca4bb5707ded48779cade1e79caee083b8669c3e9e11",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99508.33644947200000000000000",
+            "session_pnl": "-491.6635505279999999999999991",
+            "return_pct": "-0.4916635505279999999999999991",
+            "realized_pnl": "0",
+            "unrealized_pnl": "-491.6635505279999999999999991",
+            "max_drawdown_pct": "0.006605117320851494514768660125",
+            "fill_count": 8,
+            "buy_fill_count": 8,
+            "sell_fill_count": 0,
+            "quoted_notional": "252981.99181",
+            "filled_notional": "10681.95165",
+            "fill_activity_ratio": "0.04222415822396793390161109745",
+            "ending_inventory_base": "3.5792",
+            "max_abs_inventory_base": "3.5792",
+            "max_inventory_utilization": "0.35792",
+            "mean_spread_capture_bps": "-583.2890070921985815602836879",
+            "mean_mature_markout_bps": "-500.7729504630719080502362014",
+            "adverse_fill_rate": "1",
+            "keep_count": 0,
+            "create_count": 18,
+            "replace_count": 182,
+            "cancel_count": 6,
+            "reconciliation_churn_ratio": "0.9126213592233009708737864078",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 2,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 10
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 15,
+              "TOXIC": 5
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 10,
+              "POOR": 10
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 10,
+              "UNSTABLE": 10
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-49.16635505279999999999999991",
+            "drawdown_penalty": "66.05117320851494514768660125",
+            "inventory_penalty": "894.8000000",
+            "adverse_markout_penalty": "500.7729504630719080502362014",
+            "churn_penalty": "2281.553398058252427184466020",
+            "halt_penalty": "0",
+            "final_score": "-3792.343876782639280382388822"
+          }
+        }
+      ],
+      "training_score": "-2396.275580639092044620464549",
+      "training_aggregate": {
+        "mean_objective_score": "-2396.275580639092044620464549",
+        "worst_objective_score": "-2438.826741917276133861393646",
+        "mean_session_pnl": "-130.8103584916666666666666659",
+        "mean_return_pct": "-0.1308103584916666666666666659",
+        "mean_max_drawdown_pct": "0.001534468736937987105413927239",
+        "worst_drawdown_pct": "0.004603406210813961316241781716",
+        "max_inventory_utilization": "0.39996",
+        "mean_markout_bps": "-90.76297432349219080206861312",
+        "mean_churn_ratio": "0.8017182130584192439862542957",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": "-3083.671938391319640191194411",
+      "validation_aggregate": {
+        "mean_objective_score": "-3083.671938391319640191194411",
+        "worst_objective_score": "-3792.343876782639280382388822",
+        "mean_session_pnl": "-245.8317752639999999999999996",
+        "mean_return_pct": "-0.2458317752639999999999999996",
+        "mean_max_drawdown_pct": "0.003302558660425747257384330062",
+        "worst_drawdown_pct": "0.006605117320851494514768660125",
+        "max_inventory_utilization": "0.35792",
+        "mean_markout_bps": "-500.7729504630719080502362014",
+        "mean_churn_ratio": "0.931310679611650485436893204",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "score_delta": "0.968500243163988701822002",
+      "baseline_delta": {
+        "mean_objective_score": "0.968500243163988701822002",
+        "worst_objective_score": "2.905500729491966105466007",
+        "mean_session_pnl": "3.1383733333333333333333332",
+        "mean_return_pct": "0.0031383733333333333333333332",
+        "mean_max_drawdown_pct": "-0.000030735713995363348634062343",
+        "worst_drawdown_pct": "-0.000092207141986090045902187029",
+        "max_inventory_utilization": "0.00000",
+        "mean_markout_bps": "1.04191730963106564644413710",
+        "mean_churn_ratio": "0E-28",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "0",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0",
+        "objective_score": "0.968500243163988701822002"
+      },
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [
+        "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+        "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0"
+      ],
+      "validation_overlap": false,
+      "independent_holdout": true,
+      "validation_classification": "INDEPENDENT_HOLDOUT"
+    },
+    {
+      "label": "CANDIDATE_1",
+      "strategy_updates": {
+        "concentration_factor": "6",
+        "levels_per_side": 6
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.3"
+      },
+      "configuration_fingerprint": "a3ea4b238c4538ae850f4c48e7ebfecee6e79b055a72e16b8540fccc1eafea82",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "c4a2c3cca8510fb58ab159f1bd6a5957d6a308a17b2da553ae8f1c518bdc0adb",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "377314.01939",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "908ba69d1568ea60e12d1f06c8eafa9a14d186eccc58d1f550f4ff1eda7ee451",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "373981.70926",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "e8c1d966cdf59b50cfdfec8935aa01540c6f0be779438dee8826e52a59ef5b7a",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99616.03598335000000000000000",
+            "session_pnl": "-383.9640166499999999999999988",
+            "return_pct": "-0.3839640166499999999999999988",
+            "realized_pnl": "-378.0646199999999999999999988",
+            "unrealized_pnl": "-5.8993966500",
+            "max_drawdown_pct": "0.004542741015682575618953644954",
+            "fill_count": 69,
+            "buy_fill_count": 32,
+            "sell_fill_count": 37,
+            "quoted_notional": "203619.26529",
+            "filled_notional": "113964.43428",
+            "fill_activity_ratio": "0.5596937702220308409207304433",
+            "ending_inventory_base": "-0.1582",
+            "max_abs_inventory_base": "3.9997",
+            "max_inventory_utilization": "0.39997",
+            "mean_spread_capture_bps": "-128.4820517622494266289547456",
+            "mean_mature_markout_bps": "-91.68026727320735645445363849",
+            "adverse_fill_rate": "0.7966101694915254237288135593",
+            "keep_count": 0,
+            "create_count": 77,
+            "replace_count": 75,
+            "cancel_count": 4,
+            "reconciliation_churn_ratio": "0.5064102564102564102564102564",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-38.39640166499999999999999988",
+            "drawdown_penalty": "45.42741015682575618953644954",
+            "inventory_penalty": "999.9250000",
+            "adverse_markout_penalty": "91.68026727320735645445363849",
+            "churn_penalty": "1266.025641025641025641025641",
+            "halt_penalty": "0",
+            "final_score": "-2441.454720120674138285015728"
+          }
+        }
+      ],
+      "validation": [
+        {
+          "scenario": "MEAN_REVERTING",
+          "dataset_fingerprint": "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+          "run_fingerprint": "44776d7283a6180c0dacbbbe7d87b6cd0df40b8a01861653149e891f4464076e",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.000000",
+            "session_pnl": "0.000000",
+            "return_pct": "0.000000",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0.000000",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "393260.71527",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 5,
+              "QUIET": 1,
+              "TRENDING": 7
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0.000000",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.000000"
+          }
+        },
+        {
+          "scenario": "FLASH_MOVE",
+          "dataset_fingerprint": "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0",
+          "run_fingerprint": "2287853ba0b17787677eaee0bda147432e8cf16b0168f6e2afe5ca8a5339addd",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99506.45822509500000000000000",
+            "session_pnl": "-493.5417749050000000000000005",
+            "return_pct": "-0.4935417749050000000000000005",
+            "realized_pnl": "0",
+            "unrealized_pnl": "-493.5417749050000000000000005",
+            "max_drawdown_pct": "0.006605791809164903336486118615",
+            "fill_count": 6,
+            "buy_fill_count": 6,
+            "sell_fill_count": 0,
+            "quoted_notional": "258482.03652",
+            "filled_notional": "10684.68400",
+            "fill_activity_ratio": "0.04133627289482174341389315513",
+            "ending_inventory_base": "3.5795",
+            "max_abs_inventory_base": "3.5795",
+            "max_inventory_utilization": "0.35795",
+            "mean_spread_capture_bps": "-585.106382978723404255319149",
+            "mean_mature_markout_bps": "-502.4176348894543730939284967",
+            "adverse_fill_rate": "1",
+            "keep_count": 0,
+            "create_count": 14,
+            "replace_count": 146,
+            "cancel_count": 4,
+            "reconciliation_churn_ratio": "0.9146341463414634146341463415",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "NORMAL": 2,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 10
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 15,
+              "TOXIC": 5
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 10,
+              "POOR": 10
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 10,
+              "UNSTABLE": 10
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-49.35417749050000000000000005",
+            "drawdown_penalty": "66.05791809164903336486118615",
+            "inventory_penalty": "894.8750000",
+            "adverse_markout_penalty": "502.4176348894543730939284967",
+            "churn_penalty": "2286.585365853658536585365854",
+            "halt_penalty": "0",
+            "final_score": "-3799.290096325261943044155537"
+          }
+        }
+      ],
+      "training_score": "-2397.151573373558046095005243",
+      "training_aggregate": {
+        "mean_objective_score": "-2397.151573373558046095005243",
+        "worst_objective_score": "-2441.454720120674138285015728",
+        "mean_session_pnl": "-127.9880055499999999999999996",
+        "mean_return_pct": "-0.1279880055499999999999999996",
+        "mean_max_drawdown_pct": "0.001514247005227525206317881651",
+        "worst_drawdown_pct": "0.004542741015682575618953644954",
+        "max_inventory_utilization": "0.39997",
+        "mean_markout_bps": "-91.68026727320735645445363849",
+        "mean_churn_ratio": "0.802136752136752136752136752",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": "-3087.145048162630971522077768",
+      "validation_aggregate": {
+        "mean_objective_score": "-3087.145048162630971522077768",
+        "worst_objective_score": "-3799.290096325261943044155537",
+        "mean_session_pnl": "-246.7708874525000000000000002",
+        "mean_return_pct": "-0.2467708874525000000000000002",
+        "mean_max_drawdown_pct": "0.003302895904582451668243059308",
+        "worst_drawdown_pct": "0.006605791809164903336486118615",
+        "max_inventory_utilization": "0.35795",
+        "mean_markout_bps": "-502.4176348894543730939284967",
+        "mean_churn_ratio": "0.932317073170731707317073171",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "score_delta": "0.092507508697987227281308",
+      "baseline_delta": {
+        "mean_objective_score": "0.092507508697987227281308",
+        "worst_objective_score": "0.277522526093961681843925",
+        "mean_session_pnl": "5.9607262749999999999999995",
+        "mean_return_pct": "0.0059607262749999999999999995",
+        "mean_max_drawdown_pct": "-0.000050957445705825247730107931",
+        "worst_drawdown_pct": "-0.000152872337117475743190323791",
+        "max_inventory_utilization": "0.00001",
+        "mean_markout_bps": "0.12462435991589999405911173",
+        "mean_churn_ratio": "0.0004185390783328927658824563",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "0",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0",
+        "objective_score": "0.092507508697987227281308"
+      },
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [
+        "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+        "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0"
+      ],
+      "validation_overlap": false,
+      "independent_holdout": true,
+      "validation_classification": "INDEPENDENT_HOLDOUT"
+    },
+    {
+      "label": "CANDIDATE_5",
+      "strategy_updates": {
+        "concentration_factor": "10",
+        "levels_per_side": 6
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.3"
+      },
+      "configuration_fingerprint": "da1d44fa8ba501869cb70ce7ee323845135cd5582d96dd9ad6b5a58eb668e604",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "39937893825e375496a88475597374bf86af02b62d8b63581fc63e81bfbd0d6a",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "377314.01939",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "cdc960d76137c6aa7b289e640150b3c9087b97ab4d222d997c41616fbbcd9578",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "373981.70926",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 12,
+            "replace_count": 228,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "600fc3f4ea3d0cf8bd71fde72fddd16fda67f85d6ed94b146424183c90725993",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99616.03598335000000000000000",
+            "session_pnl": "-383.9640166499999999999999988",
+            "return_pct": "-0.3839640166499999999999999988",
+            "realized_pnl": "-378.0646199999999999999999988",
+            "unrealized_pnl": "-5.8993966500",
+            "max_drawdown_pct": "0.004542741015682575618953644954",
+            "fill_count": 69,
+            "buy_fill_count": 32,
+            "sell_fill_count": 37,
+            "quoted_notional": "203619.26529",
+            "filled_notional": "113964.43428",
+            "fill_activity_ratio": "0.5596937702220308409207304433",
+            "ending_inventory_base": "-0.1582",
+            "max_abs_inventory_base": "3.9997",
+            "max_inventory_utilization": "0.39997",
+            "mean_spread_capture_bps": "-128.4820517622494266289547456",
+            "mean_mature_markout_bps": "-91.68026727320735645445363849",
+            "adverse_fill_rate": "0.7966101694915254237288135593",
+            "keep_count": 0,
+            "create_count": 77,
+            "replace_count": 75,
+            "cancel_count": 4,
+            "reconciliation_churn_ratio": "0.5064102564102564102564102564",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-38.39640166499999999999999988",
+            "drawdown_penalty": "45.42741015682575618953644954",
+            "inventory_penalty": "999.9250000",
+            "adverse_markout_penalty": "91.68026727320735645445363849",
+            "churn_penalty": "1266.025641025641025641025641",
+            "halt_penalty": "0",
+            "final_score": "-2441.454720120674138285015728"
+          }
+        }
+      ],
+      "validation": [],
+      "training_score": "-2397.151573373558046095005243",
+      "training_aggregate": {
+        "mean_objective_score": "-2397.151573373558046095005243",
+        "worst_objective_score": "-2441.454720120674138285015728",
+        "mean_session_pnl": "-127.9880055499999999999999996",
+        "mean_return_pct": "-0.1279880055499999999999999996",
+        "mean_max_drawdown_pct": "0.001514247005227525206317881651",
+        "worst_drawdown_pct": "0.004542741015682575618953644954",
+        "max_inventory_utilization": "0.39997",
+        "mean_markout_bps": "-91.68026727320735645445363849",
+        "mean_churn_ratio": "0.802136752136752136752136752",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": null,
+      "validation_aggregate": {},
+      "score_delta": null,
+      "baseline_delta": {},
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [],
+      "validation_overlap": false,
+      "independent_holdout": false,
+      "validation_classification": "NOT_EVALUATED"
+    },
+    {
+      "label": "CANDIDATE_7",
+      "strategy_updates": {
+        "concentration_factor": "10",
+        "levels_per_side": 8
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.3"
+      },
+      "configuration_fingerprint": "4cdb32a31a5fa85239d533ec1f10795e16f11c4ec66e4cc85be8d59de10ce3f2",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "cfb3bd5a7855e36932e1e6696b5d73be9384f1bdf0888e25092ee2fc933314cc",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "378050.50173",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "3756735505254ca8b35510203ad12ca1461c7a9069df556cd8c617dc0cf26fa3",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "374722.26490",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "0b94fbe56ed56d352de3d1670b7152b1076fb9827d90e8282263c0f3bf26a4b6",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99598.15380452500000000000000",
+            "session_pnl": "-401.8461954749999999999999972",
+            "return_pct": "-0.4018461954749999999999999972",
+            "realized_pnl": "-397.7841899999999999999999972",
+            "unrealized_pnl": "-4.0620054750",
+            "max_drawdown_pct": "0.004695613352800051362143968745",
+            "fill_count": 86,
+            "buy_fill_count": 40,
+            "sell_fill_count": 46,
+            "quoted_notional": "197103.58621",
+            "filled_notional": "110049.99371",
+            "fill_activity_ratio": "0.5583358264864317407084076819",
+            "ending_inventory_base": "-0.0913",
+            "max_abs_inventory_base": "3.9996",
+            "max_inventory_utilization": "0.39996",
+            "mean_spread_capture_bps": "-118.5379667523983311594976399",
+            "mean_mature_markout_bps": "-91.80489163312325644851275022",
+            "adverse_fill_rate": "0.7894736842105263157894736842",
+            "keep_count": 0,
+            "create_count": 96,
+            "replace_count": 92,
+            "cancel_count": 6,
+            "reconciliation_churn_ratio": "0.5051546391752577319587628866",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-40.18461954749999999999999972",
+            "drawdown_penalty": "46.95613352800051362143968745",
+            "inventory_penalty": "999.9000000",
+            "adverse_markout_penalty": "91.80489163312325644851275022",
+            "churn_penalty": "1262.886597938144329896907216",
+            "halt_penalty": "0",
+            "final_score": "-2441.732242646768099966859653"
+          }
+        }
+      ],
+      "validation": [],
+      "training_score": "-2397.244080882256033322286551",
+      "training_aggregate": {
+        "mean_objective_score": "-2397.244080882256033322286551",
+        "worst_objective_score": "-2441.732242646768099966859653",
+        "mean_session_pnl": "-133.9487318249999999999999991",
+        "mean_return_pct": "-0.1339487318249999999999999991",
+        "mean_max_drawdown_pct": "0.001565204450933350454047989582",
+        "worst_drawdown_pct": "0.004695613352800051362143968745",
+        "max_inventory_utilization": "0.39996",
+        "mean_markout_bps": "-91.80489163312325644851275022",
+        "mean_churn_ratio": "0.8017182130584192439862542957",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": null,
+      "validation_aggregate": {},
+      "score_delta": null,
+      "baseline_delta": {},
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [],
+      "validation_overlap": false,
+      "independent_holdout": false,
+      "validation_classification": "NOT_EVALUATED"
+    },
+    {
+      "label": "CANDIDATE_3",
+      "strategy_updates": {
+        "concentration_factor": "6",
+        "levels_per_side": 8
+      },
+      "agent_updates": {
+        "regime_spread_strength": "0.3"
+      },
+      "configuration_fingerprint": "cc49e1c36bff5d330c738b0c72bbacc034114beeefc65e32aa8e1305374d48c2",
+      "training": [
+        {
+          "scenario": "TREND_UP",
+          "dataset_fingerprint": "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+          "run_fingerprint": "28ee21ffb9e2efab1f67b3d44f911ad4d82a5e7f5534e6c05d8c6f347c995b0d",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "378050.50173",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "TREND_DOWN",
+          "dataset_fingerprint": "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+          "run_fingerprint": "69338690685deba7b0e215c52c7f630e57bb9dc7b19b72f85eb548acc41157fa",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "100000.0000000000",
+            "session_pnl": "0E-10",
+            "return_pct": "0E-10",
+            "realized_pnl": "0",
+            "unrealized_pnl": "0E-10",
+            "max_drawdown_pct": "0",
+            "fill_count": 0,
+            "buy_fill_count": 0,
+            "sell_fill_count": 0,
+            "quoted_notional": "374722.26490",
+            "filled_notional": "0",
+            "fill_activity_ratio": "0E+5",
+            "ending_inventory_base": "0",
+            "max_abs_inventory_base": "0",
+            "max_inventory_utilization": "0",
+            "mean_spread_capture_bps": null,
+            "mean_mature_markout_bps": null,
+            "adverse_fill_rate": null,
+            "keep_count": 0,
+            "create_count": 16,
+            "replace_count": 304,
+            "cancel_count": 0,
+            "reconciliation_churn_ratio": "0.95",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "TRENDING": 13
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 20
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 20
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "0E-10",
+            "drawdown_penalty": "0",
+            "inventory_penalty": "0.00",
+            "adverse_markout_penalty": "0",
+            "churn_penalty": "2375.0000",
+            "halt_penalty": "0",
+            "final_score": "-2375.0000000000"
+          }
+        },
+        {
+          "scenario": "HIGH_VOLATILITY",
+          "dataset_fingerprint": "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37",
+          "run_fingerprint": "bdc6496c6733e9de821a50bdf3a2a59b4ba6ae4527fa55df08307e8713cb5973",
+          "metrics": {
+            "frame_count": 20,
+            "starting_equity": "100000",
+            "ending_equity": "99598.15380452500000000000000",
+            "session_pnl": "-401.8461954749999999999999972",
+            "return_pct": "-0.4018461954749999999999999972",
+            "realized_pnl": "-397.7841899999999999999999972",
+            "unrealized_pnl": "-4.0620054750",
+            "max_drawdown_pct": "0.004695613352800051362143968745",
+            "fill_count": 86,
+            "buy_fill_count": 40,
+            "sell_fill_count": 46,
+            "quoted_notional": "197103.58621",
+            "filled_notional": "110049.99371",
+            "fill_activity_ratio": "0.5583358264864317407084076819",
+            "ending_inventory_base": "-0.0913",
+            "max_abs_inventory_base": "3.9996",
+            "max_inventory_utilization": "0.39996",
+            "mean_spread_capture_bps": "-118.5379667523983311594976399",
+            "mean_mature_markout_bps": "-91.80489163312325644851275022",
+            "adverse_fill_rate": "0.7894736842105263157894736842",
+            "keep_count": 0,
+            "create_count": 96,
+            "replace_count": 92,
+            "cancel_count": 6,
+            "reconciliation_churn_ratio": "0.5051546391752577319587628866",
+            "risk_state_counts": {
+              "NORMAL": 20
+            },
+            "risk_halt_fraction": "0",
+            "agent_regime_counts": {
+              "WARMING_UP": 7,
+              "QUIET": 1,
+              "TRENDING": 1,
+              "HIGH_VOLATILITY": 11
+            },
+            "toxic_flow_state_counts": {
+              "INSUFFICIENT_DATA": 6,
+              "NORMAL": 1,
+              "ELEVATED": 13
+            },
+            "execution_quality_state_counts": {
+              "INSUFFICIENT_DATA": 1,
+              "POOR": 19
+            },
+            "liquidity_quality_state_counts": {
+              "HEALTHY": 9,
+              "UNSTABLE": 11
+            },
+            "perp_crowding_state_counts": {
+              "INSUFFICIENT_DATA": 5,
+              "NEUTRAL": 15
+            }
+          },
+          "score": {
+            "return_contribution": "-40.18461954749999999999999972",
+            "drawdown_penalty": "46.95613352800051362143968745",
+            "inventory_penalty": "999.9000000",
+            "adverse_markout_penalty": "91.80489163312325644851275022",
+            "churn_penalty": "1262.886597938144329896907216",
+            "halt_penalty": "0",
+            "final_score": "-2441.732242646768099966859653"
+          }
+        }
+      ],
+      "validation": [],
+      "training_score": "-2397.244080882256033322286551",
+      "training_aggregate": {
+        "mean_objective_score": "-2397.244080882256033322286551",
+        "worst_objective_score": "-2441.732242646768099966859653",
+        "mean_session_pnl": "-133.9487318249999999999999991",
+        "mean_return_pct": "-0.1339487318249999999999999991",
+        "mean_max_drawdown_pct": "0.001565204450933350454047989582",
+        "worst_drawdown_pct": "0.004695613352800051362143968745",
+        "max_inventory_utilization": "0.39996",
+        "mean_markout_bps": "-91.80489163312325644851275022",
+        "mean_churn_ratio": "0.8017182130584192439862542957",
+        "mean_halt_fraction": "0",
+        "risk_normal_fraction": "1",
+        "risk_widen_fraction": "0",
+        "risk_reduce_fraction": "0",
+        "risk_halt_fraction": "0"
+      },
+      "validation_score": null,
+      "validation_aggregate": {},
+      "score_delta": null,
+      "baseline_delta": {},
+      "training_dataset_fingerprints": [
+        "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+        "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+        "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+      ],
+      "validation_dataset_fingerprints": [],
+      "validation_overlap": false,
+      "independent_holdout": false,
+      "validation_classification": "NOT_EVALUATED"
+    }
+  ],
+  "training_scenarios": [
+    "TREND_UP",
+    "TREND_DOWN",
+    "HIGH_VOLATILITY"
+  ],
+  "validation_scenarios": [
+    "MEAN_REVERTING",
+    "FLASH_MOVE"
+  ],
+  "objective": {
+    "drawdown_weight": "1",
+    "inventory_weight": "0.25",
+    "adverse_markout_weight": "1",
+    "churn_weight": "0.25",
+    "halt_weight": "1"
+  },
+  "simulated": true,
+  "training_dataset_fingerprints": [
+    "0e466449449c9cd54ed0f18f463b13bf5dfd3df406c31cd1e4770312116cd24d",
+    "305e259429626baee2c266f36273f8d76628af6474448419b41b0f4429774596",
+    "ec933d1a17a30a07ea3a49abb98c237d90066dbf5bc8f283e9a9df87306d1b37"
+  ],
+  "validation_dataset_fingerprints": [
+    "4741fd551c695a0ccd8b7c9aff887437ef0511dff3fcd5f7a8a105eda04c7421",
+    "7d270c5a718d3c8a8520853b965c97de54aa94e93fbc93ed1b56858fe902e2d0"
+  ],
+  "validation_overlap": false,
+  "independent_holdout": true,
+  "validation_classification": "INDEPENDENT_HOLDOUT"
+}

@@ -936,9 +936,32 @@ Chromium acceptance and browser-only partial-economics/race fixtures are recorde
 with commands, screenshots and limitations in
 [Phase 13.3.1 acceptance](PHASE1331_ACCEPTANCE.md).
 
-**13.3C–G remain pending:** Advanced Analytics, Simulation & Optimization,
-Operational Logs, Settings and full feature acceptance. Twelve-route viewport
-regression does not complete those features or Phase 13.2A–E. Phase 14/15,
-macOS, external providers, real Redis, signed TESTNET, long-soak and unrelated
-audit/schema gates remain excluded/open. No trading/accounting authority or
-backend application contract changes. One draft PR; do not merge automatically.
+### Phase 13.3.2 — Advanced Analytics & Simulation/Optimization
+
+- **13.3C — IMPLEMENTED / LOCAL ACCEPTANCE.** Backend-aware session ranges with
+  saved preference fallback, unit-correct equity/PnL/base/percentage charts,
+  genuine missing-value gaps, exact observation readouts, execution explanations
+  and returned-sample distributions. Process/session/connection-bound, abortable
+  history requests preserve historical labeling and reject obsolete completions.
+  Shared series lifecycle/resize/unmount changes are regression checked in Vault.
+- **13.3D — IMPLEMENTED / LOCAL ACCEPTANCE.** Actual scenario descriptions,
+  validated frame bounds, preserved bounded presets, captured request identities,
+  grouped metrics, six frame-index trace views, full provenance and limitations,
+  and backend-ranked baseline/two-candidate training/validation comparison.
+  Null evidence and rejection reasons stay visible; no deployment or live mutation.
+
+Base `8085c5810ce72169f63a0a6c3a0619741b518852`; PRs #43–#45 verified merged.
+Frontend **310 passed**, 0 failed/skipped; TypeScript/build passed. Backend full
+suite **1124 passed, 1 failed, 0 skipped** (unchanged generated-schema failure);
+focused simulation/accounting/terminal suite **173 passed**. Actual local PAPER
+Chromium: **72 route/viewport checks + 26 workflows**, zero page exceptions,
+including real simulation/grid, backend restart, Vault charts, fixtures and chart
+observer cleanup. Commands, raw results, screenshots and precise limitations:
+[Phase 13.3.2 acceptance](PHASE1332_ACCEPTANCE.md). One dedicated draft PR,
+left unmerged; no backend application, economic, scoring or authority changes.
+
+**13.3E/F and full 13.3G remain pending:** Operational Logs, Settings and full
+Phase 13.3 feature acceptance. Twelve-route viewport regression does not complete
+those features or Phase 13.2A–E. Phase 14/15, macOS, external providers, real Redis,
+signed TESTNET, long-soak and unrelated audit/schema gates remain excluded/open.
+Do not merge automatically.
