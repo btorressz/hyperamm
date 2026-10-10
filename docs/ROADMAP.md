@@ -918,9 +918,27 @@ PR against main; do not merge automatically.**
 
 ## Phase 13.3 — Research & Operational UX
 
-**PLANNED / NOT IMPLEMENTED.** Supervisory Agents, Vault/accounting, Analytics,
-Simulation & Optimization, Logs and Settings, then full twelve-page product
-acceptance. Follows 13.2 merge/review or an explicitly reviewed dependent branch.
-Phases 14/15 remain excluded. Full Phase 13 and the three-PR sequence are not
-complete at this initial Phase 13.1 delivery. Phase 12 macOS, external-provider/
-Redis, signed venue, long-running soak and A2-003/A2-005 gates remain as recorded.
+**PARTIAL — 13.3A/B IMPLEMENTED / LOCAL ACCEPTANCE / DRAFT REVIEW.**
+Phase 13.3.1 improves the existing Agents and Vault pages on verified merged
+main `616ab5b7dc1b48c2573cad5c4f41dffadc4cf1c4` (PRs #43 and #44 confirmed
+merged). Six inspectable agent cards, supervisor overview, explicit recommendation/
+risk/authorization/execution separation and bounded read-only agent-event filters;
+capital/PnL hierarchy, backend consistency status, exact decimal ledger filters/
+details and full accounting provenance. Session/process/connection transition keys,
+abortable requests and market/mode/version/fingerprint checks protect ledger
+attribution. REST ledger/events do not declare a terminal session ID; this is a
+client safeguard, not cryptographic session binding or persistent recovery.
+
+Frontend **262 passed**, 0 failed/skipped; TypeScript and production build pass.
+Backend **1124 passed, 1 failed, 0 skipped**, one upstream warning; the known
+`test_generated_terminal_schema_is_current` failure remains. Local DEMO/PAPER
+Chromium acceptance and browser-only partial-economics/race fixtures are recorded
+with commands, screenshots and limitations in
+[Phase 13.3.1 acceptance](PHASE1331_ACCEPTANCE.md).
+
+**13.3C–G remain pending:** Advanced Analytics, Simulation & Optimization,
+Operational Logs, Settings and full feature acceptance. Twelve-route viewport
+regression does not complete those features or Phase 13.2A–E. Phase 14/15,
+macOS, external providers, real Redis, signed TESTNET, long-soak and unrelated
+audit/schema gates remain excluded/open. No trading/accounting authority or
+backend application contract changes. One draft PR; do not merge automatically.

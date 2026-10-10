@@ -77,11 +77,11 @@ def test_read_only_accounting_routes_and_active_vault_ui():
     navigation = (root / "frontend/src/utils/navigation.ts").read_text()
     assert '{ name: "Vault", slug: "vault"' in navigation
     assert "terminalPages.map" in sidebar and "href={pageHref(name)}" in sidebar
-    assert 'Vault: <Vault t={t} />' in (root / "frontend/src/App.tsx").read_text()
+    assert 'Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />' in (root / "frontend/src/App.tsx").read_text()
     ui = "\n".join((root / path).read_text() for path in (
-        "frontend/src/pages/Vault.tsx", "frontend/src/components/VaultSummary.tsx", "frontend/src/components/AccountingLedger.tsx"))
+        "frontend/src/pages/Vault.tsx", "frontend/src/components/VaultSummary.tsx", "frontend/src/components/AccountingLedger.tsx", "frontend/src/components/vault/AccountingConsistency.tsx"))
     assert "PAPER / SIMULATED" in ui and "TESTNET /" in ui and "Unavailable" in ui
-    assert "Execution / Accounting" in ui and "unaccounted fills" in ui
+    assert "Execution ↔ accounting consistency" in ui and "Unaccounted fill count" in ui
     assert "'CONSISTENT' ? 'good'" in ui and "'DIVERGED' ? 'bad'" in ui
     for token in ("deposit", "withdrawal", "transfer", "bridge", "investor", "management_fee", "performance_fee"):
         assert token not in ui.lower()

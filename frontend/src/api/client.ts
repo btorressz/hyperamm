@@ -10,7 +10,9 @@ import type {
   OptimizationResult,
   SimulationResult,
   StrategyConfig,
+  AgentEvent,
 } from "../types";
+import type { AgentName } from '../utils/researchEvidence';
 const API = "/api/v1";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${API}${path}`, {
@@ -56,8 +58,8 @@ export const api = {
     }>("/health"),
   vault: () => request<VaultSnapshot>("/vault"),
   accountingPnl: () => request<PnlBreakdownState>("/accounting/pnl"),
-  accountingLedger: (limit = 100) =>
-    request<AccountingLedgerState>(`/accounting/ledger?limit=${limit}`),
+  accountingLedger: (limit = 100, signal?: AbortSignal) =>
+    request<AccountingLedgerState>(`/accounting/ledger?limit=${limit}`, { signal }),
   accountingEvents: () => request("/accounting/events"),
   marketAdaptation: () => request("/market-adaptation"),
   perpContext: () => request("/perp-context"),
@@ -72,7 +74,8 @@ export const api = {
     }>;
   }>("/references/observations"),
   agents: () => request("/agents"),
-  agentEvents: () => request("/agents/events"),
+  agentEvents: (agent?: AgentName, limit = 100, signal?: AbortSignal) =>
+    request<AgentEvent[]>(`/agents/events?limit=${Math.min(250, Math.max(1, limit))}${agent ? '&agent=' + encodeURIComponent(agent) : ''}`, { signal }),
   riskEvidence: () => request("/risk/evidence"),
   riskEvents: () => request("/risk/events"),
   riskAuthorization: () => request("/risk/authorization"),

@@ -686,3 +686,42 @@ Before modifying this guide in later phases, recheck the repository tree and the
 
 ---
 **Revision inspected:** `50f6ab9b42cbd72f905b2ffc319f0ea90b7252c4` — merged PR #43. **Purpose:** documentation and navigation only; this file introduces no runtime behavior, schema change, API endpoint or execution permission.
+
+
+## Phase 13.3.1 — Agents and Vault workspace additions
+
+Implemented against verified main `616ab5b7dc1b48c2573cad5c4f41dffadc4cf1c4`.
+The original source inventory above remains historical; these changes add
+presentation and client attribution safeguards without backend domain changes.
+See [acceptance](docs/PHASE1331_ACCEPTANCE.md) for actual results and limitations.
+
+| Source | Responsibility |
+| --- | --- |
+| [`AgentDetails.tsx`](frontend/src/components/agents/AgentDetails.tsx) | Six tailored observation/recommendation/reason/evidence cards, exact available detail fields and version-matched input provenance. |
+| [`AgentAuthoritySummary.tsx`](frontend/src/components/agents/AgentAuthoritySummary.tsx) | Separates reported agent recommendation, RiskFirewall, final authorization and execution observations; checks declared agent binding without claiming causal attribution. |
+| [`AgentEvents.tsx`](frontend/src/components/agents/AgentEvents.tsx) | Typed existing GET event response, agent filtering, manual refresh, bounded retention and terminal-only historical fallback. |
+| [`AccountingConsistency.tsx`](frontend/src/components/vault/AccountingConsistency.tsx) | Backend CONSISTENT/DIVERGED/UNAVAILABLE status and supported fill counts/timestamps; no repair action. |
+| [`AccountingProvenance.tsx`](frontend/src/components/vault/AccountingProvenance.tsx) | Versions, source/completeness, full inspectable fingerprints and session scope. |
+| [`useResearchSession.ts`](frontend/src/hooks/useResearchSession.ts) | Observes accepted terminal store transitions; a connection epoch rejects requests across reconnects even if React batches transitions. |
+| [`researchEvidence.ts`](frontend/src/utils/researchEvidence.ts) | Session freshness, ledger response/context matching, bounded event validation and exact decimal presentation. |
+| [`phase1331.css`](frontend/src/phase1331.css) | Research-page-scoped dark terminal layout, responsive cards, keyboard details and scrollable financial tables. |
+| [`research-workspace.test.cjs`](frontend/tests/research-workspace.test.cjs) | Agent/accounting evidence, precision, filtering, authority and deferred-request regressions. |
+| [`browser-phase1331.py`](frontend/tests/browser-phase1331.py) | Optional real Chromium local acceptance, isolated read-only browser fixtures and dedicated backend stop/restart. |
+
+Existing Agents/Vault routes, AgentPanel, VaultSummary, PnlBreakdown and
+AccountingLedger are enhanced. AgentPanel retains its compact Dashboard default;
+only the Agents route selects the workspace variant. Badge, TerminalPrimitives,
+format utilities, exactDecimal, API client, terminal store and Analytics SessionCharts
+are reused. Analytics implementation remains unchanged. Ledger filtering keeps
+backend newest-first sequence order; it does not introduce financial calculations
+or sorting through binary floating-point values. The static backend UI guard follows
+the relocated consistency component and session-keyed Vault mount while retaining
+read-only route/custody protections.
+
+`GET /agents/events` is an oldest-first array of retained events with a 250 limit;
+`GET /accounting/ledger` provides newest-first rows plus mode/market/version/hash,
+not a terminal session ID. Queries bind process/session and connection epoch, consume
+AbortSignal and check accepted terminal evidence again after completion. Ledger
+responses additionally match mode/market/version/fingerprint at request and render.
+No previous-session placeholder is shown. Identical genesis fingerprints alone
+cannot prove session provenance; this residual wire limitation is documented.

@@ -1,0 +1,391 @@
+{
+  "layout_checks": [
+    {
+      "width": 1920,
+      "page": "dashboard",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "markets",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "strategy",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "amm-settings",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "execution",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "risk",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "agents",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "vault",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "analytics",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "simulation",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "logs",
+      "scroll": 1920
+    },
+    {
+      "width": 1920,
+      "page": "settings",
+      "scroll": 1920
+    },
+    {
+      "width": 1440,
+      "page": "dashboard",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "markets",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "strategy",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "amm-settings",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "execution",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "risk",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "agents",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "vault",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "analytics",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "simulation",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "logs",
+      "scroll": 1440
+    },
+    {
+      "width": 1440,
+      "page": "settings",
+      "scroll": 1440
+    },
+    {
+      "width": 1366,
+      "page": "dashboard",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "markets",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "strategy",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "amm-settings",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "execution",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "risk",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "agents",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "vault",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "analytics",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "simulation",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "logs",
+      "scroll": 1366
+    },
+    {
+      "width": 1366,
+      "page": "settings",
+      "scroll": 1366
+    },
+    {
+      "width": 1024,
+      "page": "dashboard",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "markets",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "strategy",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "amm-settings",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "execution",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "risk",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "agents",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "vault",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "analytics",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "simulation",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "logs",
+      "scroll": 1024
+    },
+    {
+      "width": 1024,
+      "page": "settings",
+      "scroll": 1024
+    },
+    {
+      "width": 768,
+      "page": "dashboard",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "markets",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "strategy",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "amm-settings",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "execution",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "risk",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "agents",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "vault",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "analytics",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "simulation",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "logs",
+      "scroll": 768
+    },
+    {
+      "width": 768,
+      "page": "settings",
+      "scroll": 768
+    },
+    {
+      "width": 390,
+      "page": "dashboard",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "markets",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "strategy",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "amm-settings",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "execution",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "risk",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "agents",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "vault",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "analytics",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "simulation",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "logs",
+      "scroll": 390
+    },
+    {
+      "width": 390,
+      "page": "settings",
+      "scroll": 390
+    }
+  ],
+  "workflows": [
+    "72 live page/viewport checks",
+    "agent keyboard expand/collapse at all six widths",
+    "live agent filter",
+    "live empty PAPER ledger",
+    "shared Vault history charts",
+    "full live provenance access",
+    "actual Uvicorn stop: historical Agents and Vault",
+    "actual backend restart: new provenance and fresh ledger; old ledger hidden",
+    "all six populated fixture agent cards",
+    "warmup/degraded/insufficient/model unavailable evidence",
+    "fixture agent event filtering/empty/API error/loading",
+    "stale in-flight agent event request rejected across session transition",
+    "fixture ledger keyboard details/full fingerprints/exact tiny decimals",
+    "ledger event/side/source/simulation/combined empty filters",
+    "populated ledger overflow and detail access at all six widths",
+    "ledger API error and version mismatch show explicit unavailable/error; no empty-success fallback",
+    "old in-flight ledger with identical material provenance cannot populate replacement process/session",
+    "backend-reported DIVERGED consistency warning",
+    "TESTNET partial fixture missing equity/PnL and unavailable authoritative fill accounting"
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "WebSocket connection to 'ws://127.0.0.1:5173/ws/terminal' failed: Connection closed before receiving a handshake response"
+  ],
+  "fixture_notes": "Browser-only deterministic states; no backend economic writes or real TESTNET orders."
+}
