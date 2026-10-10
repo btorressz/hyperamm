@@ -877,3 +877,27 @@ remain open. Dedicated draft PR only; no merge or production-readiness claim.
   response retirement and real Chromium/restart/viewport acceptance. See
   [PHASE146_ACCEPTANCE](docs/PHASE146_ACCEPTANCE.md) and
   [SIMULATION](docs/SIMULATION.md#phase-146--validated-single-native-perpetual-research-selection).
+
+## Phase 15.1 — Read-only native live observation foundation
+
+Implemented against freshly fetched main
+`66dbe4f1d1e6ffd8832a99916ba927e0b284655c`, with PRs #43–#49 confirmed merged.
+[Acceptance](docs/PHASE151_ACCEPTANCE.md) documents executed tests, exact
+contracts/settings, changed files, existing schema failure and live network blocker.
+
+| Source | Responsibility |
+| --- | --- |
+| `backend/app/market_data/live_models.py` | Frozen strict phase151-v1 BTC/ETH/SOL metadata/book/perp/snapshot/overview contracts; Decimal strings, source/receipt/cache ages, errors and limitations |
+| `backend/app/market_data/live_observations.py` | Independent optional native SDK observer, validated symbol maps, pure observation normalizers, finite workers/admission, coalescing/cache, temporal integrity and owned cleanup |
+| `backend/app/api/live_markets.py` | Typed GET overview/snapshot, availability HTTP codes and safe evidence; no runtime dependency |
+| `backend/tests/test_phase151_live_markets.py` | Native evidence, actual SDK with intercepted HTTP, resource/lifecycle/deadline regressions and seeded real-runtime authority isolation |
+| `frontend/src/types/index.ts` | Additive future REST consumer bindings; string financial values, nullable source timestamps and component states |
+
+`main.py` owns this service in lifespan and registers its router; `config.py`
+provides validated `LIVE_OBSERVATIONS_ENABLED=false` and resource/freshness options.
+No startup network, operational market switching or observer-to-trading edge.
+The existing metadata validator/native price rules and perpetual parsing/math
+are reused. Separate typed observation models preserve source times and immutable
+bounded depth without altering legacy operational normalizers. No terminal wire
+schema or React navigation changes. Fixture acceptance and genuine external live
+verification remain separate; Phase 15.2–15.5 are future work.

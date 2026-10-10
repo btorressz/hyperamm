@@ -156,3 +156,40 @@ shutdown cannot support safe recovery. Further config/start requests require a
 runtime restart; resume clears only the manual kill latch and never the lifecycle
 failure. Cancellation, strategy stop and manual kill remain available. The initial
 runtime service startup also fails closed if a transport start raises.
+
+## Phase 15.1 — Opt-in public live REST observer
+
+`LiveMarketObservationService` owns an independent GET-only BTC/ETH/SOL native
+perpetual observation path, separate from operational market/strategy/reference/
+execution/accounting objects. `LIVE_OBSERVATIONS_ENABLED=false` is the default;
+explicit opt-in also works while the operational runtime stays DEMO/PAPER.
+Startup is lazy, requires no wallet and does not wait for external connectivity.
+
+The SDK 0.24.0 range is unchanged. A metadata-only `Info.meta(dex="")` bootstrap
+uses the unchanged strict native validator. The mapped `Info(skip_ws=True)` then
+initializes from actual validated exchange metadata and empty spot metadata;
+`l2_snapshot(market)` depends on those genuine SDK symbol maps. Each worker owns
+and closes both HTTP sessions, sequentially. No spot/HIP-3 discovery, permanent
+socket or signing client is created. Native L2 and context identities/precision/
+indices are independently validated; DEMO profiles never establish live evidence.
+
+`GET /api/v1/live-markets/overview` and `GET
+/api/v1/live-markets/{market}/snapshot` expose `phase151-v1` frozen Pydantic models
+and string Decimal values. Exchange L2 event time and actual local receipt remain
+separate. Perpetual context has **null exchange event time**, receipt age and
+UNKNOWN event-time freshness. Basis-to-mid uses only context-reported mid;
+missing mid remains null. Independent book/context receipts do not establish
+exchange synchronization. Stale cached evidence is not healthy or retimed.
+
+Finite worker admission, per-market single-flight, three-entry cache, supported
+HTTP timeout, caller/shutdown deadlines and retained synchronous-worker ownership
+bound optional observation work. Fixed safe errors distinguish partial, stale,
+timeout, denied/rate-limited and unavailable evidence. No observation enters
+reference consensus, RiskFirewall or FinalQuoteAuthorization. Existing operational
+`/markets` behavior and deterministic research calibration are unchanged.
+
+See [Phase 15.1 acceptance](PHASE151_ACCEPTANCE.md) for exact defaults, HTTP
+semantics, lifecycle, tested SDK compatibility, authority proof and checks.
+Fixture acceptance is implemented; full regression retains an unchanged-base
+terminal-schema mismatch. Current managed network policy excludes the API host,
+so genuine live metadata/L2/context verification remains **NOT RUN / BLOCKED**.

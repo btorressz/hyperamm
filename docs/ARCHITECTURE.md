@@ -477,3 +477,27 @@ pending evidence; completed results retain returned market identity and explicit
 label previous backend connections. Operational Vault accounting remains separate.
 See [SIMULATION](SIMULATION.md#phase-146--validated-single-native-perpetual-research-selection)
 for precision/calibration and [acceptance](PHASE146_ACCEPTANCE.md) for limitations.
+
+## Phase 15.1 independent observation boundary
+
+```text
+Hyperliquid native public REST → owned read-only SDK Info
+→ LiveMarketObservationService → immutable phase151-v1 evidence
+→ GET /live-markets/overview and /live-markets/{market}/snapshot
+```
+
+This lifespan-owned service defaults disabled and acquires lazily when explicitly
+enabled. It reuses strict native metadata validation, price precision and pure
+perpetual formulas without sharing operational feeds or creating a runtime.
+Finite worker admission, per-market coalescing, three-entry cache and retained
+cancellation/shutdown ownership contain synchronous SDK work. Local acquisition
+coherence is distinct from exchange event-time synchronization; missing context
+source time stays null and stale evidence cannot become current through receipt.
+
+There is no edge from this graph to StrategyConfig, market/perp/reference services,
+agents, risk/quorum, quote authorization, execution, capital or accounting.
+The two existing active-market read APIs and research DEMO profiles retain their
+semantics. [Acceptance](PHASE151_ACCEPTANCE.md) records real seeded-runtime
+isolation, deterministic SDK/HTTP tests and the still-open live network and
+pre-existing terminal-schema regression gates. Continuous streaming/history and
+React consumers belong to later milestones.

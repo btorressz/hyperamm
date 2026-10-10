@@ -12,6 +12,8 @@ from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
 from app.market_data.hyperliquid_metadata import HyperliquidMetadataCatalog
+from app.market_data.live_observations import LiveMarketObservationService
+from app.api.live_markets import router as live_markets_router
 from app.market_data.models import MarketDataMode
 from app.strategy.models import ExecutionMode
 from app.api.research_markets import router as research_markets_router
@@ -30,6 +32,7 @@ async def lifespan(app: FastAPI):
     validate_local_deployment()
     app.state.runtime = HyperAmmRuntime(settings)
     app.state.simulation_executor = SimulationExecutor()
+    app.state.live_market_observer = LiveMarketObservationService(settings)
     app.state.research_market_catalog = HyperliquidMetadataCatalog(
         allow_demo=settings.market_data_mode == MarketDataMode.DEMO and settings.execution_mode == ExecutionMode.PAPER)
     app.state.terminal_relay = None
@@ -55,7 +58,10 @@ async def lifespan(app: FastAPI):
             await app.state.simulation_executor.shutdown()
         finally:
             try:
-                await app.state.research_market_catalog.close()
+                try:
+                    await app.state.live_market_observer.close()
+                finally:
+                    await app.state.research_market_catalog.close()
             finally:
                 try:
                     await app.state.runtime.stop_services()
@@ -76,7 +82,7 @@ app.add_middleware(ResearchBodyLimit)
 
 @app.exception_handler(RequestValidationError)
 async def research_validation_errors(request, exc):
-    if any(segment in request.url.path for segment in ("/research-vault/", "/simulation/")):
+    if any(segment in request.url.path for segment in ("/research-vault/", "/simulation/", "/live-markets/")):
         # Do not echo credentials, oversized/nonfinite inputs or exception ctx.
         return JSONResponse(status_code=422, content={"detail": [
             {"loc": list(error["loc"]), "msg": error["msg"], "type": error["type"]}
@@ -84,7 +90,7 @@ async def research_validation_errors(request, exc):
     return await request_validation_exception_handler(request, exc)
 
 
-for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, accounting.router, terminal.router):
+for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, live_markets_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 
