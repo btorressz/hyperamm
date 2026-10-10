@@ -1,0 +1,350 @@
+{
+  "browser": "Chromium",
+  "checks": [
+    {
+      "check": "Dashboard navigation/render 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard contained layout 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard live charts 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets navigation/render 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets contained layout 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets live charts 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Strategy navigation/render 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Strategy contained layout 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "AMM Settings navigation/render 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "AMM Settings contained layout 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Risk navigation/render 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Risk contained layout 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Execution navigation/render 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Execution contained layout 1440px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard navigation/render 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard contained layout 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard live charts 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets navigation/render 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets contained layout 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets live charts 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Strategy navigation/render 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Strategy contained layout 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "AMM Settings navigation/render 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "AMM Settings contained layout 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Risk navigation/render 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Risk contained layout 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Execution navigation/render 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Execution contained layout 768px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard navigation/render 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard contained layout 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Dashboard live charts 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets navigation/render 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets contained layout 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Markets live charts 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Strategy navigation/render 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Strategy contained layout 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "AMM Settings navigation/render 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "AMM Settings contained layout 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Risk navigation/render 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Risk contained layout 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Execution navigation/render 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Execution contained layout 390px",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "mobile drawer navigation",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "configuration reset restores backend value",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "configuration 422 preserves unsaved input",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "configuration valid save",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "DEMO/PAPER started; signed TESTNET disabled",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "quote lineage three distinct stages",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "real lifecycle orders available",
+      "result": "PASS",
+      "detail": "{'orders': 116, 'fills': 0}"
+    },
+    {
+      "check": "execution side filter",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "execution mode filter",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "execution ascending exact price sort",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "execution expanded details usable",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "real execution/reconciliation timeline",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "PAPER simulated evidence label",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "kill sticky; start disabled",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "dismissed resume preserves kill",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "confirmed resume leaves strategy stopped",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "browser acceptance rejects duplicate/stale/future envelopes",
+      "result": "PASS",
+      "detail": "{\"duplicate\": {\"accepted\": false, \"reason\": \"sequence\"}, \"stale\": {\"accepted\": false, \"reason\": \"stale\"}, \"future\": {\"accepted\": false, \"reason\": \"future\"}}"
+    },
+    {
+      "check": "disconnect execution is historical; timeline polling paused",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "initial loading without backend",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "backend restart installs new process/session",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "restart does not mix old orders",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "retired process rejected even with fresh timestamp",
+      "result": "PASS",
+      "detail": "{\"accepted\": false, \"reason\": \"replay\"}"
+    },
+    {
+      "check": "execution bookmark reload",
+      "result": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "no browser page exceptions",
+      "result": "PASS",
+      "detail": "[]"
+    }
+  ],
+  "page_errors": [],
+  "http_errors": [
+    {
+      "status": 422,
+      "url": "http://127.0.0.1:5173/api/v1/strategy"
+    },
+    {
+      "status": 500,
+      "url": "http://127.0.0.1:5173/api/v1/health"
+    },
+    {
+      "status": 500,
+      "url": "http://127.0.0.1:5173/api/v1/health"
+    }
+  ]
+}

@@ -1,8 +1,16 @@
 import type { TerminalState } from "../types";
 import { Panel, Metrics, Empty } from "../components/TerminalPrimitives";
 import { OrderTable } from "../components/RecentExecution";
-import { timestamp, price, quantity, percentage, bps } from "../utils/format";
-export function Execution({ t }: { t: TerminalState }) {
+import { exactDecimal } from "../utils/orderView";
+import { timestamp, percentage, bps } from "../utils/format";
+import { ExecutionTimeline } from "../components/ExecutionTimeline";
+export function Execution({
+  t,
+  historical = false,
+}: {
+  t: TerminalState;
+  historical?: boolean;
+}) {
   const paper = t.strategy.config.execution_mode === "PAPER",
     quality = t.agents.execution_quality?.metrics;
   return (
@@ -38,9 +46,17 @@ export function Execution({ t }: { t: TerminalState }) {
           ]}
         />
       </Panel>
-      <Panel title="Open orders" meta="Current retained venue / PAPER evidence">
+      <Panel
+        title="Active & uncertain order evidence"
+        meta={
+          historical
+            ? "HISTORICAL SESSION"
+            : "Retained venue / PAPER statuses; not resting confirmation"
+        }
+      >
         <OrderTable
           t={t}
+          historical={historical}
           orders={t.orders.filter((o) =>
             ["OPEN", "PARTIALLY_FILLED", "UNKNOWN"].includes(o.status),
           )}
@@ -52,9 +68,8 @@ export function Execution({ t }: { t: TerminalState }) {
       >
         <OrderTable
           t={t}
-          orders={[...t.orders].sort(
-            (a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at),
-          )}
+          historical={historical}
+          orders={t.orders}
         />
       </Panel>
       <Panel
@@ -79,8 +94,8 @@ export function Execution({ t }: { t: TerminalState }) {
                     <tr key={`${f.client_order_id}-${i}`}>
                       <td>{timestamp(f.timestamp)}</td>
                       <td>{f.side}</td>
-                      <td>{price(f.price)}</td>
-                      <td>{quantity(f.size)}</td>
+                      <td>{exactDecimal(f.price)}</td>
+                      <td>{exactDecimal(f.size)}</td>
                       <td>{f.source}</td>
                     </tr>
                   ))
@@ -98,6 +113,11 @@ export function Execution({ t }: { t: TerminalState }) {
           <Empty>TESTNET fill history unavailable</Empty>
         )}
       </Panel>
+      <ExecutionTimeline
+        key={t.session_id}
+        session={t.session_id}
+        historical={historical}
+      />
       <Panel title="Reconciliation actions" meta="Latest strategy cycle">
         <div className="tableWrap">
           <table>
@@ -119,7 +139,7 @@ export function Execution({ t }: { t: TerminalState }) {
                       {a.desired?.level_index ?? a.existing?.level_index ?? "—"}
                     </td>
                     <td>
-                      {price(a.desired?.price)} / {quantity(a.desired?.size)}
+                      {exactDecimal(a.desired?.price)} / {exactDecimal(a.desired?.size)}
                     </td>
                     <td>{a.existing?.status ?? "—"}</td>
                   </tr>

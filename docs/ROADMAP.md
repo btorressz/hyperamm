@@ -20,8 +20,8 @@
 | 12.1 | LINUX ACCEPTED / MACOS PENDING | Structured WebSocket cancellation, bounded subscriber/lease shutdown, reproducible test matrices and real browser/proxy acceptance; cross-platform A2-005 closure pending |
 | 12.2 | LINUX ACCEPTED / MACOS & LIVE PENDING | Executable price-distance integrity, strategy precision/feasibility and effective-price depth; logical slots preserved, stronger collapse policy deferred |
 | 12.3 | MERGED / LINUX ACCEPTED / MACOS PENDING | Terminal freshness, process/session integrity and bounded replay protection; prior external/soak gates remain |
-| 13.1 | IMPLEMENTED / LOCAL ACCEPTANCE PASSED / DRAFT REVIEW | Shared institutional design, persistent navigation, responsive accessible shell; no backend authority changes |
-| 13.2 | PLANNED | Trading workspace, Dashboard/Markets/Strategy/AMM Settings/Risk/Execution UX; follows 13.1 review/merge |
+| 13.1 | MERGED / LOCAL ACCEPTANCE PASSED | Shared institutional design, persistent navigation, responsive accessible shell; no backend authority changes |
+| 13.2 | PARTIAL / F IMPLEMENTED / G LOCAL CHECKS / A–E PENDING | 13.2.1 execution lifecycle UX; frontend verified; one baseline backend schema gate remains |
 | 13.3 | PLANNED | Agents/Vault/Analytics/Simulation/Logs/Settings UX and final acceptance; follows 13.2 review/merge |
 
 ## Phase 6 extension points
@@ -879,11 +879,42 @@ provider, signed venue or extended soak acceptance. **Do not merge automatically
 
 ## Phase 13.2 — Trading Workspace UX
 
-**PLANNED / NOT IMPLEMENTED.** Dashboard command center, Markets/order book,
-Strategy quote lineage, logically grouped AMM controls and backend-supported
-preview, Risk and Execution workflow improvements. Create its separate draft
-against merged 13.1, or an explicitly reviewed dependent branch with the correct
-base. No independently mergeable dependent draft is claimed.
+**PARTIAL / 13.2F IMPLEMENTED / 13.2G LOCAL ACCEPTANCE SCOPED / A–E PENDING.**
+13.2.1 starts from fetched merged main
+`d11acbd24d3944d4570bd855655c3aa0dbf4625a` (PRs #41 and #42 merged).
+PR #42's exact quote matching and proposal/authorization separation are preserved
+and extended for competing historical slots, replacements and partial fills.
+Execution now has status/side/mode-evidence filters, stable timestamp/price/size/
+status sorting, exact Decimal display, expandable lifecycle details and a bounded,
+read-only, session-checked execution/reconciliation event timeline. OPEN/partial,
+UNKNOWN and all terminal statuses stay distinct; historical or uncertain evidence
+never claims confirmed resting liquidity. PAPER is explicitly simulated and
+TESTNET evidence remains guarded/incomplete. Backend execution, signing, trading
+permissions and accounting are unchanged.
+
+Verified baseline frontend **175 passed**: all 164 Phase 13.1 cases plus PR #42's
+11 cases were executed. Final frontend **213 passed**, 0 failed/skipped;
+typecheck/build passed. Complete existing Python 3.12.14 optional-dependency backend
+suite: **1124 passed, 1 failed, 0 skipped**, one upstream warning. The pre-existing
+`test_generated_terminal_schema_is_current` Decimal-pattern mismatch remains an
+integration gate; no schema or test weakening is included. Real local DEMO/PAPER
+Chromium: **66 main assertions + 4 supplemental assertions** across Dashboard,
+Markets, Strategy, AMM Settings, Risk and Execution at 1440/768/390px, including
+configuration Save/Reset/422, lineage, sticky Kill/confirmed Resume, order filters/
+sorting/details, timeline, actual backend stop/restart and freshness/replay probes.
+Natural PAPER fill sample remains browser acceptance pending (zero fills in scoped
+probes); fill presentation/statuses are regression covered. Acceptance configuration
+was restored and the strategy stopped. Full implementation, commands, results,
+limitations and evidence:
+[13.2.1 acceptance](PHASE1321_ACCEPTANCE.md).
+
+**13.2A–E implementation and feature acceptance remain pending:** Dashboard command
+center, Markets workspace, broader Strategy lineage workflow, AMM Settings workflow
+and backend-supported preview, and broader Risk workflow. Existing-page acceptance
+does not establish these redesigns. Full Phase 13.2 is not complete. Preserve
+macOS, external-provider, real Redis, signed TESTNET, extended soak and existing
+A2-003/A2-005 gates. No signed TESTNET orders were sent. Dedicated **13.2.1 draft
+PR against main; do not merge automatically.**
 
 ## Phase 13.3 — Research & Operational UX
 

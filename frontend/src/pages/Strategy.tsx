@@ -7,7 +7,13 @@ import { MarketAdaptationPanel } from "../components/MarketAdaptationPanel";
 import { PerpContextPanel } from "../components/PerpContextPanel";
 import { Panel, Metrics } from "../components/TerminalPrimitives";
 import { number, price, fingerprint } from "../utils/format";
-export function Strategy({ t }: { t: TerminalState }) {
+export function Strategy({
+  t,
+  historical = false,
+}: {
+  t: TerminalState;
+  historical?: boolean;
+}) {
   return (
     <div className="stack">
       <div className="grid twoColumns">
@@ -51,7 +57,12 @@ export function Strategy({ t }: { t: TerminalState }) {
       ].map(([label, quotes, stage]) => (
         <div key={String(label)}>
           <h2>{String(label)}</h2>
-          <QuoteLadder quotes={quotes as typeof t.quotes} orders={t.orders} stage={stage as "STRATEGY" | "AGENT" | "AUTHORIZED"} />
+          <QuoteLadder
+            historical={historical}
+            quotes={quotes as typeof t.quotes}
+            orders={t.orders}
+            stage={stage as "STRATEGY" | "AGENT" | "AUTHORIZED"}
+          />
         </div>
       ))}
     </div>
