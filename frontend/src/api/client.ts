@@ -11,6 +11,7 @@ import type {
   SimulationResult,
   StrategyConfig,
   AgentEvent,
+  ResearchCatalog, ResearchProposal, ResearchPreviewResponse, ResearchComparison,
 } from "../types";
 import type { AgentName } from '../utils/researchEvidence';
 const API = "/api/v1";
@@ -19,14 +20,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json" },
     ...init,
   });
-  if (r.status === 429 && path.startsWith("/simulation/"))
+  if (r.status === 429 && (path.startsWith("/simulation/") || path.startsWith('/research-vault/')))
     throw new Error(
       "Research capacity is busy. Try again after the current simulation or optimization finishes.",
     );
   if (!r.ok) {
     const body = await r.json().catch(() => null);
     const detail = body?.detail;
-    if (path.startsWith('/simulation/')) {
+    if (path.startsWith('/simulation/') || path.startsWith('/research-vault/')) {
       const message = Array.isArray(detail)
         ? detail.map((e: {loc: unknown[]; msg: string}) => `${e.loc.slice(1).join('.')}: ${e.msg}`).join('; ')
         : typeof detail === 'string' ? detail : `HTTP ${r.status}`;
@@ -55,6 +56,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json();
 }
 export const api = {
+  researchPresets: (signal?: AbortSignal) => request<ResearchCatalog>('/research-vault/presets', {signal}),
+  researchPreview: (body: ResearchProposal, signal?: AbortSignal) => request<ResearchPreviewResponse>('/research-vault/preview',
+    {method: 'POST', body: JSON.stringify(body), signal}),
+  compareResearch: (body: unknown) => request<ResearchComparison>('/research-vault/compare',
+    {method: 'POST', body: JSON.stringify(body)}),
   terminalHistory: (range: HistoryRange = "session", limit = 600, signal?: AbortSignal) =>
     request<TerminalHistory>(`/terminal/history?range=${range}&limit=${limit}`, { signal }),
   terminalEvents: (category?: EventCategory, limit = 100, signal?: AbortSignal) =>

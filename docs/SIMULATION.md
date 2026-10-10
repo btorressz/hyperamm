@@ -881,3 +881,113 @@ SciPy usage stays transitive inside optional sklearn research; they do not enter
 AMM, risk, order sizing, accounting or final authorization. The ordinary backend
 install works without sklearn. See [complete agent and offline ML contracts](../backend/app/agents/README.md)
 for CLI usage, normalization, fingerprint scope and retained evidence formulas.
+
+## Phase 14 — Customizable Research Vault
+
+A stateless `ResearchProposal` carries a strict `ResearchVaultConfig` plus optional
+`selected_preset_id`. Python owns preset definitions (`simulation/presets.py`),
+versions and validation. Preset selection and editable drafts live only in browser
+memory. Research never writes active strategy, runtime accounting, risk, signing,
+kill state or orders. The existing PAPER engine and accounting formulas are reused.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /api/v1/research-vault/presets` | Deterministic, versioned Python catalog |
+| `POST /api/v1/research-vault/preview` | Validation and Decimal configuration arithmetic; no engine/trades/persistence |
+| `POST /api/v1/research-vault/compare` | One admitted worker operation, two sequential isolated runs from one captured snapshot and dataset |
+| `POST /api/v1/simulation/run` / `optimize` | Optional `research` proposal; legacy requests retain defaults |
+
+Canonical request example:
+
+```json
+{
+  "scenario": "FLASH_MOVE",
+  "frames": 120,
+  "research": {
+    "selected_preset_id": "balanced-research",
+    "config": {
+      "initial_equity_quote": "100000",
+      "paper_fee_model_enabled": true,
+      "paper_maker_fee_bps": "1",
+      "paper_taker_fee_bps": "3",
+      "paper_funding_accounting_enabled": false,
+      "paper_funding_interval_seconds": 3600,
+      "max_capital_utilization": "0.75"
+    }
+  },
+  "simulation": {"max_frames": 120, "record_trace": true, "trace_max_points": 250}
+}
+```
+
+With `research`, `simulation` can supply only frame/trace controls: explicitly
+supplied capital, accounting or fill model is ambiguous and rejected. There is
+one starting-capital input: `initial_equity_quote`. Explicit mapping sets both
+simulation initial equity and isolated accounting initial equity to that value;
+the engine retains its existing capital override. Accounting enablement, ledger/
+event bounds and freshness remain code-owned defaults. CROSSING_ONLY is mandatory.
+Research fields are excluded from optimizer strategy/agent parameter allowlists.
+
+Financial bounds reuse AccountingConfig metadata, with narrower research limits:
+capital >0 and ≤1e12 quote; maker/taker fees 0–100 bps; utilization >0 and ≤1;
+finite Decimals with at most 18 fractional places and 80 input characters. Flags
+are strict booleans; funding intervals are integer seconds in
+`1, 60, 300, 3600, 28800, 86400`. Short intervals are explicitly sampled research
+stress assumptions. Unknown/nested/protected fields and unknown preset IDs fail
+closed. POST research bodies are bounded to 64 KiB before parsing (including
+chunked requests). Validation errors retain location/type/message without echoing
+input/exception context, including raw JSON NaN/Infinity.
+
+| Preset ID (version 1) | Capital quote | Enabled maker/taker bps | Funding | Utilization cap |
+| --- | ---: | --- | --- | ---: |
+| conservative-capital | 50000 | 1 / 3 | Disabled, 3600s | 0.35 |
+| balanced-research | 100000 | 1 / 3 | Disabled, 3600s | 0.75 |
+| high-cost-stress | 100000 | 10 / 25 | Enabled, 60s | 0.75 |
+
+Names describe hypothetical studies, not safety or profit guarantees. The narrow
+model's defaults preserve legacy accounting assumptions (fees/funding disabled,
+100000 capital, utilization 1); Balanced Research is a separate catalog profile.
+
+Preview compares the submitted configuration to the selected preset (or the
+explicitly reported Balanced baseline when no preset is supplied). It returns
+old/new values, Decimal differences and units, canonical values, schema
+`phase14-v1`, preset ID/version, fingerprint, warnings and limitations. Its only
+capital calculation is initial capital × utilization fraction; that ceiling is
+neither venue margin nor guaranteed allocation. Preview calculates no PnL.
+Funding enabled may produce no events within a short dataset. Scenario rates
+remain per research interval, using existing sampled position/mark evidence.
+
+The research SHA-256 uses existing simulation stable-fingerprint serialization
+on a canonical config plus schema version. Decimal encodings such as `1.00` and
+`1` normalize without rounding. Preset versions are code-owned and must increment
+when definitions change. Simulation/optimization results add nullable
+`research_configuration` provenance; engine/run/dataset/strategy fingerprints
+retain their existing semantics. The run endpoint validates again and never
+accepts a preview hash as validation authority.
+
+Comparison payload: `{baseline: ResearchProposal, custom: ResearchProposal,
+scenario, frames, record_trace, trace_max_points}`. Bounds are 2–1000 frames per
+run and 0–500 trace points. The request captures strategy/agents/risk synchronously
+before awaiting admission, forces PAPER/DEMO on copied strategy and generates
+one dataset. Two engine invocations create fresh PAPER accounting/execution/
+supervision/risk state. Only permitted accounting assumptions differ. The same
+local worker (and optional existing Redis admission wrapper) owns the operation;
+429 and cancellation behavior are preserved, with no queue or second executor.
+
+Comparison returns both existing SimulationResults, config provenance,
+custom-minus-baseline Decimal deltas, actual risk-state counts and limitations.
+Fees/funding and ending capital utilization come from actual VaultSnapshots;
+unavailable values stay null. `max_inventory_utilization` remains the existing
+inventory-risk metric, distinct from ending capital reservation utilization.
+Starting-capital differences carry an explicit interpretation warning. Higher
+PnL is an observed simulated outcome, never a guaranteed improvement.
+
+Vault appends a clearly distinct studio after existing accounting provenance.
+Decimal inputs remain strings; percent movement is textual and scales once.
+Preset selection/reset, validation, stale preview and selection for research are
+separate states. Request/draft/connection generations reject obsolete completions,
+including edits, preset switches, navigation and batched reconnects. Backend restart
+retires prior validation while preserving the local draft. Simulation captures
+selected research settings at submission and keeps completed results associated
+with their request; optimization presets remain independent. Disconnect/AbortSignal
+never claims the worker has stopped. No browser persistence or live deployment
+action is added. See [Phase 14 acceptance](PHASE14_ACCEPTANCE.md).

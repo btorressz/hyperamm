@@ -1,4 +1,4 @@
-import type { SimulationResult } from "../types";
+import type { SimulationResult, ResearchProposal } from "../types";
 export const optimizationPresets = {
   Balanced: {
     description:
@@ -44,10 +44,14 @@ export function presetCandidateCount(preset: keyof typeof optimizationPresets) {
   ].reduce((n, v) => n * v.length, 1);
 }
 export type RunConfiguration = {
-  kind: "run" | "opt";
+  kind: "run" | "opt" | "compare";
   scenario: string;
   frames: number;
   preset: keyof typeof optimizationPresets;
+  research?: ResearchProposal;
+  baseline?: ResearchProposal;
+  researchFingerprint?: string;
+  researchEpoch?: number;
 };
 // Synchronous admission closes the double-click window before React rerenders.
 export class ResearchRunGate {

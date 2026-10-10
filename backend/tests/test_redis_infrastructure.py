@@ -356,3 +356,27 @@ async def test_health_requires_success_and_tracks_sanitized_failure_and_recovery
         assert infra.health()["status"] == "DEGRADED"
     finally:
         await client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_phase14_comparison_reuses_coordinated_worker(infrastructure):
+    from app.simulation.research_vault import ResearchProposal
+    from app.simulation.presets import get_preset
+    infra, _ = infrastructure
+    executor = CoordinatedSimulationExecutor(SimulationExecutor(), infra, lambda: ('p14', 's14'))
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    baseline = ResearchProposal(config=get_preset('balanced-research').config, selected_preset_id='balanced-research')
+    custom = ResearchProposal(config=get_preset('high-cost-stress').config, selected_preset_id='high-cost-stress')
+    before = (rt.config.model_dump(), rt.agent_config.model_dump(), rt.risk_config.model_dump())
+    try:
+        result = await executor.execute('compare_research_configs', scenario='QUIET', frames=3,
+            strategy=rt.config, agents=rt.agent_config, risk=rt.risk_config,
+            simulation=SimulationConfig(max_frames=3), baseline=baseline, custom=custom)
+        assert result.baseline_result.dataset_fingerprint == result.custom_result.dataset_fingerprint
+        keys = await infra.call('keys', infra.key('research-job', 'p14', 's14', '*'))
+        assert len(keys) == 1
+        status = json.loads(await infra.call('get', keys[0]))
+        assert status['operation'] == 'compare_research_configs' and status['status'] == 'COMPLETED'
+        assert before == (rt.config.model_dump(), rt.agent_config.model_dump(), rt.risk_config.model_dump())
+    finally:
+        await executor.shutdown()

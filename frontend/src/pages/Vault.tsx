@@ -9,6 +9,7 @@ import { PnlBreakdown } from '../components/PnlBreakdown';
 import { AccountingLedger } from '../components/AccountingLedger';
 import { AccountingConsistency } from '../components/vault/AccountingConsistency';
 import { AccountingProvenance } from '../components/vault/AccountingProvenance';
+import { ResearchConfiguration } from '../components/vault/ResearchConfiguration';
 import { Panel, StatusBanner } from '../components/TerminalPrimitives';
 import { SessionCharts } from './Analytics';
 import '../phase11.css';
@@ -41,5 +42,6 @@ export function Vault({t,historical = false}: {t: TerminalState; historical?: bo
       : !visible ? <Panel title="Accounting ledger"><p className="muted panelNote" role="status">Loading / reconciling current ledger evidence…</p></Panel>
       : <AccountingLedger key={`${t.process_id}:${t.session_id}`} ledger={visible} mode={v.mode}/>}
     <AccountingProvenance t={t}/>
+    <ResearchConfiguration t={t} historical={historical}/>
   </div>;
 }

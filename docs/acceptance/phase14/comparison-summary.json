@@ -1,0 +1,59 @@
+{
+  "scenario": "FLASH_MOVE",
+  "frame_count": 30,
+  "comparison_deltas": {
+    "starting_equity": "0.123456789123456789",
+    "ending_equity": "-0.88662642914401821100000",
+    "session_pnl": "-1.0100832182674750000000000",
+    "return_pct": "-0.0010095623697451509778216164",
+    "max_drawdown_pct": "4.9859041611654991925654E-8",
+    "fill_count": 0,
+    "max_inventory_utilization": "0.00000",
+    "risk_halt_fraction": "0",
+    "fees_quote": "1.008541936",
+    "funding_quote": "-0.001541282267475000",
+    "capital_utilization": "0.0000010287539570964858334027"
+  },
+  "baseline_config_fingerprint": "d0ea2429f9d45476e157ce2a51af3069d58f61d6d128e88408463a7d4cb6f81f",
+  "custom_config_fingerprint": "fee22161a250a3ddf73f7e99d2044249b368240fe8f72d71832a754e4611f7e1",
+  "baseline_result": {
+    "dataset_fingerprint": "822736de38b3e50af48fc0a02aba57ddce9770ea038176adb705eddd15ada15b",
+    "strategy_fingerprint": "2e1451bc3ffe4b6bd34b3c7a5a0abee062be8676222b3b3253904935d0e7f438",
+    "run_fingerprint": "699f49b3ef988863288841b83ed514d70461e57a60562be7099db3065f466718",
+    "engine_version": "phase10.1-v3",
+    "metrics": {
+      "starting_equity": "100000",
+      "ending_equity": "99579.12225587000000000000000",
+      "session_pnl": "-420.8777441299999999999999986",
+      "fill_count": 8,
+      "risk_state_counts": {
+        "NORMAL": 30
+      }
+    },
+    "accounting": {
+      "fees_quote": "1.008541936",
+      "funding_quote": "0",
+      "capital_utilization": "0.1155407740815648297817890682"
+    }
+  },
+  "custom_result": {
+    "dataset_fingerprint": "822736de38b3e50af48fc0a02aba57ddce9770ea038176adb705eddd15ada15b",
+    "strategy_fingerprint": "2e1451bc3ffe4b6bd34b3c7a5a0abee062be8676222b3b3253904935d0e7f438",
+    "run_fingerprint": "def0f1a78de81a175d9e8e69dc467d8b7a22f19756d0cf8a30fe13bb16c2d1de",
+    "engine_version": "phase10.1-v3",
+    "metrics": {
+      "starting_equity": "100000.123456789123456789",
+      "ending_equity": "99578.23562944085598178900000",
+      "session_pnl": "-421.8878273482674749999999986",
+      "fill_count": 8,
+      "risk_state_counts": {
+        "NORMAL": 30
+      }
+    },
+    "accounting": {
+      "fees_quote": "2.017083872",
+      "funding_quote": "-0.001541282267475000",
+      "capital_utilization": "0.1155418028355219262676224709"
+    }
+  }
+}
