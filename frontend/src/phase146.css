@@ -1,0 +1,10 @@
+/* Single-market research controls reuse the terminal's form and panel palette. */
+.researchMarketSelector { padding: 16px; min-width: 0; }
+.researchMarketSelector .formGrid {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  max-width: 460px;
+}
+.researchMarketSelector .formGrid label { font-size: 12px; }
+.researchMarketSelector .formGrid select { min-height: 38px; font-size: 12px; }
+.researchMarketSelector p, .researchMarketSelector dd { overflow-wrap: anywhere; }

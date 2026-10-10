@@ -11,6 +11,10 @@ from app.deployment import LocalOnlyBoundary, validate_local_deployment
 from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
+from app.market_data.hyperliquid_metadata import HyperliquidMetadataCatalog
+from app.market_data.models import MarketDataMode
+from app.strategy.models import ExecutionMode
+from app.api.research_markets import router as research_markets_router
 from app.api.research_vault import router as research_vault_router, ResearchBodyLimit
 from app.infrastructure.redis import RedisInfrastructure
 from app.infrastructure.terminal_transport import RedisTerminalTransport
@@ -26,6 +30,8 @@ async def lifespan(app: FastAPI):
     validate_local_deployment()
     app.state.runtime = HyperAmmRuntime(settings)
     app.state.simulation_executor = SimulationExecutor()
+    app.state.research_market_catalog = HyperliquidMetadataCatalog(
+        allow_demo=settings.market_data_mode == MarketDataMode.DEMO and settings.execution_mode == ExecutionMode.PAPER)
     app.state.terminal_relay = None
     app.state.redis_infrastructure = None
     infrastructure = None
@@ -49,14 +55,17 @@ async def lifespan(app: FastAPI):
             await app.state.simulation_executor.shutdown()
         finally:
             try:
-                await app.state.runtime.stop_services()
+                await app.state.research_market_catalog.close()
             finally:
                 try:
-                    if app.state.terminal_relay is not None:
-                        await app.state.terminal_relay.close()
+                    await app.state.runtime.stop_services()
                 finally:
-                    if infrastructure is not None:
-                        await infrastructure.close()
+                    try:
+                        if app.state.terminal_relay is not None:
+                            await app.state.terminal_relay.close()
+                    finally:
+                        if infrastructure is not None:
+                            await infrastructure.close()
 
 
 app = FastAPI(title="HyperAMM API", version="0.12.0", lifespan=lifespan)
@@ -75,7 +84,7 @@ async def research_validation_errors(request, exc):
     return await request_validation_exception_handler(request, exc)
 
 
-for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, accounting.router, terminal.router):
+for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 

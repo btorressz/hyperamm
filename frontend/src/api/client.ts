@@ -12,6 +12,7 @@ import type {
   StrategyConfig,
   AgentEvent,
   ResearchCatalog, ResearchProposal, ResearchPreviewResponse, ResearchComparison,
+  ResearchMarketCatalog,
 } from "../types";
 import type { AgentName } from '../utils/researchEvidence';
 const API = "/api/v1";
@@ -56,6 +57,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json();
 }
 export const api = {
+  researchMarkets: (signal?: AbortSignal) => request<ResearchMarketCatalog>('/research-markets', {signal}),
   researchPresets: (signal?: AbortSignal) => request<ResearchCatalog>('/research-vault/presets', {signal}),
   researchPreview: (body: ResearchProposal, signal?: AbortSignal) => request<ResearchPreviewResponse>('/research-vault/preview',
     {method: 'POST', body: JSON.stringify(body), signal}),

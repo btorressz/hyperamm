@@ -27,6 +27,7 @@ from .models import SimulationDataset,SimulationResult,SimulationTracePoint,stab
 from .references import build_simulated_references
 from .replay import bounded_frames
 from . import version
+from .market_profiles import normalize_quotes
 
 
 LIMITATIONS=[
@@ -65,6 +66,7 @@ class SimulationEngine:
         simulation_config:SimulationConfig,
         scenario:str|None=None,
         predictive_model:LogisticModelArtifact|None=None,
+        market_profile=None,
     )->SimulationResult:
         frames=bounded_frames(dataset,simulation_config.max_frames)
         strategy=strategy_config.model_copy(deep=True)
@@ -74,6 +76,9 @@ class SimulationEngine:
             raise ValueError("simulation requires PAPER execution_mode")
         if strategy.market!=dataset.market:
             raise ValueError("strategy market must match simulation dataset")
+        if market_profile is not None and (market_profile.market != dataset.market
+                or not market_profile.research_supported or strategy.size_precision != market_profile.sz_decimals):
+            raise ValueError("research profile must match dataset and strategy precision")
 
         clock=SimulationClock(frames[0].timestamp)
         accounting_payload=simulation_config.accounting.model_dump()
@@ -149,6 +154,7 @@ class SimulationEngine:
         orders=OrderManager(paper,authority=simulation_authority)
         strategy_fingerprint=stable_fingerprint(strategy)
         run_fingerprint=stable_fingerprint({
+            **({"research_market_profile": market_profile.evidence()} if market_profile is not None else {}),
             "engine_version":version.SIMULATION_ENGINE_VERSION,
             "dataset_fingerprint":dataset.fingerprint,
             "strategy":strategy,
@@ -199,6 +205,8 @@ class SimulationEngine:
                 proposed,agent_decision,center=inventory_decision.reservation_price,
                 tick_size=strategy.tick_size,size_precision=strategy.size_precision,
             )
+            if market_profile is not None:
+                agent_quotes = normalize_quotes(agent_quotes, market_profile)
 
             accounting.observe_funding(frame.perp_context)
             accounting.mark(frame.perp_context.mark_price,observed_at=frame.timestamp)
@@ -218,6 +226,8 @@ class SimulationEngine:
                 tick_size=strategy.tick_size,size_precision=strategy.size_precision,
                 base_order_size=strategy.base_order_size,
             )
+            if market_profile is not None:
+                authorized = normalize_quotes(authorized, market_profile)
             validate_quotes(authorized,frame.market,risk_status)
             accounting.reserve(authorized,existing)
             vault=accounting.snapshot()
@@ -281,6 +291,7 @@ class SimulationEngine:
             agent_config=agents,frame_count=len(frames),
         )
         return SimulationResult(
+            **(market_profile.evidence() if market_profile is not None else {}),
             engine_version=version.SIMULATION_ENGINE_VERSION,
             run_fingerprint=run_fingerprint,scenario=scenario or dataset.source,
             dataset_fingerprint=dataset.fingerprint,strategy_fingerprint=strategy_fingerprint,

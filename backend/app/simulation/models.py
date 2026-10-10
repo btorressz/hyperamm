@@ -173,7 +173,15 @@ class SimulationMetrics(BaseModel):
     perp_crowding_state_counts:dict[str,int]=Field(default_factory=dict)
 
 
-class SimulationResult(BaseModel):
+class ResearchMarketEvidence(BaseModel):
+    research_market:str|None=None
+    market_profile_version:str|None=None
+    market_profile_fingerprint:str|None=None
+    metadata_source:str|None=None
+    metadata_status:str|None=None
+
+
+class SimulationResult(ResearchMarketEvidence):
     research_configuration:dict|None=None
     engine_version:str
     run_fingerprint:str
@@ -254,7 +262,7 @@ class CandidateEvaluation(BaseModel):
         return "INDEPENDENT_HOLDOUT" if self.independent_holdout else "NOT_EVALUATED"
 
 
-class OptimizationResult(BaseModel):
+class OptimizationResult(ResearchMarketEvidence):
     research_configuration:dict|None=None
     engine_version:str
     baseline:CandidateEvaluation

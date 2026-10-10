@@ -850,3 +850,30 @@ remain open. Dedicated draft PR only; no merge or production-readiness claim.
   contracts, economics, async retirement, worker isolation, real browser workflows
   and all twelve routes. [Phase 14 acceptance](docs/PHASE14_ACCEPTANCE.md) records
   actual validation and remaining gates; no Phase 15 implementation is implied.
+## Phase 14.6 — Single selected native perpetual for isolated research
+
+- `backend/app/market_data/hyperliquid_metadata.py`: lifespan-owned read-only
+  official SDK native metadata worker/cache, strict universe validation and
+  explicitly permitted DEMO fallback. It owns no operational feed or Exchange.
+- `backend/app/simulation/market_profiles.py`: frozen BTC/ETH/SOL metadata/profile
+  contracts, code-owned calibration/fingerprints, Decimal price/size rules and
+  isolated strategy adaptation; hard inventory/risk limits remain unchanged.
+- `backend/app/api/research_markets.py`: bounded GET catalog, separate from active
+  runtime `/markets`; existing run/optimize/compare requests add optional strict
+  `research_market`. A validated server profile is captured before admission.
+- Existing scenarios, service, engine and optimizer carry one optional profile
+  through their existing PAPER stack. Legacy paths remain compatible; selected
+  scenarios and run provenance commit to profile identity and effective precision.
+- `frontend/src/stores/researchMarkets.ts`: in-memory shared ETH-default selection,
+  catalog/profile/generation/connection evidence. Accounting drafts stay in the
+  existing narrow Research Vault store; terminal configuration is never written.
+- `components/markets/ResearchMarketSelector.tsx`, `ResearchMarketDetails.tsx`,
+  `utils/researchMarkets.ts`, `phase146.css`: backend catalog, strict response
+  evidence, honest source/anchor/precision labels, loading/unavailable/retry UI.
+  Existing Vault studio and Simulation controls/results reuse these components.
+- `backend/tests/test_phase146_research_markets.py`,
+  `frontend/tests/research-markets.test.cjs`, `frontend/tests/browser-phase146.py`:
+  native SDK lifecycle, precision, all asset/scenario pairs, isolation, client
+  response retirement and real Chromium/restart/viewport acceptance. See
+  [PHASE146_ACCEPTANCE](docs/PHASE146_ACCEPTANCE.md) and
+  [SIMULATION](docs/SIMULATION.md#phase-146--validated-single-native-perpetual-research-selection).

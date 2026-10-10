@@ -5,6 +5,9 @@ import type { OptimizationResult, SimulationResult, ResearchComparison } from ".
 import { useResearchVaultStore, capturedResearch } from '../stores/researchVault';
 import { ResearchComparisonView } from '../components/simulation/ResearchComparison';
 import { checkedComparison } from '../utils/researchVault';
+import { useResearchMarketStore, capturedMarket } from '../stores/researchMarkets';
+import { checkedMarketEvidence } from '../utils/researchMarkets';
+import { ResearchMarketSelector } from '../components/markets/ResearchMarketSelector';
 import { SimulationPanel } from "../components/SimulationPanel";
 import { SimulationTrace } from "../components/simulation/SimulationTrace";
 import { CandidateComparison } from "../components/simulation/CandidateComparison";
@@ -25,6 +28,8 @@ import "../phase1332.css";
 import "../phase14.css";
 export function Simulation() {
   const researchState = useResearchVaultStore();
+  const marketState = useResearchMarketStore();
+  const marketReady = marketState.catalog?.markets.find(p => p.market === marketState.selectedResearchMarket)?.research_supported;
   const [comparison, setComparison] = useState<{data: ResearchComparison; config: RunConfiguration} | null>(null);
   const scenarios = useQuery({
     queryKey: ["simulation-scenarios"],
@@ -56,6 +61,8 @@ export function Simulation() {
   const submit = async (kind: "run" | "opt" | "compare") => {
     if (validation || !selected || (kind === "opt" && !catalogSupportsGrid))
       return;
+    const marketProfile = capturedMarket();
+    if (!marketProfile) { setError('Selected research market is not validated or available. Reload the market catalog.'); return; }
     const research = capturedResearch();
     if (researchState.useForResearch && !research) { setError('Research validation is outdated. Reconnect and revalidate in Vault.'); return; }
     if (kind === 'compare' && !research) return;
@@ -70,14 +77,22 @@ export function Simulation() {
       baseline: research?.baseline,
       researchFingerprint: research?.fingerprint,
       researchEpoch: research ? useResearchVaultStore.getState().evidenceEpoch : undefined,
+      marketProfile, marketSelectionVersion: marketState.marketSelectionVersion, marketEpoch: marketState.evidenceEpoch,
     };
     setBusy(config);
     setError("");
+    const checkMarket = () => {
+      const current = useResearchMarketStore.getState();
+      if (current.evidenceEpoch !== config.marketEpoch || current.marketSelectionVersion !== config.marketSelectionVersion
+          || current.marketProfileFingerprint !== config.marketProfile?.profile_fingerprint)
+        throw new Error('Research response retired after market selection or backend session changed. Run again for the current selection.');
+    };
     try {
       if (kind === "run") {
         const data = await api.runSimulation({
           scenario: config.scenario,
           frames: config.frames,
+          research_market: marketProfile.market,
           simulation: {
             max_frames: config.frames,
             record_trace: true,
@@ -85,14 +100,16 @@ export function Simulation() {
           },
           ...(config.research ? {research: config.research} : {}),
         });
+        checkMarket(); checkedMarketEvidence(data, marketProfile);
         if (config.research && (config.researchEpoch !== useResearchVaultStore.getState().evidenceEpoch
           || data.research_configuration?.config_fingerprint !== config.researchFingerprint))
           throw new Error('Research response belongs to a retired connection or mismatched configuration. Revalidate in Vault.');
         if (gate.current.current(token)) setResult({ data, config });
       } else if (kind === 'compare') {
-        const data = checkedComparison(await api.compareResearch({scenario: config.scenario, frames: config.frames,
+        const data = checkedComparison(await api.compareResearch({scenario: config.scenario, frames: config.frames, research_market: marketProfile.market,
           baseline: config.baseline, custom: config.research, record_trace: true, trace_max_points: 250}),
           config.scenario, config.frames, config.researchFingerprint!);
+        checkMarket(); checkedMarketEvidence(data.baseline_result, marketProfile); checkedMarketEvidence(data.custom_result, marketProfile);
         if (config.researchEpoch !== useResearchVaultStore.getState().evidenceEpoch)
           throw new Error('Research response belongs to a retired connection. Revalidate in Vault.');
         if (gate.current.current(token)) setComparison({data, config});
@@ -101,6 +118,7 @@ export function Simulation() {
           optimizationPresets[config.preset];
         const data = await api.optimizeSimulation({
           strategy_grid,
+          research_market: marketProfile.market,
           agent_grid,
           training_scenarios: trainingScenarios,
           validation_scenarios: validationScenarios,
@@ -109,6 +127,7 @@ export function Simulation() {
           top_n: 5,
           ...(config.research ? {research: config.research} : {}),
         });
+        checkMarket(); checkedMarketEvidence(data, marketProfile);
         if (config.research && (config.researchEpoch !== useResearchVaultStore.getState().evidenceEpoch
           || data.research_configuration?.config_fingerprint !== config.researchFingerprint))
           throw new Error('Research response belongs to a retired connection or mismatched configuration. Revalidate in Vault.');
@@ -144,6 +163,7 @@ export function Simulation() {
         meta="DETERMINISTIC CROSSING FILLS"
         className="simControls"
       >
+        <ResearchMarketSelector/>
         <div className="researchInset researchConfigSummary">
           <h3>Research accounting configuration</h3>
           <p>{researchState.useForResearch ? `Preset: ${researchState.preset?.name} · validated draft v${researchState.validatedVersion}` : 'Legacy simulation defaults: no Vault research configuration selected.'}</p>
@@ -255,7 +275,7 @@ export function Simulation() {
           <button
             type="button"
             className="primary"
-            disabled={!!busy || !!validation || !selected}
+            disabled={!!busy || !!validation || !selected || !marketReady}
             onClick={() => void submit("run")}
           >
             {busy?.kind === "run" ? "Running…" : "Run Simulation"}
@@ -263,13 +283,13 @@ export function Simulation() {
           <button
             type="button"
             disabled={
-              !!busy || !!validation || !selected || !catalogSupportsGrid
+              !!busy || !!validation || !selected || !catalogSupportsGrid || !marketReady
             }
             onClick={() => void submit("opt")}
           >
             {busy?.kind === "opt" ? "Optimizing…" : "Run Bounded Grid Search"}
           </button>
-          <button type="button" disabled={!!busy || !!validation || !selected || !researchState.useForResearch}
+          <button type="button" disabled={!!busy || !!validation || !selected || !researchState.useForResearch || !marketReady}
             onClick={() => void submit('compare')}>{busy?.kind === 'compare' ? 'Comparing…' : 'Compare preset baseline vs customized'}</button>
         </div>
         {busy && (
@@ -278,6 +298,7 @@ export function Simulation() {
               ? `Running ${busy.scenario}`
               : `Evaluating ${busy.preset} grid`}{" "}
             · {busy.frames} frames per scenario. Waiting for bounded backend
+            · Captured market: {busy.marketProfile?.display_name}.
             research; no progress percentage is reported. Controls describe the
             next request; completed results keep their captured configuration.
             {busy.researchFingerprint && <> Captured research fingerprint: {busy.researchFingerprint}.</>}
@@ -302,6 +323,7 @@ export function Simulation() {
       )}
       {result && (
         <section aria-label="Completed simulation" className="stack">
+          {result.config.marketEpoch !== marketState.evidenceEpoch && <StatusBanner>Historical research result from a previous backend connection. Captured market and economics remain evidence of that request; run again for the current session.</StatusBanner>}
           <div className="researchPageTitle">
             <h2>Completed run · {result.data.scenario}</h2>
             <Badge tone="blue">
@@ -311,6 +333,8 @@ export function Simulation() {
               · {result.config.frames} requested frames
             </Badge>
           </div>
+          <p>Market: {result.data.research_market}-PERP · {result.data.metadata_status} · profile {result.data.market_profile_version} · PAPER / SIMULATED</p>
+          <code className="researchFingerprint">{result.data.market_profile_fingerprint}</code>
           <p className="muted">
             Captured request: {result.config.scenario} · {result.config.frames}{" "}
             frames. Results remain associated with this request when controls
@@ -357,7 +381,10 @@ export function Simulation() {
       )}
       {opt && (
         <section aria-label="Completed optimization" className="stack">
+          {opt.config.marketEpoch !== marketState.evidenceEpoch && <StatusBanner>Historical parameter study from a previous backend connection. Run again for the current session.</StatusBanner>}
           <h2>Completed parameter study · {opt.config.preset}</h2>
+          <p>Market: {opt.data.research_market}-PERP · {opt.data.metadata_status} · profile {opt.data.market_profile_version} · PAPER / SIMULATED</p>
+          <code className="researchFingerprint">{opt.data.market_profile_fingerprint}</code>
           <p className="muted">
             Captured request: {opt.config.preset} · {opt.config.frames} frames
             per scenario · backend ranking preserved.
@@ -366,7 +393,7 @@ export function Simulation() {
           {opt.data.research_configuration && <p className="researchConfigSummary">Captured research preset: {opt.data.research_configuration.selected_preset_id} · schema {opt.data.research_configuration.research_config_version} · fingerprint {opt.data.research_configuration.config_fingerprint}. These accounting assumptions apply to all candidates.</p>}
         </section>
       )}
-      {comparison && <ResearchComparisonView data={comparison.data}/>}
+      {comparison && <>{comparison.config.marketEpoch !== marketState.evidenceEpoch && <StatusBanner>Historical comparison from a previous backend connection. Run again for the current session.</StatusBanner>}<p>Comparison market: {comparison.data.baseline_result.research_market}-PERP · {comparison.data.baseline_result.metadata_status} · PAPER / SIMULATED</p><ResearchComparisonView data={comparison.data}/></>}
       <StatusBanner>
         Deterministic crossing-only PAPER research does not establish real queue
         priority, hidden liquidity, actual network latency, stochastic fills,

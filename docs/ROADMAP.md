@@ -24,6 +24,7 @@
 | 13.2 | PARTIAL / F IMPLEMENTED / G LOCAL CHECKS / A–E PENDING | 13.2.1 execution lifecycle UX; frontend verified; one baseline backend schema gate remains |
 | 13.3 | IMPLEMENTED / LOCAL ACCEPTANCE | A–G research/operations frontend complete locally; schema/macOS/external gates remain |
 | 14 | IMPLEMENTED / LOCAL ACCEPTANCE | Custom research assumptions, Python presets/preview, Vault studio, isolated PAPER runs/optimizer and controlled comparison; external gates remain |
+| 14.6 | COMPLETE / LOCAL ACCEPTANCE; LIVE METADATA GATE OPEN | Validated BTC/ETH/SOL Research Market Selection; isolated single-market PAPER runs, bounded optimizer and controlled comparisons; live SDK endpoint blocked in acceptance environment |
 
 ## Phase 6 extension points
 
@@ -1026,3 +1027,31 @@ for commands, exact durations, modeling limits and screenshots.
 remain unfinished. macOS, real external providers/source integrity, real Redis,
 signed TESTNET, long soak and unrelated A2-003/A2-005 gates remain open. Local
 PAPER research does not establish production readiness or future profitability.
+## Phase 14.6 — Validated BTC/ETH/SOL Research Market Selection
+
+Local implementation/acceptance complete on fetched main
+`762803ae996137c4f6ec45ca724b6b57f113e361` after merged PR #48. One selected
+native perpetual per isolated PAPER request; exactly BTC/ETH/SOL. Official SDK
+0.24.0 metadata integration, bounded owned cache, strict listing/precision
+validation, explicit DEMO fallback, asset-aware deterministic calibration,
+price/size normalization and market/profile/dataset/run provenance reuse the
+existing research engine, optimizer and Research Vault accounting.
+
+Vault/Simulation share a separate in-memory preference and capture/validate
+market-specific request generations; prior results retain original market labels
+and previous-connection evidence is historical. Active ETH strategy/feed/orders/
+accounting/risk/authorization/kill switch and TESTNET eligibility remain unchanged.
+No hard risk/inventory limit is relaxed to force fills.
+
+Executed final acceptance: backend **1281 passed**, 0 failed/skipped, 1 upstream
+warning; frontend **454 passed**, 0 failed/skipped/cancelled; TypeScript/build,
+pip check/compileall/diff passed. Actual Chromium: **72 route/viewport checks +
+11 workflow groups**, zero page exceptions/overflow and zero trading/config writes.
+Existing 1185 backend/410 frontend cases are preserved.
+
+The actual official SDK live check was blocked by cloud HTTP policy; exchange
+verification is not claimed from fixtures. Network-permitted live metadata
+acceptance remains open. See [detailed acceptance](PHASE146_ACCEPTANCE.md) and
+[simulation contract](SIMULATION.md#phase-146--validated-single-native-perpetual-research-selection).
+Draft delivery only; do not merge. Phase 15 and unfinished Phase 13.2A–E gates
+remain unchanged.
