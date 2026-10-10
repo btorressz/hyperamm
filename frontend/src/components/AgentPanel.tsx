@@ -1,6 +1,7 @@
+import { AgentDetails } from "./agents/AgentDetails";
 import type { TerminalState } from "../types";
 import { number as f, percentage, timestamp, fingerprint } from "../utils/format";
-export function AgentPanel({ t }: { t: TerminalState }) {
+function CompactAgentPanel({ t }: { t: TerminalState }) {
   const a = t.agents,
     s = a?.supervisor,
     r = a?.regime,
@@ -142,4 +143,8 @@ export function AgentPanel({ t }: { t: TerminalState }) {
       </div>
     </section>
   );
+}
+
+export function AgentPanel({t, workspace = false, historical = false}: {t: TerminalState; workspace?: boolean; historical?: boolean}) {
+  return workspace ? <AgentDetails t={t} historical={historical}/> : <CompactAgentPanel t={t}/>;
 }
