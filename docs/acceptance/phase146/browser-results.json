@@ -1,0 +1,515 @@
+{
+  "route_checks": [
+    {
+      "route": "dashboard",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "markets",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "strategy",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "amm-settings",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "execution",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "risk",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "agents",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "vault",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "analytics",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "simulation",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "logs",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "settings",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "dashboard",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "markets",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "strategy",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "amm-settings",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "execution",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "risk",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "agents",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "vault",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "analytics",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "simulation",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "logs",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "settings",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "dashboard",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "markets",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "strategy",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "amm-settings",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "execution",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "risk",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "agents",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "vault",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "analytics",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "simulation",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "logs",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "settings",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "dashboard",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "markets",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "strategy",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "amm-settings",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "execution",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "risk",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "agents",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "vault",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "analytics",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "simulation",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "logs",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "settings",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "dashboard",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "markets",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "strategy",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "amm-settings",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "execution",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "risk",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "agents",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "vault",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "analytics",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "simulation",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "logs",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "settings",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "dashboard",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "markets",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "strategy",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "amm-settings",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "execution",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "risk",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "agents",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "vault",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "analytics",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "simulation",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "logs",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "settings",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "workflows": [
+    "Catalog loads exactly BTC/ETH/SOL with honest DEMO metadata, fixed anchors and precision",
+    "A: BTC FLASH_MOVE actual PAPER metrics, trace, market provenance and unchanged operational ETH",
+    "B: ETH selection uses its profile while prior completed BTC evidence retains BTC labeling",
+    "C: SOL uses 150 quote anchor/2 decimals and reports genuine unchanged-limit HALTs without fabricated fills",
+    "D: High-Cost Stress baseline/customized comparison shares one BTC dataset and strategy; Vault ledger unchanged",
+    "Bounded Inventory optimization succeeds independently for BTC ETH SOL with fixed candidate market",
+    "E1: switching market during actual delayed BTC run retires its response; completed SOL evidence stays SOL",
+    "E2: real backend restart retires market/accounting evidence, preserves BTC preference, revalidates and runs",
+    "F: real SDK outage uses explicit DEMO fallback; disallowed-fallback browser fixture disables research",
+    "Slow catalog response validates current ETH selection without restoring an old BTC preference",
+    "72 route/viewport checks, zero page exceptions/overflow, and zero trading or configuration writes"
+  ],
+  "page_errors": [],
+  "mutations": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/optimize"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/optimize"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/optimize"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    }
+  ],
+  "runs": [
+    {
+      "research_market": "BTC",
+      "market_profile_version": "phase146-v1",
+      "market_profile_fingerprint": "af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a",
+      "metadata_source": "PINNED_RESEARCH_FIXTURE",
+      "metadata_status": "DEMO_PROFILE",
+      "dataset_fingerprint": "4b7b92ccec2a8c219dcea56f77fd686093945bb1a95fc6d23b457321ec8f0c1c",
+      "strategy_fingerprint": "04e352a6db7e1e5d2c7cdd213d62fd07df5f65174821c1451c343b417ab29b1d",
+      "run_fingerprint": "67f35b0acca90a89f96a2dc7c073b3f6ff3ec50de06fc2ea9f1647fbacb1025c",
+      "engine_version": "phase10.1-v3",
+      "fill_count": 2,
+      "risk_state_counts": {
+        "NORMAL": 30
+      }
+    },
+    {
+      "research_market": "ETH",
+      "market_profile_version": "phase146-v1",
+      "market_profile_fingerprint": "10da7505c08d232a96c15b222dd4b74c448d39805b0d5bbb9ac9d519c7722657",
+      "metadata_source": "PINNED_RESEARCH_FIXTURE",
+      "metadata_status": "DEMO_PROFILE",
+      "dataset_fingerprint": "ff4d242835be30a3699a2bb56da85f3962281840a3e4587786e8c10451603906",
+      "strategy_fingerprint": "894fcdb790989b88c26707f801e4f105118ff63c5bc432e4e5969f25dbd4dcbd",
+      "run_fingerprint": "e665f714918ce62ee331c5a019838faec8987089d0db895842d180b8f9e363ba",
+      "engine_version": "phase10.1-v3",
+      "fill_count": 0,
+      "risk_state_counts": {
+        "NORMAL": 30
+      }
+    },
+    {
+      "research_market": "SOL",
+      "market_profile_version": "phase146-v1",
+      "market_profile_fingerprint": "2d109a3c7a3a43e0d571d926412e595c41ed0df720a367d874c0a274c741013a",
+      "metadata_source": "PINNED_RESEARCH_FIXTURE",
+      "metadata_status": "DEMO_PROFILE",
+      "dataset_fingerprint": "99e1638dd9e1a8e1e103c59de9251cad4cb11fd50019ab6c384495d217b33caa",
+      "strategy_fingerprint": "cc1865d2498328bf5515523a3980170769f44e95eb84d361f2396a399b4ef3b4",
+      "run_fingerprint": "c07c15b966c09cbf1fcaf981c587d71470110776dbe24cfdffb24f41898c5735",
+      "engine_version": "phase10.1-v3",
+      "fill_count": 0,
+      "risk_state_counts": {
+        "HALT": 17,
+        "NORMAL": 13
+      }
+    },
+    {
+      "research_market": "SOL",
+      "market_profile_version": "phase146-v1",
+      "market_profile_fingerprint": "2d109a3c7a3a43e0d571d926412e595c41ed0df720a367d874c0a274c741013a",
+      "metadata_source": "PINNED_RESEARCH_FIXTURE",
+      "metadata_status": "DEMO_PROFILE",
+      "dataset_fingerprint": "5b7d27ef686a5774ad10205adab45be3bda8fc14463244f127f40e18b135e949",
+      "strategy_fingerprint": "cc1865d2498328bf5515523a3980170769f44e95eb84d361f2396a399b4ef3b4",
+      "run_fingerprint": "c602b43100a5897d84dd957aa6f983741a933115f5ae53eb76ee56f2f09b49f5",
+      "engine_version": "phase10.1-v3",
+      "fill_count": 0,
+      "risk_state_counts": {
+        "HALT": 3
+      }
+    },
+    {
+      "research_market": "BTC",
+      "market_profile_version": "phase146-v1",
+      "market_profile_fingerprint": "af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a",
+      "metadata_source": "PINNED_RESEARCH_FIXTURE",
+      "metadata_status": "DEMO_PROFILE",
+      "dataset_fingerprint": "dd601992e6366308470710caf1a4183b842e3396fd05770b7006c248df47576f",
+      "strategy_fingerprint": "04e352a6db7e1e5d2c7cdd213d62fd07df5f65174821c1451c343b417ab29b1d",
+      "run_fingerprint": "02853ed6072cfe46792761c04a9a2357dd828a6c13b4ef7e42d1dd576f26ad5b",
+      "engine_version": "phase10.1-v3",
+      "fill_count": 0,
+      "risk_state_counts": {
+        "NORMAL": 3
+      }
+    }
+  ],
+  "fixtures": "Delayed actual run/catalog responses and unavailable catalog are browser-only fixtures. All run/optimization/comparison economics use actual backend."
+}

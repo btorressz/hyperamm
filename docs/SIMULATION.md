@@ -991,3 +991,118 @@ selected research settings at submission and keeps completed results associated
 with their request; optimization presets remain independent. Disconnect/AbortSignal
 never claims the worker has stopped. No browser persistence or live deployment
 action is added. See [Phase 14 acceptance](PHASE14_ACCEPTANCE.md).
+## Phase 14.6 — Validated single-native-perpetual research selection
+
+Exactly `BTC`, `ETH`, and `SOL` are accepted as optional `research_market` on
+`POST /api/v1/simulation/run`, `/simulation/optimize`, and `/research-vault/compare`.
+Display labels are BTC-PERP, ETH-PERP, SOL-PERP; these labels, lowercase names,
+spot pairs, HIP-3 identifiers, arrays and arbitrary symbols are rejected by the
+request contract. Omission preserves the legacy request/worker behavior and ETH
+scenario methodology. One immutable market profile is resolved before worker
+admission; optimization never varies market identity.
+
+```json
+{"research_market":"BTC","scenario":"FLASH_MOVE","frames":30,
+ "simulation":{"max_frames":30,"record_trace":true,"trace_max_points":250}}
+```
+
+`GET /api/v1/research-markets` is a separate read-only catalog with exactly three
+entries, `research_only: true`, and `execution_mode: PAPER`. Operational
+`/markets/{market}` remains the active market only. Clients cannot supply asset
+indices, profiles, precision or tick values. Existing Research Vault proposals,
+presets, simulation controls, candidate bounds and parameter allowlists remain.
+
+### Metadata ownership and offline eligibility
+
+The existing official `hyperliquid-python-sdk>=0.24.0,<0.25` dependency is unchanged.
+Installed 0.24.0 signatures were inspected. A lifespan-owned catalog uses one
+dedicated synchronous worker, single-flight initialization/refresh and a 300s
+immutable snapshot cache. `Info(MAINNET_API_URL, skip_ws=True, timeout=5, ...)`
+receives empty supported initialization maps to avoid constructor-side spot and
+perp discovery; exchange facts come solely from the subsequent actual
+`Info.meta(dex="")` response. No WebSocket, trading Exchange, keys, HIP-3 discovery,
+permanent collector or refresh loop is created. Requests remain off the FastAPI
+event loop. Cancellation preserves ownership of the real worker; shutdown drains
+the task and closes the SDK HTTP session even on failures.
+
+Validation rejects duplicate identities, malformed/bounded universes, unsupported
+native identifiers, missing size precision, noninteger/boolean/out-of-range
+`szDecimals`, invalid delisting flags and non-native dex metadata. The actual
+universe position supplies `asset_index`. A valid response that explicitly
+delists or omits an allowlisted market yields `UNAVAILABLE`; it never receives a
+DEMO override. Metadata failures replace expired verified eligibility rather than
+silently retaining it.
+
+`EXCHANGE_VERIFIED` originates only from successful validated official SDK native
+metadata. `DEMO_PROFILE` is permitted only when the server starts in DEMO/PAPER,
+and uses code-owned pinned fixtures. DEMO listing, observed timestamp and asset
+index remain null; source is `PINNED_RESEARCH_FIXTURE`. No current listing, live
+price or trading eligibility is asserted. In other modes a metadata outage makes
+research unavailable. Catalog observation age is reported at retrieval; it is
+not a continuously refreshed venue clock. A copied research strategy always
+forces DEMO/PAPER regardless of operational mode.
+
+### Deterministic calibration and actual executable precision
+
+Profile version `phase146-v1` uses hypothetical anchors **BTC 60000**, **ETH 3000**,
+**SOL 150** quote per base. These are fixed research inputs, never current mark
+prices. DEMO size precisions are respectively 5, 4 and 2; verified size precision
+comes from metadata. No fixture asset index is guessed.
+
+The isolated adapter derives the source pool price from configured quote/base
+reserves, keeps virtual quote reserves unchanged, sets virtual base reserves to
+quote reserves / selected anchor, and scales base order size and per-side
+liquidity by source reference / selected anchor. Quantities round downward.
+Inventory targets, soft/hard limits and every risk configuration field remain
+unchanged. Pydantic/curve feasibility still validates the complete copy. An
+infeasible lot-size budget rejects; capital/exposure violations retain genuine
+HALT behavior. SOL may have no fills under unchanged configured base limits.
+
+The selected-profile scenario path reuses all 13 existing scenario shapes by
+scaling the legacy 3000-anchor movements, book spreads/depth notionals and price
+offsets proportionally. Book prices round outward, sizes downward; BBO midpoint
+is recomputed from the rounded book. Mark/oracle observations follow the same
+asset price rules. Market/book/perp identity, frame time/sequence and positive,
+uncrossed prices retain existing validations. Legacy generation stays untouched
+when no profile is supplied. Negative long-horizon scenario prices fail closed.
+
+Price normalization enforces at most five significant figures for nonintegers,
+at most `6 - szDecimals` decimal places, and the documented integer exemption.
+It computes precision from each actual price, rather than claiming a universal
+fixed exchange tick. Isolated agent and final risk ladders are normalized before
+existing final validation, capital reservation and FinalQuoteAuthorization.
+Outward ASK rounding reduces size as necessary so neither proposed quantity nor
+individual order notional increases. Sub-lot quantities are removed; no fill is
+fabricated. Runtime/venue quote paths and AMM formulas are unchanged.
+
+### Provenance, comparisons and client lifecycle
+
+Selected results expose `research_market`, `market_profile_version`,
+`market_profile_fingerprint`, `metadata_source`, `metadata_status` alongside
+existing dataset/strategy/run fingerprints and engine version. Economic profile
+identity includes market, metadata source/status/listing/precision/index and
+fixed anchor/version; observation times/age are excluded from deterministic
+identity. Dataset source commits to the profile; run identity also commits to
+its evidence. The legacy engine version is preserved and selected-path
+calibration is separately versioned. Each optimization scenario's dataset/run
+fingerprint binds the same chosen profile. Baseline/custom comparison generates
+one dataset and copies one strategy/agents/risk snapshot; only permitted
+accounting assumptions differ. Both results independently retain market evidence.
+
+Vault and Simulation share an in-memory ETH-default research preference, separate
+from terminal state and research accounting drafts. TanStack Query retrieves and
+validates the bounded server catalog. Both workspaces show metadata state, fixed
+anchor, size/price rules, source, version and limitations. Switching market keeps
+accounting values but retires market-dependent approval and pending responses.
+Requests capture a detached profile, selection generation and backend connection
+epoch. A response must match that market/profile and current generation before
+being accepted. Completed results render their captured returned identity after
+dropdown changes; previous-connection results carry an explicit historical notice.
+Restart retires catalog/accounting validation while retaining local drafts and
+preference. There is no browser persistence or strategy write.
+
+Operational VaultSummary, PnlBreakdown, consistency/provenance, ledger and session
+charts remain separate from the selected simulated market. No operational feed,
+strategy/order lifecycle, ledger, risk authority, kill switch or TESTNET signing
+eligibility is mutated by this feature. See [Phase 14.6 acceptance](PHASE146_ACCEPTANCE.md)
+for executed tests, real Chromium evidence and the blocked live-provider check.

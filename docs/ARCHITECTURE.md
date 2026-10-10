@@ -454,3 +454,26 @@ arithmetic, displays aggregate bars and count-based warnings, and labels neutral
 AMM lineage as normalized CLOB quotes rather than mathematical samples. Logical
 slots, client IDs, reconciliation and authorization fingerprints are unchanged by
 observation. The stronger collapsed-slot execution policy remains deferred.
+## Phase 14.6 research market boundary
+
+A separate lifespan-owned read-only native Hyperliquid metadata catalog resolves
+exactly one BTC/ETH/SOL profile before existing research-worker admission. Its
+single synchronous SDK worker has a finite timeout, single-flight refresh,
+immutable snapshot cache and owned HTTP-session cleanup. It never shares the
+active market-data adapter or instantiates an execution Exchange. Verified native
+metadata and explicitly allowed DEMO fixtures have distinct source/status fields;
+delisted/missing markets fail closed.
+
+The existing SimulationService copies operational strategy/agents/risk inputs,
+forces DEMO/PAPER, adapts only research quote/reserve calibration and precision,
+and runs the existing SimulationEngine/optimizer/accounting stack. No operational
+configuration/feed/order/ledger/risk/authorization object is replaced or mutated.
+Selected profile identity binds dataset/run provenance. Controlled accounting
+comparisons share one chosen profile, strategy snapshot and dataset.
+
+React keeps one research preference/catalog/generation in a narrow in-memory
+store shared by Vault and Simulation. Connection/selection generations retire
+pending evidence; completed results retain returned market identity and explicitly
+label previous backend connections. Operational Vault accounting remains separate.
+See [SIMULATION](SIMULATION.md#phase-146--validated-single-native-perpetual-research-selection)
+for precision/calibration and [acceptance](PHASE146_ACCEPTANCE.md) for limitations.

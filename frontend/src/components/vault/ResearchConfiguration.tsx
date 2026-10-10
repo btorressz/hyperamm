@@ -9,6 +9,7 @@ import { Panel, StatusBanner } from '../TerminalPrimitives';
 import { Badge } from '../Badge';
 import { ResearchPresets } from './ResearchPresets';
 import { ResearchPreview } from './ResearchPreview';
+import { ResearchMarketSelector } from '../markets/ResearchMarketSelector';
 import '../../phase14.css';
 export function ResearchConfiguration({t, historical}: {t: TerminalState; historical: boolean}) {
   const session = useResearchSession(t, historical), s = useResearchVaultStore();
@@ -38,6 +39,7 @@ export function ResearchConfiguration({t, historical}: {t: TerminalState; histor
   return <section className="researchStudio stack" aria-label="Research Configuration Studio">
     <div className="researchPageTitle"><h2>Research Configuration Studio</h2><Badge tone="blue">PAPER RESEARCH ONLY</Badge></div>
     <StatusBanner>HYPOTHETICAL ACCOUNTING ASSUMPTIONS · NO LIVE TRADING AUTHORITY. Local drafts do not change Vault capital, active strategy, risk limits or orders.</StatusBanner>
+    <Panel title="Selected simulated research market" meta="SINGLE NATIVE PERPETUAL"><ResearchMarketSelector/></Panel>
     <Panel title="Preset library" meta="PYTHON-OWNED · VERSIONED">
       {catalog.isPending && <p role="status">Loading research presets…</p>}
       {catalog.isError && <p className="inlineError" role="alert">{catalog.error.message} <button onClick={() => void catalog.refetch()}>Retry presets</button></p>}

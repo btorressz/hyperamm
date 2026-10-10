@@ -1,4 +1,4 @@
-import type { SimulationResult, ResearchProposal } from "../types";
+import type { SimulationResult, ResearchProposal, ResearchMarketProfile } from "../types";
 export const optimizationPresets = {
   Balanced: {
     description:
@@ -52,6 +52,9 @@ export type RunConfiguration = {
   baseline?: ResearchProposal;
   researchFingerprint?: string;
   researchEpoch?: number;
+  marketProfile?: ResearchMarketProfile;
+  marketSelectionVersion?: number;
+  marketEpoch?: number;
 };
 // Synchronous admission closes the double-click window before React rerenders.
 export class ResearchRunGate {

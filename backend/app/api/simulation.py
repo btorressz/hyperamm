@@ -14,6 +14,8 @@ from app.simulation.scenarios import ScenarioName
 from app.simulation.executor import ResearchBusyError
 from app.infrastructure.research import ResearchUnavailableError
 from app.simulation.research_vault import ResearchProposal
+from app.simulation.market_profiles import ResearchPerpMarketId
+from app.api.research_markets import selected_profile
 
 
 router=APIRouter(tags=["simulation"])
@@ -26,6 +28,7 @@ class SimulationRunRequest(BaseModel):
     frames:int=Field(default=120,ge=2,le=5000)
     simulation:SimulationConfig=Field(default_factory=SimulationConfig)
     research:ResearchProposal|None=None
+    research_market:ResearchPerpMarketId|None=None
 
     @model_validator(mode="after")
     def frame_bound(self):
@@ -46,6 +49,7 @@ class OptimizationRequest(BaseModel):
     top_n:int=Field(default=5,ge=1,le=10)
     simulation:SimulationConfig=Field(default_factory=SimulationConfig)
     research:ResearchProposal|None=None
+    research_market:ResearchPerpMarketId|None=None
     objective:OptimizationObjectiveConfig=Field(default_factory=OptimizationObjectiveConfig)
 
     @model_validator(mode="after")
@@ -76,10 +80,12 @@ async def scenarios():
 @router.post("/simulation/run")
 async def run_simulation(request:SimulationRunRequest,http_request:Request,rt=Depends(runtime)):
     try:
+        market_profile = await selected_profile(http_request, request.research_market)
         result=await http_request.app.state.simulation_executor.execute("run_scenario",
             scenario=request.scenario.value,frames=request.frames,strategy=rt.config.model_copy(deep=True),
             agents=rt.agent_config.model_copy(deep=True),risk=rt.risk_config.model_copy(deep=True),
             simulation=isolated_simulation(request),
+            **({"market_profile": market_profile} if market_profile is not None else {}),
         )
         if request.research:
             result.research_configuration=request.research.provenance()
@@ -98,6 +104,7 @@ async def run_simulation(request:SimulationRunRequest,http_request:Request,rt=De
 @router.post("/simulation/optimize")
 async def optimize(request:OptimizationRequest,http_request:Request,rt=Depends(runtime)):
     try:
+        market_profile = await selected_profile(http_request, request.research_market)
         result=await http_request.app.state.simulation_executor.execute("optimize",
             strategy=rt.config.model_copy(deep=True),agents=rt.agent_config.model_copy(deep=True),
             risk=rt.risk_config.model_copy(deep=True),simulation=isolated_simulation(request),
@@ -105,6 +112,7 @@ async def optimize(request:OptimizationRequest,http_request:Request,rt=Depends(r
             training_scenarios=[x.value for x in request.training_scenarios],
             validation_scenarios=[x.value for x in request.validation_scenarios],
             objective=request.objective.model_copy(deep=True),max_candidates=request.max_candidates,frames=request.frames,top_n=request.top_n,
+            **({"market_profile": market_profile} if market_profile is not None else {}),
         )
         if request.research:
             result.research_configuration=request.research.provenance()

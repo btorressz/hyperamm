@@ -140,14 +140,14 @@ class StrategyOptimizer:
         return result
 
     async def _evaluate(
-        self,*,label,strategy,agents,risk,simulation,scenario_names,frames,objective,strategy_updates,agent_updates
+        self,*,label,strategy,agents,risk,simulation,scenario_names,frames,objective,strategy_updates,agent_updates,market_profile=None
     )->CandidateEvaluation:
         evaluations=[]
         for name in scenario_names:
-            dataset=generate_scenario(name,frames=frames,market=strategy.market)
+            dataset=generate_scenario(name,frames=frames,market=strategy.market,market_profile=market_profile)
             result=await self.engine.run(
                 dataset=dataset,strategy_config=strategy,agent_config=agents,risk_config=risk,
-                simulation_config=simulation,scenario=name,
+                simulation_config=simulation,scenario=name,market_profile=market_profile,
             )
             evaluations.append(ScenarioEvaluation(
                 scenario=name,dataset_fingerprint=result.dataset_fingerprint,
@@ -166,7 +166,7 @@ class StrategyOptimizer:
         self,*,baseline_strategy:StrategyConfig,baseline_agents:AgentConfig,risk_config:RiskFirewallConfig,
         simulation_config:SimulationConfig,strategy_grid:dict,agent_grid:dict,
         training_scenarios:list[str],validation_scenarios:list[str],
-        objective:OptimizationObjectiveConfig,max_candidates:int=32,frames:int=120,top_n:int=5,
+        objective:OptimizationObjectiveConfig,max_candidates:int=32,frames:int=120,top_n:int=5,market_profile=None,
     )->OptimizationResult:
         if not training_scenarios:raise ValueError("at least one training scenario is required")
         if not validation_scenarios:raise ValueError("at least one validation scenario is required")
@@ -181,6 +181,7 @@ class StrategyOptimizer:
             label="BASELINE",strategy=baseline_strategy.model_copy(deep=True),agents=baseline_agents.model_copy(deep=True),
             risk=risk_config.model_copy(deep=True),simulation=simulation_config.model_copy(deep=True),
             scenario_names=training_scenarios,frames=frames,objective=objective,strategy_updates={},agent_updates={},
+            market_profile=market_profile,
         )
         candidates=[];rejected=[]
         for index,(strategy_updates,agent_updates) in enumerate(self.enumerate_grid(strategy_grid,agent_grid,max_candidates),start=1):
@@ -194,6 +195,7 @@ class StrategyOptimizer:
                 label=f"CANDIDATE_{index}",strategy=strategy,agents=agents,risk=risk_config.model_copy(deep=True),
                 simulation=simulation_config.model_copy(deep=True),scenario_names=training_scenarios,
                 frames=frames,objective=objective,strategy_updates=strategy_updates,agent_updates=agent_updates,
+                market_profile=market_profile,
             )
             candidates.append(candidate)
 
@@ -202,11 +204,11 @@ class StrategyOptimizer:
         selected=ranked[:max(1,min(top_n,len(ranked)))]
         baseline_validation=[]
         for name in validation_scenarios:
-            dataset=generate_scenario(name,frames=frames,market=baseline_strategy.market)
+            dataset=generate_scenario(name,frames=frames,market=baseline_strategy.market,market_profile=market_profile)
             result=await self.engine.run(
                 dataset=dataset,strategy_config=baseline_strategy.model_copy(deep=True),
                 agent_config=baseline_agents.model_copy(deep=True),risk_config=risk_config.model_copy(deep=True),
-                simulation_config=simulation_config.model_copy(deep=True),scenario=name,
+                simulation_config=simulation_config.model_copy(deep=True),scenario=name,market_profile=market_profile,
             )
             baseline_validation.append(ScenarioEvaluation(
                 scenario=name,dataset_fingerprint=result.dataset_fingerprint,
@@ -225,10 +227,10 @@ class StrategyOptimizer:
             agents=AgentConfig.model_validate({**baseline_agents.model_dump(),**candidate.agent_updates})
             validation=[]
             for name in validation_scenarios:
-                dataset=generate_scenario(name,frames=frames,market=strategy.market)
+                dataset=generate_scenario(name,frames=frames,market=strategy.market,market_profile=market_profile)
                 result=await self.engine.run(
                     dataset=dataset,strategy_config=strategy,agent_config=agents,risk_config=risk_config.model_copy(deep=True),
-                    simulation_config=simulation_config.model_copy(deep=True),scenario=name,
+                    simulation_config=simulation_config.model_copy(deep=True),scenario=name,market_profile=market_profile,
                 )
                 validation.append(ScenarioEvaluation(
                     scenario=name,dataset_fingerprint=result.dataset_fingerprint,
@@ -249,6 +251,7 @@ class StrategyOptimizer:
             candidate.baseline_delta["objective_score"]=candidate.training_score-baseline.training_score
 
         return OptimizationResult(
+            **(market_profile.evidence() if market_profile is not None else {}),
             engine_version=version.SIMULATION_ENGINE_VERSION,
             baseline=baseline,requested_candidate_count=requested,candidate_count=len(candidates),
             rejected_candidates=rejected,ranked_candidates=ranked,training_scenarios=training_scenarios,

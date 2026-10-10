@@ -33,6 +33,7 @@ export function Vault({t,historical = false}: {t: TerminalState; historical?: bo
     <div className="researchPageTitle"><div><h1>Research vault & accounting</h1><p className="muted">Capital, economics and session ledger provenance</p></div></div>
     {historical && <StatusBanner>Historical financial observations · last accepted snapshot. Current ledger evidence is unavailable while disconnected.</StatusBanner>}
     {!historical && (v.stale || v.error) && <StatusBanner>Accounting evidence is {v.error ? 'in error' : 'stale'}; last-known financial values do not establish current capital authority.</StatusBanner>}
+    <p className="muted">Operational Vault Accounting · Current runtime market: {v.market}. The Research Configuration Studio below uses separate hypothetical inputs.</p>
     <VaultSummary vault={v} historical={historical}/>
     <PnlBreakdown pnl={t.accounting.pnl} vault={v}/>
     <AccountingConsistency vault={v} historical={historical}/>

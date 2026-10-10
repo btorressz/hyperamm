@@ -589,7 +589,7 @@ export type SimulationMetrics = {
   toxic_flow_state_counts: Record<string, number>;
   execution_quality_state_counts: Record<string, number>;
 };
-export type SimulationResult = {
+export type SimulationResult = ResearchMarketEvidence & {
   research_configuration?: ResearchProvenance | null;
   vault?: VaultSnapshot | null;
   engine_version: string;
@@ -651,7 +651,7 @@ export type CandidateEvaluation = {
   score_delta: Decimalish | null;
   baseline_delta: Record<string, Decimalish | null>;
 };
-export type OptimizationResult = {
+export type OptimizationResult = ResearchMarketEvidence & {
   research_configuration?: ResearchProvenance | null;
   engine_version: string;
   baseline: CandidateEvaluation;
@@ -663,6 +663,26 @@ export type OptimizationResult = {
   validation_scenarios: string[];
   objective: Record<string, Decimalish>;
   simulated: boolean;
+};
+
+export type ResearchMarketId = 'BTC' | 'ETH' | 'SOL';
+export type ResearchMarketEvidence = {
+  research_market?: ResearchMarketId | null;
+  market_profile_version?: string | null;
+  market_profile_fingerprint?: string | null;
+  metadata_source?: string | null;
+  metadata_status?: 'EXCHANGE_VERIFIED' | 'DEMO_PROFILE' | 'UNAVAILABLE' | null;
+};
+export type ResearchMarketProfile = {
+  market: ResearchMarketId; display_name: string; exchange: 'HYPERLIQUID'; dex: ''; market_type: 'PERPETUAL';
+  sz_decimals: number | null; asset_index: number | null; listed: boolean | null; research_supported: boolean;
+  metadata_status: 'EXCHANGE_VERIFIED' | 'DEMO_PROFILE' | 'UNAVAILABLE'; metadata_source: string;
+  metadata_observed_at: string | null; metadata_age_seconds: number | null; unavailable_reason: string | null;
+  profile_version: string; profile_fingerprint: string; simulated_reference_price: string;
+  research_price_rules: string; limitations: string[];
+};
+export type ResearchMarketCatalog = {
+  catalog_version: string; research_only: true; execution_mode: 'PAPER'; markets: ResearchMarketProfile[];
 };
 
 export type ExecutionAccountingConsistency = {

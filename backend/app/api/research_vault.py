@@ -11,6 +11,8 @@ from app.simulation.executor import ResearchBusyError
 from app.simulation.presets import PRESETS
 from app.simulation.research_vault import RESEARCH_CONFIG_VERSION, ResearchProposal, preview
 from app.simulation.scenarios import ScenarioName
+from app.simulation.market_profiles import ResearchPerpMarketId
+from app.api.research_markets import selected_profile
 
 router = APIRouter(prefix="/research-vault", tags=["research-vault"])
 logger = logging.getLogger(__name__)
@@ -24,6 +26,7 @@ class ResearchComparisonRequest(BaseModel):
     frames: int = Field(default=120, ge=2, le=1000)
     record_trace: bool = True
     trace_max_points: int = Field(default=250, ge=0, le=500)
+    research_market: ResearchPerpMarketId | None = None
 
 
 @router.get("/presets")
@@ -40,12 +43,14 @@ async def preview_config(proposal: ResearchProposal):
 @router.post("/compare")
 async def compare_configs(proposal: ResearchComparisonRequest, request: Request, rt=Depends(runtime)):
     try:
+        market_profile = await selected_profile(request, proposal.research_market)
         result = await request.app.state.simulation_executor.execute("compare_research_configs",
             scenario=proposal.scenario.value, frames=proposal.frames,
             strategy=rt.config.model_copy(deep=True), agents=rt.agent_config.model_copy(deep=True),
             risk=rt.risk_config.model_copy(deep=True), baseline=proposal.baseline.model_copy(deep=True),
             custom=proposal.custom.model_copy(deep=True), simulation=SimulationConfig(max_frames=proposal.frames,
-                record_trace=proposal.record_trace, trace_max_points=proposal.trace_max_points))
+                record_trace=proposal.record_trace, trace_max_points=proposal.trace_max_points),
+            **({"market_profile": market_profile} if market_profile is not None else {}))
         return result.model_dump(mode="json")
     except (ResearchBusyError, ResearchUnavailableError) as exc:
         raise HTTPException(status_code=429 if isinstance(exc, ResearchBusyError) else 503, detail=str(exc)) from exc
