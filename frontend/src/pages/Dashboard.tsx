@@ -11,9 +11,15 @@ import { RecentExecution } from "../components/RecentExecution";
 import { SystemHealth } from "../components/SystemHealth";
 import { Panel, Metrics } from "../components/TerminalPrimitives";
 import { number } from "../utils/format";
-export function Dashboard({ t }: { t: TerminalState }) {
+export function Dashboard({
+  t,
+  historical = false,
+}: {
+  t: TerminalState;
+  historical?: boolean;
+}) {
   const a = t.agents;
-  const current = useTerminalStore(s => s.wsState === "connected");
+  const current = useTerminalStore((s) => s.wsState === "connected");
   return (
     <>
       <div className="operatorTitle">
@@ -57,7 +63,7 @@ export function Dashboard({ t }: { t: TerminalState }) {
             ]}
           />
         </Panel>
-        <RecentExecution t={t} />
+        <RecentExecution t={t} historical={historical} />
         <SystemHealth t={t} compact />
       </div>
     </>

@@ -1,0 +1,41 @@
+........................................................................ [  6%]
+..............................................F......................... [ 12%]
+........................................................................ [ 19%]
+........................................................................ [ 25%]
+........................................................................ [ 32%]
+........................................................................ [ 38%]
+........................................................................ [ 44%]
+........................................................................ [ 51%]
+........................................................................ [ 57%]
+........................................................................ [ 64%]
+........................................................................ [ 70%]
+........................................................................ [ 76%]
+........................................................................ [ 83%]
+........................................................................ [ 89%]
+........................................................................ [ 96%]
+.............................................                            [100%]
+=================================== FAILURES ===================================
+__________________ test_generated_terminal_schema_is_current ___________________
+
+    def test_generated_terminal_schema_is_current():
+        spec = importlib.util.spec_from_file_location('contract_generator', ROOT/'backend/scripts/generate_terminal_contract.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+>       assert module.build_contract() == json.loads((ROOT/'frontend/src/contracts/terminal.schema.json').read_text())
+E       AssertionError: assert {'$defs': {'A...t', ...], ...} == {'$defs': {'A...t', ...], ...}
+E         
+E         Omitting 5 identical items, use -vv to show
+E         Differing items:
+E         {'properties': {'accounting': {'additionalProperties': False, 'properties': {'accounting_fingerprint': {'format': 'sha...$defs/QuoteLevel'}, 'title': 'Agent Quotes', 'type': 'array'}, 'agents': {'$ref': '#/$defs/AgentSystemSnapshot'}, ...}} != {'properties': {'accounting': {'additionalProperties': False, 'properties': {'accounting_fingerprint': {'format': 'sha...$defs/QuoteLevel'}, 'title': 'Agent Quotes', 'type': 'array'}, 'agents': {'$ref': '#/$defs/AgentSystemSnapshot'}, ...}}
+E         Use -v to get more diff
+
+tests/test_audit_terminal_contract.py:14: AssertionError
+=============================== warnings summary ===============================
+../../.hyperamm/venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/.hyperamm/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_audit_terminal_contract.py::test_generated_terminal_schema_is_current
+1 failed, 1124 passed, 1 warning in 74.73s (0:01:14)

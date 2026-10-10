@@ -1,3 +1,4 @@
+import { terminalEnvelopeFailure } from "./utils/terminalIntegrity";
 import { displayedTerminal } from "./utils/freshness";
 import { TerminalDiagnostics } from "./components/TerminalDiagnostics";
 import {
@@ -82,12 +83,15 @@ export default function App() {
       </Loading>
     );
   else {
+    const historical =
+      s.wsState !== "connected" ||
+      !!terminalEnvelopeFailure(t.emitted_at, nowMs);
     const pages: Record<PageName, ReactNode> = {
-      Dashboard: <Dashboard t={t} />,
+      Dashboard: <Dashboard t={t} historical={historical} />,
       Markets: <Markets t={t} />,
-      Strategy: <Strategy t={t} />,
+      Strategy: <Strategy t={t} historical={historical} />,
       "AMM Settings": <AmmSettings t={t} />,
-      Execution: <Execution t={t} />,
+      Execution: <Execution key={t.session_id} t={t} historical={historical} />,
       Risk: <Risk t={t} />,
       "Supervisory Agents": <Agents t={t} />,
       Vault: <Vault t={t} />,

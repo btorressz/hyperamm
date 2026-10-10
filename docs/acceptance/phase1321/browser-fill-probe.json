@@ -1,0 +1,7 @@
+{
+  "checks": [
+    "acceptance configuration restored; strategy stopped"
+  ],
+  "pending": "No natural PAPER fill within 12s; fill rendering remains regression covered",
+  "fill_count": 0
+}

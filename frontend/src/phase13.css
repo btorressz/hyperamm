@@ -737,3 +737,38 @@ tbody tr:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.orderFilters {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.orderFilters label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.orderDetails {
+  min-width: 230px;
+  max-width: 420px;
+}
+.orderDetails div {
+  margin: 8px 0;
+}
+.orderDetails dt {
+  color: var(--muted);
+}
+.orderDetails dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.orderDetails + p {
+  max-width: 420px;
+  white-space: normal;
+}
+.orderTable table {
+  min-width: 760px;
+}
+.executionTimeline .eventTable table {
+  min-width: 720px;
+}

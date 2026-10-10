@@ -2,10 +2,11 @@ import type { Quote, Order } from "../types";
 import { quoteEvidence, type QuoteStage } from "../utils/quoteEvidence";
 import { price, quantity, bps, number } from "../utils/format";
 
-export function QuoteLadder({ quotes, orders, stage = "STRATEGY" }: {
+export function QuoteLadder({ quotes, orders, stage = "STRATEGY", historical = false }: {
   quotes: Quote[];
   orders: Order[];
   stage?: QuoteStage;
+  historical?: boolean;
 }) {
   return (
     <section className="panel quotePanel">
@@ -21,7 +22,7 @@ export function QuoteLadder({ quotes, orders, stage = "STRATEGY" }: {
           </tr></thead>
           <tbody>
             {quotes.map((q) => {
-              const evidence = quoteEvidence(q, orders, stage);
+              const evidence = quoteEvidence(q, orders, stage, historical);
               return (
                 <tr key={q.side + ":" + q.level_index}>
                   <td>{q.level_index + 1}</td>
