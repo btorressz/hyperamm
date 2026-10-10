@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import json
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -28,10 +29,10 @@ async def main(args):
     vite_log = (scratch/'browser-vite.log').open('w')
     def backend():
         return subprocess.Popen([args.python,'-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8000'],
-            cwd=ROOT/'backend', env=env, stdout=log, stderr=subprocess.STDOUT)
+            cwd=ROOT/'backend', env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     server = backend()
     vite = subprocess.Popen(['npm','run','dev','--','--host','127.0.0.1','--port','5173'],
-        cwd=ROOT/'frontend', stdout=vite_log, stderr=subprocess.STDOUT)
+        cwd=ROOT/'frontend', stdout=vite_log, stderr=subprocess.STDOUT, start_new_session=True)
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(executable_path=args.chromium, headless=True, args=['--no-sandbox'])
@@ -199,7 +200,9 @@ async def main(args):
             await browser.close()
     finally:
         for process in (server,vite):
-            if process.poll() is None:process.terminate();process.wait(timeout=10)
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGTERM)
+                process.wait(timeout=10)
         log.close();vite_log.close()
         (scratch/'browser-results.json').write_text(json.dumps(report,indent=2)+'\n')
     (out/'browser-results.json').write_text(json.dumps(report,indent=2)+'\n')

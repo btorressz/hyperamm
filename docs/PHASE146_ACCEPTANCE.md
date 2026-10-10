@@ -96,6 +96,10 @@ legacy optimization; the API now sends the argument only for selected requests,
 and the original test passes unchanged. Initial browser harness fixes addressed
 ambiguous region/control labels and a result reset on navigation. Final acceptance
 was rerun cleanly after those fixes and the final styling/session notices.
+Final process inspection also found npm-spawned Vite children surviving their
+parent harness processes. The harness now owns separate process groups and
+terminates the full groups; acceptance was rerun from fresh services and final
+inspection confirmed no acceptance backend or Vite process remained.
 
 ## Isolation and economics evidence
 
