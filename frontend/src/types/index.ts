@@ -590,6 +590,8 @@ export type SimulationMetrics = {
   execution_quality_state_counts: Record<string, number>;
 };
 export type SimulationResult = {
+  research_configuration?: ResearchProvenance | null;
+  vault?: VaultSnapshot | null;
   engine_version: string;
   run_fingerprint: string;
   scenario: string;
@@ -650,6 +652,7 @@ export type CandidateEvaluation = {
   baseline_delta: Record<string, Decimalish | null>;
 };
 export type OptimizationResult = {
+  research_configuration?: ResearchProvenance | null;
   engine_version: string;
   baseline: CandidateEvaluation;
   requested_candidate_count: number;
@@ -849,4 +852,39 @@ export type TerminalEvents = {
   order: "newest-first";
   max_events: number;
   events: TerminalEvent[];
+};
+
+export type ResearchVaultConfig = {
+  initial_equity_quote: string;
+  paper_fee_model_enabled: boolean;
+  paper_maker_fee_bps: string;
+  paper_taker_fee_bps: string;
+  paper_funding_accounting_enabled: boolean;
+  paper_funding_interval_seconds: number;
+  max_capital_utilization: string;
+};
+export type ResearchProposal = { config: ResearchVaultConfig; selected_preset_id: string | null };
+export type ResearchPreset = {
+  preset_id: string; name: string; description: string; version: string;
+  config: ResearchVaultConfig; config_fingerprint: string; limitations: string[];
+};
+export type ResearchCatalog = { research_config_version: string; simulated: true; presets: ResearchPreset[] };
+export type ResearchProvenance = {
+  research_config_version: string; selected_preset_id: string | null; selected_preset_version: string | null;
+  normalized_config: ResearchVaultConfig; config_fingerprint: string; customized: boolean;
+};
+export type ResearchPreviewResponse = ResearchProvenance & {
+  validation_status: 'VALID'; simulated: true; baseline_preset_id: string;
+  changed_fields: Array<{ field: keyof ResearchVaultConfig; old_value: string | number | boolean;
+    new_value: string | number | boolean; difference: string | null; units: string }>;
+  baseline_values: ResearchVaultConfig; custom_values: ResearchVaultConfig;
+  illustrative_utilization_ceiling_quote: string; warnings: string[]; limitations: string[];
+};
+export type ResearchComparison = {
+  research_config_version: string; baseline_config_fingerprint: string; custom_config_fingerprint: string;
+  baseline_provenance: ResearchProvenance; custom_provenance: ResearchProvenance;
+  scenario: string; frame_count: number; baseline_result: SimulationResult; custom_result: SimulationResult;
+  comparison_deltas: Record<string, string | number | null>;
+  risk_state_counts: { baseline: Record<string, number>; custom: Record<string, number> };
+  limitations: string[]; simulated: true;
 };

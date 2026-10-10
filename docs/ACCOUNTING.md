@@ -421,3 +421,21 @@ storage is in-memory and capacity-bounded. TESTNET completeness is deliberately
 partial. Full-notional reservation may halt trading conservatively; it is not a
 production margin engine. No live signed TESTNET execution is required for local
 acceptance.
+
+## Phase 14 research integration
+
+ResearchVaultConfig exposes only simulated initial equity, fee enablement/rates,
+funding enablement/interval and utilization cap. It reuses AccountingConfig's
+financial validation metadata and explicitly builds fresh isolated PAPER
+AccountingConfig from code-owned administrative defaults. The engine's existing
+initial-equity override remains authoritative for each research run. Runtime
+AccountingService, ledger identities, capital reservations and accounting authority
+are never rebound by preset, preview, run, optimization or comparison requests.
+
+Fee/funding formulas, idempotency, ledger ordering, average cost, high-water equity
+and full-notional capital reservation are unchanged. Preset and customized
+comparison results report actual isolated VaultSnapshot fees/funding and ending
+capital utilization. A preview ceiling is configuration arithmetic only, not
+Vault available capital, venue margin or an allocation forecast. Funding stress
+intervals use the existing sampled scenario-rate convention and do not represent
+venue funding timing. Contract/API/preset details are in [Simulation](SIMULATION.md#phase-14--customizable-research-vault).

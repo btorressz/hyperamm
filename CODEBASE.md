@@ -820,3 +820,33 @@ acceptance totals **216 route/viewport checks + 61 workflows**, zero page except
 Phase 13.3A–G is implemented/locally accepted; Phase 13.2A–E, macOS, external
 providers/Redis, signed TESTNET, extended soak and unrelated audit/schema gates
 remain open. Dedicated draft PR only; no merge or production-readiness claim.
+
+## Phase 14 — Research assumptions and controlled PAPER comparison
+
+- `backend/app/simulation/research_vault.py`: narrow strict/frozen Decimal contract,
+  explicit AccountingConfig/SimulationConfig mapping, versioned canonical hashes,
+  proposal provenance, pure preview/differences and actual result deltas.
+- `backend/app/simulation/presets.py`: Python-owned immutable catalog, version 1
+  Conservative Capital / Balanced Research / High-Cost Stress definitions.
+- `backend/app/api/research_vault.py`: GET presets, POST validation-only preview,
+  bounded comparison requests and pre-parsing research-body limit. `main.py`
+  registers routes and sanitized research validation errors.
+- Existing simulation API adds optional validated `research`; legacy defaults
+  remain. Existing service captures comparison inputs once and reuses one dataset,
+  sequential engine runs and the existing executor/admission wrapper. Simulation
+  and optimization outputs add nullable research provenance. Engine/accounting/
+  optimizer mathematics and active runtime authority remain unchanged.
+- `frontend/src/stores/researchVault.ts`: separate in-memory preset/draft/validation/
+  selection state, synchronous request/draft/connection generations; no persistence
+  or terminal/strategy writes. `utils/researchVault.ts`: exact textual percent
+  movement and response validation.
+- `components/vault/ResearchConfiguration.tsx`, `ResearchPresets.tsx`,
+  `ResearchPreview.tsx`: appended Vault studio, preserving all capital/PnL/session
+  chart/ledger/provenance components. `phase14.css` scopes responsive styles.
+- Simulation captures selected research assumptions for runs and bounded grids,
+  reuses SimulationPanel/SimulationTrace/CandidateComparison, and adds
+  `components/simulation/ResearchComparison.tsx` for controlled actual results.
+- Focused pytest and Node tests plus `frontend/tests/browser-phase14.py` cover
+  contracts, economics, async retirement, worker isolation, real browser workflows
+  and all twelve routes. [Phase 14 acceptance](docs/PHASE14_ACCEPTANCE.md) records
+  actual validation and remaining gates; no Phase 15 implementation is implied.

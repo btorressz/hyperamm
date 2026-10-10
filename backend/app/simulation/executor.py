@@ -43,7 +43,7 @@ class SimulationExecutor:
             self._busy = False
 
     async def execute(self, operation: str, **inputs):
-        if operation not in {"run_scenario", "optimize"}:
+        if operation not in {"run_scenario", "optimize", "compare_research_configs"}:
             raise ValueError("unknown research operation")
         with self._lock:
             if self._closed:

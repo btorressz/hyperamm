@@ -23,6 +23,7 @@
 | 13.1 | MERGED / LOCAL ACCEPTANCE PASSED | Shared institutional design, persistent navigation, responsive accessible shell; no backend authority changes |
 | 13.2 | PARTIAL / F IMPLEMENTED / G LOCAL CHECKS / A–E PENDING | 13.2.1 execution lifecycle UX; frontend verified; one baseline backend schema gate remains |
 | 13.3 | IMPLEMENTED / LOCAL ACCEPTANCE | A–G research/operations frontend complete locally; schema/macOS/external gates remain |
+| 14 | IMPLEMENTED / LOCAL ACCEPTANCE | Custom research assumptions, Python presets/preview, Vault studio, isolated PAPER runs/optimizer and controlled comparison; external gates remain |
 
 ## Phase 6 extension points
 
@@ -993,3 +994,35 @@ all Phase 13 gates. **Phase 13.2A–E remains unfinished.** Phase 14/15, macOS,
 real external providers/live oracle/source integrity, real Redis, signed TESTNET,
 extended soak, known terminal schema generation and other audit findings including
 A2-003/A2-005 remain excluded/open. One dedicated draft PR; do not merge automatically.
+
+
+## Phase 14 — Customizable Research Vault
+
+| Milestone | Status | Local evidence |
+| --- | --- | --- |
+| 14.1 — Research Configuration Contracts | IMPLEMENTED / LOCAL ACCEPTANCE | Strict allowed fields, reused financial bounds, one capital source, canonical hashes, malformed/protected input rejection |
+| 14.2 — Presets & Preview | IMPLEMENTED / LOCAL ACCEPTANCE | Python catalog v1, read-only Decimal preview/differences, runtime non-mutation |
+| 14.3 — Customizable Vault Studio | IMPLEMENTED / LOCAL ACCEPTANCE | Preserved accounting workspace; local Decimal draft, presets/editor/preview, stale-response retirement and navigation |
+| 14.4 — Simulation Integration | IMPLEMENTED / LOCAL ACCEPTANCE | Existing engine/accounting/optimizer, actual same-dataset comparison, one bounded worker and optional existing Redis admission |
+| 14.5 — Security & Acceptance | IMPLEMENTED / LOCAL ACCEPTANCE | Full regression, typecheck/build, real Chromium workflows/restart and 72 route/viewport checks |
+
+Verified base `bf547ad889d0e549b8d67beb966323614f2a5c27`; latest main fetched,
+PRs #43–#47 verified merged, original working tree clean. Backend **1185 passed**
+(1125 baseline + 60 new), frontend **410 passed** (376 baseline + 34 new),
+0 failures/skips. TypeScript/build, pip check and compileall pass. The previously
+recorded generated-terminal-schema mismatch did **not** reproduce on unchanged
+base or final with this environment's dependencies; the test/schema are unchanged.
+The final backend includes one upstream Starlette testclient deprecation warning.
+
+Real DEMO/PAPER Chromium verifies presets, exact inputs, validation/rejection,
+customized simulation, same-dataset baseline comparison, unchanged Inventory
+optimizer, navigation, slow/malformed preview fixtures, actual backend restart
+and all twelve routes at six viewports. Zero page exceptions and zero trading
+mutation requests; observed strategy, kill, orders, ledger fingerprint/version
+and TESTNET eligibility unchanged. See [Phase 14 acceptance](PHASE14_ACCEPTANCE.md)
+for commands, exact durations, modeling limits and screenshots.
+
+**Draft review only; do not merge automatically.** Phase 15 and Phase 13.2A–E
+remain unfinished. macOS, real external providers/source integrity, real Redis,
+signed TESTNET, long soak and unrelated A2-003/A2-005 gates remain open. Local
+PAPER research does not establish production readiness or future profitability.

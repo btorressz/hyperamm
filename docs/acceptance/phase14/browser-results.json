@@ -1,0 +1,439 @@
+{
+  "route_checks": [
+    {
+      "route": "dashboard",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "markets",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "strategy",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "amm-settings",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "execution",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "risk",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "agents",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "vault",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "analytics",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "simulation",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "logs",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "settings",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "route": "dashboard",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "markets",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "strategy",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "amm-settings",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "execution",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "risk",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "agents",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "vault",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "analytics",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "simulation",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "logs",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "settings",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "route": "dashboard",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "markets",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "strategy",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "amm-settings",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "execution",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "risk",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "agents",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "vault",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "analytics",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "simulation",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "logs",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "settings",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "route": "dashboard",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "markets",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "strategy",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "amm-settings",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "execution",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "risk",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "agents",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "vault",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "analytics",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "simulation",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "logs",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "settings",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "route": "dashboard",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "markets",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "strategy",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "amm-settings",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "execution",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "risk",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "agents",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "vault",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "analytics",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "simulation",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "logs",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "settings",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "route": "dashboard",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "markets",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "strategy",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "amm-settings",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "execution",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "risk",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "agents",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "vault",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "analytics",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "simulation",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "logs",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "route": "settings",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "workflows": [
+    "A: backend presets switch correctly; original Vault economics, ledger, provenance and session charts preserved",
+    "Exact fractional percentage remains editable through sequential keyboard typing",
+    "B: exact Decimal capital, fees, funding interval and percent conversion validated with preview fingerprint",
+    "C: negative capital/fees, malformed Decimal, utilization >100%, invalid interval and forbidden nested/execution inputs reject",
+    "D: actual customized FLASH_MOVE PAPER run, fees/funding, existing trace and configuration provenance",
+    "E: actual baseline/custom comparison shares dataset and strategy, renders exact backend deltas and both results",
+    "Research accounting preset combines with unchanged bounded Inventory optimizer",
+    "Vault \u2192 Simulation \u2192 Vault preserves coherent in-memory selected research draft",
+    "Browser fixture: slow preview completion cannot approve an edited draft",
+    "Browser fixture: malformed preview leaves draft unvalidated",
+    "Real runtime config, running state, kill switch, ledger fingerprint/version, orders and TESTNET eligibility unchanged before restart",
+    "F: real backend stop/restart invalidates prior preview, preserves local draft, revalidates and runs again",
+    "All 72 route/viewport checks; no trading mutations or page exceptions; runtime strategy, kill, ledger version and orders unchanged"
+  ],
+  "page_errors": [],
+  "mutations": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/optimize"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    }
+  ],
+  "fixtures": "Delayed/malformed preview responses only; simulation results use actual backend."
+}

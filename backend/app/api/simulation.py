@@ -13,6 +13,7 @@ from app.simulation.optimizer import HARD_MAX_CANDIDATES
 from app.simulation.scenarios import ScenarioName
 from app.simulation.executor import ResearchBusyError
 from app.infrastructure.research import ResearchUnavailableError
+from app.simulation.research_vault import ResearchProposal
 
 
 router=APIRouter(tags=["simulation"])
@@ -24,9 +25,11 @@ class SimulationRunRequest(BaseModel):
     scenario:ScenarioName=ScenarioName.QUIET
     frames:int=Field(default=120,ge=2,le=5000)
     simulation:SimulationConfig=Field(default_factory=SimulationConfig)
+    research:ResearchProposal|None=None
 
     @model_validator(mode="after")
     def frame_bound(self):
+        validate_research_controls(self)
         if self.frames>self.simulation.max_frames:
             raise ValueError(f"frames {self.frames} exceeds simulation max_frames {self.simulation.max_frames}")
         return self
@@ -42,15 +45,27 @@ class OptimizationRequest(BaseModel):
     max_candidates:int=Field(default=32,ge=1,le=HARD_MAX_CANDIDATES)
     top_n:int=Field(default=5,ge=1,le=10)
     simulation:SimulationConfig=Field(default_factory=SimulationConfig)
+    research:ResearchProposal|None=None
     objective:OptimizationObjectiveConfig=Field(default_factory=OptimizationObjectiveConfig)
 
     @model_validator(mode="after")
     def grid_present(self):
+        validate_research_controls(self)
         if not self.strategy_grid and not self.agent_grid:
             raise ValueError("optimization requires at least one strategy or agent parameter grid")
         if self.frames>self.simulation.max_frames:
             raise ValueError(f"frames {self.frames} exceeds simulation max_frames {self.simulation.max_frames}")
         return self
+
+
+def validate_research_controls(request):
+    if request.research is not None and request.simulation.model_fields_set & {"initial_equity_quote", "accounting", "fill_model"}:
+        raise ValueError("research owns capital and accounting; simulation may supply only frame/trace controls")
+
+
+def isolated_simulation(request):
+    return (request.research.config.to_simulation(request.simulation) if request.research
+            else request.simulation.model_copy(deep=True))
 
 
 @router.get("/simulation/scenarios")
@@ -64,8 +79,10 @@ async def run_simulation(request:SimulationRunRequest,http_request:Request,rt=De
         result=await http_request.app.state.simulation_executor.execute("run_scenario",
             scenario=request.scenario.value,frames=request.frames,strategy=rt.config.model_copy(deep=True),
             agents=rt.agent_config.model_copy(deep=True),risk=rt.risk_config.model_copy(deep=True),
-            simulation=request.simulation.model_copy(deep=True),
+            simulation=isolated_simulation(request),
         )
+        if request.research:
+            result.research_configuration=request.research.provenance()
         return result.model_dump(mode="json")
     except ResearchUnavailableError as exc:
         raise HTTPException(status_code=503,detail=str(exc)) from exc
@@ -83,12 +100,14 @@ async def optimize(request:OptimizationRequest,http_request:Request,rt=Depends(r
     try:
         result=await http_request.app.state.simulation_executor.execute("optimize",
             strategy=rt.config.model_copy(deep=True),agents=rt.agent_config.model_copy(deep=True),
-            risk=rt.risk_config.model_copy(deep=True),simulation=request.simulation.model_copy(deep=True),
+            risk=rt.risk_config.model_copy(deep=True),simulation=isolated_simulation(request),
             strategy_grid=deepcopy(request.strategy_grid),agent_grid=deepcopy(request.agent_grid),
             training_scenarios=[x.value for x in request.training_scenarios],
             validation_scenarios=[x.value for x in request.validation_scenarios],
             objective=request.objective.model_copy(deep=True),max_candidates=request.max_candidates,frames=request.frames,top_n=request.top_n,
         )
+        if request.research:
+            result.research_configuration=request.research.provenance()
         return result.model_dump(mode="json")
     except ResearchUnavailableError as exc:
         raise HTTPException(status_code=503,detail=str(exc)) from exc

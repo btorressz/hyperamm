@@ -9,6 +9,7 @@ from .config import OptimizationObjectiveConfig,SimulationConfig
 from .engine import SimulationEngine
 from .optimizer import StrategyOptimizer
 from .scenarios import generate_scenario,scenario_catalog
+from .research_vault import LIMITATIONS, ResearchProposal, ResearchComparisonResult, result_deltas
 
 
 class SimulationService:
@@ -25,6 +26,32 @@ class SimulationService:
 
     def scenarios(self):
         return scenario_catalog()
+
+    async def compare_research_configs(self, *, scenario, frames, strategy, agents, risk,
+                                       simulation, baseline: ResearchProposal, custom: ResearchProposal):
+        # One request captures all runtime inputs before admission. One dataset and
+        # sequential fresh engine states make this a controlled accounting study.
+        strategy_copy = self.research_strategy(strategy.model_copy(deep=True))
+        agents_copy, risk_copy = agents.model_copy(deep=True), risk.model_copy(deep=True)
+        dataset = generate_scenario(scenario, frames=frames, market=strategy_copy.market)
+        results = []
+        for proposal in (baseline, custom):
+            result = await self.engine.run(dataset=dataset, scenario=scenario,
+                strategy_config=strategy_copy.model_copy(deep=True),
+                agent_config=agents_copy.model_copy(deep=True), risk_config=risk_copy.model_copy(deep=True),
+                simulation_config=proposal.config.to_simulation(simulation))
+            result.research_configuration = proposal.provenance()
+            results.append(result)
+        old, new = results
+        limitations = list(LIMITATIONS) + ["Both runs share one captured strategy/agent/risk snapshot and deterministic dataset; only research accounting assumptions differ."]
+        if baseline.config.initial_equity_quote != custom.config.initial_equity_quote:
+            limitations.append("Starting capital differs: interpret absolute PnL, returns and utilization in the context of different capital assumptions.")
+        return ResearchComparisonResult(baseline_config_fingerprint=baseline.config.fingerprint(),
+            custom_config_fingerprint=custom.config.fingerprint(), baseline_provenance=baseline.provenance(),
+            custom_provenance=custom.provenance(), scenario=scenario, frame_count=frames,
+            baseline_result=old, custom_result=new, comparison_deltas=result_deltas(old, new),
+            risk_state_counts={"baseline": old.metrics.risk_state_counts, "custom": new.metrics.risk_state_counts},
+            limitations=limitations)
 
     async def run_scenario(
         self,*,scenario:str,frames:int,strategy:StrategyConfig,agents:AgentConfig,

@@ -35,7 +35,7 @@ class CoordinatedSimulationExecutor:
         self._closed = False
 
     async def execute(self, operation, **inputs):
-        if operation not in {"run_scenario", "optimize"}:
+        if operation not in {"run_scenario", "optimize", "compare_research_configs"}:
             raise ValueError("unknown research operation")
         if self._closed:
             raise ResearchBusyError("Phase 10 research worker is shutting down")

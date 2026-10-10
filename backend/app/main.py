@@ -4,10 +4,14 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.responses import JSONResponse
 from app.deployment import LocalOnlyBoundary, validate_local_deployment
 from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
+from app.api.research_vault import router as research_vault_router, ResearchBodyLimit
 from app.infrastructure.redis import RedisInfrastructure
 from app.infrastructure.terminal_transport import RedisTerminalTransport
 from app.infrastructure.research import CoordinatedSimulationExecutor
@@ -58,7 +62,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="HyperAMM API", version="0.12.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 app.add_middleware(LocalOnlyBoundary)
-for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, accounting.router, terminal.router):
+app.add_middleware(ResearchBodyLimit)
+
+
+@app.exception_handler(RequestValidationError)
+async def research_validation_errors(request, exc):
+    if any(segment in request.url.path for segment in ("/research-vault/", "/simulation/")):
+        # Do not echo credentials, oversized/nonfinite inputs or exception ctx.
+        return JSONResponse(status_code=422, content={"detail": [
+            {"loc": list(error["loc"]), "msg": error["msg"], "type": error["type"]}
+            for error in exc.errors()]})
+    return await request_validation_exception_handler(request, exc)
+
+
+for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 
