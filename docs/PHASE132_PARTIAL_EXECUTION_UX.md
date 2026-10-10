@@ -8,7 +8,7 @@ This branch deliberately addresses one high-value correctness defect first, with
 - Does **not** infer a matching order from side + level alone: requires exact normalized price and size. Unmatched authorized quotes report missing matched order evidence; historical slot records cannot be silently treated as current.
 - Separates STRATEGY/AGENT proposals from final AUTHORIZED quotes so pre-authorization stages can never be represented as resting venue orders.
 - Reworks the existing quote-ladder display with standard repository formatters, explicit evidence descriptions, and order IDs for inspection.
-- Adds `frontend/tests/quote-evidence.test.cjs` with **14 new test definitions** for status categories, matching, and proposal-versus-authorized behavior, and registers them in the existing test runner.
+- Adds `frontend/tests/quote-evidence.test.cjs` with **11 new test definitions** for status categories, matching, and proposal-versus-authorized behavior, and registers them in the existing test runner.
 
 ## Validation
 - GitHub repository source and backend OrderStatus enum were inspected; only frontend display and test files are modified.
