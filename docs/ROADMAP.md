@@ -1055,3 +1055,32 @@ acceptance remains open. See [detailed acceptance](PHASE146_ACCEPTANCE.md) and
 [simulation contract](SIMULATION.md#phase-146--validated-single-native-perpetual-research-selection).
 Draft delivery only; do not merge. Phase 15 and unfinished Phase 13.2A–E gates
 remain unchanged.
+
+## Phase 15 — Live Market Experience
+
+| Milestone | Status |
+| --- | --- |
+| 15.1 — Read-Only Live Market Observation & API Contracts | IMPLEMENTED / FIXTURE ACCEPTED; full regression gate open; LIVE EXTERNALLY VERIFIED blocked |
+| 15.2 — Live Streams & Provider Integrity | PLANNED |
+| 15.3 — Live Markets Terminal UX | PLANNED |
+| 15.4 — Market vs Research Comparison & Explainability | PLANNED |
+| 15.5 — Security, Regression & Final Acceptance | PLANNED |
+
+15.1 base `66dbe4f1d1e6ffd8832a99916ba927e0b284655c`, PRs #43–#49 verified merged.
+Independent lifespan-owned native public SDK observer supports exactly BTC/ETH/SOL,
+validated metadata/maps/L2/perpetual context, Decimal contracts and two GET routes.
+Opt-in networking defaults disabled; workers, admission, cache, cancellation and
+shutdown are bounded. L2 source time is genuine, context source time stays null,
+cache receipts never renew source age, and partial/stale failures stay explicit.
+No observer data enters strategy/reference/risk/authorization/orders/accounting.
+Frontend scope is additive types; full terminal/streaming/history remain planned.
+
+Executed final scoped suite: **132 passed**; full backend: **1412 passed,
+1 unchanged-base schema failure**, 0 skipped, 1 warning; frontend **454 passed**,
+0 failed/skipped, TypeScript/build pass. A first full-run watchdog timeout and its
+subsequent non-reproduction are explicitly recorded. Before/after results and the
+unchanged-base terminal-schema equality failure are recorded in [Phase 15.1 acceptance](PHASE151_ACCEPTANCE.md). Existing
+protected tests/schema remain unchanged. The enforced managed policy excludes
+`api.hyperliquid.xyz`; genuine SDK metadata/BTC/ETH/SOL L2/context checks were
+NOT RUN, and live verification remains open for a permitted local environment.
+The entire Phase 15 is not complete. Draft delivery only; do not merge.

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     execution_mode: str = "PAPER"
     market_stale_after_seconds: float = 5.0
     demo_update_interval_seconds: float = 1.0
+    live_observations_enabled: bool = False
+    live_observation_http_timeout_seconds: float = Field(default=5, gt=0, le=30, allow_inf_nan=False)
+    live_observation_cache_ttl_seconds: float = Field(default=2, gt=0, le=60, allow_inf_nan=False)
+    live_observation_stale_after_seconds: float = Field(default=10, gt=0, le=300, allow_inf_nan=False)
+    live_observation_max_concurrent_requests: int = Field(default=2, ge=1, le=3, strict=True)
+    live_observation_metadata_stale_after_seconds: float = Field(default=300, gt=0, le=3600, allow_inf_nan=False)
+    live_observation_coherence_seconds: float = Field(default=2, gt=0, le=30, allow_inf_nan=False)
+    live_observation_future_tolerance_seconds: float = Field(default=1, ge=0, le=5, allow_inf_nan=False)
+    live_observation_book_levels: int = Field(default=20, ge=1, le=20, strict=True)
     enable_hyperliquid_testnet_orders: bool = False
     hyperliquid_private_key: str | None = Field(default=None, repr=False)
     hyperliquid_account_address: str | None = None
@@ -63,6 +72,14 @@ class Settings(BaseSettings):
     redis_worker_heartbeat_ttl_seconds: int = Field(default=15, ge=10, le=300)
     redis_operation_timeout_seconds: float = Field(default=1, gt=0, le=5)
     redis_research_enabled: bool = False
+
+    @field_validator("live_observation_max_concurrent_requests", "live_observation_book_levels", mode="before")
+    @classmethod
+    def observation_integer_options(cls, value):
+        # Environment settings arrive as strings; still reject booleans/floats.
+        if isinstance(value, str) and value.isascii() and value.isdigit() and len(value) <= 2:
+            return int(value)
+        return value
 
     @model_validator(mode="after")
     def redis_options(self):

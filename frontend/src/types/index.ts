@@ -908,3 +908,48 @@ export type ResearchComparison = {
   risk_state_counts: { baseline: Record<string, number>; custom: Record<string, number> };
   limitations: string[]; simulated: true;
 };
+
+/** Phase 15.1 REST observations. Decimal financial fields stay strings. */
+export type LiveMarketId = ResearchMarketId;
+export type LiveObservationStatus = 'AVAILABLE' | 'PARTIAL' | 'DEGRADED' | 'STALE' | 'UNAVAILABLE' | 'ERROR' | 'DISABLED';
+export type LiveMarketMetadata = {
+  market: LiveMarketId; dex: ''; metadata_status: 'EXCHANGE_VERIFIED' | 'UNAVAILABLE' | 'STALE' | 'ERROR';
+  source: 'OFFICIAL_SDK_NATIVE_META' | 'NONE'; sz_decimals: number | null; asset_index: number | null;
+  listed: boolean | null; observed_at: string | null;
+};
+export type LiveBookLevel = { price: string; size: string; order_count: number };
+export type LiveBookObservation = {
+  market: LiveMarketId; bids: LiveBookLevel[]; asks: LiveBookLevel[];
+  source_timestamp: string; observed_at: string; source: 'OFFICIAL_SDK_L2_SNAPSHOT';
+  best_bid: string; best_ask: string; midpoint: string; spread: string; spread_bps: string; truncated: boolean;
+};
+export type LivePerpObservation = {
+  market: LiveMarketId; source: 'OFFICIAL_SDK_META_AND_ASSET_CTXS'; source_timestamp: null; observed_at: string;
+  mark_price: string; oracle_price: string; funding_rate: string; open_interest_base: string;
+  open_interest_notional: string; provider_mid_price: string | null; premium: string | null;
+  mark_oracle_basis_bps: string; mark_mid_basis_bps: string | null; oracle_mid_basis_bps: string | null;
+};
+export type LiveFreshness = {
+  metadata_age_seconds: number | null; l2_source_age_seconds: number | null;
+  perp_observation_age_seconds: number | null;
+  metadata: 'FRESH' | 'STALE' | 'UNAVAILABLE'; order_book: 'FRESH' | 'STALE' | 'UNAVAILABLE';
+  perp_context: 'FRESH' | 'STALE' | 'UNAVAILABLE'; perp_event_time: 'UNKNOWN';
+  acquisition_gap_seconds: number | null; acquisition_coherent: boolean | null;
+};
+export type LiveObservationError = {
+  component: 'metadata' | 'order_book' | 'perp_context' | 'service' | 'snapshot';
+  code: 'DISABLED' | 'CLOSED' | 'CAPACITY' | 'TIMEOUT' | 'FORBIDDEN' | 'RATE_LIMITED' | 'UPSTREAM_ERROR' |
+    'SDK_UNAVAILABLE' | 'NETWORK_ERROR' | 'INVALID_DATA' | 'NOT_LISTED' | 'TEMPORAL_DISCREPANCY' | 'CLEANUP_ERROR';
+  message: string;
+};
+export type LiveMarketSnapshot = {
+  contract_version: 'phase151-v1'; market: LiveMarketId; display_name: string; exchange: 'HYPERLIQUID';
+  dex: ''; market_type: 'PERPETUAL'; read_only: true; simulated: false; observation_status: LiveObservationStatus;
+  metadata: LiveMarketMetadata; order_book: LiveBookObservation | null; perp_context: LivePerpObservation | null;
+  observed_at: string | null; generated_at: string; cache_stored_at: string | null; cache_age_seconds: number | null;
+  last_successful_observed_at: string | null; freshness: LiveFreshness; errors: LiveObservationError[]; limitations: string[];
+};
+export type LiveMarketOverview = {
+  contract_version: 'phase151-v1'; read_only: true; simulated: false; generated_at: string;
+  markets: [LiveMarketSnapshot, LiveMarketSnapshot, LiveMarketSnapshot];
+};
