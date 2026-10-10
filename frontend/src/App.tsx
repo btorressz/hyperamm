@@ -77,7 +77,7 @@ export default function App() {
   }, [mobile, closeNavigation]);
   let content: ReactNode;
   if (!t)
-    content = (
+    content = page === 'Settings' ? <Settings t={null} historical /> : (
       <Loading title="Connecting to HyperAMM…">
         Waiting for a valid backend terminal snapshot.
       </Loading>
@@ -97,8 +97,8 @@ export default function App() {
       Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Analytics: <Analytics key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       "Simulation & Optimization": <Simulation />,
-      Logs: <Logs t={t} />,
-      Settings: <Settings t={t} />,
+      Logs: <Logs key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
+      Settings: <Settings t={t} historical={historical} />,
     };
     content = pages[page];
   }

@@ -1,0 +1,150 @@
+.operationsWorkspace {
+  min-width: 0;
+}
+.operationsWorkspace .researchPageTitle {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.operationsWorkspace .researchPageTitle h1 {
+  margin-bottom: 6px;
+}
+.operationsWorkspace .researchPageTitle p {
+  margin: 0;
+}
+.operationsWorkspace .eventCategories,
+.operationsWorkspace .operationsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.operationsWorkspace .eventCategories button[aria-pressed="true"] {
+  background: #1d3e65;
+  border-color: #4a86c5;
+  color: #e5f1ff;
+}
+.operationsWorkspace .operationsFilters {
+  margin: 16px 0;
+}
+.operationsWorkspace .operationsFilters label:first-child {
+  min-width: 0;
+}
+.operationsWorkspace .operationsActions {
+  margin-top: 14px;
+  align-items: center;
+}
+.operationsWorkspace .eventMatchCount {
+  margin: 16px 0;
+  color: #a9bfd4;
+}
+.operationsWorkspace .operationsDetails {
+  display: grid;
+  grid-template-columns: minmax(100px, 160px) minmax(0, 1fr);
+  gap: 10px 16px;
+  margin: 12px 0;
+}
+.operationsWorkspace .operationsDetails dt {
+  color: #8da7c2;
+}
+.operationsWorkspace .operationsDetails dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.operationsWorkspace .eventTable table {
+  min-width: 880px;
+  table-layout: fixed;
+}
+.operationsWorkspace .eventTable th:nth-child(1) {
+  width: 17%;
+}
+.operationsWorkspace .eventTable th:nth-child(2) {
+  width: 13%;
+}
+.operationsWorkspace .eventTable th:nth-child(3) {
+  width: 20%;
+}
+.operationsWorkspace .eventTable th:nth-child(4) {
+  width: 34%;
+}
+.operationsWorkspace .eventTable td {
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.operationsWorkspace .eventMessagePreview {
+  display: block;
+  line-height: 1.5;
+}
+.operationsWorkspace .eventReference {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.operationsWorkspace .eventDetailsToggle {
+  display: block;
+  margin-top: 10px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+  font-size: 11px;
+}
+.operationsWorkspace .providerTable table {
+  min-width: 1020px;
+}
+.operationsWorkspace .providerTable td {
+  vertical-align: top;
+  max-width: 280px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.operationsWorkspace .providerTable small,
+.operationsWorkspace .eventTable small {
+  display: block;
+  margin-top: 5px;
+  color: #94abc2;
+}
+.operationsWorkspace .preferenceGroup {
+  border: 1px solid #29405b;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.operationsWorkspace .preferenceGroup legend {
+  color: #a9bfd4;
+  padding: 0 6px;
+}
+.operationsWorkspace .preferenceReset {
+  padding: 12px;
+  border: 1px solid #586343;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+.operationsWorkspace .localPreferenceFeedback {
+  margin-top: 12px;
+  color: #91b8dd;
+}
+.operationsWorkspace .runtimeIdentity code {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .operationsWorkspace .operationsDetails {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .operationsWorkspace .operationsDetails dd {
+    margin-bottom: 8px;
+  }
+  .operationsWorkspace .operationsActions button {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+  }
+  .operationsWorkspace .preferenceGroup {
+    padding: 10px;
+  }
+}

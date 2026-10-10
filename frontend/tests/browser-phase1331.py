@@ -67,6 +67,7 @@ async def main(args):
       assert await page.get_by_text('ML SHADOW · OBSERVATIONAL ONLY',exact=False).is_visible()
      else:
       await page.get_by_text('No accounting events have been booked in this research session.',exact=True).wait_for()
+      await page.wait_for_function("document.querySelectorAll('.historyChart canvas').length>=4")
       assert await page.locator('canvas').count()>=4
       provenance=page.get_by_text('Inspect full accounting identities',exact=True)
       await provenance.click();assert await provenance.evaluate('(s)=>s.parentElement.open')
