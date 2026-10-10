@@ -26,6 +26,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!r.ok) {
     const body = await r.json().catch(() => null);
     const detail = body?.detail;
+    if (path.startsWith('/simulation/')) {
+      const message = Array.isArray(detail)
+        ? detail.map((e: {loc: unknown[]; msg: string}) => `${e.loc.slice(1).join('.')}: ${e.msg}`).join('; ')
+        : typeof detail === 'string' ? detail : `HTTP ${r.status}`;
+      const advice = r.status === 422
+        ? 'Review the scenario, frame bounds and parameter grid.'
+        : r.status === 503
+          ? 'Research service unavailable. Retry when capacity coordination is restored.'
+          : r.status >= 500
+            ? 'Research failed on the server. Retry or inspect backend diagnostics.'
+            : 'Retry the research request.';
+      throw new Error(`${message} ${advice}`);
+    }
     throw new Error(
       Array.isArray(detail)
         ? detail
@@ -42,8 +55,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json();
 }
 export const api = {
-  terminalHistory: (range: HistoryRange = "session", limit = 600) =>
-    request<TerminalHistory>(`/terminal/history?range=${range}&limit=${limit}`),
+  terminalHistory: (range: HistoryRange = "session", limit = 600, signal?: AbortSignal) =>
+    request<TerminalHistory>(`/terminal/history?range=${range}&limit=${limit}`, { signal }),
   terminalEvents: (category?: EventCategory, limit = 100) =>
     request<TerminalEvents>(
       `/terminal/events?limit=${limit}${category ? "&category=" + category : ""}`,

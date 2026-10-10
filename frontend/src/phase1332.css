@@ -1,0 +1,185 @@
+/* Analytics and isolated research; existing terminal palette and primitives. */
+.analyticsPage,
+.simulationPage {
+  min-width: 0;
+}
+.researchWorkspace.stack {
+  gap: 16px;
+}
+.researchWorkspace > section,
+.researchWorkspace .grid > *,
+.researchChart {
+  min-width: 0;
+}
+.researchWorkspace .panelNote {
+  margin: 10px 16px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.researchWorkspace h2 {
+  font-size: 15px;
+}
+.historyRanges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.historyRanges button {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.historyRanges button[aria-pressed="true"] {
+  background: #193a60;
+  color: #a6ceff;
+  border-color: #4383cb;
+}
+.historyRanges button:disabled {
+  opacity: 0.5;
+}
+.historyMetadata {
+  padding: 10px 0;
+  color: #a8bbce;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.researchChart .chartLegend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #a8bbce;
+  align-items: center;
+}
+.chartLegend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.chartLegend button {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 4px 8px;
+}
+.chartReadout {
+  min-height: 45px;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #8198ad;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chartReadout time {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.chartReadout b {
+  color: #d5e1ee;
+  font-variant-numeric: tabular-nums;
+}
+.researchChart .tableWrap {
+  max-height: 280px;
+}
+.stateDistribution {
+  padding: 0 16px 14px;
+  font-size: 12px;
+  min-width: 0;
+}
+.stateDistribution h3 {
+  margin: 12px 0;
+}
+.distributionRow {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(40px, 2fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 11px;
+}
+.distributionRow span {
+  overflow-wrap: anywhere;
+}
+.distributionRow meter {
+  width: 100%;
+  height: 10px;
+  accent-color: #77aaff;
+}
+.simulationPage .formGrid {
+  padding: 12px 16px;
+}
+.simulationPage .formGrid label {
+  min-width: 0;
+}
+.simulationPage .formGrid input,
+.simulationPage .formGrid select {
+  width: 100%;
+  min-width: 0;
+}
+.simulationPage .actions {
+  padding: 0 16px;
+  flex-wrap: wrap;
+}
+.simulationPage p {
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.simulationPage .tableWrap {
+  max-height: 650px;
+  overflow: auto;
+}
+.simulationPage table td {
+  vertical-align: top;
+}
+.simulationPage .researchCardBody .terminalMetrics {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.simulationPage details details {
+  margin-left: 8px;
+}
+.researchWorkspace .tableWrap:focus-visible {
+  outline: 2px solid #77aaff;
+  outline-offset: 2px;
+}
+.researchWorkspace summary {
+  white-space: normal;
+}
+.researchWorkspace details .tableWrap {
+  max-height: 350px;
+}
+.researchWorkspace .inlineError button {
+  margin-left: 8px;
+}
+.researchWorkspace .historyChart {
+  width: 100%;
+  overflow: hidden;
+}
+@media (max-width: 767px) {
+  .analyticsPage .grid.twoColumns,
+  .simulationPage .grid.twoColumns {
+    grid-template-columns: 1fr;
+  }
+  .simulationPage .formGrid {
+    grid-template-columns: 1fr;
+  }
+  .historyRanges {
+    width: 100%;
+  }
+  .historyRanges button {
+    flex: 1;
+  }
+  .distributionRow {
+    grid-template-columns: minmax(70px, 1fr) minmax(25px, 1fr) auto;
+    gap: 5px;
+  }
+  .simulationPage .actions button {
+    width: 100%;
+  }
+  .researchWorkspace .chartLegend {
+    gap: 8px;
+  }
+}

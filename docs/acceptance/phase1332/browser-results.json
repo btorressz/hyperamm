@@ -1,0 +1,406 @@
+{
+  "layout_checks": [
+    {
+      "page": "dashboard",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "markets",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "strategy",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "amm-settings",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "execution",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "risk",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "agents",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "vault",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "analytics",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "simulation",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "logs",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "settings",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "page": "dashboard",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "markets",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "strategy",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "amm-settings",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "execution",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "risk",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "agents",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "vault",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "analytics",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "simulation",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "logs",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "settings",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "page": "dashboard",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "markets",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "strategy",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "amm-settings",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "execution",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "risk",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "agents",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "vault",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "analytics",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "simulation",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "logs",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "settings",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "page": "dashboard",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "markets",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "strategy",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "amm-settings",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "execution",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "risk",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "agents",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "vault",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "analytics",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "simulation",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "logs",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "settings",
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "page": "dashboard",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "markets",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "strategy",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "amm-settings",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "execution",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "risk",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "agents",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "vault",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "analytics",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "simulation",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "logs",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "settings",
+      "width": 768,
+      "height": 900
+    },
+    {
+      "page": "dashboard",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "markets",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "strategy",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "amm-settings",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "execution",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "risk",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "agents",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "vault",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "analytics",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "simulation",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "logs",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "page": "settings",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "workflows": [
+    "live range query and persisted 1M preference",
+    "live Analytics four charts and keyboard explanations",
+    "live Vault shared chart regression",
+    "actual FLASH_MOVE PAPER simulation: backend metrics, 80 trace frames and full provenance",
+    "captured run header survives scenario changes",
+    "actual Balanced grid: backend ordering and two-candidate comparison",
+    "frame input prevents invalid request; backend description displayed",
+    "research/result inspection preserves active config, kill, ledger and orders",
+    "actual backend stop/restart: historical chart freeze and new-session reset",
+    "fixture retention disabled ranges, saved unavailable preference and size-bound queries",
+    "fixture chart gaps, signed base and percent axes/data; actual sample-count distribution",
+    "fixture Analytics all six viewports",
+    "fixture old in-flight history after process/session replacement rejected",
+    "fixture history error/retry and disconnected retained chart evidence",
+    "fixture busy state: single admission and changing controls never relabel captured response",
+    "fixture trace same-second frames, missing/nonfinite metrics and invalid timestamps",
+    "fixture Inventory preset, baseline/candidate selectors, null validation and rejection details",
+    "fixture populated Simulation all six viewports",
+    "fixture research error 422 actionable",
+    "fixture research error 429 actionable",
+    "fixture research error 503 actionable",
+    "fixture research error 500 actionable",
+    "fixture research error network actionable",
+    "fixture unmounted research completion cannot seed replacement page",
+    "zero non-research mutation requests across browser acceptance",
+    "real chart mount: config replacement, height/width resize, keyboard reset and observer cleanup"
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "control_requests": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/optimize"
+    }
+  ]
+}

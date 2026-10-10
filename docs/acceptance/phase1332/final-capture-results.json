@@ -1,0 +1,9 @@
+{
+  "mode": "actual local DEMO/PAPER",
+  "frames": 80,
+  "trace_points": 80,
+  "fills": 8,
+  "ranked_candidates_returned": 8,
+  "candidates_shown": 5,
+  "page_errors": []
+}

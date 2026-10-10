@@ -95,7 +95,7 @@ export default function App() {
       Risk: <Risk t={t} />,
       "Supervisory Agents": <Agents key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
-      Analytics: <Analytics t={t} />,
+      Analytics: <Analytics key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       "Simulation & Optimization": <Simulation />,
       Logs: <Logs t={t} />,
       Settings: <Settings t={t} />,

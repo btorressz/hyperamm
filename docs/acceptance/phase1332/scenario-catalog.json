@@ -1,0 +1,57 @@
+{
+  "simulated": true,
+  "scenarios": [
+    {
+      "name": "QUIET",
+      "description": "Low-volatility balanced market."
+    },
+    {
+      "name": "TREND_UP",
+      "description": "Deterministic upward price trend."
+    },
+    {
+      "name": "TREND_DOWN",
+      "description": "Deterministic downward price trend."
+    },
+    {
+      "name": "MEAN_REVERTING",
+      "description": "Deterministic oscillation around the starting price."
+    },
+    {
+      "name": "HIGH_VOLATILITY",
+      "description": "Alternating large price moves."
+    },
+    {
+      "name": "BID_HEAVY_BOOK",
+      "description": "Persistent positive top-book imbalance."
+    },
+    {
+      "name": "ASK_HEAVY_BOOK",
+      "description": "Persistent negative top-book imbalance."
+    },
+    {
+      "name": "FLASH_MOVE",
+      "description": "Abrupt downward move followed by partial recovery."
+    },
+    {
+      "name": "ORACLE_DISLOCATION",
+      "description": "One external oracle diverges while normal policy decides the outcome."
+    },
+    {
+      "name": "REFERENCE_DEGRADATION",
+      "description": "Primary external oracle is unavailable; fallback consensus is exercised."
+    },
+    {
+      "name": "POSITIVE_FUNDING_STRESS",
+      "description": "Elevated positive funding with otherwise orderly prices."
+    },
+    {
+      "name": "NEGATIVE_FUNDING_STRESS",
+      "description": "Elevated negative funding with otherwise orderly prices."
+    },
+    {
+      "name": "LIQUIDITY_SHOCK",
+      "description": "Order-book depth collapses temporarily without synthetic fill probability."
+    }
+  ]
+}
