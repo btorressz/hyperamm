@@ -777,3 +777,46 @@ Final frontend **310 passed**, typecheck/build passed; backend **1124 passed,
 restart and shared Vault charts, pass with zero page exceptions. These scoped
 13.3C/D results do not complete 13.3E/F/full G, Phase 13.2A–E, macOS, external
 providers/Redis, signed TESTNET or extended soak. Dedicated draft PR only.
+
+
+## Phase 13.3.3 — Operational evidence and local configuration workspace
+
+Implemented on verified current main `fc8c6303f4ac0114d11b1a6b1f2da30a55e7b315`,
+with PRs #43–#46 merged. [Acceptance](docs/PHASE1333_ACCEPTANCE.md) records complete
+file inventory, actual browser workflows/screenshots and unresolved external/schema
+gates. Backend application, terminal contracts and economic authority are unchanged.
+
+| Source | Responsibility |
+| --- | --- |
+| `pages/Logs.tsx` | Loaded-evidence summary, backend category/100–500 bounds, local search, display order, explicit response/error states and selected-record JSON download. |
+| `hooks/useTerminalEvents.ts` | Abortable process/session/connection-epoch/category/limit query, pre/post completion checks, five-second current polling, zero inactive cache retention and same-identity historical freeze. |
+| `utils/terminalEventView.ts` | Event response/session/type/bound checks, loaded-only search, stable timestamp/response-position ordering, missing-state text and explicit export field allowlist/metadata. |
+| `components/EventTimeline.tsx` | Existing table with stable native row expansion, full EventDetails, null/zero distinctions, SIMULATED flag and neutral categories; Execution retains its existing empty-state contract. |
+| `pages/Settings.tsx` | Grouped browser preferences, explicit four-default reset confirmation, persistence feedback and read-only runtime/authority evidence; works before initial terminal acceptance. |
+| `stores/display.ts` | Existing persistence key; validated owned hydration/partialization and atomic reset of density/sidebar/range/history size. |
+| `components/settings/ProviderHealthSummary.tsx` | Actual reference rows with backend hierarchy, exact prices, source/observation times, advancing ages, reported stale/status/error/transport and historical labels. No added provider/poller/authority. |
+| `components/SystemHealth.tsx` | Preserved subsystem statuses/reasons; matching fresh session required for current badges. |
+| `phase1333.css` | Scoped institutional Logs/Settings styling, responsive controls and local horizontal table scroll. |
+| `tests/logs-settings.test.cjs` | 66 additional contract/search/order/identity/export/persistence/health regressions, registered without replacing prior cases. |
+| `tests/browser-phase1333.py` | Optional real DEMO/PAPER twelve-route/19-workflow Chromium acceptance, actual dedicated backend restart and isolated event/provider/storage/race fixtures. |
+
+App keys Logs by process/session and passes historical state to Logs/Settings.
+The existing shared TerminalDiagnostics panel supplies transport ages/rejections;
+its connection calculations are not duplicated. Events REST declares session but
+no authenticated process ID: client checks protect attribution only. Export
+preserves selected declared event fields/nulls and excludes extra diagnostics,
+storage, credentials and search text. It is bounded evidence, not a full archive.
+
+Display reset owns all four fields (including sidebar): Comfortable, Expanded,
+SESSION and 600 observations. It never clears terminal/research/ledger evidence
+or calls a trading API. Unavailable saved ranges retain Analytics' temporary
+SESSION fallback. Backend settings are read-only; TESTNET eligibility does not
+prove account/order acceptance. Provider freshness stays backend-reported at
+emission; absent source budgets/configuration/Redis remain unavailable.
+
+Final frontend **376 passed**, TypeScript/build passed. Backend **1124 passed,
+1 known schema failure**, focused **182 passed**. Re-executed six-page browser
+acceptance totals **216 route/viewport checks + 61 workflows**, zero page exceptions.
+Phase 13.3A–G is implemented/locally accepted; Phase 13.2A–E, macOS, external
+providers/Redis, signed TESTNET, extended soak and unrelated audit/schema gates
+remain open. Dedicated draft PR only; no merge or production-readiness claim.

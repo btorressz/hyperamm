@@ -57,9 +57,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   terminalHistory: (range: HistoryRange = "session", limit = 600, signal?: AbortSignal) =>
     request<TerminalHistory>(`/terminal/history?range=${range}&limit=${limit}`, { signal }),
-  terminalEvents: (category?: EventCategory, limit = 100) =>
+  terminalEvents: (category?: EventCategory, limit = 100, signal?: AbortSignal) =>
     request<TerminalEvents>(
       `/terminal/events?limit=${limit}${category ? "&category=" + category : ""}`,
+      { signal },
     ),
   health: () =>
     request<{

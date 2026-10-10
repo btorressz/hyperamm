@@ -2,14 +2,17 @@ import { useTerminalStore } from "../stores/terminal";
 import type { TerminalState } from "../types";
 import { Panel } from "./TerminalPrimitives";
 import { Badge } from "./Badge";
+import { sessionCurrent } from '../utils/researchEvidence';
 export function SystemHealth({
   t,
   compact = false,
+  historical = false,
 }: {
   t: TerminalState;
   compact?: boolean;
+  historical?: boolean;
 }) {
-  const current = useTerminalStore(s => s.wsState === "connected");
+  const current = useTerminalStore(s => !historical && sessionCurrent(t, s));
   const states = Object.entries(t.system_health.subsystems);
   return (
     <Panel

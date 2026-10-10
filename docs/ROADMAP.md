@@ -22,7 +22,7 @@
 | 12.3 | MERGED / LINUX ACCEPTED / MACOS PENDING | Terminal freshness, process/session integrity and bounded replay protection; prior external/soak gates remain |
 | 13.1 | MERGED / LOCAL ACCEPTANCE PASSED | Shared institutional design, persistent navigation, responsive accessible shell; no backend authority changes |
 | 13.2 | PARTIAL / F IMPLEMENTED / G LOCAL CHECKS / A–E PENDING | 13.2.1 execution lifecycle UX; frontend verified; one baseline backend schema gate remains |
-| 13.3 | PLANNED | Agents/Vault/Analytics/Simulation/Logs/Settings UX and final acceptance; follows 13.2 review/merge |
+| 13.3 | IMPLEMENTED / LOCAL ACCEPTANCE | A–G research/operations frontend complete locally; schema/macOS/external gates remain |
 
 ## Phase 6 extension points
 
@@ -918,7 +918,7 @@ PR against main; do not merge automatically.**
 
 ## Phase 13.3 — Research & Operational UX
 
-**PARTIAL — 13.3A/B IMPLEMENTED / LOCAL ACCEPTANCE / DRAFT REVIEW.**
+**13.3A/B — IMPLEMENTED / LOCAL ACCEPTANCE.**
 Phase 13.3.1 improves the existing Agents and Vault pages on verified merged
 main `616ab5b7dc1b48c2573cad5c4f41dffadc4cf1c4` (PRs #43 and #44 confirmed
 merged). Six inspectable agent cards, supervisor overview, explicit recommendation/
@@ -960,8 +960,36 @@ observer cleanup. Commands, raw results, screenshots and precise limitations:
 [Phase 13.3.2 acceptance](PHASE1332_ACCEPTANCE.md). One dedicated draft PR,
 left unmerged; no backend application, economic, scoring or authority changes.
 
-**13.3E/F and full 13.3G remain pending:** Operational Logs, Settings and full
-Phase 13.3 feature acceptance. Twelve-route viewport regression does not complete
-those features or Phase 13.2A–E. Phase 14/15, macOS, external providers, real Redis,
-signed TESTNET, long-soak and unrelated audit/schema gates remain excluded/open.
-Do not merge automatically.
+### Phase 13.3.3 — Operational Logs, Settings and final research acceptance
+
+| Phase | Status |
+| --- | --- |
+| 13.3A — Supervisory Agents | IMPLEMENTED / LOCAL ACCEPTANCE |
+| 13.3B — Research Vault | IMPLEMENTED / LOCAL ACCEPTANCE |
+| 13.3C — Analytics | IMPLEMENTED / LOCAL ACCEPTANCE |
+| 13.3D — Simulation & Optimization | IMPLEMENTED / LOCAL ACCEPTANCE |
+| 13.3E — Operational Logs | IMPLEMENTED / LOCAL ACCEPTANCE |
+| 13.3F — Settings | IMPLEMENTED / LOCAL ACCEPTANCE |
+| 13.3G — Scoped six-page integration | IMPLEMENTED / LOCAL ACCEPTANCE |
+
+Base `fc8c6303f4ac0114d11b1a6b1f2da30a55e7b315`; PRs #43–#46 verified merged.
+Logs adds loaded-only search, category/100–500 bounds, stable ordering, keyboard
+inspection, safe bounded JSON export and process/session/connection-epoch guards.
+Settings adds grouped local preferences, validated persistence and four-field
+reset, read-only runtime/authority/provider evidence and historical health.
+Browser preferences also work before the first accepted terminal frame.
+
+Frontend **376 passed**, TypeScript/build passed; full backend **1124 passed,
+1 unchanged generated-schema failure**; focused compatibility **182 passed**.
+Re-executed Chromium harnesses: **216 route/viewport checks + 61 workflows**, zero
+page exceptions, including six-page interaction, specified cross-page transitions,
+real backend stop/restart, historical exports, race/storage/provider fixtures and
+zero trading/configuration mutations in Logs/Settings. Exact commands, limitations,
+changed files and representative screenshots are in
+[Phase 13.3.3 acceptance](PHASE1333_ACCEPTANCE.md).
+
+This completes scoped frontend Phase 13.3 local acceptance, not production or
+all Phase 13 gates. **Phase 13.2A–E remains unfinished.** Phase 14/15, macOS,
+real external providers/live oracle/source integrity, real Redis, signed TESTNET,
+extended soak, known terminal schema generation and other audit findings including
+A2-003/A2-005 remain excluded/open. One dedicated draft PR; do not merge automatically.
