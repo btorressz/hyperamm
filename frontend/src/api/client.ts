@@ -56,15 +56,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return r.json();
 }
+function livePath(market: LiveMarketId, resource: string) {
+  if (!['BTC','ETH','SOL'].includes(market)) throw new Error('Unsupported live market');
+  return `/live-markets/${market}/${resource}`;
+}
 export const api = {
   liveStreamStatus: (market: LiveMarketId, signal?: AbortSignal) =>
-    request<LiveMarketStreamStatus>(`/live-markets/${market}/stream-status`, {signal}),
+    request<LiveMarketStreamStatus>(livePath(market,'stream-status'), {signal,cache:'no-store'}),
   liveStreamSnapshot: (market: LiveMarketId, signal?: AbortSignal) =>
-    request<LiveStreamSnapshot>(`/live-markets/${market}/stream-snapshot`, {signal}),
-  liveMarketHistory: (market: LiveMarketId, limit = 100, signal?: AbortSignal) =>
-    request<LiveMarketHistory>(`/live-markets/${market}/history?limit=${limit}`, {signal}),
+    request<LiveStreamSnapshot>(livePath(market,'stream-snapshot'), {signal,cache:'no-store'}),
+  liveMarketHistory: (market: LiveMarketId, limit = 100, signal?: AbortSignal) => {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000) throw new Error('History limit must be 1–1000');
+    return request<LiveMarketHistory>(livePath(market,`history?limit=${limit}`), {signal,cache:'no-store'});
+  },
   liveProviderHealth: (market: LiveMarketId, signal?: AbortSignal) =>
-    request<LiveProviderHealth>(`/live-markets/${market}/references`, {signal}),
+    request<LiveProviderHealth>(livePath(market,'references'), {signal,cache:'no-store'}),
   researchMarkets: (signal?: AbortSignal) => request<ResearchMarketCatalog>('/research-markets', {signal}),
   researchPresets: (signal?: AbortSignal) => request<ResearchCatalog>('/research-vault/presets', {signal}),
   researchPreview: (body: ResearchProposal, signal?: AbortSignal) => request<ResearchPreviewResponse>('/research-vault/preview',

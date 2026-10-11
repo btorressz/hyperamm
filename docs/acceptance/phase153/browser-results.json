@@ -1,0 +1,71 @@
+{
+  "fixture_notice": "DETERMINISTIC FIXTURE ACCEPTANCE \u2014 NOT LIVE VENUE DATA",
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "chart_resized": true,
+      "selector_visible": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "chart_resized": true,
+      "selector_visible": true
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "chart_resized": true,
+      "selector_visible": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "chart_resized": true,
+      "selector_visible": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false,
+      "chart_resized": true,
+      "selector_visible": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "chart_resized": true,
+      "selector_visible": true
+    }
+  ],
+  "workflows": [
+    "Actual disabled service: accessible Live workspace, no fabricated prices and no live browser socket",
+    "BTC native browser socket receives validated backend fixture envelope; book/chart/context and external-disabled rows render",
+    "Delayed BTC HTTP response/socket retired during ETH selection; no mixed-market current evidence",
+    "SOL native metadata and actual reported price/size precision displayed independently",
+    "Native browser socket 1013 closure retires active data, fetches snapshot and reconnects",
+    "Observer restart and subsequent generation change independently retire evidence and resynchronize history/stream",
+    "Fresh REST source/provider health during BOOTSTRAPPING never labeled confirmed streaming",
+    "Stale L2 and recent receipt-time context remain distinct in rendered browser evidence",
+    "HTTP 200 unavailable payload retires current evidence; explicit retry restores only validated observations",
+    "All six Chromium desktop/tablet/mobile viewports have no page overflow and resize chart/selector/tables",
+    "Navigation releases every real server browser subscription; StrictMode return owns exactly one BTC socket",
+    "Operational ETH strategy/orders/kill/ledger/signing and SOL PAPER research unchanged; zero live-page mutations",
+    "Live Markets remains accessible with no operational terminal snapshot at first mount"
+  ],
+  "page_errors": [],
+  "mutations": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    }
+  ],
+  "console_errors": [],
+  "elapsed_seconds": 21.65
+}

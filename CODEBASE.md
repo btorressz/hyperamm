@@ -928,3 +928,21 @@ Phase 15.1 book/context validation and Phase 7 financial arithmetic are reused.
 No operational feed/ref/risk/execution/accounting redesign or terminal wire-schema
 change is made. Phase 15.3 UI, 15.4 comparison and 15.5 final acceptance remain
 separate planned milestones; external live stream acceptance is open.
+
+## Phase 15.3 — Live Markets workspace
+
+| Source | Responsibility |
+| --- | --- |
+| `frontend/src/pages/Markets.tsx`, `App.tsx` | Default operational view preserved; independent live workspace accessible with no terminal snapshot |
+| `frontend/src/components/markets/Live*.tsx`, `phase153.css` | Exact native selector, overview/book/context/connection/providers/chart/history and responsive evidence |
+| `frontend/src/stores/liveMarkets.ts`, `hooks/useLiveMarket.ts` | Nonpersistent observational selection and one owned native browser socket |
+| `frontend/src/utils/liveMarketEvidence.ts`, `liveMarketSocket.ts` | Runtime validation, snapshot boundary, observer/generation/sequence retirement and bounded reconnect |
+| `frontend/src/hooks/useLiveMarketHistory.ts`, `utils/liveMarketHistory.ts` | Bounded query isolation and deterministic source/receipt-time segments without interpolation |
+| `backend/app/market_data/live_stream_models.py`, `live_streams.py` | Additive status observer/evaluation/budgets and matching nested envelope identity |
+| `frontend/tests/phase153-*`, `browser-phase153.py`, `phase153_browser_backend.py` | Node validation and actual native Chromium loopback fixture acceptance |
+| `backend/tests/test_phase153_live_terminal_acceptance.py` | Per-market boundary/custom-budget/restart and actual runtime isolation checks |
+
+Existing Phase 15.1/15.2 APIs, operational components and authority remain intact.
+No production execution route, new chart dependency or persistent raw data.
+[Acceptance](docs/PHASE153_ACCEPTANCE.md) records 1554 backend/539 frontend passes
+and 13 Chromium workflows at six viewports; genuine venue acceptance remains open.
