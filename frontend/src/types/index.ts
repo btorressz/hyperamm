@@ -957,6 +957,8 @@ export type LiveMarketOverview = {
 /** Additive observation contracts. Sequence orders publications, never exchange events. */
 export type LiveMarketStreamStatus = {
   contract_version: 'phase152-v1'; market: LiveMarketId; transport: 'OFFICIAL_SDK_WEBSOCKET';
+  observer_instance_id: string; evaluated_at: string;
+  l2_stale_after_seconds: number; perp_stale_after_seconds: number; metadata_stale_after_seconds: number;
   connection_state: 'DISABLED' | 'CONNECTING' | 'BOOTSTRAPPING' | 'CONNECTED' | 'DEGRADED' | 'STALE' | 'RECONNECTING' | 'UNAVAILABLE' | 'STOPPED';
   subscription_state: 'NONE' | 'REQUESTED' | 'OBSERVED' | 'RETIRED'; connection_generation: number;
   last_l2_source_timestamp: string | null; last_l2_observed_at: string | null; last_perp_observed_at: string | null;

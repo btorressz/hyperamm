@@ -530,3 +530,24 @@ and service publication sequence. They do not use operational terminal session
 identity or exchange sequencing. REST `phase151-v1` remains independent. See
 [Phase 15.2 acceptance](PHASE152_ACCEPTANCE.md) for capacities, receipts, native
 source roles, tests and the open external live gate.
+
+## Phase 15.3 browser observation boundary
+
+The Markets container preserves default operational chart/book/reference authority
+and mounts an independent LiveMarketsView on explicit selection. A BTC-default
+nonpersistent liveMarkets store owns accepted normalized snapshots, selection epoch,
+observer/generation/publication sequence and current/historical state. It has no
+edge to terminal, research approval, strategy, risk, execution or accounting stores.
+
+One same-origin selected-market browser socket validates full phase152-v1 evidence.
+Fresh HTTP status publishes the observer/evaluation and configured freshness budgets
+needed to establish resynchronization boundaries. Immutable component snapshots
+replace rather than merge generations. Sequence replay protection survives
+same-generation reconnects; observer restarts require fresh snapshot/history keys.
+Elapsed monotonic presentation time and conservative transit age cannot renew
+source evidence. L2 event and context receipt history use explicitly separate
+time bases; native provider roles remain one venue group with authority NONE.
+
+The browser test-only loopback fixture server is not imported by app.main; production
+networking defaults remain disabled. [Acceptance](PHASE153_ACCEPTANCE.md) separates
+fixture/Chromium validation from genuine external venue/Mac/soak acceptance.

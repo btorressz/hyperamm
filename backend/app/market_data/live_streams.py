@@ -272,6 +272,9 @@ class LiveMarketStreamService:
         else:
             observation = 'UNAVAILABLE'
         status = LiveMarketStreamStatus(market=market, connection_state=connection,
+            observer_instance_id=self.instance_id, evaluated_at=now,
+            l2_stale_after_seconds=self.l2_budget, perp_stale_after_seconds=self.perp_budget,
+            metadata_stale_after_seconds=self.metadata_budget,
             subscription_state=state.subscription, connection_generation=state.generation,
             last_l2_source_timestamp=state.book.source_timestamp if state.book else None,
             last_l2_observed_at=state.book.observed_at if state.book else None,

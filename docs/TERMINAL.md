@@ -326,3 +326,28 @@ explicit eviction/gaps and process/generation identity. Coverage is the actual
 retained receipt range, not proof of continuous market history; L2 source ordering
 is tracked independently from receipts. Restart produces a new observer UUID and
 empty history. See [acceptance](PHASE152_ACCEPTANCE.md) for open live gates.
+
+## Phase 15.3 Live Market Intelligence
+
+Markets starts in Operational Market. The separate pressed-button view and
+BTC-default BTC/ETH/SOL selector mount independent read-only observation state;
+selecting a live asset never changes operational or PAPER research markets. App
+can show disabled/unavailable live status without an operational terminal snapshot.
+
+One same-origin native browser socket consumes phase152-v1 frames after a fresh
+HTTP snapshot boundary. Observer/generation changes clear current evidence;
+reconnect preserves publication replay protection, uses bounded backoff and
+retires claims on disconnect/offline/hidden/unmount. Backend status now carries
+observer identity/evaluation time and configured component age budgets. Browser
+ages advance conservatively without renewing exchange or receipt timestamps.
+
+Overview uses bounded GETs. Typed native L2 rows/context and per-market provider
+evidence remain separate from authorized operational quotes/consensus. REST
+bootstrap source freshness does not confirm streaming; native context event time
+remains unknown; health authority is NONE. Histories use separate L2 exchange-
+time versus context receipt-time charts, bounded 100–1000-record inspection,
+latest actual observation per second and separate segments at gaps/generations.
+A global unpositioned gap count renders isolated observations throughout.
+
+See [Phase 15.3 acceptance](PHASE153_ACCEPTANCE.md) for native Chromium fixture
+checks, mobile/tablet behavior and external venue acceptance still open.

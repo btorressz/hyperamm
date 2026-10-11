@@ -23,6 +23,12 @@ class LiveMarketStreamStatus(Evidence):
     contract_version: Literal['phase152-v1'] = 'phase152-v1'
     market: LiveMarketId
     transport: Literal['OFFICIAL_SDK_WEBSOCKET'] = 'OFFICIAL_SDK_WEBSOCKET'
+    # Additive HTTP/WS resynchronization and local age-projection boundary.
+    observer_instance_id: str
+    evaluated_at: AwareDatetime
+    l2_stale_after_seconds: float = Field(default=10, gt=0, le=300, allow_inf_nan=False)
+    perp_stale_after_seconds: float = Field(default=30, gt=0, le=300, allow_inf_nan=False)
+    metadata_stale_after_seconds: float = Field(default=300, gt=0, le=3600, allow_inf_nan=False)
     connection_state: ConnectionState
     subscription_state: Literal['NONE', 'REQUESTED', 'OBSERVED', 'RETIRED']
     connection_generation: StrictInt = Field(ge=0)
@@ -83,7 +89,8 @@ class LiveMarketStreamEnvelope(Evidence):
 
     @model_validator(mode='after')
     def identities(self):
-        if self.market != self.payload.market or self.connection_generation != self.payload.status.connection_generation:
+        if (self.market != self.payload.market or self.connection_generation != self.payload.status.connection_generation
+                or self.observer_instance_id != self.payload.status.observer_instance_id):
             raise ValueError('mixed envelope identity')
         if self.observation_status != self.payload.observation_status:
             raise ValueError('mixed envelope availability')

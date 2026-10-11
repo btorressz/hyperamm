@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { LiveMarketsView } from '../components/markets/LiveMarketsView';
+import { Loading } from '../components/TerminalPrimitives';
 import type { TerminalState } from "../types";
 import { currentSourcePrices } from "../utils/freshness";
 import { OrderBook } from "../components/OrderBook";
@@ -12,7 +15,18 @@ import {
   bps,
   timestamp,
 } from "../utils/format";
-export function Markets({ t }: { t: TerminalState }) {
+export function Markets({ t }: { t: TerminalState | null }) {
+  const [view,setView]=useState<'operational'|'live'>('operational');
+  return <div className="stack">
+    <h1>Markets</h1>
+    <div className="marketViews" role="group" aria-label="Market workspace view">
+      <button aria-pressed={view==='operational'} onClick={()=>setView('operational')}>Operational Market</button>
+      <button aria-pressed={view==='live'} onClick={()=>setView('live')}>Live Market Intelligence</button>
+    </div>
+    {view==='live'?<LiveMarketsView/>:t?<OperationalMarketsView t={t}/>:<Loading title="Operational market unavailable">Waiting for a valid operational terminal snapshot. Live Market Intelligence remains accessible.</Loading>}
+  </div>;
+}
+function OperationalMarketsView({ t }: { t: TerminalState }) {
   const current = currentSourcePrices(t);
   const p = t.perp_context?.stale ? null : t.perp_context,
     m = t.market;

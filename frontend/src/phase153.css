@@ -1,0 +1,18 @@
+.marketViews,.liveSelector,.liveChartControls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.marketViews button,.liveSelector button,.liveWorkspace button{min-height:44px}
+.marketViews button[aria-pressed=true],.liveSelector button[aria-pressed=true]{background:#163850;border-color:#61b8ff;color:#d8efff}
+.liveOverview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.liveCard{min-width:0}.liveCard.selected{border-color:#387cac}.liveCardPrice{display:block;font-size:26px;padding:8px 14px}
+.liveCard p{padding:0 14px;overflow-wrap:anywhere;font-size:12px}.liveCard .panelHead{flex-wrap:wrap}
+.liveMarketColumns{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:14px;align-items:start}
+.liveWorkspace,.liveWorkspace>*,.liveMarketColumns>*{min-width:0;max-width:100%}
+.liveChart{width:100%;min-width:0}.liveChartControls{padding:12px}.liveChartControls label{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.liveWorkspace select{min-height:40px}.liveWorkspace input[type=checkbox]{width:18px;height:18px}
+.liveWorkspace .terminalMetrics strong{overflow-wrap:anywhere}.liveDetails{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,2fr);gap:8px;padding:12px;font-size:12px}
+.liveDetails dt{color:#8da3b8}.liveDetails dd{margin:0;overflow-wrap:anywhere}.liveWorkspace details{padding:12px;overflow-wrap:anywhere}
+.liveWorkspace summary{cursor:pointer;min-height:32px}.liveWorkspace small{display:block;color:#8da3b8}
+.liveBook table{width:100%;min-width:360px;font-variant-numeric:tabular-nums}.liveBook td,.liveBook th{text-align:right}
+.liveAsk{color:#f0788a;background:#36212a55}.liveBid{color:#4cd4a1;background:#12342d55}.liveHistorical{color:#8193a5}.liveMid{color:#b2c4d6;background:#162534}
+.liveWorkspace .providerTable table{min-width:820px}.liveWorkspace .tableWrap{max-width:100%;overflow-x:auto}
+@media(max-width:1150px){.liveMarketColumns{grid-template-columns:1fr}}
+@media(max-width:700px){.liveOverview{grid-template-columns:1fr}.liveSelector{display:grid;grid-template-columns:1fr;width:100%}.marketViews{display:grid;grid-template-columns:1fr}.liveDetails{grid-template-columns:1fr}.liveWorkspace .terminalMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.liveWorkspace .panelHead{flex-wrap:wrap}.liveChartControls{align-items:flex-start}.liveCardPrice{font-size:24px}}

@@ -1062,7 +1062,7 @@ remain unchanged.
 | --- | --- |
 | 15.1 — Read-Only Live Market Observation & API Contracts | IMPLEMENTED / FIXTURE ACCEPTED; full regression gate open; LIVE EXTERNALLY VERIFIED blocked |
 | 15.2 — Live Streams & Provider Integrity | IMPLEMENTED / FIXTURE ACCEPTED; LIVE EXTERNALLY VERIFIED blocked |
-| 15.3 — Live Markets Terminal UX | PLANNED |
+| 15.3 — Live Markets Terminal UX | IMPLEMENTED / FIXTURE ACCEPTED; genuine external acceptance open |
 | 15.4 — Market vs Research Comparison & Explainability | PLANNED |
 | 15.5 — Security, Regression & Final Acceptance | PLANNED |
 
@@ -1109,3 +1109,20 @@ no schema is regenerated or test suppressed. Genuine six-subscription venue
 acceptance remains NOT RUN because api.hyperliquid.xyz is outside the cloud
 policy; it is an open network-permitted Mac gate. Phase 15.3–15.5 remain PLANNED.
 Draft PR delivery only; do not merge.
+
+### Phase 15.3 — Independent Live Markets terminal
+
+The existing Markets page now separates its unchanged default operational view
+from BTC/ETH/SOL read-only intelligence. Independent selection/store/socket,
+validated identity and sequence boundaries, conservative component age projection,
+reported native book/context, separate event/receipt-time history charts and
+provider authority NONE preserve strategy and PAPER research isolation. App
+allows this workspace to render without an operational terminal snapshot.
+
+Final checks: 1554 backend and 539 frontend tests passed; TypeScript/build and
+13 actual Chromium workflows at six viewports passed. A clean-base legacy
+redaction assertion hit a coincidental hash substring; it remains unchanged and
+passes final regression. [Acceptance](PHASE153_ACCEPTANCE.md) records the exact
+base, counts, native loopback fixture/browser evidence and remaining gates.
+Genuine venue access remains blocked; Phase 15.4 comparison and 15.5 security/
+external closure stay planned. Draft delivery only; do not merge.

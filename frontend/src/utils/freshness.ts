@@ -38,3 +38,10 @@ export function displayedTerminal(t: TerminalState, nowMs: number): TerminalStat
     } : null,
   };
 }
+
+// Pure presentation age for independent observations. An unreliable monotonic
+// interval is uncertainty; it can never renew evidence or reduce a reported age.
+export function advancingAge(reported: number | null, receivedAt: number, now: number, transitSeconds = 0): number | null {
+  if (reported === null || ![reported, receivedAt, now, transitSeconds].every(Number.isFinite) || now < receivedAt || transitSeconds < 0) return null;
+  return Math.max(0, reported) + transitSeconds + (now - receivedAt) / 1000;
+}

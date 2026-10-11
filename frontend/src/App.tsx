@@ -19,6 +19,7 @@ import "./phase9.css";
 import "./phase11.css";
 import "./phase12.css";
 import "./phase13.css";
+import "./phase153.css";
 import { usePageNavigation } from "./hooks/usePageNavigation";
 import { useMobileNavigation } from "./hooks/useMobileNavigation";
 import type { PageName } from "./utils/navigation";
@@ -77,7 +78,7 @@ export default function App() {
   }, [mobile, closeNavigation]);
   let content: ReactNode;
   if (!t)
-    content = page === 'Settings' ? <Settings t={null} historical /> : (
+    content = page === 'Markets' ? <Markets t={null} /> : page === 'Settings' ? <Settings t={null} historical /> : (
       <Loading title="Connecting to HyperAMM…">
         Waiting for a valid backend terminal snapshot.
       </Loading>
