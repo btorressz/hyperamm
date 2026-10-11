@@ -193,3 +193,59 @@ semantics, lifecycle, tested SDK compatibility, authority proof and checks.
 Fixture acceptance is implemented; full regression retains an unchanged-base
 terminal-schema mismatch. Current managed network policy excludes the API host,
 so genuine live metadata/L2/context verification remains **NOT RUN / BLOCKED**.
+
+## Phase 15.2 — Owned BTC/ETH/SOL read-only streams
+
+Installed official SDK **0.24.0**, compatibility range unchanged. The observer
+owns a metadata-only `Info(skip_ws=True)` bootstrap, closes it, then constructs one
+mapped `Info(skip_ws=False)` with validated native metadata and empty spot maps.
+The `Info` object is owned before its constructor can start threads. No Exchange,
+account subscriptions, signing keys, spot/HIP-3 discovery or operational feed
+connection is used by this path.
+
+For every listed BTC/ETH/SOL market it calls `Info.subscribe` once for `l2Book` and
+once for `activeAssetCtx`. Native indices and `szDecimals` come from the actual
+validated universe and must match SDK-generated maps. After the socket is ready,
+all six handles are registered before per-market `Info.l2_snapshot` barriers and
+`Info.meta_and_asset_ctxs` bootstrap. REST acquisitions keep `OFFICIAL_SDK_REST`;
+accepted WS arrivals use `OFFICIAL_SDK_WEBSOCKET`. An identical same-time WS L2
+packet does not relabel or retime a retained REST acquisition.
+
+`l2Book` carries complete depth snapshots. Strict Phase 15.1 Decimal/price/size/
+ordering/depth checks are reused. The canonical replay identity includes **all
+received validated levels**, including levels beyond the 20-level output. Older
+event times and conflicting equal-event economics are rejected; identical equal
+source-time packets never create new price samples or refresh receipts. Context
+uses the existing `normalize_active_asset_ctx` and basis/OI calculations; source
+exchange time remains null and event-time verification UNKNOWN. Buffered context
+receipts cannot overwrite a later acquisition, but receipt order is not asserted
+to prove economic-event ordering.
+
+One bounded thread buffer per market (64 default, 1–1024) retains at most 64 KiB
+per message and schedules one pending asyncio wake. Each accepted component
+arrival can enter bounded history; browser publication sends the latest normalized
+state per bounded ingestion batch and periodic health tick, not every raw packet.
+Overflow increments dropped counts, records a gap and retires both current
+components until recovery. No complete continuous history guarantee is made.
+
+Connection loss/stalls/metadata expiration trigger a new generation and bounded
+1–30s exponential backoff (configurable); 429/403 impose at least 30s cooldown.
+Metadata is revalidated and fresh REST book barriers precede resumed acceptance.
+The six handles are unsubscribed with SDK `unsubscribe(subscription, id)`.
+A dead socket may reject unsubscribe; verified connection teardown still retires
+its handles. `disconnect_websocket()` stops/joins ping, and the owner explicitly
+joins and verifies both SDK threads and closes sessions. Failed cleanup stops
+replacement, retains ownership and reports CLEANUP_ERROR. Shutdown cancellation
+or deadline does not terminate a synchronous worker or claim cleanup completed.
+
+Defaults require explicit `LIVE_OBSERVATIONS_ENABLED=true` **and**
+`LIVE_STREAMS_ENABLED=true`. Operational `MARKET_DATA_MODE=DEMO`,
+`EXECUTION_MODE=PAPER`, and active ETH remain supported and unchanged. All new
+numeric settings are finite and bounded; invalid dependencies/backoff bounds
+reject configuration. See [acceptance](PHASE152_ACCEPTANCE.md) for every setting.
+
+Genuine API/WS acceptance is **NOT RUN / BLOCKED**: the selected cloud destination
+policy excludes `api.hyperliquid.xyz` and grants no VPN/TCP access. Intercepted
+actual SDK tests establish compatibility and thread ownership, not live operation,
+rate-limit calibration or venue availability. External acceptance remains open
+for a network-permitted Mac environment; TLS and proxy policy must stay intact.

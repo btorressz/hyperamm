@@ -901,3 +901,30 @@ are reused. Separate typed observation models preserve source times and immutabl
 bounded depth without altering legacy operational normalizers. No terminal wire
 schema or React navigation changes. Fixture acceptance and genuine external live
 verification remain separate; Phase 15.2–15.5 are future work.
+
+## Phase 15.2 — Independent live streams and provider health
+
+Built on verified merged main `3ba75863ccd4d7b4c80bde6f600b5aecd5269762` after
+PRs #49/#50. [Acceptance](docs/PHASE152_ACCEPTANCE.md) records actual checks and
+external blockers. This is public multi-market observation alongside the single
+operational runtime; observations never acquire trading authority.
+
+| Source | Responsibility |
+| --- | --- |
+| `backend/app/market_data/live_streams.py` | One owned public SDK connection/single worker, six native subscriptions, bounded thread ingress, independent state/replay/freshness, REST barriers, reconnect and verified shutdown |
+| `backend/app/market_data/live_stream_models.py` | Frozen additive phase152-v1 status/component/envelope/history contracts, Decimal strings and distinct process/generation/publication identities |
+| `backend/app/market_data/live_history.py` | Per-market accepted component history, fixed retention, deduplication, eviction/gap counts and accurate receipt coverage |
+| `backend/app/references/live_provider_mappings.py` | Explicit native/external mapping contracts and pure provider/source identity gates; optional collectors disabled |
+| `backend/app/references/live_provider_integrity.py` | Native source roles/ages and honest disabled external rows; one venue group, authority NONE, no operational consensus |
+| `backend/app/api/live_market_streams.py` | Bounded read-only browser admission, current initial envelope, structured send/disconnect/slow-client cleanup |
+| Existing `live_markets.py`, `config.py`, `main.py` | Typed GET status/snapshot/history/references, validated opt-in/resource settings and lifespan ownership |
+| Existing `live_observations.py` | Shared canonical full-depth identity and context financial-value helper, unchanged phase151-v1 REST lifecycle/cache/contracts |
+| `backend/tests/test_phase152_*.py` | Native/SDK, integrity, provider, resource, cancellation/reconnect and seeded real-runtime authority acceptance |
+| `frontend/src/types/index.ts`, `api/client.ts` | Strict nullable/string observation contracts and read-only GET helpers for future Phase 15.3 |
+| `frontend/tests/phase152-live-contracts.test.cjs` | GET identity/signal behavior and TypeScript financial/time/authority compatibility checks |
+
+Existing operational SDK socket readiness, native metadata validation, strict
+Phase 15.1 book/context validation and Phase 7 financial arithmetic are reused.
+No operational feed/ref/risk/execution/accounting redesign or terminal wire-schema
+change is made. Phase 15.3 UI, 15.4 comparison and 15.5 final acceptance remain
+separate planned milestones; external live stream acceptance is open.

@@ -1061,7 +1061,7 @@ remain unchanged.
 | Milestone | Status |
 | --- | --- |
 | 15.1 — Read-Only Live Market Observation & API Contracts | IMPLEMENTED / FIXTURE ACCEPTED; full regression gate open; LIVE EXTERNALLY VERIFIED blocked |
-| 15.2 — Live Streams & Provider Integrity | PLANNED |
+| 15.2 — Live Streams & Provider Integrity | IMPLEMENTED / FIXTURE ACCEPTED; LIVE EXTERNALLY VERIFIED blocked |
 | 15.3 — Live Markets Terminal UX | PLANNED |
 | 15.4 — Market vs Research Comparison & Explainability | PLANNED |
 | 15.5 — Security, Regression & Final Acceptance | PLANNED |
@@ -1084,3 +1084,28 @@ protected tests/schema remain unchanged. The enforced managed policy excludes
 `api.hyperliquid.xyz`; genuine SDK metadata/BTC/ETH/SOL L2/context checks were
 NOT RUN, and live verification remains open for a permitted local environment.
 The entire Phase 15 is not complete. Draft delivery only; do not merge.
+
+
+### Phase 15.2 — Read-only live streams and provider integrity
+
+Independent lifespan-owned official SDK 0.24.0 public stream observer adds exactly
+BTC/ETH/SOL L2 and activeAssetCtx subscriptions, validated native maps, REST book
+barriers, bounded per-market thread ingress, replay/generation integrity, stale
+source handling, bounded history and read-only browser delivery. Additive
+phase152-v1 typed status/history/provider contracts preserve phase151-v1 REST.
+External references remain disabled until asset-specific mappings and actual
+transport/configuration acceptance exist. Native roles share one source group;
+all observational provider rows have authority NONE. Strategy, active ETH,
+PAPER execution, risk/authorization/kill and accounting retain authority.
+
+Final regression: **1548 backend tests passed**, including **135 Phase 15.2**
+and all **132 Phase 15.1** tests; **458 frontend tests passed**. Type checking
+and the production build pass; no failed or skipped tests.
+
+[Phase 15.2 acceptance](PHASE152_ACCEPTANCE.md) records exact baseline/final
+results, lifecycle/isolation evidence and limitations. The historical terminal
+schema failure is preserved as a check and compared with the actual current run;
+no schema is regenerated or test suppressed. Genuine six-subscription venue
+acceptance remains NOT RUN because api.hyperliquid.xyz is outside the cloud
+policy; it is an open network-permitted Mac gate. Phase 15.3–15.5 remain PLANNED.
+Draft PR delivery only; do not merge.

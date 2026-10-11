@@ -13,6 +13,8 @@ from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
 from app.market_data.hyperliquid_metadata import HyperliquidMetadataCatalog
 from app.market_data.live_observations import LiveMarketObservationService
+from app.market_data.live_streams import LiveMarketStreamService
+from app.api.live_market_streams import router as live_market_streams_router
 from app.api.live_markets import router as live_markets_router
 from app.market_data.models import MarketDataMode
 from app.strategy.models import ExecutionMode
@@ -33,6 +35,7 @@ async def lifespan(app: FastAPI):
     app.state.runtime = HyperAmmRuntime(settings)
     app.state.simulation_executor = SimulationExecutor()
     app.state.live_market_observer = LiveMarketObservationService(settings)
+    app.state.live_market_streams = LiveMarketStreamService(settings)
     app.state.research_market_catalog = HyperliquidMetadataCatalog(
         allow_demo=settings.market_data_mode == MarketDataMode.DEMO and settings.execution_mode == ExecutionMode.PAPER)
     app.state.terminal_relay = None
@@ -52,6 +55,7 @@ async def lifespan(app: FastAPI):
                 app.state.simulation_executor = CoordinatedSimulationExecutor(
                     app.state.simulation_executor, infrastructure, identity)
         await app.state.runtime.start_services()
+        await app.state.live_market_streams.start()
         yield
     finally:
         try:
@@ -59,7 +63,10 @@ async def lifespan(app: FastAPI):
         finally:
             try:
                 try:
-                    await app.state.live_market_observer.close()
+                    try:
+                        await app.state.live_market_streams.close()
+                    finally:
+                        await app.state.live_market_observer.close()
                 finally:
                     await app.state.research_market_catalog.close()
             finally:
@@ -93,6 +100,7 @@ async def research_validation_errors(request, exc):
 for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, live_markets_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
+app.include_router(live_market_streams_router)
 
 
 @app.get("/")

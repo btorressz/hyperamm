@@ -361,3 +361,39 @@ Optional Yahoo personal research observation: install `pip install -e '.[yahoo]'
 The separately polled `GET /api/v1/references/observations` endpoint and Risk-page card expose observational health, source age, prices and available signed comparison bps. Unavailable comparisons remain null. **Yahoo is excluded from CORE, ALL, the material reference snapshot, economic version/fingerprint, quorum, outlier decisions, risk, agents, authorization, accounting and execution.** It cannot replace RedStone, Kraken or Hyperliquid evidence or authorize trades. The Phase 12 streaming contract remains unchanged.
 
 **Licensing and acceptance:** Yahoo data is for permitted local personal/research observation only. Do not redistribute it publicly or use it for commercial trading without appropriate rights. Live CoinGecko and Yahoo connections, real schemas and reconnect acceptance remain pending. Phase 8.3.1 fixture and local command results are recorded in the roadmap; they do not establish live-provider acceptance. Historical Audit 2.0 issues A2-001–A2-005 are unchanged. No Actions files, Docker, PostgreSQL, signing changes or new trading authority. No additional oracle providers were introduced; unsupported oracle integrations remain prohibited.
+
+## Phase 15.2 observational per-market provider health
+
+`live_provider_mappings.py` and `live_provider_integrity.py` provide read-only
+BTC/ETH/SOL source rows, independent of operational `ReferenceService` and
+`ReferenceConsensusPolicy`. Native L2 mid, oracle and mark have distinct roles
+but the **same HYPERLIQUID independent source group**. REST/WS are transports of
+that same source. Every row has authority NONE; no provider vote, eligibility,
+reference fingerprint or FinalQuoteAuthorization input is added.
+
+Native L2 health uses exchange event age. Oracle/mark use actual context receipt
+age and retain null source timestamp: recent valid rows are DEGRADED with
+EVENT_TIME_UNKNOWN; expired receipts are STALE. Disconnect, invalid/expired
+metadata or missing components yields unavailable/error evidence, never a guessed
+price. Health is observational and cannot authorize an order.
+
+Optional RedStone, Kraken, CoinGecko and Yahoo rows start disabled and
+UNCONFIGURED, with no inferred symbol or validation receipt. The registry uses
+per-market allowlists only to reject wrong configuration; these are not automatic
+configuration or evidence of venue support. Yahoo SOL remains UNAVAILABLE because
+the existing Yahoo transport supports explicit BTC/ETH mappings only.
+
+Pure mapping validation checks market/provider/native symbol, expected source ID,
+transport and validation timestamp; the evidence gate also checks source role and
+simulation provenance. External collectors cannot be enabled in this milestone:
+network/configuration/credentials/source-time acceptance must precede future
+observational enablement. Operational ETH settings are never copied to BTC/SOL.
+RedStone Live (`redstone-primary-prod:<feed>`, PRIMARY) and public HTTP
+(`redstone-public-http:<symbol>`, FALLBACK) remain **one REDSTONE identity**. Kraken
+is a VENUE_REFERENCE, CoinGecko an AGGREGATOR_REFERENCE and Yahoo observational
+only. No independent usable external evidence exists here, so consensus remains
+null and no agreement badge or synthetic healthy row is manufactured.
+
+`GET /api/v1/live-markets/{market}/references` returns typed `phase152-v1` provider
+health. The original operational reference APIs and authority hierarchy remain
+unchanged. See [Phase 15.2 acceptance](PHASE152_ACCEPTANCE.md).

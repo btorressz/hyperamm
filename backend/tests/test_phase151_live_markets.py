@@ -383,7 +383,9 @@ async def test_real_runtime_authority_isolation_and_api_contract(live,monkeypatc
         assert rt.risk.kill_switch_active and rt.authorization is None
     before=authority(rt);identities=(id(rt.market),id(rt.perp_context_service),id(rt.reference_service));anchors=copy.deepcopy(DEMO_PROFILES)
     paths={path:value for path,value in app.openapi()['paths'].items() if '/live-markets/' in path}
-    assert set(paths)=={'/api/v1/live-markets/overview','/api/v1/live-markets/{market}/snapshot'}
+    assert set(paths)=={'/api/v1/live-markets/overview','/api/v1/live-markets/{market}/snapshot',
+        '/api/v1/live-markets/{market}/stream-status', '/api/v1/live-markets/{market}/stream-snapshot',
+        '/api/v1/live-markets/{market}/history', '/api/v1/live-markets/{market}/references'}
     assert all(set(methods)=={'get'} for methods in paths.values())
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://127.0.0.1') as client:
         overview=await client.get('/api/v1/live-markets/overview');assert overview.status_code==200

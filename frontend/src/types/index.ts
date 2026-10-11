@@ -953,3 +953,67 @@ export type LiveMarketOverview = {
   contract_version: 'phase151-v1'; read_only: true; simulated: false; generated_at: string;
   markets: [LiveMarketSnapshot, LiveMarketSnapshot, LiveMarketSnapshot];
 };
+
+/** Additive observation contracts. Sequence orders publications, never exchange events. */
+export type LiveMarketStreamStatus = {
+  contract_version: 'phase152-v1'; market: LiveMarketId; transport: 'OFFICIAL_SDK_WEBSOCKET';
+  connection_state: 'DISABLED' | 'CONNECTING' | 'BOOTSTRAPPING' | 'CONNECTED' | 'DEGRADED' | 'STALE' | 'RECONNECTING' | 'UNAVAILABLE' | 'STOPPED';
+  subscription_state: 'NONE' | 'REQUESTED' | 'OBSERVED' | 'RETIRED'; connection_generation: number;
+  last_l2_source_timestamp: string | null; last_l2_observed_at: string | null; last_perp_observed_at: string | null;
+  l2_age_seconds: number | null; perp_age_seconds: number | null; metadata_age_seconds: number | null;
+  l2_freshness: 'FRESH' | 'STALE' | 'UNAVAILABLE'; perp_freshness: 'FRESH' | 'STALE' | 'UNAVAILABLE';
+  metadata_freshness: 'FRESH' | 'STALE' | 'UNAVAILABLE'; perp_event_time: 'UNKNOWN';
+  reconnect_count: number; rejected_update_count: number; dropped_update_count: number;
+  last_error_code: 'INVALID_DATA' | 'REPLAY' | 'CONFLICT' | 'OVERFLOW' | 'TIMEOUT' | 'NETWORK_ERROR' | 'RATE_LIMITED' | 'FORBIDDEN' | 'SDK_UNAVAILABLE' | 'UPSTREAM_ERROR' | 'CLEANUP_ERROR' | 'NOT_LISTED' | null;
+  read_only: true; simulated: false;
+};
+export type LiveStreamSnapshot = {
+  market: LiveMarketId; status: LiveMarketStreamStatus; observation_status: LiveObservationStatus;
+  metadata: LiveMarketMetadata;
+  order_book: (Omit<LiveBookObservation, 'source'> & {source: 'OFFICIAL_SDK_REST' | 'OFFICIAL_SDK_WEBSOCKET'}) | null;
+  perp_context: (Omit<LivePerpObservation, 'source'> & {source: 'OFFICIAL_SDK_REST' | 'OFFICIAL_SDK_WEBSOCKET'; event_time_verified: false}) | null;
+  limitations: string[];
+};
+export type LiveMarketStreamEnvelope = {
+  contract_version: 'phase152-v1'; market: LiveMarketId; observer_instance_id: string;
+  connection_generation: number; sequence: number; emitted_at: string;
+  observation_status: LiveObservationStatus; payload: LiveStreamSnapshot;
+};
+export type LiveHistoryPoint = {
+  market: LiveMarketId; observer_instance_id: string; connection_generation: number;
+  kind: 'L2' | 'PERP_CONTEXT'; source: 'OFFICIAL_SDK_REST' | 'OFFICIAL_SDK_WEBSOCKET';
+  source_timestamp: string | null; observed_at: string; midpoint: string | null;
+  best_bid: string | null; best_ask: string | null; spread: string | null; mark: string | null;
+  oracle: string | null; funding: string | null; open_interest: string | null;
+  observation_status: LiveObservationStatus;
+};
+export type LiveMarketHistory = {
+  contract_version: 'phase152-v1'; market: LiveMarketId; observer_instance_id: string;
+  read_only: true; simulated: false; points: LiveHistoryPoint[];
+  coverage_start: string | null; coverage_end: string | null; retained_point_count: number;
+  evicted_point_count: number; gap_count: number; max_points: number;
+  continuous_history_verified: false; limitations: string[];
+};
+export type LiveProviderMapping = {
+  market: LiveMarketId; provider: ProviderId; native_symbol: string | null; expected_source_id: string | null;
+  transport: ReferenceTransport; mapping_status: 'VALIDATED' | 'UNCONFIGURED' | 'UNVERIFIED' | 'UNAVAILABLE';
+  enabled: boolean; last_validated_configuration: string | null; authority: 'NONE';
+};
+export type LiveProviderEvidence = {
+  provider: ProviderId; role: SourceType; mapping: LiveProviderMapping; transport: ReferenceTransport;
+  transport_quality: TransportQuality | null; enabled: boolean; price: string | null;
+  source_timestamp: string | null; observed_at: string | null; age_seconds: number | null;
+  status: ProviderStatus; stale: boolean; event_time_verified: boolean; source_id: string | null;
+  error: 'UNCONFIGURED' | 'UNAVAILABLE' | 'SOURCE_UNAVAILABLE' | 'EVENT_TIME_UNKNOWN' | null;
+  simulated: false; authority: 'NONE'; independent_source_group: string;
+  health_basis: 'EXCHANGE_EVENT_TIME' | 'RECEIPT_TIME' | 'NONE';
+};
+export type LiveProviderHealth = {
+  contract_version: 'phase152-v1'; market: LiveMarketId; read_only: true; authority: 'NONE';
+  providers: LiveProviderEvidence[]; independent_usable_external_sources: 0;
+  consensus_price: null; limitations: string[];
+};
+
+export type ProviderId = 'REDSTONE' | 'HYPERLIQUID_ORACLE' | 'KRAKEN' | 'COINGECKO' | 'YAHOO_FINANCE' | 'HYPERLIQUID_MID' | 'HYPERLIQUID_MARK';
+export type ProviderStatus = 'HEALTHY' | 'DEGRADED' | 'STALE' | 'ERROR' | 'DISABLED';
+export type SourceType = 'ORACLE' | 'NATIVE_ORACLE' | 'VENUE_REFERENCE' | 'EXECUTION_VENUE' | 'PERP_MARK' | 'AGGREGATOR_REFERENCE';
