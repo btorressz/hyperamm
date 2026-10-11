@@ -1,0 +1,1671 @@
+{
+  "BTC": {
+    "request": {
+      "market": "BTC",
+      "research": {
+        "engine_version": "phase10.1-v3",
+        "research_market": "BTC",
+        "market_profile_version": "phase146-v1",
+        "market_profile_fingerprint": "af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a",
+        "metadata_source": "PINNED_RESEARCH_FIXTURE",
+        "metadata_status": "DEMO_PROFILE",
+        "run_fingerprint": "8412f5e23c4e9ebd224aa81275b9aecad7350c11f8799766414ea3e582d1ece4",
+        "dataset_fingerprint": "dd601992e6366308470710caf1a4183b842e3396fd05770b7006c248df47576f",
+        "strategy_fingerprint": "04e352a6db7e1e5d2c7cdd213d62fd07df5f65174821c1451c343b417ab29b1d",
+        "scenario": "QUIET",
+        "simulated": true,
+        "assumptions": {
+          "contract_version": "phase154-v1",
+          "market": "BTC",
+          "market_profile_version": "phase146-v1",
+          "market_profile_fingerprint": "af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a",
+          "dataset_fingerprint": "dd601992e6366308470710caf1a4183b842e3396fd05770b7006c248df47576f",
+          "scenario": "QUIET",
+          "frame_count": 3,
+          "simulated": true,
+          "representative_frame": "LAST_CONSUMED_DATASET_FRAME",
+          "representative_frame_sequence": 3,
+          "representative_frame_timestamp": "2026-01-01T00:00:02Z",
+          "midpoint": "60000",
+          "best_bid": "59997",
+          "best_ask": "60003",
+          "spread_quote": "6",
+          "spread_bps": "1.0000",
+          "mark_price": "60000",
+          "oracle_price": "60000",
+          "funding_rate": "0.000000",
+          "funding_convention": "RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL",
+          "open_interest_base": "250020",
+          "bid_levels": [
+            {
+              "price": "59997",
+              "size": "0.30000"
+            },
+            {
+              "price": "59994",
+              "size": "0.15000"
+            },
+            {
+              "price": "59991",
+              "size": "0.10000"
+            },
+            {
+              "price": "59988",
+              "size": "0.07500"
+            },
+            {
+              "price": "59985",
+              "size": "0.06000"
+            }
+          ],
+          "ask_levels": [
+            {
+              "price": "60003",
+              "size": "0.30000"
+            },
+            {
+              "price": "60006",
+              "size": "0.15000"
+            },
+            {
+              "price": "60009",
+              "size": "0.10000"
+            },
+            {
+              "price": "60012",
+              "size": "0.07500"
+            },
+            {
+              "price": "60015",
+              "size": "0.06000"
+            }
+          ],
+          "bid_depth_base": "0.68500",
+          "ask_depth_base": "0.68500",
+          "depth_level_count": 5,
+          "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+          "reference_source": "DEMO",
+          "assumption_fingerprint": "a042da423532d56f3ba868d7ec5478c9bab4dfa9ec59612817d8dcdfaf5fbf59",
+          "limitations": [
+            "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+            "Visible synthetic depth does not establish queue priority or executable fill probability.",
+            "Funding is a sampled research rate; accounting interval is separate captured configuration."
+          ]
+        },
+        "performance": {
+          "frame_count": 3,
+          "session_pnl": "0",
+          "return_pct": "0",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "quoted_notional": "15725.37784",
+          "filled_notional": "0",
+          "fill_activity_ratio": "0",
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "ending_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "risk_halt_fraction": "0",
+          "risk_state_counts": {
+            "NORMAL": 3
+          },
+          "fees_quote": "0",
+          "funding_quote": "0"
+        },
+        "research_configuration": null
+      }
+    },
+    "response": {
+      "contract_version": "phase154-v1",
+      "market": "BTC",
+      "read_only": true,
+      "generated_at": "2026-10-11T05:13:47.382995Z",
+      "comparison_status": "PARTIAL",
+      "research": {
+        "engine_version": "phase10.1-v3",
+        "research_market": "BTC",
+        "market_profile_version": "phase146-v1",
+        "market_profile_fingerprint": "af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a",
+        "metadata_source": "PINNED_RESEARCH_FIXTURE",
+        "metadata_status": "DEMO_PROFILE",
+        "run_fingerprint": "8412f5e23c4e9ebd224aa81275b9aecad7350c11f8799766414ea3e582d1ece4",
+        "dataset_fingerprint": "dd601992e6366308470710caf1a4183b842e3396fd05770b7006c248df47576f",
+        "strategy_fingerprint": "04e352a6db7e1e5d2c7cdd213d62fd07df5f65174821c1451c343b417ab29b1d",
+        "scenario": "QUIET",
+        "simulated": true,
+        "assumptions": {
+          "contract_version": "phase154-v1",
+          "market": "BTC",
+          "market_profile_version": "phase146-v1",
+          "market_profile_fingerprint": "af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a",
+          "dataset_fingerprint": "dd601992e6366308470710caf1a4183b842e3396fd05770b7006c248df47576f",
+          "scenario": "QUIET",
+          "frame_count": 3,
+          "simulated": true,
+          "representative_frame": "LAST_CONSUMED_DATASET_FRAME",
+          "representative_frame_sequence": 3,
+          "representative_frame_timestamp": "2026-01-01T00:00:02Z",
+          "midpoint": "60000",
+          "best_bid": "59997",
+          "best_ask": "60003",
+          "spread_quote": "6",
+          "spread_bps": "1.0000",
+          "mark_price": "60000",
+          "oracle_price": "60000",
+          "funding_rate": "0.000000",
+          "funding_convention": "RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL",
+          "open_interest_base": "250020",
+          "bid_levels": [
+            {
+              "price": "59997",
+              "size": "0.30000"
+            },
+            {
+              "price": "59994",
+              "size": "0.15000"
+            },
+            {
+              "price": "59991",
+              "size": "0.10000"
+            },
+            {
+              "price": "59988",
+              "size": "0.07500"
+            },
+            {
+              "price": "59985",
+              "size": "0.06000"
+            }
+          ],
+          "ask_levels": [
+            {
+              "price": "60003",
+              "size": "0.30000"
+            },
+            {
+              "price": "60006",
+              "size": "0.15000"
+            },
+            {
+              "price": "60009",
+              "size": "0.10000"
+            },
+            {
+              "price": "60012",
+              "size": "0.07500"
+            },
+            {
+              "price": "60015",
+              "size": "0.06000"
+            }
+          ],
+          "bid_depth_base": "0.68500",
+          "ask_depth_base": "0.68500",
+          "depth_level_count": 5,
+          "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+          "reference_source": "DEMO",
+          "assumption_fingerprint": "a042da423532d56f3ba868d7ec5478c9bab4dfa9ec59612817d8dcdfaf5fbf59",
+          "limitations": [
+            "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+            "Visible synthetic depth does not establish queue priority or executable fill probability.",
+            "Funding is a sampled research rate; accounting interval is separate captured configuration."
+          ]
+        },
+        "performance": {
+          "frame_count": 3,
+          "session_pnl": "0",
+          "return_pct": "0",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "quoted_notional": "15725.37784",
+          "filled_notional": "0",
+          "fill_activity_ratio": "0",
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "ending_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "risk_halt_fraction": "0",
+          "risk_state_counts": {
+            "NORMAL": 3
+          },
+          "fees_quote": "0",
+          "funding_quote": "0"
+        },
+        "research_configuration": null
+      },
+      "observed": {
+        "snapshot": {
+          "market": "BTC",
+          "status": {
+            "contract_version": "phase152-v1",
+            "market": "BTC",
+            "transport": "OFFICIAL_SDK_WEBSOCKET",
+            "observer_instance_id": "374b890e-c4e0-44c2-883d-592f13bc4736",
+            "evaluated_at": "2026-10-10T20:00:00.500000Z",
+            "l2_stale_after_seconds": 10.0,
+            "perp_stale_after_seconds": 30.0,
+            "metadata_stale_after_seconds": 300.0,
+            "connection_state": "CONNECTED",
+            "subscription_state": "OBSERVED",
+            "connection_generation": 1,
+            "last_l2_source_timestamp": "2026-10-10T20:00:00.500000Z",
+            "last_l2_observed_at": "2026-10-10T20:00:00.500000Z",
+            "last_perp_observed_at": "2026-10-10T20:00:00.500000Z",
+            "l2_age_seconds": 0.0,
+            "perp_age_seconds": 0.0,
+            "metadata_age_seconds": 0.5,
+            "l2_freshness": "FRESH",
+            "perp_freshness": "FRESH",
+            "metadata_freshness": "FRESH",
+            "perp_event_time": "UNKNOWN",
+            "reconnect_count": 0,
+            "rejected_update_count": 0,
+            "dropped_update_count": 0,
+            "last_error_code": null,
+            "simulated": false,
+            "read_only": true
+          },
+          "observation_status": "AVAILABLE",
+          "metadata": {
+            "market": "BTC",
+            "dex": "",
+            "metadata_status": "EXCHANGE_VERIFIED",
+            "source": "OFFICIAL_SDK_NATIVE_META",
+            "sz_decimals": 5,
+            "asset_index": 2,
+            "listed": true,
+            "observed_at": "2026-10-10T20:00:00Z"
+          },
+          "order_book": {
+            "market": "BTC",
+            "bids": [
+              {
+                "price": "60000",
+                "size": "1",
+                "order_count": 2
+              },
+              {
+                "price": "59990",
+                "size": "2",
+                "order_count": 2
+              },
+              {
+                "price": "59980",
+                "size": "3",
+                "order_count": 2
+              },
+              {
+                "price": "59970",
+                "size": "4",
+                "order_count": 2
+              },
+              {
+                "price": "59960",
+                "size": "5",
+                "order_count": 2
+              }
+            ],
+            "asks": [
+              {
+                "price": "60010",
+                "size": "2",
+                "order_count": 2
+              },
+              {
+                "price": "60020",
+                "size": "3",
+                "order_count": 2
+              },
+              {
+                "price": "60030",
+                "size": "4",
+                "order_count": 2
+              },
+              {
+                "price": "60040",
+                "size": "5",
+                "order_count": 2
+              },
+              {
+                "price": "60050",
+                "size": "6",
+                "order_count": 2
+              }
+            ],
+            "source_timestamp": "2026-10-10T20:00:00.500000Z",
+            "observed_at": "2026-10-10T20:00:00.500000Z",
+            "source": "OFFICIAL_SDK_WEBSOCKET",
+            "best_bid": "60000",
+            "best_ask": "60010",
+            "midpoint": "60005",
+            "spread": "10",
+            "spread_bps": "1.666527789350887426047829348",
+            "truncated": false
+          },
+          "perp_context": {
+            "market": "BTC",
+            "source": "OFFICIAL_SDK_WEBSOCKET",
+            "source_timestamp": null,
+            "observed_at": "2026-10-10T20:00:00.500000Z",
+            "mark_price": "60000",
+            "oracle_price": "60000",
+            "funding_rate": "-0.0001",
+            "open_interest_base": "100",
+            "open_interest_notional": "6000000",
+            "provider_mid_price": "60000",
+            "premium": "0.001",
+            "mark_oracle_basis_bps": "0",
+            "mark_mid_basis_bps": "0",
+            "oracle_mid_basis_bps": "0",
+            "event_time_verified": false
+          },
+          "limitations": [
+            "One Hyperliquid venue; no independent reference quorum or trading authority.",
+            "Context receipt freshness does not verify economic event time.",
+            "Book and context are independent acquisitions, not an atomic economic snapshot."
+          ]
+        },
+        "acquisition_gap_seconds": 0.0,
+        "bid_depth_base": "15",
+        "ask_depth_base": "20",
+        "depth_level_count": 5,
+        "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+        "book_eligible": true,
+        "context_eligible": true,
+        "funding_convention": "NATIVE_RAW_HOURLY_RATE_EVENT_TIME_UNKNOWN"
+      },
+      "metrics": [
+        {
+          "metric_name": "midpoint",
+          "observed_value": "60005",
+          "research_assumed_value": "60000",
+          "absolute_difference": "5",
+          "difference_bps": "0.8333333333333333333333333333",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "best_bid",
+          "observed_value": "60000",
+          "research_assumed_value": "59997",
+          "absolute_difference": "3",
+          "difference_bps": "0.5000250012500625031251562578",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "best_ask",
+          "observed_value": "60010",
+          "research_assumed_value": "60003",
+          "absolute_difference": "7",
+          "difference_bps": "1.166608336249854173957968768",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "mark_price",
+          "observed_value": "60000",
+          "research_assumed_value": "60000",
+          "absolute_difference": "0",
+          "difference_bps": "0",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "oracle_price",
+          "observed_value": "60000",
+          "research_assumed_value": "60000",
+          "absolute_difference": "0",
+          "difference_bps": "0",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "spread_quote",
+          "observed_value": "10",
+          "research_assumed_value": "6",
+          "absolute_difference": "4",
+          "difference_bps": null,
+          "unit": "quote",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "spread_bps",
+          "observed_value": "1.666527789350887426047829348",
+          "research_assumed_value": "1.0000",
+          "absolute_difference": "0.666527789350887426047829348",
+          "difference_bps": "0.666527789350887426047829348",
+          "unit": "bps",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "funding_rate",
+          "observed_value": "-0.0001",
+          "research_assumed_value": "0.000000",
+          "absolute_difference": "-0.000100",
+          "difference_bps": null,
+          "unit": "raw rate",
+          "comparison_status": "PARTIAL",
+          "reason": "Raw rate subtraction only: native hourly rate vs sampled research interval; not comparable settled payments."
+        },
+        {
+          "metric_name": "bid_depth_base",
+          "observed_value": "15",
+          "research_assumed_value": "0.68500",
+          "absolute_difference": "14.31500",
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "ask_depth_base",
+          "observed_value": "20",
+          "research_assumed_value": "0.68500",
+          "absolute_difference": "19.31500",
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "open_interest_base",
+          "observed_value": "100",
+          "research_assumed_value": "250020",
+          "absolute_difference": "-249920",
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "PARTIAL",
+          "reason": "Native reported base OI vs actual modeled frame OI; descriptive synthetic assumption only."
+        }
+      ],
+      "explainability": {
+        "completeness": "COMPLETE_FOR_SUPPORTED_METRICS",
+        "interpretation": "CROSS_CONTEXT_DESCRIPTIVE_ONLY",
+        "available_metrics": [
+          "midpoint",
+          "best_bid",
+          "best_ask",
+          "mark_price",
+          "oracle_price",
+          "spread_quote",
+          "spread_bps",
+          "funding_rate",
+          "bid_depth_base",
+          "ask_depth_base",
+          "open_interest_base"
+        ],
+        "missing_metrics": [],
+        "statements": [
+          "midpoint: Captured observed minus last hypothetical frame; different economic contexts.",
+          "best_bid: Captured observed minus last hypothetical frame; different economic contexts.",
+          "best_ask: Captured observed minus last hypothetical frame; different economic contexts.",
+          "mark_price: Captured observed minus last hypothetical frame; different economic contexts.",
+          "oracle_price: Captured observed minus last hypothetical frame; different economic contexts.",
+          "spread_quote: Captured observed minus last hypothetical frame; different economic contexts.",
+          "spread_bps: Captured observed minus last hypothetical frame; different economic contexts.",
+          "funding_rate: Raw rate subtraction only: native hourly rate vs sampled research interval; not comparable settled payments.",
+          "bid_depth_base: Captured observed minus last hypothetical frame; different economic contexts.",
+          "ask_depth_base: Captured observed minus last hypothetical frame; different economic contexts.",
+          "open_interest_base: Native reported base OI vs actual modeled frame OI; descriptive synthetic assumption only."
+        ]
+      },
+      "provenance": {
+        "comparison_fingerprint": "31a0cfb633827c14ad0d5cbd696d2c8739a2f5be8abae5a126325b5eb0e70f09",
+        "research_trust": "STRUCTURALLY_VALIDATED_CLIENT_SUPPLIED_NOT_AUTHENTICATED",
+        "observer_instance_id": "374b890e-c4e0-44c2-883d-592f13bc4736",
+        "connection_generation": 1,
+        "research_frame_timestamp": "2026-01-01T00:00:02Z",
+        "l2_source_timestamp": "2026-10-10T20:00:00.500000Z",
+        "l2_observed_at": "2026-10-10T20:00:00.500000Z",
+        "perp_observed_at": "2026-10-10T20:00:00.500000Z",
+        "perp_event_time": "UNKNOWN"
+      },
+      "limitations": [
+        "Different economic contexts and timestamps; descriptive only, not a time-matched historical replay.",
+        "Client-supplied research evidence is structurally validated, not independently authenticated; hashes do not prove execution.",
+        "One native venue source; no independent reference quorum or consensus.",
+        "Native perpetual event time is unknown; L2 and context are independently acquired.",
+        "Observed price differences do not establish expected future returns.",
+        "Venue spread does not establish executable strategy spread capture or historical slippage.",
+        "Native funding observations are not simulated settled funding payments.",
+        "Visible depth does not guarantee executable liquidity, fill probability or queue priority.",
+        "PAPER PnL is hypothetical; observed data did not generate the completed research fills.",
+        "Evidence completeness does not predict profitability or grant trading eligibility.",
+        "Research accounting configuration provenance unavailable for this legacy result; no preset inferred.",
+        "One Hyperliquid venue; no independent reference quorum or trading authority.",
+        "Context receipt freshness does not verify economic event time.",
+        "Book and context are independent acquisitions, not an atomic economic snapshot.",
+        "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+        "Visible synthetic depth does not establish queue priority or executable fill probability.",
+        "Funding is a sampled research rate; accounting interval is separate captured configuration."
+      ]
+    }
+  },
+  "ETH": {
+    "request": {
+      "market": "ETH",
+      "research": {
+        "engine_version": "phase10.1-v3",
+        "research_market": "ETH",
+        "market_profile_version": "phase146-v1",
+        "market_profile_fingerprint": "10da7505c08d232a96c15b222dd4b74c448d39805b0d5bbb9ac9d519c7722657",
+        "metadata_source": "PINNED_RESEARCH_FIXTURE",
+        "metadata_status": "DEMO_PROFILE",
+        "run_fingerprint": "f73a1a43c6fa87769715255e5d8c2361dddb214c001af5a81b239813ff041a01",
+        "dataset_fingerprint": "589f2b5decc21b2b734d747d457f8663fcfb83003f84db97df0f9a74e23ab6cb",
+        "strategy_fingerprint": "894fcdb790989b88c26707f801e4f105118ff63c5bc432e4e5969f25dbd4dcbd",
+        "scenario": "QUIET",
+        "simulated": true,
+        "assumptions": {
+          "contract_version": "phase154-v1",
+          "market": "ETH",
+          "market_profile_version": "phase146-v1",
+          "market_profile_fingerprint": "10da7505c08d232a96c15b222dd4b74c448d39805b0d5bbb9ac9d519c7722657",
+          "dataset_fingerprint": "589f2b5decc21b2b734d747d457f8663fcfb83003f84db97df0f9a74e23ab6cb",
+          "scenario": "QUIET",
+          "frame_count": 3,
+          "simulated": true,
+          "representative_frame": "LAST_CONSUMED_DATASET_FRAME",
+          "representative_frame_sequence": 3,
+          "representative_frame_timestamp": "2026-01-01T00:00:02Z",
+          "midpoint": "3000.0",
+          "best_bid": "2999.8",
+          "best_ask": "3000.2",
+          "spread_quote": "0.4",
+          "spread_bps": "1.333333333333333333333333333",
+          "mark_price": "3000.0",
+          "oracle_price": "3000.0",
+          "funding_rate": "0.000000",
+          "funding_convention": "RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL",
+          "open_interest_base": "250020",
+          "bid_levels": [
+            {
+              "price": "2999.8",
+              "size": "6.0000"
+            },
+            {
+              "price": "2999.7",
+              "size": "3.0000"
+            },
+            {
+              "price": "2999.5",
+              "size": "2.0000"
+            },
+            {
+              "price": "2999.4",
+              "size": "1.5000"
+            },
+            {
+              "price": "2999.2",
+              "size": "1.2000"
+            }
+          ],
+          "ask_levels": [
+            {
+              "price": "3000.2",
+              "size": "6.0000"
+            },
+            {
+              "price": "3000.3",
+              "size": "3.0000"
+            },
+            {
+              "price": "3000.5",
+              "size": "2.0000"
+            },
+            {
+              "price": "3000.6",
+              "size": "1.5000"
+            },
+            {
+              "price": "3000.8",
+              "size": "1.2000"
+            }
+          ],
+          "bid_depth_base": "13.7000",
+          "ask_depth_base": "13.7000",
+          "depth_level_count": 5,
+          "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+          "reference_source": "DEMO",
+          "assumption_fingerprint": "2991da8548e1bb523ce5a68de6de947d166a536ebaa07ca468c005005ed1646d",
+          "limitations": [
+            "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+            "Visible synthetic depth does not establish queue priority or executable fill probability.",
+            "Funding is a sampled research rate; accounting interval is separate captured configuration."
+          ]
+        },
+        "performance": {
+          "frame_count": 3,
+          "session_pnl": "0.0",
+          "return_pct": "0.0",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0.0",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "quoted_notional": "71994.08896",
+          "filled_notional": "0",
+          "fill_activity_ratio": "0",
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "ending_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "risk_halt_fraction": "0",
+          "risk_state_counts": {
+            "NORMAL": 3
+          },
+          "fees_quote": "0",
+          "funding_quote": "0"
+        },
+        "research_configuration": null
+      }
+    },
+    "response": {
+      "contract_version": "phase154-v1",
+      "market": "ETH",
+      "read_only": true,
+      "generated_at": "2026-10-11T05:13:47.473605Z",
+      "comparison_status": "PARTIAL",
+      "research": {
+        "engine_version": "phase10.1-v3",
+        "research_market": "ETH",
+        "market_profile_version": "phase146-v1",
+        "market_profile_fingerprint": "10da7505c08d232a96c15b222dd4b74c448d39805b0d5bbb9ac9d519c7722657",
+        "metadata_source": "PINNED_RESEARCH_FIXTURE",
+        "metadata_status": "DEMO_PROFILE",
+        "run_fingerprint": "f73a1a43c6fa87769715255e5d8c2361dddb214c001af5a81b239813ff041a01",
+        "dataset_fingerprint": "589f2b5decc21b2b734d747d457f8663fcfb83003f84db97df0f9a74e23ab6cb",
+        "strategy_fingerprint": "894fcdb790989b88c26707f801e4f105118ff63c5bc432e4e5969f25dbd4dcbd",
+        "scenario": "QUIET",
+        "simulated": true,
+        "assumptions": {
+          "contract_version": "phase154-v1",
+          "market": "ETH",
+          "market_profile_version": "phase146-v1",
+          "market_profile_fingerprint": "10da7505c08d232a96c15b222dd4b74c448d39805b0d5bbb9ac9d519c7722657",
+          "dataset_fingerprint": "589f2b5decc21b2b734d747d457f8663fcfb83003f84db97df0f9a74e23ab6cb",
+          "scenario": "QUIET",
+          "frame_count": 3,
+          "simulated": true,
+          "representative_frame": "LAST_CONSUMED_DATASET_FRAME",
+          "representative_frame_sequence": 3,
+          "representative_frame_timestamp": "2026-01-01T00:00:02Z",
+          "midpoint": "3000.0",
+          "best_bid": "2999.8",
+          "best_ask": "3000.2",
+          "spread_quote": "0.4",
+          "spread_bps": "1.333333333333333333333333333",
+          "mark_price": "3000.0",
+          "oracle_price": "3000.0",
+          "funding_rate": "0.000000",
+          "funding_convention": "RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL",
+          "open_interest_base": "250020",
+          "bid_levels": [
+            {
+              "price": "2999.8",
+              "size": "6.0000"
+            },
+            {
+              "price": "2999.7",
+              "size": "3.0000"
+            },
+            {
+              "price": "2999.5",
+              "size": "2.0000"
+            },
+            {
+              "price": "2999.4",
+              "size": "1.5000"
+            },
+            {
+              "price": "2999.2",
+              "size": "1.2000"
+            }
+          ],
+          "ask_levels": [
+            {
+              "price": "3000.2",
+              "size": "6.0000"
+            },
+            {
+              "price": "3000.3",
+              "size": "3.0000"
+            },
+            {
+              "price": "3000.5",
+              "size": "2.0000"
+            },
+            {
+              "price": "3000.6",
+              "size": "1.5000"
+            },
+            {
+              "price": "3000.8",
+              "size": "1.2000"
+            }
+          ],
+          "bid_depth_base": "13.7000",
+          "ask_depth_base": "13.7000",
+          "depth_level_count": 5,
+          "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+          "reference_source": "DEMO",
+          "assumption_fingerprint": "2991da8548e1bb523ce5a68de6de947d166a536ebaa07ca468c005005ed1646d",
+          "limitations": [
+            "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+            "Visible synthetic depth does not establish queue priority or executable fill probability.",
+            "Funding is a sampled research rate; accounting interval is separate captured configuration."
+          ]
+        },
+        "performance": {
+          "frame_count": 3,
+          "session_pnl": "0.0",
+          "return_pct": "0.0",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0.0",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "quoted_notional": "71994.08896",
+          "filled_notional": "0",
+          "fill_activity_ratio": "0",
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "ending_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "risk_halt_fraction": "0",
+          "risk_state_counts": {
+            "NORMAL": 3
+          },
+          "fees_quote": "0",
+          "funding_quote": "0"
+        },
+        "research_configuration": null
+      },
+      "observed": {
+        "snapshot": {
+          "market": "ETH",
+          "status": {
+            "contract_version": "phase152-v1",
+            "market": "ETH",
+            "transport": "OFFICIAL_SDK_WEBSOCKET",
+            "observer_instance_id": "374b890e-c4e0-44c2-883d-592f13bc4736",
+            "evaluated_at": "2026-10-10T20:00:00.500000Z",
+            "l2_stale_after_seconds": 10.0,
+            "perp_stale_after_seconds": 30.0,
+            "metadata_stale_after_seconds": 300.0,
+            "connection_state": "CONNECTED",
+            "subscription_state": "OBSERVED",
+            "connection_generation": 1,
+            "last_l2_source_timestamp": "2026-10-10T20:00:00.500000Z",
+            "last_l2_observed_at": "2026-10-10T20:00:00.500000Z",
+            "last_perp_observed_at": "2026-10-10T20:00:00.500000Z",
+            "l2_age_seconds": 0.0,
+            "perp_age_seconds": 0.0,
+            "metadata_age_seconds": 0.5,
+            "l2_freshness": "FRESH",
+            "perp_freshness": "FRESH",
+            "metadata_freshness": "FRESH",
+            "perp_event_time": "UNKNOWN",
+            "reconnect_count": 0,
+            "rejected_update_count": 0,
+            "dropped_update_count": 0,
+            "last_error_code": null,
+            "simulated": false,
+            "read_only": true
+          },
+          "observation_status": "AVAILABLE",
+          "metadata": {
+            "market": "ETH",
+            "dex": "",
+            "metadata_status": "EXCHANGE_VERIFIED",
+            "source": "OFFICIAL_SDK_NATIVE_META",
+            "sz_decimals": 4,
+            "asset_index": 3,
+            "listed": true,
+            "observed_at": "2026-10-10T20:00:00Z"
+          },
+          "order_book": {
+            "market": "ETH",
+            "bids": [
+              {
+                "price": "3000",
+                "size": "1",
+                "order_count": 2
+              },
+              {
+                "price": "2999",
+                "size": "2",
+                "order_count": 2
+              },
+              {
+                "price": "2998",
+                "size": "3",
+                "order_count": 2
+              },
+              {
+                "price": "2997",
+                "size": "4",
+                "order_count": 2
+              },
+              {
+                "price": "2996",
+                "size": "5",
+                "order_count": 2
+              }
+            ],
+            "asks": [
+              {
+                "price": "3001",
+                "size": "2",
+                "order_count": 2
+              },
+              {
+                "price": "3002",
+                "size": "3",
+                "order_count": 2
+              },
+              {
+                "price": "3003",
+                "size": "4",
+                "order_count": 2
+              },
+              {
+                "price": "3004",
+                "size": "5",
+                "order_count": 2
+              },
+              {
+                "price": "3005",
+                "size": "6",
+                "order_count": 2
+              }
+            ],
+            "source_timestamp": "2026-10-10T20:00:00.500000Z",
+            "observed_at": "2026-10-10T20:00:00.500000Z",
+            "source": "OFFICIAL_SDK_WEBSOCKET",
+            "best_bid": "3000",
+            "best_ask": "3001",
+            "midpoint": "3000.5",
+            "spread": "1",
+            "spread_bps": "3.332777870354940843192801200",
+            "truncated": false
+          },
+          "perp_context": {
+            "market": "ETH",
+            "source": "OFFICIAL_SDK_WEBSOCKET",
+            "source_timestamp": null,
+            "observed_at": "2026-10-10T20:00:00.500000Z",
+            "mark_price": "3000",
+            "oracle_price": "3000",
+            "funding_rate": "-0.0001",
+            "open_interest_base": "100",
+            "open_interest_notional": "300000",
+            "provider_mid_price": "3000",
+            "premium": "0.001",
+            "mark_oracle_basis_bps": "0",
+            "mark_mid_basis_bps": "0",
+            "oracle_mid_basis_bps": "0",
+            "event_time_verified": false
+          },
+          "limitations": [
+            "One Hyperliquid venue; no independent reference quorum or trading authority.",
+            "Context receipt freshness does not verify economic event time.",
+            "Book and context are independent acquisitions, not an atomic economic snapshot."
+          ]
+        },
+        "acquisition_gap_seconds": 0.0,
+        "bid_depth_base": "15",
+        "ask_depth_base": "20",
+        "depth_level_count": 5,
+        "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+        "book_eligible": true,
+        "context_eligible": true,
+        "funding_convention": "NATIVE_RAW_HOURLY_RATE_EVENT_TIME_UNKNOWN"
+      },
+      "metrics": [
+        {
+          "metric_name": "midpoint",
+          "observed_value": "3000.5",
+          "research_assumed_value": "3000.0",
+          "absolute_difference": "0.5",
+          "difference_bps": "1.666666666666666666666666667",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "best_bid",
+          "observed_value": "3000",
+          "research_assumed_value": "2999.8",
+          "absolute_difference": "0.2",
+          "difference_bps": "0.6667111140742716181078738583",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "best_ask",
+          "observed_value": "3001",
+          "research_assumed_value": "3000.2",
+          "absolute_difference": "0.8",
+          "difference_bps": "2.666488900739950669955336311",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "mark_price",
+          "observed_value": "3000",
+          "research_assumed_value": "3000.0",
+          "absolute_difference": "0.0",
+          "difference_bps": "0",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "oracle_price",
+          "observed_value": "3000",
+          "research_assumed_value": "3000.0",
+          "absolute_difference": "0.0",
+          "difference_bps": "0",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "spread_quote",
+          "observed_value": "1",
+          "research_assumed_value": "0.4",
+          "absolute_difference": "0.6",
+          "difference_bps": null,
+          "unit": "quote",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "spread_bps",
+          "observed_value": "3.332777870354940843192801200",
+          "research_assumed_value": "1.333333333333333333333333333",
+          "absolute_difference": "1.999444537021607509859467867",
+          "difference_bps": "1.999444537021607509859467867",
+          "unit": "bps",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "funding_rate",
+          "observed_value": "-0.0001",
+          "research_assumed_value": "0.000000",
+          "absolute_difference": "-0.000100",
+          "difference_bps": null,
+          "unit": "raw rate",
+          "comparison_status": "PARTIAL",
+          "reason": "Raw rate subtraction only: native hourly rate vs sampled research interval; not comparable settled payments."
+        },
+        {
+          "metric_name": "bid_depth_base",
+          "observed_value": "15",
+          "research_assumed_value": "13.7000",
+          "absolute_difference": "1.3000",
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "ask_depth_base",
+          "observed_value": "20",
+          "research_assumed_value": "13.7000",
+          "absolute_difference": "6.3000",
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "open_interest_base",
+          "observed_value": "100",
+          "research_assumed_value": "250020",
+          "absolute_difference": "-249920",
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "PARTIAL",
+          "reason": "Native reported base OI vs actual modeled frame OI; descriptive synthetic assumption only."
+        }
+      ],
+      "explainability": {
+        "completeness": "COMPLETE_FOR_SUPPORTED_METRICS",
+        "interpretation": "CROSS_CONTEXT_DESCRIPTIVE_ONLY",
+        "available_metrics": [
+          "midpoint",
+          "best_bid",
+          "best_ask",
+          "mark_price",
+          "oracle_price",
+          "spread_quote",
+          "spread_bps",
+          "funding_rate",
+          "bid_depth_base",
+          "ask_depth_base",
+          "open_interest_base"
+        ],
+        "missing_metrics": [],
+        "statements": [
+          "midpoint: Captured observed minus last hypothetical frame; different economic contexts.",
+          "best_bid: Captured observed minus last hypothetical frame; different economic contexts.",
+          "best_ask: Captured observed minus last hypothetical frame; different economic contexts.",
+          "mark_price: Captured observed minus last hypothetical frame; different economic contexts.",
+          "oracle_price: Captured observed minus last hypothetical frame; different economic contexts.",
+          "spread_quote: Captured observed minus last hypothetical frame; different economic contexts.",
+          "spread_bps: Captured observed minus last hypothetical frame; different economic contexts.",
+          "funding_rate: Raw rate subtraction only: native hourly rate vs sampled research interval; not comparable settled payments.",
+          "bid_depth_base: Captured observed minus last hypothetical frame; different economic contexts.",
+          "ask_depth_base: Captured observed minus last hypothetical frame; different economic contexts.",
+          "open_interest_base: Native reported base OI vs actual modeled frame OI; descriptive synthetic assumption only."
+        ]
+      },
+      "provenance": {
+        "comparison_fingerprint": "267ba1b594b1ab26ff127d0985080c27f41f1f27011b07e981c415c2f2663b1f",
+        "research_trust": "STRUCTURALLY_VALIDATED_CLIENT_SUPPLIED_NOT_AUTHENTICATED",
+        "observer_instance_id": "374b890e-c4e0-44c2-883d-592f13bc4736",
+        "connection_generation": 1,
+        "research_frame_timestamp": "2026-01-01T00:00:02Z",
+        "l2_source_timestamp": "2026-10-10T20:00:00.500000Z",
+        "l2_observed_at": "2026-10-10T20:00:00.500000Z",
+        "perp_observed_at": "2026-10-10T20:00:00.500000Z",
+        "perp_event_time": "UNKNOWN"
+      },
+      "limitations": [
+        "Different economic contexts and timestamps; descriptive only, not a time-matched historical replay.",
+        "Client-supplied research evidence is structurally validated, not independently authenticated; hashes do not prove execution.",
+        "One native venue source; no independent reference quorum or consensus.",
+        "Native perpetual event time is unknown; L2 and context are independently acquired.",
+        "Observed price differences do not establish expected future returns.",
+        "Venue spread does not establish executable strategy spread capture or historical slippage.",
+        "Native funding observations are not simulated settled funding payments.",
+        "Visible depth does not guarantee executable liquidity, fill probability or queue priority.",
+        "PAPER PnL is hypothetical; observed data did not generate the completed research fills.",
+        "Evidence completeness does not predict profitability or grant trading eligibility.",
+        "Research accounting configuration provenance unavailable for this legacy result; no preset inferred.",
+        "One Hyperliquid venue; no independent reference quorum or trading authority.",
+        "Context receipt freshness does not verify economic event time.",
+        "Book and context are independent acquisitions, not an atomic economic snapshot.",
+        "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+        "Visible synthetic depth does not establish queue priority or executable fill probability.",
+        "Funding is a sampled research rate; accounting interval is separate captured configuration."
+      ]
+    }
+  },
+  "SOL": {
+    "request": {
+      "market": "SOL",
+      "research": {
+        "engine_version": "phase10.1-v3",
+        "research_market": "SOL",
+        "market_profile_version": "phase146-v1",
+        "market_profile_fingerprint": "2d109a3c7a3a43e0d571d926412e595c41ed0df720a367d874c0a274c741013a",
+        "metadata_source": "PINNED_RESEARCH_FIXTURE",
+        "metadata_status": "DEMO_PROFILE",
+        "run_fingerprint": "ac9bfb69b7227981b6a830e0f61577dda8771c73bf64375a140127f983976e75",
+        "dataset_fingerprint": "5b7d27ef686a5774ad10205adab45be3bda8fc14463244f127f40e18b135e949",
+        "strategy_fingerprint": "cc1865d2498328bf5515523a3980170769f44e95eb84d361f2396a399b4ef3b4",
+        "scenario": "QUIET",
+        "simulated": true,
+        "assumptions": {
+          "contract_version": "phase154-v1",
+          "market": "SOL",
+          "market_profile_version": "phase146-v1",
+          "market_profile_fingerprint": "2d109a3c7a3a43e0d571d926412e595c41ed0df720a367d874c0a274c741013a",
+          "dataset_fingerprint": "5b7d27ef686a5774ad10205adab45be3bda8fc14463244f127f40e18b135e949",
+          "scenario": "QUIET",
+          "frame_count": 3,
+          "simulated": true,
+          "representative_frame": "LAST_CONSUMED_DATASET_FRAME",
+          "representative_frame_sequence": 3,
+          "representative_frame_timestamp": "2026-01-01T00:00:02Z",
+          "midpoint": "150.00",
+          "best_bid": "149.99",
+          "best_ask": "150.01",
+          "spread_quote": "0.02",
+          "spread_bps": "1.333333333333333333333333333",
+          "mark_price": "150.00",
+          "oracle_price": "150.00",
+          "funding_rate": "0.000000",
+          "funding_convention": "RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL",
+          "open_interest_base": "250020",
+          "bid_levels": [
+            {
+              "price": "149.99",
+              "size": "120.00"
+            },
+            {
+              "price": "149.98",
+              "size": "60.00"
+            },
+            {
+              "price": "149.97",
+              "size": "40.00"
+            },
+            {
+              "price": "149.97",
+              "size": "30.00"
+            },
+            {
+              "price": "149.96",
+              "size": "24.00"
+            }
+          ],
+          "ask_levels": [
+            {
+              "price": "150.01",
+              "size": "120.00"
+            },
+            {
+              "price": "150.02",
+              "size": "60.00"
+            },
+            {
+              "price": "150.03",
+              "size": "40.00"
+            },
+            {
+              "price": "150.03",
+              "size": "30.00"
+            },
+            {
+              "price": "150.04",
+              "size": "24.00"
+            }
+          ],
+          "bid_depth_base": "274.00",
+          "ask_depth_base": "274.00",
+          "depth_level_count": 5,
+          "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+          "reference_source": "DEMO",
+          "assumption_fingerprint": "dbdf1280ce80cddacc3bd6ecb5ce8d1689d9aa8d0e4993fc06a35cf56d3f9398",
+          "limitations": [
+            "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+            "Visible synthetic depth does not establish queue priority or executable fill probability.",
+            "Funding is a sampled research rate; accounting interval is separate captured configuration."
+          ]
+        },
+        "performance": {
+          "frame_count": 3,
+          "session_pnl": "0.00",
+          "return_pct": "0.00",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0.00",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "quoted_notional": "0",
+          "filled_notional": "0",
+          "fill_activity_ratio": null,
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "ending_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "risk_halt_fraction": "1",
+          "risk_state_counts": {
+            "HALT": 3
+          },
+          "fees_quote": "0",
+          "funding_quote": "0"
+        },
+        "research_configuration": null
+      }
+    },
+    "response": {
+      "contract_version": "phase154-v1",
+      "market": "SOL",
+      "read_only": true,
+      "generated_at": "2026-10-11T05:13:47.484100Z",
+      "comparison_status": "PARTIAL",
+      "research": {
+        "engine_version": "phase10.1-v3",
+        "research_market": "SOL",
+        "market_profile_version": "phase146-v1",
+        "market_profile_fingerprint": "2d109a3c7a3a43e0d571d926412e595c41ed0df720a367d874c0a274c741013a",
+        "metadata_source": "PINNED_RESEARCH_FIXTURE",
+        "metadata_status": "DEMO_PROFILE",
+        "run_fingerprint": "ac9bfb69b7227981b6a830e0f61577dda8771c73bf64375a140127f983976e75",
+        "dataset_fingerprint": "5b7d27ef686a5774ad10205adab45be3bda8fc14463244f127f40e18b135e949",
+        "strategy_fingerprint": "cc1865d2498328bf5515523a3980170769f44e95eb84d361f2396a399b4ef3b4",
+        "scenario": "QUIET",
+        "simulated": true,
+        "assumptions": {
+          "contract_version": "phase154-v1",
+          "market": "SOL",
+          "market_profile_version": "phase146-v1",
+          "market_profile_fingerprint": "2d109a3c7a3a43e0d571d926412e595c41ed0df720a367d874c0a274c741013a",
+          "dataset_fingerprint": "5b7d27ef686a5774ad10205adab45be3bda8fc14463244f127f40e18b135e949",
+          "scenario": "QUIET",
+          "frame_count": 3,
+          "simulated": true,
+          "representative_frame": "LAST_CONSUMED_DATASET_FRAME",
+          "representative_frame_sequence": 3,
+          "representative_frame_timestamp": "2026-01-01T00:00:02Z",
+          "midpoint": "150.00",
+          "best_bid": "149.99",
+          "best_ask": "150.01",
+          "spread_quote": "0.02",
+          "spread_bps": "1.333333333333333333333333333",
+          "mark_price": "150.00",
+          "oracle_price": "150.00",
+          "funding_rate": "0.000000",
+          "funding_convention": "RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL",
+          "open_interest_base": "250020",
+          "bid_levels": [
+            {
+              "price": "149.99",
+              "size": "120.00"
+            },
+            {
+              "price": "149.98",
+              "size": "60.00"
+            },
+            {
+              "price": "149.97",
+              "size": "40.00"
+            },
+            {
+              "price": "149.97",
+              "size": "30.00"
+            },
+            {
+              "price": "149.96",
+              "size": "24.00"
+            }
+          ],
+          "ask_levels": [
+            {
+              "price": "150.01",
+              "size": "120.00"
+            },
+            {
+              "price": "150.02",
+              "size": "60.00"
+            },
+            {
+              "price": "150.03",
+              "size": "40.00"
+            },
+            {
+              "price": "150.03",
+              "size": "30.00"
+            },
+            {
+              "price": "150.04",
+              "size": "24.00"
+            }
+          ],
+          "bid_depth_base": "274.00",
+          "ask_depth_base": "274.00",
+          "depth_level_count": 5,
+          "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+          "reference_source": "DEMO",
+          "assumption_fingerprint": "dbdf1280ce80cddacc3bd6ecb5ce8d1689d9aa8d0e4993fc06a35cf56d3f9398",
+          "limitations": [
+            "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+            "Visible synthetic depth does not establish queue priority or executable fill probability.",
+            "Funding is a sampled research rate; accounting interval is separate captured configuration."
+          ]
+        },
+        "performance": {
+          "frame_count": 3,
+          "session_pnl": "0.00",
+          "return_pct": "0.00",
+          "realized_pnl": "0",
+          "unrealized_pnl": "0.00",
+          "max_drawdown_pct": "0",
+          "fill_count": 0,
+          "quoted_notional": "0",
+          "filled_notional": "0",
+          "fill_activity_ratio": null,
+          "mean_spread_capture_bps": null,
+          "mean_mature_markout_bps": null,
+          "adverse_fill_rate": null,
+          "ending_inventory_base": "0",
+          "max_inventory_utilization": "0",
+          "risk_halt_fraction": "1",
+          "risk_state_counts": {
+            "HALT": 3
+          },
+          "fees_quote": "0",
+          "funding_quote": "0"
+        },
+        "research_configuration": null
+      },
+      "observed": {
+        "snapshot": {
+          "market": "SOL",
+          "status": {
+            "contract_version": "phase152-v1",
+            "market": "SOL",
+            "transport": "OFFICIAL_SDK_WEBSOCKET",
+            "observer_instance_id": "374b890e-c4e0-44c2-883d-592f13bc4736",
+            "evaluated_at": "2026-10-10T20:00:00.500000Z",
+            "l2_stale_after_seconds": 10.0,
+            "perp_stale_after_seconds": 30.0,
+            "metadata_stale_after_seconds": 300.0,
+            "connection_state": "CONNECTED",
+            "subscription_state": "OBSERVED",
+            "connection_generation": 1,
+            "last_l2_source_timestamp": "2026-10-10T20:00:00.500000Z",
+            "last_l2_observed_at": "2026-10-10T20:00:00.500000Z",
+            "last_perp_observed_at": "2026-10-10T20:00:00.500000Z",
+            "l2_age_seconds": 0.0,
+            "perp_age_seconds": 0.0,
+            "metadata_age_seconds": 0.5,
+            "l2_freshness": "FRESH",
+            "perp_freshness": "FRESH",
+            "metadata_freshness": "FRESH",
+            "perp_event_time": "UNKNOWN",
+            "reconnect_count": 0,
+            "rejected_update_count": 0,
+            "dropped_update_count": 0,
+            "last_error_code": null,
+            "simulated": false,
+            "read_only": true
+          },
+          "observation_status": "AVAILABLE",
+          "metadata": {
+            "market": "SOL",
+            "dex": "",
+            "metadata_status": "EXCHANGE_VERIFIED",
+            "source": "OFFICIAL_SDK_NATIVE_META",
+            "sz_decimals": 2,
+            "asset_index": 1,
+            "listed": true,
+            "observed_at": "2026-10-10T20:00:00Z"
+          },
+          "order_book": {
+            "market": "SOL",
+            "bids": [
+              {
+                "price": "150.12",
+                "size": "1.23",
+                "order_count": 2
+              },
+              {
+                "price": "150.11",
+                "size": "2.23",
+                "order_count": 2
+              },
+              {
+                "price": "150.10",
+                "size": "3.23",
+                "order_count": 2
+              },
+              {
+                "price": "150.09",
+                "size": "4.23",
+                "order_count": 2
+              },
+              {
+                "price": "150.08",
+                "size": "5.23",
+                "order_count": 2
+              }
+            ],
+            "asks": [
+              {
+                "price": "150.13",
+                "size": "2.34",
+                "order_count": 2
+              },
+              {
+                "price": "150.14",
+                "size": "3.34",
+                "order_count": 2
+              },
+              {
+                "price": "150.15",
+                "size": "4.34",
+                "order_count": 2
+              },
+              {
+                "price": "150.16",
+                "size": "5.34",
+                "order_count": 2
+              },
+              {
+                "price": "150.17",
+                "size": "6.34",
+                "order_count": 2
+              }
+            ],
+            "source_timestamp": "2026-10-10T20:00:00.500000Z",
+            "observed_at": "2026-10-10T20:00:00.500000Z",
+            "source": "OFFICIAL_SDK_WEBSOCKET",
+            "best_bid": "150.12",
+            "best_ask": "150.13",
+            "midpoint": "150.125",
+            "spread": "0.01",
+            "spread_bps": "0.6661115736885928393005828476",
+            "truncated": false
+          },
+          "perp_context": {
+            "market": "SOL",
+            "source": "OFFICIAL_SDK_WEBSOCKET",
+            "source_timestamp": null,
+            "observed_at": "2026-10-10T20:00:00.500000Z",
+            "mark_price": "150",
+            "oracle_price": "150",
+            "funding_rate": "-0.0001",
+            "open_interest_base": "100",
+            "open_interest_notional": "15000",
+            "provider_mid_price": "150",
+            "premium": "0.001",
+            "mark_oracle_basis_bps": "0",
+            "mark_mid_basis_bps": "0",
+            "oracle_mid_basis_bps": "0",
+            "event_time_verified": false
+          },
+          "limitations": [
+            "One Hyperliquid venue; no independent reference quorum or trading authority.",
+            "Context receipt freshness does not verify economic event time.",
+            "Book and context are independent acquisitions, not an atomic economic snapshot."
+          ]
+        },
+        "acquisition_gap_seconds": 0.0,
+        "bid_depth_base": "16.15",
+        "ask_depth_base": "21.70",
+        "depth_level_count": 5,
+        "depth_measurement_method": "TOP_5_LEVELS_PER_SIDE_BASE",
+        "book_eligible": true,
+        "context_eligible": true,
+        "funding_convention": "NATIVE_RAW_HOURLY_RATE_EVENT_TIME_UNKNOWN"
+      },
+      "metrics": [
+        {
+          "metric_name": "midpoint",
+          "observed_value": "150.125",
+          "research_assumed_value": "150.00",
+          "absolute_difference": "0.125",
+          "difference_bps": "8.333333333333333333333333333",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "best_bid",
+          "observed_value": "150.12",
+          "research_assumed_value": "149.99",
+          "absolute_difference": "0.13",
+          "difference_bps": "8.667244482965531035402360157",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "best_ask",
+          "observed_value": "150.13",
+          "research_assumed_value": "150.01",
+          "absolute_difference": "0.12",
+          "difference_bps": "7.999466702219852009866008933",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "mark_price",
+          "observed_value": "150",
+          "research_assumed_value": "150.00",
+          "absolute_difference": "0.00",
+          "difference_bps": "0",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "oracle_price",
+          "observed_value": "150",
+          "research_assumed_value": "150.00",
+          "absolute_difference": "0.00",
+          "difference_bps": "0",
+          "unit": "quote/base",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "spread_quote",
+          "observed_value": "0.01",
+          "research_assumed_value": "0.02",
+          "absolute_difference": "-0.01",
+          "difference_bps": null,
+          "unit": "quote",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "spread_bps",
+          "observed_value": "0.6661115736885928393005828476",
+          "research_assumed_value": "1.333333333333333333333333333",
+          "absolute_difference": "-0.6672217596447404940327504854",
+          "difference_bps": "-0.6672217596447404940327504854",
+          "unit": "bps",
+          "comparison_status": "COMPARABLE",
+          "reason": "Captured observed minus last hypothetical frame; different economic contexts."
+        },
+        {
+          "metric_name": "funding_rate",
+          "observed_value": "-0.0001",
+          "research_assumed_value": "0.000000",
+          "absolute_difference": "-0.000100",
+          "difference_bps": null,
+          "unit": "raw rate",
+          "comparison_status": "PARTIAL",
+          "reason": "Raw rate subtraction only: native hourly rate vs sampled research interval; not comparable settled payments."
+        },
+        {
+          "metric_name": "bid_depth_base",
+          "observed_value": "16.15",
+          "research_assumed_value": "274.00",
+          "absolute_difference": null,
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "NOT_COMPARABLE",
+          "reason": "Top five valid levels per side in matching base units are required."
+        },
+        {
+          "metric_name": "ask_depth_base",
+          "observed_value": "21.70",
+          "research_assumed_value": "274.00",
+          "absolute_difference": null,
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "NOT_COMPARABLE",
+          "reason": "Top five valid levels per side in matching base units are required."
+        },
+        {
+          "metric_name": "open_interest_base",
+          "observed_value": "100",
+          "research_assumed_value": "250020",
+          "absolute_difference": "-249920",
+          "difference_bps": null,
+          "unit": "base",
+          "comparison_status": "PARTIAL",
+          "reason": "Native reported base OI vs actual modeled frame OI; descriptive synthetic assumption only."
+        }
+      ],
+      "explainability": {
+        "completeness": "PARTIAL",
+        "interpretation": "CROSS_CONTEXT_DESCRIPTIVE_ONLY",
+        "available_metrics": [
+          "midpoint",
+          "best_bid",
+          "best_ask",
+          "mark_price",
+          "oracle_price",
+          "spread_quote",
+          "spread_bps",
+          "funding_rate",
+          "open_interest_base"
+        ],
+        "missing_metrics": [
+          "bid_depth_base",
+          "ask_depth_base"
+        ],
+        "statements": [
+          "midpoint: Captured observed minus last hypothetical frame; different economic contexts.",
+          "best_bid: Captured observed minus last hypothetical frame; different economic contexts.",
+          "best_ask: Captured observed minus last hypothetical frame; different economic contexts.",
+          "mark_price: Captured observed minus last hypothetical frame; different economic contexts.",
+          "oracle_price: Captured observed minus last hypothetical frame; different economic contexts.",
+          "spread_quote: Captured observed minus last hypothetical frame; different economic contexts.",
+          "spread_bps: Captured observed minus last hypothetical frame; different economic contexts.",
+          "funding_rate: Raw rate subtraction only: native hourly rate vs sampled research interval; not comparable settled payments.",
+          "bid_depth_base: Top five valid levels per side in matching base units are required.",
+          "ask_depth_base: Top five valid levels per side in matching base units are required.",
+          "open_interest_base: Native reported base OI vs actual modeled frame OI; descriptive synthetic assumption only."
+        ]
+      },
+      "provenance": {
+        "comparison_fingerprint": "274480627d504fa4b3c96b8cae3696edf0a7dfb136a87e8ac1c940f964828886",
+        "research_trust": "STRUCTURALLY_VALIDATED_CLIENT_SUPPLIED_NOT_AUTHENTICATED",
+        "observer_instance_id": "374b890e-c4e0-44c2-883d-592f13bc4736",
+        "connection_generation": 1,
+        "research_frame_timestamp": "2026-01-01T00:00:02Z",
+        "l2_source_timestamp": "2026-10-10T20:00:00.500000Z",
+        "l2_observed_at": "2026-10-10T20:00:00.500000Z",
+        "perp_observed_at": "2026-10-10T20:00:00.500000Z",
+        "perp_event_time": "UNKNOWN"
+      },
+      "limitations": [
+        "Different economic contexts and timestamps; descriptive only, not a time-matched historical replay.",
+        "Client-supplied research evidence is structurally validated, not independently authenticated; hashes do not prove execution.",
+        "One native venue source; no independent reference quorum or consensus.",
+        "Native perpetual event time is unknown; L2 and context are independently acquired.",
+        "Observed price differences do not establish expected future returns.",
+        "Venue spread does not establish executable strategy spread capture or historical slippage.",
+        "Native funding observations are not simulated settled funding payments.",
+        "Visible depth does not guarantee executable liquidity, fill probability or queue priority.",
+        "PAPER PnL is hypothetical; observed data did not generate the completed research fills.",
+        "Evidence completeness does not predict profitability or grant trading eligibility.",
+        "Research accounting configuration provenance unavailable for this legacy result; no preset inferred.",
+        "One Hyperliquid venue; no independent reference quorum or trading authority.",
+        "Context receipt freshness does not verify economic event time.",
+        "Book and context are independent acquisitions, not an atomic economic snapshot.",
+        "Last consumed dataset frame only; not a scenario aggregate or historical live replay.",
+        "Visible synthetic depth does not establish queue priority or executable fill probability.",
+        "Funding is a sampled research rate; accounting interval is separate captured configuration."
+      ]
+    }
+  }
+}

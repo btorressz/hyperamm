@@ -4,6 +4,7 @@ from datetime import datetime,timezone
 from decimal import Decimal
 from enum import Enum
 import hashlib,json
+from typing import Annotated, Literal
 
 from pydantic import BaseModel,ConfigDict,Field,computed_field,model_validator
 
@@ -11,6 +12,9 @@ from app.market_data.models import MarketSnapshot
 from app.market_data.perp_context import PerpMarketContext
 from app.accounting.models import LedgerEntry, VaultSnapshot
 from app.research.ml.shadow_evaluation import ShadowEvaluationResult
+from app.market_data.live_models import Evidence, FinancialDecimal, PositiveDecimal, NonnegativeDecimal
+from app.simulation.market_profiles import ResearchPerpMarketId
+from pydantic import AwareDatetime, StrictInt, field_validator
 
 
 def _canonical(value):
@@ -181,7 +185,78 @@ class ResearchMarketEvidence(BaseModel):
     metadata_status:str|None=None
 
 
+class ResearchBookLevel(Evidence):
+    price: PositiveDecimal
+    size: NonnegativeDecimal
+
+
+Fingerprint = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+BoundedText = Annotated[str, Field(max_length=500)]
+
+
+class ResearchMarketAssumptions(Evidence):
+    """Last consumed dataset frame, independent of trace retention and accounting."""
+    contract_version: Literal['phase154-v1'] = 'phase154-v1'
+    market: ResearchPerpMarketId
+    market_profile_version: Literal['phase146-v1'] | None = None
+    market_profile_fingerprint: Fingerprint | None = None
+    dataset_fingerprint: Fingerprint
+    scenario: Annotated[str, Field(pattern=r'^[A-Z_]{1,64}$')]
+    frame_count: StrictInt = Field(ge=2, le=5000)
+    simulated: Literal[True] = True
+    representative_frame: Literal['LAST_CONSUMED_DATASET_FRAME'] = 'LAST_CONSUMED_DATASET_FRAME'
+    representative_frame_sequence: StrictInt = Field(ge=0)
+    representative_frame_timestamp: AwareDatetime
+    midpoint: PositiveDecimal
+    best_bid: PositiveDecimal
+    best_ask: PositiveDecimal
+    spread_quote: PositiveDecimal
+    spread_bps: PositiveDecimal
+    mark_price: PositiveDecimal
+    oracle_price: PositiveDecimal
+    funding_rate: FinancialDecimal
+    funding_convention: Literal['RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL'] = 'RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL'
+    open_interest_base: NonnegativeDecimal | None = None
+    bid_levels: tuple[ResearchBookLevel, ...] = Field(min_length=1, max_length=5)
+    ask_levels: tuple[ResearchBookLevel, ...] = Field(min_length=1, max_length=5)
+    bid_depth_base: NonnegativeDecimal
+    ask_depth_base: NonnegativeDecimal
+    depth_level_count: StrictInt = Field(ge=1, le=5)
+    depth_measurement_method: Literal['TOP_5_LEVELS_PER_SIDE_BASE'] = 'TOP_5_LEVELS_PER_SIDE_BASE'
+    reference_source: Annotated[str, Field(pattern=r'^[a-zA-Z0-9:_ -]{1,200}$')]
+    assumption_fingerprint: Fingerprint
+    limitations: tuple[BoundedText, ...] = Field(default=(), max_length=12)
+
+    @field_validator('simulated', mode='before')
+    @classmethod
+    def paper_flag(cls, value):
+        if value is not True:
+            raise ValueError('research evidence requires explicit simulated true')
+        return value
+
+    @model_validator(mode='after')
+    def consistent_assumptions(self):
+        if self.best_bid >= self.best_ask or self.midpoint != (self.best_bid + self.best_ask) / 2:
+            raise ValueError('inconsistent research BBO/midpoint')
+        if self.spread_quote != self.best_ask - self.best_bid or self.spread_bps != self.spread_quote / self.midpoint * Decimal('10000'):
+            raise ValueError('inconsistent research spread')
+        if self.bid_levels[0].price != self.best_bid or self.ask_levels[0].price != self.best_ask:
+            raise ValueError('research BBO does not match captured levels')
+        if any(a.price < b.price for a,b in zip(self.bid_levels, self.bid_levels[1:])) or any(a.price > b.price for a,b in zip(self.ask_levels, self.ask_levels[1:])):
+            raise ValueError('research levels are unsorted')
+        if self.depth_level_count != min(len(self.bid_levels), len(self.ask_levels)):
+            raise ValueError('inconsistent research level count')
+        if self.bid_depth_base != sum((x.size for x in self.bid_levels), Decimal(0)) or self.ask_depth_base != sum((x.size for x in self.ask_levels), Decimal(0)):
+            raise ValueError('inconsistent research depth sums')
+        if (self.market_profile_version is None) != (self.market_profile_fingerprint is None):
+            raise ValueError('incomplete research profile identity')
+        if self.assumption_fingerprint != stable_fingerprint(self.model_dump(exclude={'assumption_fingerprint'})):
+            raise ValueError('research assumptions fingerprint mismatch')
+        return self
+
+
 class SimulationResult(ResearchMarketEvidence):
+    research_assumptions: ResearchMarketAssumptions | None = None
     research_configuration:dict|None=None
     engine_version:str
     run_fingerprint:str

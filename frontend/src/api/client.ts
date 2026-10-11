@@ -1,4 +1,5 @@
 import type {
+  MarketResearchComparisonRequest, MarketResearchComparisonResult,
   StrategyState,
   TerminalHistory,
   TerminalEvents,
@@ -61,6 +62,8 @@ function livePath(market: LiveMarketId, resource: string) {
   return `/live-markets/${market}/${resource}`;
 }
 export const api = {
+  compareMarketResearch: (body: MarketResearchComparisonRequest, signal?: AbortSignal) =>
+    request<MarketResearchComparisonResult>('/research-market-comparison/compare', {method:'POST', body:JSON.stringify(body), signal, cache:'no-store'}),
   liveStreamStatus: (market: LiveMarketId, signal?: AbortSignal) =>
     request<LiveMarketStreamStatus>(livePath(market,'stream-status'), {signal,cache:'no-store'}),
   liveStreamSnapshot: (market: LiveMarketId, signal?: AbortSignal) =>

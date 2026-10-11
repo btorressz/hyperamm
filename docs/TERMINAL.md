@@ -351,3 +351,34 @@ A global unpositioned gap count renders isolated observations throughout.
 
 See [Phase 15.3 acceptance](PHASE153_ACCEPTANCE.md) for native Chromium fixture
 checks, mobile/tablet behavior and external venue acceptance still open.
+
+## Phase 15.4 — Market vs Research workspace
+
+Markets adds **Market vs Research** alongside the existing Operational and Live
+views. Complete an explicit PAPER run in Simulation, then choose its original
+BTC/ETH/SOL result and an observed market. **Compare with observed market** captures
+a request boundary; **Refresh observed comparison** captures newer evidence only.
+Neither action reruns a simulation, optimizes, deploys or modifies strategy.
+Research Vault baseline/customized completed sides are individually selectable;
+optimizer candidate summaries are not. Up to three detached completed summaries
+are retained in an independent in-memory store, without financial browser storage.
+
+The workspace renders independent observed/hypothetical columns, Decimal strings,
+price/spread/funding/base depth, captured assumptions and hypothetical performance.
+A static paired midpoint graphic uses separately labeled full dates/time zones;
+there is no fabricated common timeline, OHLCV, interpolation or forward filling.
+Unavailable observations never borrow research values. Captured freshness/source/
+metadata, raw-rate convention, acquisition gap and unknown context event time are
+visible alongside completeness, explicit limitations and full fingerprints.
+
+Abortable TanStack mutations capture market/research/run/dataset/profile, observer/
+generation, selection/connection and request generations. Changed boundaries reject
+late completions. Finished comparisons stay frozen; new publications do not alter
+their values. New research, market/source changes, observer/generation/reconnect,
+workspace exit and captured-source expiry retire the artifact to HISTORICAL.
+A later fresh tick cannot revive it. Disabled live services still render PAPER
+assumptions/performance and unavailable observed evidence. Cross-asset choices are
+explicitly NOT_COMPARABLE. Legacy missing assumptions/configuration are explained
+without inventing controls or presets. All actions remain accessible with local
+scrolling tables and a single-column mobile layout. See
+[Phase 15.4 acceptance](PHASE154_ACCEPTANCE.md).

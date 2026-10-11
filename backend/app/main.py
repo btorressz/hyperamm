@@ -18,6 +18,7 @@ from app.api.live_market_streams import router as live_market_streams_router
 from app.api.live_markets import router as live_markets_router
 from app.market_data.models import MarketDataMode
 from app.strategy.models import ExecutionMode
+from app.api.research_market_comparison import router as research_market_comparison_router
 from app.api.research_markets import router as research_markets_router
 from app.api.research_vault import router as research_vault_router, ResearchBodyLimit
 from app.infrastructure.redis import RedisInfrastructure
@@ -89,7 +90,7 @@ app.add_middleware(ResearchBodyLimit)
 
 @app.exception_handler(RequestValidationError)
 async def research_validation_errors(request, exc):
-    if any(segment in request.url.path for segment in ("/research-vault/", "/simulation/", "/live-markets/")):
+    if any(segment in request.url.path for segment in ("/research-vault/", "/simulation/", "/live-markets/", "/research-market-comparison/")):
         # Do not echo credentials, oversized/nonfinite inputs or exception ctx.
         return JSONResponse(status_code=422, content={"detail": [
             {"loc": list(error["loc"]), "msg": error["msg"], "type": error["type"]}
@@ -97,7 +98,7 @@ async def research_validation_errors(request, exc):
     return await request_validation_exception_handler(request, exc)
 
 
-for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, live_markets_router, accounting.router, terminal.router):
+for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, research_market_comparison_router, live_markets_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 app.include_router(live_market_streams_router)

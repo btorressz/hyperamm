@@ -551,3 +551,22 @@ time bases; native provider roles remain one venue group with authority NONE.
 The browser test-only loopback fixture server is not imported by app.main; production
 networking defaults remain disabled. [Acceptance](PHASE153_ACCEPTANCE.md) separates
 fixture/Chromium validation from genuine external venue/Mac/soak acceptance.
+
+## Phase 15.4 — Independent descriptive evidence comparison
+
+Actual deterministic SimulationDataset frames → optional frozen research
+assumptions; current accepted native stream snapshot → observed evidence. Pure
+`research_comparison` modules combine them only for Decimal deltas, deterministic
+explanations, completeness and provenance. One computational POST router consumes
+a bounded client summary and the existing in-memory observer. No new SDK, worker,
+scheduler, persistence or runtime dependency is created.
+
+Research hashes are consistency identities, not authenticated execution records.
+Native L2 event time and context receipt time remain independent of synthetic
+research timestamps; event-time uncertainty and acquisition gaps are explicit.
+Fresh L2 can remain comparable when context expires. Metadata/source/connection
+boundaries gate eligibility, never strategy authority. No comparison can change
+HyperAmmRuntime, StrategyConfig, MarketDataService, ReferenceService, agent/risk/
+FinalQuoteAuthorization, orders/fills/positions/accounting/reservations/kill or
+TESTNET eligibility. Real seeded authority tests and actual Chromium checks are
+recorded in [Phase 15.4 acceptance](PHASE154_ACCEPTANCE.md).

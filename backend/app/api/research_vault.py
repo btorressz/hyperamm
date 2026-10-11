@@ -69,7 +69,7 @@ class ResearchBodyLimit:
     async def __call__(self, scope, receive, send):
         path = scope.get("path", "")
         if scope["type"] != "http" or scope.get("method") != "POST" or not any(
-                segment in path for segment in ("/research-vault/", "/simulation/")):
+                segment in path for segment in ("/research-vault/", "/simulation/", "/research-market-comparison/")):
             return await self.app(scope, receive, send)
         messages, size = [], 0
         while True:

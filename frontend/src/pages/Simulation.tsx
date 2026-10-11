@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMarketResearchComparisonStore } from '../stores/marketResearchComparison';
 import { api } from "../api/client";
 import type { OptimizationResult, SimulationResult, ResearchComparison } from "../types";
 import { useResearchVaultStore, capturedResearch } from '../stores/researchVault';
@@ -104,7 +105,10 @@ export function Simulation() {
         if (config.research && (config.researchEpoch !== useResearchVaultStore.getState().evidenceEpoch
           || data.research_configuration?.config_fingerprint !== config.researchFingerprint))
           throw new Error('Research response belongs to a retired connection or mismatched configuration. Revalidate in Vault.');
-        if (gate.current.current(token)) setResult({ data, config });
+        if (gate.current.current(token)) {
+          useMarketResearchComparisonStore.getState().retain(data);
+          setResult({ data, config });
+        }
       } else if (kind === 'compare') {
         const data = checkedComparison(await api.compareResearch({scenario: config.scenario, frames: config.frames, research_market: marketProfile.market,
           baseline: config.baseline, custom: config.research, record_trace: true, trace_max_points: 250}),
@@ -112,7 +116,11 @@ export function Simulation() {
         checkMarket(); checkedMarketEvidence(data.baseline_result, marketProfile); checkedMarketEvidence(data.custom_result, marketProfile);
         if (config.researchEpoch !== useResearchVaultStore.getState().evidenceEpoch)
           throw new Error('Research response belongs to a retired connection. Revalidate in Vault.');
-        if (gate.current.current(token)) setComparison({data, config});
+        if (gate.current.current(token)) {
+          useMarketResearchComparisonStore.getState().retain(data.baseline_result, 'Research Vault baseline');
+          useMarketResearchComparisonStore.getState().retain(data.custom_result, 'Research Vault customized');
+          setComparison({data, config});
+        }
       } else {
         const { strategy_grid, agent_grid } =
           optimizationPresets[config.preset];
@@ -340,6 +348,7 @@ export function Simulation() {
             frames. Results remain associated with this request when controls
             change.
           </p>
+          <p><a href="#/markets">Open Markets → Market vs Research to select this completed PAPER result</a></p>
           <SimulationPanel m={result.data.metrics} />
           {result.data.research_configuration && <Panel title="Captured research accounting assumptions" meta={result.data.research_configuration.research_config_version}>
             <p>Preset: {result.data.research_configuration.selected_preset_id ?? 'None'} · version {result.data.research_configuration.selected_preset_version ?? 'Unavailable'} · customized: {result.data.research_configuration.customized ? 'YES' : 'NO'}</p>

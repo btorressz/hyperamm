@@ -1,3 +1,4 @@
+import { MarketResearchWorkspace } from '../components/research-comparison/MarketResearchWorkspace';
 import { useState } from 'react';
 import { LiveMarketsView } from '../components/markets/LiveMarketsView';
 import { Loading } from '../components/TerminalPrimitives';
@@ -16,14 +17,15 @@ import {
   timestamp,
 } from "../utils/format";
 export function Markets({ t }: { t: TerminalState | null }) {
-  const [view,setView]=useState<'operational'|'live'>('operational');
+  const [view,setView]=useState<'operational'|'live'|'comparison'>('operational');
   return <div className="stack">
     <h1>Markets</h1>
     <div className="marketViews" role="group" aria-label="Market workspace view">
       <button aria-pressed={view==='operational'} onClick={()=>setView('operational')}>Operational Market</button>
       <button aria-pressed={view==='live'} onClick={()=>setView('live')}>Live Market Intelligence</button>
+      <button aria-pressed={view==='comparison'} onClick={()=>setView('comparison')}>Market vs Research</button>
     </div>
-    {view==='live'?<LiveMarketsView/>:t?<OperationalMarketsView t={t}/>:<Loading title="Operational market unavailable">Waiting for a valid operational terminal snapshot. Live Market Intelligence remains accessible.</Loading>}
+    {view==='comparison'?<MarketResearchWorkspace/>:view==='live'?<LiveMarketsView/>:t?<OperationalMarketsView t={t}/>:<Loading title="Operational market unavailable">Waiting for a valid operational terminal snapshot. Live Market Intelligence remains accessible.</Loading>}
   </div>;
 }
 function OperationalMarketsView({ t }: { t: TerminalState }) {

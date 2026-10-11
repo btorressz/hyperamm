@@ -946,3 +946,25 @@ Existing Phase 15.1/15.2 APIs, operational components and authority remain intac
 No production execution route, new chart dependency or persistent raw data.
 [Acceptance](docs/PHASE153_ACCEPTANCE.md) records 1554 backend/539 frontend passes
 and 13 Chromium workflows at six viewports; genuine venue acceptance remains open.
+
+## Phase 15.4 — Market vs Research comparison and explainability
+
+| Source | Responsibility |
+| --- | --- |
+| `backend/app/simulation/models.py`, `engine.py` | Optional strict/frozen assumptions from the last actual dataset frame; no economics or existing fingerprint change |
+| `backend/app/research_comparison/assumptions.py` | Actual BBO/context/levels extraction, frame/profile/dataset attribution and assumptions fingerprint |
+| `backend/app/research_comparison/models.py` | Bounded request/summary/performance/accounting provenance and typed Decimal comparison contracts |
+| `backend/app/research_comparison/comparison.py` | Pure component freshness/market/depth eligibility and signed descriptive deltas |
+| `backend/app/research_comparison/explainability.py`, `provenance.py` | Deterministic completeness/limitations and request-time-independent evidence identity |
+| `backend/app/api/research_market_comparison.py`, `main.py`, `api/research_vault.py` | One computational POST, existing snapshot capture and shared body/error bounds |
+| `frontend/src/pages/Simulation.tsx`, `stores/marketResearchComparison.ts` | Accepted completed results → bounded detached in-memory summaries; optimizer candidates excluded |
+| `frontend/src/pages/Markets.tsx`, `components/research-comparison/*`, `phase154.css` | Explicit selection/capture/refresh, financial tables, paired independent timestamps, PAPER performance and audit/limitations |
+| `frontend/src/hooks/useMarketResearchComparison.ts`, `utils/marketResearchComparison.ts` | Abortable TanStack request boundaries, evidence validation and sticky historical retirement |
+| `frontend/tests/phase154-*`, `browser-phase154.py`, `phase154_browser_backend.py` | Reproducible real PAPER summaries/normalized fixtures, Node contracts and real Chromium assertions |
+| `backend/tests/test_phase154_*.py`, `phase154_helpers.py` | All 39 scenario/market combinations, source arithmetic/provenance/security and real seeded runtime isolation |
+
+Existing SimulationService/research_vault/scenarios/profile/accounting/executor/
+optimizer and Phase 15 observer/history/provider contracts are reused. No second
+simulation interface, live refresh, persistent registry, trading authority or new
+chart dependency is introduced. [Acceptance](docs/PHASE154_ACCEPTANCE.md) records
+actual checks and remaining external/Phase 15.5 gates; Phase 15 is not complete.
