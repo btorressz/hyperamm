@@ -590,6 +590,7 @@ export type SimulationMetrics = {
   execution_quality_state_counts: Record<string, number>;
 };
 export type SimulationResult = ResearchMarketEvidence & {
+  research_assumptions?: ResearchMarketAssumptions | null;
   research_configuration?: ResearchProvenance | null;
   vault?: VaultSnapshot | null;
   engine_version: string;
@@ -1019,3 +1020,53 @@ export type LiveProviderHealth = {
 export type ProviderId = 'REDSTONE' | 'HYPERLIQUID_ORACLE' | 'KRAKEN' | 'COINGECKO' | 'YAHOO_FINANCE' | 'HYPERLIQUID_MID' | 'HYPERLIQUID_MARK';
 export type ProviderStatus = 'HEALTHY' | 'DEGRADED' | 'STALE' | 'ERROR' | 'DISABLED';
 export type SourceType = 'ORACLE' | 'NATIVE_ORACLE' | 'VENUE_REFERENCE' | 'EXECUTION_VENUE' | 'PERP_MARK' | 'AGGREGATOR_REFERENCE';
+
+/** Phase 15.4: independently sourced, descriptive comparison only. */
+export type ResearchMarketAssumptions = {
+  contract_version: 'phase154-v1'; market: ResearchMarketId; market_profile_version: 'phase146-v1' | null;
+  market_profile_fingerprint: string | null; dataset_fingerprint: string; scenario: string; frame_count: number;
+  simulated: true; representative_frame: 'LAST_CONSUMED_DATASET_FRAME'; representative_frame_sequence: number;
+  representative_frame_timestamp: string; midpoint: string; best_bid: string; best_ask: string;
+  spread_quote: string; spread_bps: string; mark_price: string; oracle_price: string; funding_rate: string;
+  funding_convention: 'RAW_RATE_PER_SAMPLED_RESEARCH_INTERVAL'; open_interest_base: string | null;
+  bid_levels: Array<{price: string; size: string}>; ask_levels: Array<{price: string; size: string}>;
+  bid_depth_base: string; ask_depth_base: string; depth_level_count: number;
+  depth_measurement_method: 'TOP_5_LEVELS_PER_SIDE_BASE'; reference_source: string;
+  assumption_fingerprint: string; limitations: string[];
+};
+export type ResearchPerformanceContext = {
+  frame_count:number; session_pnl:string; return_pct:string; realized_pnl:string; unrealized_pnl:string;
+  max_drawdown_pct:string; fill_count:number; quoted_notional:string; filled_notional:string;
+  fill_activity_ratio:string|null; mean_spread_capture_bps:string|null; mean_mature_markout_bps:string|null;
+  adverse_fill_rate:string|null; ending_inventory_base:string; max_inventory_utilization:string;
+  risk_halt_fraction:string; risk_state_counts:Record<string,number>; fees_quote:string|null; funding_quote:string|null;
+};
+export type ResearchEvidenceSummary = {
+  engine_version: string; research_market: ResearchMarketId; market_profile_version: 'phase146-v1' | null;
+  market_profile_fingerprint: string | null; metadata_source: 'PINNED_RESEARCH_FIXTURE'|'OFFICIAL_SDK_NATIVE_META'|null;
+  metadata_status: 'DEMO_PROFILE'|'EXCHANGE_VERIFIED'|null; run_fingerprint: string; dataset_fingerprint: string;
+  strategy_fingerprint: string; scenario: string; simulated: true; assumptions: ResearchMarketAssumptions | null;
+  performance: ResearchPerformanceContext; research_configuration: ResearchProvenance | null;
+};
+export type MarketResearchComparisonRequest = {market: LiveMarketId; research: ResearchEvidenceSummary};
+export type ComparisonStatus = 'COMPARABLE'|'PARTIAL'|'NOT_COMPARABLE'|'UNAVAILABLE';
+export type ComparisonMetricName = 'midpoint'|'best_bid'|'best_ask'|'mark_price'|'oracle_price'|'spread_quote'|'spread_bps'|'funding_rate'|'bid_depth_base'|'ask_depth_base'|'open_interest_base';
+export type ComparisonMetric = {
+  metric_name: ComparisonMetricName; observed_value: string | null; research_assumed_value: string | null;
+  absolute_difference: string | null; difference_bps: string | null; unit: 'quote/base'|'quote'|'bps'|'raw rate'|'base';
+  comparison_status: ComparisonStatus; reason: string;
+};
+export type MarketResearchComparisonResult = {
+  contract_version: 'phase154-v1'; market: LiveMarketId; read_only: true; generated_at: string;
+  comparison_status: ComparisonStatus; research: ResearchEvidenceSummary;
+  observed: {snapshot: LiveStreamSnapshot; acquisition_gap_seconds: number | null; bid_depth_base: string | null;
+    ask_depth_base: string | null; depth_level_count: number; depth_measurement_method: 'TOP_5_LEVELS_PER_SIDE_BASE';
+    book_eligible: boolean; context_eligible: boolean; funding_convention: 'NATIVE_RAW_HOURLY_RATE_EVENT_TIME_UNKNOWN'};
+  metrics: ComparisonMetric[];
+  explainability: {completeness: 'COMPLETE_FOR_SUPPORTED_METRICS'|'PARTIAL'|'INSUFFICIENT'|'UNAVAILABLE';
+    interpretation: 'CROSS_CONTEXT_DESCRIPTIVE_ONLY'; available_metrics: string[]; missing_metrics: string[]; statements: string[]};
+  provenance: {comparison_fingerprint: string; research_trust: 'STRUCTURALLY_VALIDATED_CLIENT_SUPPLIED_NOT_AUTHENTICATED';
+    observer_instance_id: string; connection_generation: number; research_frame_timestamp: string | null;
+    l2_source_timestamp: string | null; l2_observed_at: string | null; perp_observed_at: string | null; perp_event_time: 'UNKNOWN'};
+  limitations: string[];
+};

@@ -1,0 +1,108 @@
+{
+  "fixture_notice": "DETERMINISTIC FIXTURE ACCEPTANCE \u2014 NOT LIVE VENUE DATA",
+  "workflows": [
+    "No completed result: comparison disabled and Simulation navigation available",
+    "Real BTC PAPER run with live switches disabled: assumptions and performance survive; observed unavailable",
+    "BTC explicit capture shows actual Decimal price/spread/funding/book differences and independent source timestamps",
+    "New live publication never silently recalculates frozen comparison",
+    "Stale context and fresh L2: price/spread remain eligible while mark/funding are unavailable",
+    "Insufficient visible levels: unavailable numerical depth comparison without invented liquidity",
+    "ETH selection keeps BTC research identity, retires historical artifact and blocks cross-asset deltas; authority unchanged",
+    "ETH real PAPER result explicitly selected with matching normalized observations",
+    "SOL real PAPER result explicitly selected with matching normalized observations",
+    "Navigation retains bounded historical comparison; no implicit capture or research mutation",
+    "Observer restart during delayed POST retires completion; prior artifact stays historical",
+    "Explicit refresh captures new observer/generation after resynchronization",
+    "Captured freshness expires despite a newer live publication; economic artifact is unchanged and historical",
+    "Legacy completed result: hypothetical performance retained, missing assumptions explained without synthesized controls",
+    "Six responsive viewports, zero document overflow/page exceptions; only three explicit PAPER runs and comparison POSTs"
+  ],
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    }
+  ],
+  "page_errors": [],
+  "mutations": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    }
+  ],
+  "elapsed_seconds": 28.08
+}

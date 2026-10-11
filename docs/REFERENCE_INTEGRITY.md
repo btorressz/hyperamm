@@ -397,3 +397,13 @@ null and no agreement badge or synthetic healthy row is manufactured.
 `GET /api/v1/live-markets/{market}/references` returns typed `phase152-v1` provider
 health. The original operational reference APIs and authority hierarchy remain
 unchanged. See [Phase 15.2 acceptance](PHASE152_ACCEPTANCE.md).
+
+## Phase 15.4 comparison attribution
+
+Native midpoint/mark/oracle evidence in the descriptive comparison remains one
+Hyperliquid source group. No independent quorum, fake consensus, provider health
+upgrade or trading eligibility is inferred from a research profile or hash.
+Research metadata retains its own DEMO_PROFILE/EXCHANGE_VERIFIED attribution and
+never inherits operational/live authority. Component freshness/source timestamps
+and unknown context event time remain explicit; client research execution is not
+independently authenticated. See [Phase 15.4 acceptance](PHASE154_ACCEPTANCE.md).

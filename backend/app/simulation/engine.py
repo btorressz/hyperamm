@@ -290,7 +290,9 @@ class SimulationEngine:
             paper=paper,market=strategy.market,vault=accounting.snapshot(),telemetry=telemetry,history=history,
             agent_config=agents,frame_count=len(frames),
         )
+        from app.research_comparison.assumptions import capture_assumptions
         return SimulationResult(
+            research_assumptions=capture_assumptions(dataset, frames, scenario, market_profile),
             **(market_profile.evidence() if market_profile is not None else {}),
             engine_version=version.SIMULATION_ENGINE_VERSION,
             run_fingerprint=run_fingerprint,scenario=scenario or dataset.source,

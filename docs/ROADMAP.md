@@ -1126,3 +1126,21 @@ passes final regression. [Acceptance](PHASE153_ACCEPTANCE.md) records the exact
 base, counts, native loopback fixture/browser evidence and remaining gates.
 Genuine venue access remains blocked; Phase 15.4 comparison and 15.5 security/
 external closure stay planned. Draft delivery only; do not merge.
+
+## Phase 15.4 — Market vs Research Comparison & Explainability
+
+IMPLEMENTED / LOCAL FIXTURE ACCEPTANCE. Optional last-frame research assumptions
+from actual datasets; bounded read-only comparison POST against existing native
+observer state; Decimal price/spread/raw funding/depth and modeled OI; deterministic
+eligibility/completeness/explanations and separately attributed fingerprints/times.
+React Markets adds explicit completed-result selection/capture/refresh, frozen
+historical artifacts and isolated hypothetical performance context. Client evidence
+is structurally validated, not authenticated execution. No optimization, trading,
+configuration, accounting authority, new networking or persistence is added.
+
+[Phase 15.4 acceptance](PHASE154_ACCEPTANCE.md) records exact executed regression,
+actual Chromium/viewport and seeded isolation evidence. Phase 15.5 remains final
+security/regression, substantive review and external acceptance closure. Genuine
+venue delivery/times/reconnect/soak, macOS, permitted providers/Redis and signed
+TESTNET gates remain open. Comparison is descriptive across contexts, not live
+performance attribution or a matched historical backtest. Phase 15 is not complete.

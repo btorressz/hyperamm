@@ -1106,3 +1106,64 @@ charts remain separate from the selected simulated market. No operational feed,
 strategy/order lifecycle, ledger, risk authority, kill switch or TESTNET signing
 eligibility is mutated by this feature. See [Phase 14.6 acceptance](PHASE146_ACCEPTANCE.md)
 for executed tests, real Chromium evidence and the blocked live-provider check.
+
+## Phase 15.4 — Captured research assumptions and observed comparison
+
+`SimulationResult.research_assumptions` is optional and backward compatible.
+`ResearchMarketAssumptions` is frozen/extra-forbid `phase154-v1` evidence extracted
+from the **last frame consumed from the actual supplied dataset**, independently
+of trace retention. It retains BBO/mid/spread, mark/oracle/raw funding, modeled
+base OI, actual top-five per-side levels/sizes/depth, sequence/time, market/profile/
+dataset/scenario and a separate assumptions fingerprint. Existing run, strategy,
+profile and dataset fingerprints retain their original meaning. A representative
+frame is not an aggregate of the entire scenario. Legacy evidence stays null.
+
+The existing SimulationService still generates one deterministic dataset per
+individual run and one shared dataset for baseline/custom Research Vault runs;
+engine extraction therefore gives both sides identical market assumptions.
+Fees/funding/capital provenance and hypothetical PnL remain their original actual
+simulation outputs. Optimizer ranking and candidate summaries are unchanged.
+
+`POST /api/v1/research-market-comparison/compare` accepts `{market, research}`;
+research is a compact completed-result summary with original identities,
+assumptions, bounded performance fields and optional Research Vault provenance.
+Exactly BTC/ETH/SOL, no unknown fields, 64 KiB pre-parsing body bound, at most five
+levels per side, bounded finite Decimal inputs and strict PAPER flags. No trace,
+strategy program, URL, credential, order or execution configuration is admitted.
+422 errors omit input/exception context; service failures return a sanitized 500.
+Responses have `Cache-Control: no-store`.
+
+The service reads only existing `LiveMarketStreamService.snapshot(market)`. It
+never starts an SDK, calls REST refresh, schedules work, regenerates research or
+writes operational state. Disabled observations yield unavailable observed values
+while preserving research performance and provenance. L2 exchange time, L2 receipt,
+context receipt (economic event time UNKNOWN), research frame and processing time
+are separate. Acquisition gaps are explicit. Current component eligibility also
+requires valid/fresh native metadata and an accepted connection boundary.
+
+Decimal equations: price delta = observed − research; price bps = delta / research
+× 10000; spread quote delta = observed spread − research spread; spread bps delta
+= observed bps − research bps, **not** a relative price percentage. Funding is raw
+subtraction only, classified PARTIAL because native hourly rates and sampled
+research intervals do not establish comparable settled payments. OI subtraction
+requires actual modeled frame base OI and is descriptive/PARTIAL. Depth subtraction
+requires five distinct prices per side and comparable base units. SOL's current
+rounded synthetic frames can have repeated modeled prices: actual sizes remain
+visible, but depth delta is unavailable. No book economics are rewritten.
+
+Metric statuses COMPARABLE/PARTIAL/NOT_COMPARABLE/UNAVAILABLE gate every delta;
+cross-market requests return NOT_COMPARABLE with no cross-asset arithmetic.
+Completeness is deterministic: all eleven supported metrics available →
+COMPLETE_FOR_SUPPORTED_METRICS; some → PARTIAL; none with incompatible evidence →
+INSUFFICIENT; otherwise UNAVAILABLE. PARTIAL raw funding/OI can count as available
+without becoming equivalent economic contexts. Interpretation always remains
+CROSS_CONTEXT_DESCRIPTIVE_ONLY. Completeness never predicts profit.
+
+Client research is **structurally validated, not independently authenticated**.
+Recomputed assumption/config hashes check consistency; a supplied run hash is not
+proof of server execution. No durable registry is added. Semantic comparison
+identity binds accepted research/observer/generation/source times/values, contract
+and eligibility, excluding processing time, evaluation time and advancing ages.
+Freshness transitions retire eligibility; unchanged economic captures retain a
+stable fingerprint. [Acceptance](PHASE154_ACCEPTANCE.md) records actual tests and
+remaining Phase 15.5/external gates.
