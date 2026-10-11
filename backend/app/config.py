@@ -18,6 +18,16 @@ class Settings(BaseSettings):
     market_stale_after_seconds: float = 5.0
     demo_update_interval_seconds: float = 1.0
     live_observations_enabled: bool = False
+    live_streams_enabled: bool = False
+    live_stream_max_subscribers: int = Field(default=16, ge=1, le=64, strict=True)
+    live_stream_queue_capacity: int = Field(default=64, ge=1, le=1024, strict=True)
+    live_stream_history_max_points: int = Field(default=1000, ge=1, le=3600, strict=True)
+    live_stream_l2_stale_after_seconds: float = Field(default=10, gt=0, le=300, allow_inf_nan=False)
+    live_stream_perp_stale_after_seconds: float = Field(default=30, gt=0, le=300, allow_inf_nan=False)
+    live_stream_connect_timeout_seconds: float = Field(default=10, gt=0, le=30, allow_inf_nan=False)
+    live_stream_reconnect_initial_seconds: float = Field(default=1, gt=0, le=30, allow_inf_nan=False)
+    live_stream_reconnect_max_seconds: float = Field(default=30, gt=0, le=300, allow_inf_nan=False)
+    live_stream_shutdown_timeout_seconds: float = Field(default=15, gt=0, le=120, allow_inf_nan=False)
     live_observation_http_timeout_seconds: float = Field(default=5, gt=0, le=30, allow_inf_nan=False)
     live_observation_cache_ttl_seconds: float = Field(default=2, gt=0, le=60, allow_inf_nan=False)
     live_observation_stale_after_seconds: float = Field(default=10, gt=0, le=300, allow_inf_nan=False)
@@ -73,11 +83,13 @@ class Settings(BaseSettings):
     redis_operation_timeout_seconds: float = Field(default=1, gt=0, le=5)
     redis_research_enabled: bool = False
 
-    @field_validator("live_observation_max_concurrent_requests", "live_observation_book_levels", mode="before")
+    @field_validator("live_observation_max_concurrent_requests", "live_observation_book_levels",
+                     "live_stream_max_subscribers", "live_stream_queue_capacity",
+                     "live_stream_history_max_points", mode="before")
     @classmethod
     def observation_integer_options(cls, value):
         # Environment settings arrive as strings; still reject booleans/floats.
-        if isinstance(value, str) and value.isascii() and value.isdigit() and len(value) <= 2:
+        if isinstance(value, str) and value.isascii() and value.isdigit() and len(value) <= 4:
             return int(value)
         return value
 
@@ -88,6 +100,14 @@ class Settings(BaseSettings):
             raise ValueError("Redis required/research modes require redis_enabled")
         if self.redis_enabled and urlsplit(self.redis_url).scheme not in {"redis", "rediss"}:
             raise ValueError("Redis URL must use redis or rediss")
+        return self
+
+    @model_validator(mode="after")
+    def live_stream_options(self):
+        if self.live_streams_enabled and not self.live_observations_enabled:
+            raise ValueError("live_streams_enabled requires live_observations_enabled")
+        if self.live_stream_reconnect_initial_seconds > self.live_stream_reconnect_max_seconds:
+            raise ValueError("stream reconnect initial must not exceed maximum")
         return self
 
     @property

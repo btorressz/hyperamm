@@ -114,6 +114,12 @@ def normalize_book(raw, metadata, observed_at, *, future_tolerance, max_levels):
         truncated=any(len(entries) > max_levels for entries in sides))
 
 
+def book_economic_identity(raw):
+    """Canonical full received depth AFTER normalize_book validated all levels."""
+    return tuple(tuple((financial_decimal(x['px']), financial_decimal(x['sz']), x.get('n', 0))
+                       for x in side) for side in raw['levels'])
+
+
 def normalize_context(raw, metadata, observed_at):
     if not isinstance(raw, (list, tuple)) or len(raw) != 2:
         raise ValueError("invalid native context structure")
@@ -136,13 +142,18 @@ def normalize_context(raw, metadata, observed_at):
     # The existing pure normalizer supplies financial formulas. Its synthetic
     # fallback market_mid is never exposed: missing provider mid means null bases.
     normalized = normalize_meta_and_asset_ctxs(raw, metadata.market, updated_at=observed_at)
+    return LivePerpObservation(market=metadata.market, observed_at=observed_at,
+                              **context_observation_values(normalized))
+
+
+def context_observation_values(normalized):
+    """Shared REST/WS values: financial math uses only the same context's mid."""
     values = {name: getattr(normalized, name) for name in (
         "mark_price", "oracle_price", "funding_rate", "open_interest_base",
         "open_interest_notional", "provider_mid_price", "premium", "mark_oracle_basis_bps")}
     has_mid = normalized.provider_mid_price is not None
-    return LivePerpObservation(market=metadata.market, observed_at=observed_at, **values,
-        mark_mid_basis_bps=normalized.mark_mid_basis_bps if has_mid else None,
-        oracle_mid_basis_bps=normalized.oracle_mid_basis_bps if has_mid else None)
+    return {**values, 'mark_mid_basis_bps': normalized.mark_mid_basis_bps if has_mid else None,
+            'oracle_mid_basis_bps': normalized.oracle_mid_basis_bps if has_mid else None}
 
 
 class LiveMarketObservationService:

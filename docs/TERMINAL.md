@@ -287,3 +287,42 @@ stale/duplicate/regressed observations and preserve original bytes. Redis mode
 adds shared expiring WS admission; local mode keeps its original 32-client cap.
 Loss degrades Redis observability/admission without changing trading authority.
 No Streams/replay, remote access or multi-worker deployment is enabled.
+
+## Phase 15.2 future live-market consumer contract
+
+The operational terminal socket and session history remain separate. New read-only
+`WS /ws/live-markets/{BTC|ETH|SOL}` requires both live observation switches. No SDK
+client is constructed per browser. Initial delivery is a freshly evaluated typed
+snapshot/status envelope, followed by latest normalized evidence per ingestion
+batch and health ticks. Raw SDK messages, credentials and operational session
+identity are not exposed. No React consumer, chart or trading control is added.
+
+`phase152-v1` carries market, observer_instance_id, connection_generation,
+monotonic service publication sequence, emitted_at, observation_status and payload.
+Financial values are strings. Source times stay inside components; context source
+time remains null. Publication time/sequence never proves source freshness or
+exchange ordering. Phase 15.3 must retire old observer/generation data, inspect
+component freshness and reconnect for a current snapshot after overflow.
+
+Admission defaults to 16 clients (max 64), individual queues to eight envelopes,
+outbound frames to 64 KiB and sends to five seconds. A full queue receives a
+termination sentinel and the socket closes 1013; its admission is retained until
+its structured sender/receiver have joined and released the queue. Unsupported
+markets close 1008; disabled/capacity admission closes 1013. Browser messages
+cannot change strategy or subscriptions. Slow clients affect their own queue.
+Shutdown sends sentinels and waits for socket ownership cleanup within the service
+shutdown deadline; incomplete drain is reported and retained.
+
+GET additions under `/api/v1/live-markets/{market}` are `/stream-status`,
+`/stream-snapshot`, `/history?limit=1..1000` and `/references`. These status-bearing
+read endpoints return HTTP 200 even when their evidence says DISABLED/UNAVAILABLE;
+clients must inspect the typed status. Invalid markets/limits return sanitized
+422; POST is 405. All responses are no-store. Existing Phase 15.1 REST overview
+and snapshot routes retain their original availability HTTP semantics.
+
+History is accepted per-component observation evidence, with nullable financial
+values for the other component, no interpolation, fixed per-market retention,
+explicit eviction/gaps and process/generation identity. Coverage is the actual
+retained receipt range, not proof of continuous market history; L2 source ordering
+is tracked independently from receipts. Restart produces a new observer UUID and
+empty history. See [acceptance](PHASE152_ACCEPTANCE.md) for open live gates.

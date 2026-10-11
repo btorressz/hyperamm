@@ -12,7 +12,7 @@ import type {
   StrategyConfig,
   AgentEvent,
   ResearchCatalog, ResearchProposal, ResearchPreviewResponse, ResearchComparison,
-  ResearchMarketCatalog,
+  ResearchMarketCatalog, LiveMarketId, LiveMarketStreamStatus, LiveMarketHistory, LiveProviderHealth, LiveStreamSnapshot,
 } from "../types";
 import type { AgentName } from '../utils/researchEvidence';
 const API = "/api/v1";
@@ -57,6 +57,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json();
 }
 export const api = {
+  liveStreamStatus: (market: LiveMarketId, signal?: AbortSignal) =>
+    request<LiveMarketStreamStatus>(`/live-markets/${market}/stream-status`, {signal}),
+  liveStreamSnapshot: (market: LiveMarketId, signal?: AbortSignal) =>
+    request<LiveStreamSnapshot>(`/live-markets/${market}/stream-snapshot`, {signal}),
+  liveMarketHistory: (market: LiveMarketId, limit = 100, signal?: AbortSignal) =>
+    request<LiveMarketHistory>(`/live-markets/${market}/history?limit=${limit}`, {signal}),
+  liveProviderHealth: (market: LiveMarketId, signal?: AbortSignal) =>
+    request<LiveProviderHealth>(`/live-markets/${market}/references`, {signal}),
   researchMarkets: (signal?: AbortSignal) => request<ResearchMarketCatalog>('/research-markets', {signal}),
   researchPresets: (signal?: AbortSignal) => request<ResearchCatalog>('/research-vault/presets', {signal}),
   researchPreview: (body: ResearchProposal, signal?: AbortSignal) => request<ResearchPreviewResponse>('/research-vault/preview',

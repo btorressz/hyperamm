@@ -501,3 +501,32 @@ semantics. [Acceptance](PHASE151_ACCEPTANCE.md) records real seeded-runtime
 isolation, deterministic SDK/HTTP tests and the still-open live network and
 pre-existing terminal-schema regression gates. Continuous streaming/history and
 React consumers belong to later milestones.
+
+## Phase 15.2 independent public stream observer
+
+One lifespan-owned `LiveMarketStreamService` adds a separate public SDK connection
+for exactly BTC/ETH/SOL native perpetual observations. Each market owns metadata,
+L2/context state, replay watermark, subscription delivery state, bounded history
+and errors. The shared socket generation retires on disconnect; all old callbacks
+are ignored. No observation is written to operational market/perp/reference
+services, strategy, agents, risk, execution or accounting.
+
+A single serialized SDK worker validates native metadata/maps before six public
+subscriptions, then establishes a REST L2 barrier and independently validated
+native context. Subscriptions are REQUESTED until both channels actually deliver
+valid data; a socket or acknowledgement alone cannot establish AVAILABLE. L2
+messages are complete depth snapshots, not invented incremental deltas.
+Per-market thread buffers are bounded before event-loop scheduling, with one
+pending wake. Overflow records a gap, clears both components and requires a fresh
+book boundary plus new context delivery. Disconnect/reconnect also separates
+history by generation. Shutdown retires admission/callbacks, drains synchronous
+work, unsubscribes, closes HTTP sessions, verifies manager/ping thread termination
+and waits for structured browser owners to release queues. A deadline reports
+incomplete cleanup while retaining the drain task; no replacement socket starts
+when cleanup cannot be verified.
+
+The additive `phase152-v1` envelopes use an observer UUID, connection generation
+and service publication sequence. They do not use operational terminal session
+identity or exchange sequencing. REST `phase151-v1` remains independent. See
+[Phase 15.2 acceptance](PHASE152_ACCEPTANCE.md) for capacities, receipts, native
+source roles, tests and the open external live gate.
