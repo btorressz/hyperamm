@@ -425,3 +425,12 @@ Optional Yahoo personal research observation: install `pip install -e '.[yahoo]'
 The separately polled `GET /api/v1/references/observations` endpoint and Risk-page card expose observational health, source age, prices and available signed comparison bps. Unavailable comparisons remain null. **Yahoo is excluded from CORE, ALL, the material reference snapshot, economic version/fingerprint, quorum, outlier decisions, risk, agents, authorization, accounting and execution.** It cannot replace RedStone, Kraken or Hyperliquid evidence or authorize trades. The Phase 12 streaming contract remains unchanged.
 
 **Licensing and acceptance:** Yahoo data is for permitted local personal/research observation only. Do not redistribute it publicly or use it for commercial trading without appropriate rights. Live CoinGecko and Yahoo connections, real schemas and reconnect acceptance remain pending. Phase 8.3.1 fixture and local command results are recorded in the roadmap; they do not establish live-provider acceptance. Historical Audit 2.0 issues A2-001–A2-005 are unchanged. No Actions files, Docker, PostgreSQL, signing changes or new trading authority. No additional oracle providers were introduced; unsupported oracle integrations remain prohibited.
+
+## Contributors
+
+HyperAMM is developed and maintained by:
+
+| Contributor | GitHub | LinkedIn |
+|-------------|--------|----------|
+| **Brandon Torres** — Creator & Lead Developer | [@btorressz](https://github.com/btorressz) | [LinkedIn](https://www.linkedin.com/in/brandon-t-b94312ab) |
+| **Alexander Delano** — Contributor | [@thatdela](https://github.com/thatdela) | [LinkedIn](https://www.linkedin.com/in/alexander-delano/) |
