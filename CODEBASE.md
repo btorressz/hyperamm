@@ -968,3 +968,182 @@ optimizer and Phase 15 observer/history/provider contracts are reused. No second
 simulation interface, live refresh, persistent registry, trading authority or new
 chart dependency is introduced. [Acceptance](docs/PHASE154_ACCEPTANCE.md) records
 actual checks and remaining external/Phase 15.5 gates; Phase 15 is not complete.
+
+---
+
+## 13. Repository review addendum — 2026-10-14 (current merged main)
+
+> **Preservation and version note.** Sections 1–12 and the existing Phase 13.3–15.4 notes above are intentionally preserved verbatim. The opening reference to `50f6ab9b42cb` is the source baseline at which this guide was originally written, not the latest commit or the full state of the software. This addendum reviews `main` after merged PR #53 and subsequent documentation commits through `f0fac078c35b993752f955b068fb361172b770db`. It does not silently promote older acceptance results or rewrite historical notes.
+
+### 13.1 Verified present-day repository shape
+
+A recursive GitHub tree inspection on 2026-10-14 returned **510 tracked files** (including documentation, screenshots, test fixtures, and other non-source artifacts). In that tree: `backend/app/` contains 146 files, `backend/tests/` 58, `frontend/src/` 137, `frontend/tests/` 45, and `docs/` 102. These counts describe the inspected tree, not a software release version. All **53 pull requests #1–#53 were merged** by this baseline; Phase 15.5 has not been implemented in that history.
+
+| Area | Current tracked locations and developer meaning |
+| --- | --- |
+| Historical changes | [`CHANGELOG.md`](CHANGELOG.md) is now the dated account of merged PRs; [`Summary.md`](Summary.md) was extended through Phase 15.4 in plain English. These are documentation, not an execution-state source. |
+| Backend entrypoints | `backend/app/main.py` constructs FastAPI and lifespan-owned services; `backend/app/runtime.py` remains the single operational strategy and economic authority; `backend/app/config.py` validates runtime settings; `backend/app/deployment.py` restricts supported local deployment. |
+| Backend API | `backend/app/api/` has 18 tracked files, including operational endpoints, Phase 14 research, Phase 15 live-observation routes, and WebSockets. |
+| Native public observation | `backend/app/market_data/live_models.py`, `live_observations.py`, `live_stream_models.py`, `live_streams.py`, and `live_history.py` implement a separate, read-only BTC/ETH/SOL data path. |
+| External observational provider view | `backend/app/references/live_provider_mappings.py` and `live_provider_integrity.py` derive Phase 15 read-only source health. They do not feed the operational reference consensus. |
+| Historical/DEMO research | `backend/app/simulation/` has 16 tracked files including presets, profiles, scenarios, runner, optimizer, and the one-worker executor. There is no Phase 16 historical replay feature in this tree. |
+| Comparison implementation | `backend/app/research_comparison/` has six files: `__init__.py`, `models.py`, `assumptions.py`, `comparison.py`, `explainability.py`, and `provenance.py`. |
+| Optional scientific research | `backend/app/research/ml/` contains dataset construction, validation, training, and shadow evaluation. No production ML execution authority exists. |
+| Optional infrastructure | `backend/app/infrastructure/{redis.py,research.py,terminal_transport.py}` implements ephemeral coordination/observations, not a distributed economic ledger. |
+| Frontend research/UI | `frontend/src/pages/` contains twelve active operator pages plus `Planned.tsx`; `frontend/src/components/markets/` and `components/research-comparison/` provide the independent Phase 14–15 research views. |
+| Acceptance artifacts | `docs/acceptance/` includes phase-specific fixture/browser JSON, screenshots, and some command outputs, including `phase153/` and `phase154/`; do not mistake screenshots for live-venue acceptance. |
+
+### 13.2 Current FastAPI lifespan ownership and shutdown
+
+Source: [`backend/app/main.py`](backend/app/main.py). The app creates these **separate** objects during lifespan startup:
+
+| Lifespan object | Implementation | Responsibility / boundary |
+| --- | --- | --- |
+| `app.state.runtime` | `HyperAmmRuntime(settings)` | Sole operational quote generation, market selection, strategy, risk, execution, kill state, and ledger/accounting authority. |
+| `app.state.simulation_executor` | `SimulationExecutor()` | One isolated local PAPER research worker; optional Redis wrapper coordinates admission, but does not move computation into the trading runtime. |
+| `app.state.research_market_catalog` | `HyperliquidMetadataCatalog(...)` | Read-only native-market metadata for single-market BTC/ETH/SOL research; DEMO fallback only under configured DEMO/PAPER conditions. |
+| `app.state.live_market_observer` | `LiveMarketObservationService(settings)` | Opt-in, separately acquired native REST evidence and bounded cache; no operational configuration write. |
+| `app.state.live_market_streams` | `LiveMarketStreamService(settings)` | Opt-in SDK public WebSocket observation, per-market history, and browser publication; separate from operational strategy feeds. |
+| Optional Redis | `RedisInfrastructure`, `RedisTerminalTransport`, `CoordinatedSimulationExecutor` | TTL cache/health, relay and constrained admission; the local runtime and one research worker remain authoritative in their own domains. |
+
+`main.py` validates supported deployment before startup, initializes optional Redis, starts operational services and the independent live stream, and owns cleanup of the research executor, streams, REST observer, metadata catalog, runtime, terminal relay and Redis infrastructure. A failing research comparison cannot be used to restart or replace the operational market runtime.
+
+### 13.3 Exact independently reviewed API and socket routes
+
+The default REST prefix is `/api/v1` (`Settings.api_prefix`). The following Phase 14–15 routes were verified in the checked-in route implementations rather than inferred from UI names:
+
+| Method / path | Implemented in | Behavior |
+| --- | --- | --- |
+| `GET /api/v1/health` | `api/health.py` | Operational health plus read-only optional Redis status; an HTTP `ok` does not certify all providers or external venue operation. |
+| `GET /api/v1/research-markets` | `api/research_markets.py` | Native BTC/ETH/SOL research catalog with exchange or DEMO profile evidence. |
+| `GET /api/v1/research-vault/presets` | `api/research_vault.py` | Python-owned immutable research presets. |
+| `POST /api/v1/research-vault/preview` | `api/research_vault.py` | Validate/preview proposed hypothetical accounting settings without changing active configuration. |
+| `POST /api/v1/research-vault/compare` | `api/research_vault.py` | Bounded, sequential baseline-versus-proposal PAPER comparisons over shared research inputs. |
+| `GET /api/v1/simulation/scenarios` | `api/simulation.py` | Deterministic scenario catalog. |
+| `POST /api/v1/simulation/run` | `api/simulation.py` | Run isolated PAPER simulation with selected validated research inputs. |
+| `POST /api/v1/simulation/optimize` | `api/simulation.py` | Bounded allowlisted offline strategy/grid research; not automatic production tuning. |
+| `GET /api/v1/live-markets/overview` | `api/live_markets.py` | Read-only independent native REST overview; component availability can be partial or unavailable. |
+| `GET /api/v1/live-markets/{market}/snapshot` | `api/live_markets.py` | Native REST book/perpetual snapshot with explicit status and source/receipt time. |
+| `GET /api/v1/live-markets/{market}/stream-status` | `api/live_markets.py` | Independent streaming observer status. |
+| `GET /api/v1/live-markets/{market}/stream-snapshot` | `api/live_markets.py` | Last accepted read-only WebSocket observation snapshot. |
+| `GET /api/v1/live-markets/{market}/history` | `api/live_markets.py` | Bounded session-local observation history; not permanent exchange history. |
+| `GET /api/v1/live-markets/{market}/references` | `api/live_markets.py` | Observational provider/source health without operational quorum or authorization. |
+| `POST /api/v1/research-market-comparison/compare` | `api/research_market_comparison.py` | Compare client-presented completed PAPER research evidence with the **already accepted** server streaming snapshot; no SDK refresh or simulation execution. |
+| `WS /ws/live-markets/{market}` | `api/live_market_streams.py` | Separate read-only BTC/ETH/SOL browser stream. The socket router is registered **outside** the REST `/api/v1` prefix. |
+| `WS /ws/terminal` | `api/websocket.py` | Existing operational terminal publisher; not the Phase 15 multi-market observer. |
+
+The `research-market-comparison` route is a computational POST, **not** an order POST. Its return value is a description of two distinct evidence domains. Research Vault, simulation, and market-comparison POST requests share `ResearchBodyLimit` in `api/research_vault.py` (64 KiB request body) and use sanitized validation errors. Every additional API must preserve the same authority and resource-admission separation.
+
+### 13.4 Native markets, evidence identity, and source limitations
+
+Source files: `market_data/live_models.py`, `market_data/live_stream_models.py`, `market_data/live_streams.py`, `market_data/hyperliquid_metadata.py`, `simulation/market_profiles.py`, and `references/live_provider_integrity.py`.
+
+- The only supported independent native-perpetual selectors are `BTC`, `ETH`, and `SOL`; displayed labels are BTC-PERP, ETH-PERP, and SOL-PERP. Do not infer spot, HIP-3, arbitrary symbols, or simultaneous operational engines.
+- Phase 14.6 DEMO research profiles use **hypothetical** reference anchors of BTC `60000`, ETH `3000`, SOL `150`, version `phase146-v1`. These are not current market quotes. `DEMO_PROFILE` is not `EXCHANGE_VERIFIED` and never establishes order eligibility.
+- Phase 15.1 REST observations are immutable typed snapshots. They reject float/nonfinite financial wire data, separate exchange L2 source time from local receipt time, and describe stale/missing components explicitly.
+- Phase 15.2 stream contracts add observer instance ID, reconnect generation and accepted publication identity. Perpetual context does **not** have verified upstream exchange event time; its health is based on receipt age rather than certified exchange-time freshness.
+- Native Hyperliquid mid, mark and oracle rows are all **one Hyperliquid source group**. The native book and context are not independent confirmation of each other. RedStone Live WS/public HTTP remain **one external provider**, not two votes.
+- In the Phase 15 observational provider view, external mappings are not automatic live collectors; no independent usable external consensus is claimed. Every observational provider row reports `authority: NONE`, and the comparison/streaming path does not feed `ReferenceService` or `FinalQuoteAuthorization`.
+
+### 13.5 Settings and default capacities relevant to Phase 15
+
+Source: [`backend/app/config.py`](backend/app/config.py). These are **defaults**, not proof that external sources are enabled or reachable.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| `MARKET_DATA_MODE` / `EXECUTION_MODE` | `DEMO` / `PAPER` | Local research default; signed TESTNET has separate explicit guards. |
+| `LIVE_OBSERVATIONS_ENABLED` / `LIVE_STREAMS_ENABLED` | `false` / `false` | Both opt-in. Streams cannot be enabled unless REST live observations are enabled. |
+| `LIVE_OBSERVATION_HTTP_TIMEOUT_SECONDS` / `LIVE_OBSERVATION_CACHE_TTL_SECONDS` | `5` / `2` | Bounded independent REST acquisition and short cache. |
+| `LIVE_OBSERVATION_MAX_CONCURRENT_REQUESTS` / `LIVE_OBSERVATION_BOOK_LEVELS` | `2` / `20` | Limited public REST work and visible depth. |
+| `LIVE_STREAM_MAX_SUBSCRIBERS` / `LIVE_STREAM_QUEUE_CAPACITY` | `16` / `64` | Independent browser subscriber/ingress resource limits. |
+| `LIVE_STREAM_HISTORY_MAX_POINTS` | `1000` | Per-market bounded observation history, not a database. |
+| `LIVE_STREAM_L2_STALE_AFTER_SECONDS` / `LIVE_STREAM_PERP_STALE_AFTER_SECONDS` | `10` / `30` | Separate component freshness budgets. |
+| `LIVE_STREAM_CONNECT_TIMEOUT_SECONDS` / `LIVE_STREAM_SHUTDOWN_TIMEOUT_SECONDS` | `10` / `15` | Worker/connect/cleanup timeouts. |
+| `REDIS_ENABLED` / `REDIS_RESEARCH_ENABLED` / `REDIS_REQUIRED` | `false` / `false` / `false` | Optional ephemeral coordination only; not persistence or an operational execution cluster. |
+
+The current deployment guard checks loopback client, Host and browser Origin and rejects unsupported multi-worker launch settings. **This is not identity-based authentication**; public hosting, reverse proxies, tunnels, and arbitrary LAN clients remain unsupported. An unrelated localhost origin may still pass the loopback-only Origin check; exact-origin enforcement belongs in security review, not an assumed current guarantee. See `backend/app/deployment.py` and [`README.md`](README.md).
+
+### 13.6 Phase 15.4 comparison: exact semantics and trust boundary
+
+Current code: `backend/app/research_comparison/{models,assumptions,comparison,explainability,provenance}.py`, `backend/app/api/research_market_comparison.py`, `backend/app/simulation/{models,engine}.py`.
+
+1. A completed PAPER scenario carries optional immutable research assumptions extracted from the **last consumed frame in the actual simulation dataset**, not from independently regenerated market data or a possibly truncated chart trace.
+2. The browser captures at most **three** completed individual research results in a nonpersistent Zustand store (`frontend/src/stores/marketResearchComparison.ts`); an optimizer candidate summary is not the same as a completed individual simulation.
+3. A user explicitly chooses a native observed market and a completed research result, then presses **Compare with observed market**. The endpoint reads `app.state.live_market_streams.snapshot()` without collecting a fresh REST observation, launching an SDK client, executing a simulation, or optimizing a strategy.
+4. Calculations use strict Decimal values and report each metric as `COMPARABLE`, `PARTIAL`, `NOT_COMPARABLE` or `UNAVAILABLE`. Observed-minus-hypothetical midpoint, BBO, mark/oracle and spreads are meaningful only when the matching component is eligible.
+5. Native funding is a raw hourly rate; the synthetic research rate has its own sample/settlement assumptions. Funding and modeled open interest are therefore **PARTIAL descriptive** comparisons, not settled cash flows or measured trading performance.
+6. Depth requires five distinct valid prices per side with matching base units. If modeled tick rounding collapses prices (including known SOL cases), return `NOT_COMPARABLE` rather than inventing like-for-like executable liquidity.
+7. Current-vs-old timestamps are displayed independently. These are **cross-context** comparisons, not synchronized historical backtests, actual passive fills or realized PnL.
+8. Client-presented run/dataset/profile identifiers and configuration fields can be structurally validated, but **they are not server-attested** without a trusted saved run registry. `STRUCTURALLY_VALIDATED_CLIENT_SUPPLIED_NOT_AUTHENTICATED` and `CROSS_CONTEXT_DESCRIPTIVE_ONLY` are deliberate evidence limits.
+9. A completed comparison is frozen. Changing live observer identity, selected market, research inputs or connection lifecycle retires it to historical; a new capture requires a deliberate user action.
+
+The paired-price component (`frontend/src/components/research-comparison/ComparisonPriceChart.tsx`) displays retained observed price evidence even when numerical comparison is unavailable because it was stale. Phase 15.5 should audit whether its **historical/stale eligibility label is prominent enough**, rather than assuming that every displayed number is current.
+
+### 13.7 Frontend owner map and browser state flow
+
+| UI responsibility | Files to inspect |
+| --- | --- |
+| Default Markets view and modes | `frontend/src/pages/Markets.tsx` switches among `Operational Market`, `Live Market Intelligence`, and `Market vs Research`. Operational mode alone uses the strategy terminal snapshot. |
+| Live workspace composition | `frontend/src/components/markets/LiveMarketsView.tsx` plus `LiveMarketSelector`, `LiveMarketOverview`, `LiveMarketConnection`, `LiveMarketChart`, `LiveMarketOrderBook`, `LivePerpMetrics`, `LiveProviderStatus`, `LiveMarketHistory`. |
+| Live observation state | `frontend/src/hooks/useLiveMarket.ts`, `useLiveMarketHistory.ts`, `stores/liveMarkets.ts`, `utils/liveMarketSocket.ts`, `liveMarketEvidence.ts`, `liveMarketHistory.ts`. |
+| Research market preference | `frontend/src/stores/researchMarkets.ts`, `components/markets/ResearchMarketSelector.tsx`, `ResearchMarketDetails.tsx`, `utils/researchMarkets.ts` (Vault and Simulation). |
+| Research Vault settings | `frontend/src/stores/researchVault.ts`, `utils/researchVault.ts`, and `components/vault/Research*.tsx`. Stored draft research settings do not configure operational risk. |
+| Compare request and retention | `frontend/src/stores/marketResearchComparison.ts`, `hooks/useMarketResearchComparison.ts`, `utils/marketResearchComparison.ts`. Abort/identity checks reject retired or wrong-market responses. |
+| Comparison rendering | `components/research-comparison/MarketResearchWorkspace.tsx`, `ComparisonPriceChart.tsx`, `ComparisonMetricTable.tsx`, `ComparisonPerformanceContext.tsx`, `ComparisonConfidence.tsx`, and `phase154.css`. |
+| Shared REST/client contracts | `frontend/src/api/client.ts` and `frontend/src/types/index.ts`. Preserve financial strings, source-time/nullability, report statuses and versioned envelopes. |
+
+Do not tie all three Markets views to an accepted operational WebSocket snapshot. A missing operational terminal must not block the separate read-only Live Market Intelligence or research explanation views. Conversely, a healthy Phase 15 stream must never renew a stale operational market feed or change strategy authority.
+
+### 13.8 Regression tests, browser captures, and what was actually accepted
+
+Current checked-in test locations: `backend/tests/test_phase151_live_markets.py`, the Phase 15.2 tests for streams/provider integrity/runtime isolation, `test_phase153_live_terminal_acceptance.py`, all four `test_phase154_{market_comparison,provenance,research_assumptions,runtime_isolation}.py` suites, and `backend/tests/phase154_helpers.py`. The frontend regression entrypoint is **`frontend/tests/run.cjs`**, which explicitly lists its Node suites.
+
+Recommended standard local commands (run in supported environments; **not executed during this documentation-only update**):
+
+~~~bash
+cd backend
+python -m pip install -e '.[test,ml,redis,yahoo]'
+python -m pip check
+python -m compileall -q app
+python -m pytest -q
+
+cd ../frontend
+npm ci
+npm test
+npm run typecheck
+npm run build
+~~~
+
+The Phase 15.4 acceptance document reports **1,649 passing backend** and **602 passing frontend** tests, plus TypeScript/build and **15 Chromium workflows across six viewport sizes**. These are the previous milestone's recorded outcomes, **not independent fresh runs for this guide**. See [`docs/PHASE154_ACCEPTANCE.md`](docs/PHASE154_ACCEPTANCE.md).
+
+Actual tracked browser harnesses and fixture owners include `frontend/tests/browser-phase153.py`, `frontend/tests/phase153_browser_backend.py`, `frontend/tests/browser-phase154.py`, `frontend/tests/phase154_browser_backend.py`, and their `phase153/phase154` fixtures. Browser results and PNG screenshots are under `docs/acceptance/phase153/` and `docs/acceptance/phase154/`. A screenshot of a fixture-fed live UI does **not** certify successful external Hyperliquid market-data delivery.
+
+### 13.9 Accepted local scope versus open verification
+
+| Area | Current documented disposition |
+| --- | --- |
+| Phase 1–12 core implementation | Present, with historical audit and platform caveats preserved. |
+| Phase 13 interface work | Merged; local/browser evidence recorded in Phase 13 acceptance files. |
+| Phase 14 Research Vault and Phase 14.6 native research selection | Merged; isolated PAPER functionality and local fixture/browser acceptance documented. |
+| Phase 15.1–15.4 | Merged; independent observation/streaming UI and read-only research comparison locally fixture-accepted. |
+| Phase 15.5 | **Planned, not implemented** at the inspected baseline: security/regression/final acceptance and further authorized external checks. |
+| External real market access | Not established by fixture tests; network permissions, actual event-time/reconnect behavior and appropriate venue/data rights require independent evidence. |
+| Signed TESTNET lifecycle | Guarded support exists, but no signed exchange-order acceptance is claimed here. |
+| Production / remote multi-user | Not supported: missing operator authentication, durability, public deployment hardening, external execution proof and operational acceptance. |
+| Future Phase 16/17 plans | Not part of the implemented code tree; historical replay and multi-market portfolio research remain proposals, not deployed features. |
+
+### 13.10 Navigation for the next developer
+
+- **Add a market-data source?** Choose between authoritative `market_data/` + `references/` operational evidence and `live_*` observation-only paths. Write explicit symbol, source group, time, trust, transport and health rules before wiring consumers.
+- **Change AMM curves or executable quote sizing?** Audit `amm/`, `strategy/quote_engine.py`, `risk/authorization.py`, `execution/` and accounting-bound tests together; UI-only evidence must never alter the signed economic request.
+- **Add a PAPER research feature?** Start in `simulation/`, retain one-worker admission and document the provenance of every assumption; never reach into `HyperAmmRuntime` to mutate active trading state.
+- **Add a market comparison or browser chart?** Inspect the complete Phase 15 request, source-freshness and session-retirement contracts, and reuse existing `components/markets/` and `components/research-comparison/` first.
+- **Change Redis or deployment?** Use `infrastructure/redis.py`, `infrastructure/terminal_transport.py`, `infrastructure/research.py`, `deployment.py` and `config.py`; Redis remains optional and non-authoritative.
+- **Declare a milestone complete?** Record the actual commands, test counts, source/network conditions, screenshots where useful, known failures and blocked gates in a dedicated acceptance report. Do not infer real venue acceptance from synthetic fixtures or a passing React page.
+
+### 13.11 Documentation and runtime version drift
+
+At the inspected main revision, `backend/pyproject.toml` and `frontend/package.json` still declare package version `0.4.0`; `backend/app/main.py` constructs the FastAPI app with `version="0.12.0"` and its root GET still responds with a `phase` value of `"1-12"`. Those are **existing code labels, not proof that newer Phase 13–15 implementations are absent** or that a production release was certified. The older headings and branch/PR instructions above are preserved as historical context rather than current work instructions.
+
+For change chronology use [`CHANGELOG.md`](CHANGELOG.md); for current implementation and local acceptance see [`docs/ROADMAP.md`](docs/ROADMAP.md), the latest applicable [`PHASE154_ACCEPTANCE.md`](docs/PHASE154_ACCEPTANCE.md), and targeted source modules. Update this guide whenever a later phase is actually merged; do not pre-document planned 15.5, 16 or 17 code as implemented.
+
