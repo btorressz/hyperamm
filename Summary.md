@@ -2350,3 +2350,223 @@ The project should currently be described as:
 It should not yet be described as:
 
 **production-mainnet trading infrastructure.**
+
+---
+
+# Latest HyperAMM updates — October 14, 2026
+
+> **About this update:** Everything above is the original detailed Phase 1–12 summary and has been kept unchanged. This section explains, in plain English, the important features, improvements, and fixes merged afterward. The earlier "Current review status (2026-10-07)" is a historical snapshot, not today's full feature list.
+
+## What HyperAMM can do now
+
+HyperAMM has grown beyond its original virtual AMM and PAPER trading terminal. It is now a local, open-source market-making and research platform that brings together liquidity modeling, market data, conservative risk checks, supervised strategy decisions, accounting, simulation, and a detailed React interface.
+
+The original trading and quote-management system remains separate from newer market-intelligence features. The active operational system is not automatically switched when someone browses BTC, ETH, or SOL market data or chooses a different market for a research simulation.
+
+The project can be explored using deterministic DEMO market data and PAPER execution. Some Hyperliquid TESTNET functionality is guarded separately. **Mainnet trading, custody, deposits, withdrawals, and money transfers are not supported or claimed to be ready.**
+
+## Additional improvements to the original trading system
+
+After the first twelve phases, the repository received several rounds of independent audits and targeted improvements:
+
+- **Safer outgoing orders:** The system now checks the exact price and size that would reach the Hyperliquid SDK, including venue rounding, before final authorization. This prevents an authorized mathematical quote from quietly becoming a different order on the wire.
+- **More reliable market data:** Changes to an order book are tracked even when the exchange timestamp stays the same. Out-of-order or replayed evidence cannot silently replace the current trusted market state.
+- **Stronger reconnection and shutdown:** Hyperliquid and terminal WebSocket handling has more explicit ownership, cleanup, retry, and recovery behavior. Genuine long-running exchange acceptance is still a separate test.
+- **More reliable fills and accounting:** Closed-order history is bounded, duplicate order slots are handled more carefully, and simulated fills are checked against accounting records.
+- **Clearer price timestamps:** The time attached to an exchange price stays tied to that price. A newer message or terminal refresh does not make older market evidence current again.
+- **Safer configuration changes:** Runtime startup, shutdown, and configuration updates have stricter ordering. When an important transition fails, new quote creation is blocked rather than assuming recovery succeeded.
+- **More accurate measurements:** Volatility sampling and execution-quality calculations now state their assumptions, check numerical limits, and preserve evidence used in their results.
+- **Better audit history:** Audit 1.0 and Audit 2.0 document what was checked, what was corrected, and what still needs outside testing. Not every audit finding was a production defect, and not every remaining acceptance gate is closed.
+
+These improvements are covered in the linked [changelog](CHANGELOG.md), [Audit 1.0](AUDIT_REPORT_1.0.md), and [Audit 2.0](AUDIT_REPORT_2.0.md).
+
+## More capable supervisory agents and optional predictive research
+
+The original Regime, Toxic Flow, and Execution Quality agents were expanded to explain more about market conditions and simulated execution:
+
+- **Regime Agent improvements:** More context from price movement, order-book pressure, funding, basis, and inventory.
+- **Toxic Flow improvements:** Several post-fill observation periods, stronger sample tracking, and clearer evidence about whether a fill was followed by an unfavorable price move.
+- **Execution Quality improvements:** Better PAPER fill timing, partial-fill and order-lifetime observations, while leaving unavailable TESTNET measurements unavailable.
+- **Liquidity Quality Agent:** Examines whether the visible order book shows enough liquidity and whether that liquidity is uneven or weak.
+- **Perpetual Crowding Agent:** Looks at supported funding, open interest, and related perpetual-market observations without treating any single signal as proof of crowding.
+- **Optional predictive adverse-selection research:** An offline logistic-regression model can be trained and evaluated using controlled historical research features and labels.
+
+**Important:** Predictive machine learning remains in SHADOW mode. It provides research observations only and cannot place trades, change executable quotes, relax risk checks, or automatically become an active trading model. Deterministic risk rules and FinalQuoteAuthorization still decide what may be sent to the execution layer.
+
+## Price providers and market-data integrity
+
+The reference-price system was also improved:
+
+- **RedStone:** The primary live transport has a separate public HTTP fallback. Both count as one RedStone source, not two independent votes.
+- **CoinGecko:** Enabled requests require the appropriate Demo or Pro API key and use the expected secure host and header. Bad settings and provider errors are handled conservatively.
+- **Kraken and Hyperliquid:** Their exchange and perpetual evidence continue to have distinct source roles and freshness rules.
+- **Yahoo Finance:** An optional research-only observation source was added. Its data can appear in read-only diagnostics but does not influence trading consensus, risk decisions, authorization, or accounting.
+
+The system distinguishes prices supplied by the exchange, prices from external providers, and simulated DEMO data. A price arriving through a new transport does not automatically prove that the underlying economic information is new. Actual provider connectivity, usage rights, and live-network acceptance remain subject to separate checks.
+
+## Optional Redis infrastructure
+
+HyperAMM can optionally connect to Redis to help distribute terminal updates and coordinate limited research and WebSocket resources.
+
+In plain English, Redis can temporarily hold the latest terminal snapshot, share selected updates, track whether a worker is alive, and help enforce limits on simultaneous browser/research activity. The existing application still owns strategy, risk, orders, and accounting; Redis does **not** become the trading engine.
+
+Redis is **off by default**. It is an optional temporary coordination layer, not a permanent trade database. The project does not yet implement PostgreSQL-based durable accounts, permanent ledger recovery, or a distributed multi-worker trading service.
+
+See [Redis documentation](docs/REDIS.md) for configuration and limits.
+
+## Phase 12.1–12.3 — Reliability improvements to the operator terminal
+
+After the original Phase 12 terminal was built, three focused updates made it safer to use:
+
+- **12.1 — WebSocket reliability:** Better handling when browser clients disconnect, tests stop, and background connection tasks are cancelled.
+- **12.2 — Quote and liquidity accuracy:** Execution-facing quote checks now use the prices actually rounded to exchange ticks. The interface can also show how liquidity is grouped at those executable prices.
+- **12.3 — Freshness and session protection:** Old terminal sessions, timestamps that are far outside acceptable time, and replayed messages cannot pretend to be current market evidence.
+
+These updates improve reliability and clarity; they do not replace the original PAPER/TESTNET execution authority.
+
+## Phase 13 — Improved React interface and research experience
+
+Phase 13 made the terminal easier to navigate, inspect, and use for research while keeping its existing safety rules.
+
+### Phase 13.1 — Navigation and visual design
+
+The React application gained a more consistent dark, professional-looking interface. Its twelve main pages have clearer navigation, bookmarkable routes, better browser back/forward behavior, saved sidebar preferences, and mobile-friendly navigation.
+
+### Phase 13.2 — Trading workspace clarity
+
+The quote and execution pages now better distinguish:
+
+- A **proposed** quote that has not yet been authorized.
+- A quote **authorized** by the backend.
+- An order that is actually **retained/resting** in the execution view.
+- An order or quote with **uncertain, outdated, or historical** evidence.
+
+Execution history gained better filtering, sorting, and order-detail inspection. These improvements avoid suggesting that a proposed quote is already a filled trade. This phase focused mainly on the interface; it did not introduce new signing or order authority.
+
+### Phase 13.3 — Agents, Vault, Analytics, Simulation, Logs and Settings
+
+- **Agents:** Clearer cards explaining each agent's observations, advice, reasons, and available supporting evidence.
+- **Vault:** Better viewing of simulated equity, ledger entries, accounting consistency, and which backend session the information belongs to.
+- **Analytics:** More useful charts for equity, profit and loss, drawdown, inventory and capital use, with history-range and freshness information.
+- **Simulation:** Better charts, traces, simulated performance summaries, and optimizer-result inspection.
+- **Logs:** Searchable and filterable operational events with clearer session identity.
+- **Settings:** A cleaner separation between local display preferences and read-only backend settings.
+
+The added frontend pages and controls continue to use backend evidence instead of calculating or granting trading permission in the browser.
+
+## Phase 14 — Customizable Research Vault
+
+Phase 14 added a separate place to experiment with **hypothetical research settings** without changing the live operational Vault.
+
+Researchers can now:
+
+- Choose from prepared capital/fee/funding research presets.
+- Make controlled changes to allowed starting equity, simulated fees, funding settings, and capital-utilization assumptions.
+- Preview whether those settings are valid before running research.
+- Run the existing PAPER simulator or bounded optimizer using an accepted research configuration.
+- Compare a preset baseline with a customized configuration using a controlled, shared simulation dataset.
+- See differences in simulated results and inspect which exact settings produced them.
+
+The original accounting and risk settings are still protected. Choosing a research preset does not move money, change real balances, or deploy a trading strategy.
+
+### Phase 14.6 — BTC, ETH and SOL research markets
+
+Research is no longer tied to ETH-like price assumptions for every run. A researcher can select **BTC-PERP, ETH-PERP or SOL-PERP** for an individual PAPER study. The system uses market-specific pricing and size rules and identifies whether metadata came from the exchange or from a clearly marked DEMO research profile.
+
+Each run still studies **one selected market at a time**. This is not a live multi-market portfolio engine, and selecting a research market does not switch the market used by the operational trading service.
+
+## Phase 15 — Independent Live Market Intelligence
+
+Phase 15 is a larger new area of HyperAMM, separate from the original operator's quote-generation and execution controls.
+
+### Phase 15.1 — Read-only market snapshots
+
+Added a separate, opt-in way to request native Hyperliquid market observations for BTC, ETH and SOL. The results can contain order-book prices and sizes, midpoint, spread, mark, oracle, funding, open interest, source timestamps, and reasons why evidence is missing or stale.
+
+The service is **read-only**. It cannot use a market-data request to start the strategy, switch execution markets, or place an order. External networking is disabled by default.
+
+### Phase 15.2 — Read-only live streams and provider health
+
+Added a separate WebSocket observation service for BTC, ETH, and SOL. It is designed to receive native order-book and perpetual-market updates, maintain bounded recent observations, reconnect safely, and publish status to browser clients.
+
+Source freshness, observer identity, generation changes, and provider health are tracked so that a disconnected, replaced, or outdated stream cannot simply appear current. The external sources listed in this view are not automatically enabled, and several native values come from **one Hyperliquid source group**, not independent sources.
+
+### Phase 15.3 — Live Markets terminal
+
+The Markets page now includes an **independent Live Market Intelligence view** alongside the original Operational Market view.
+
+A visitor can select BTC, ETH, or SOL for observation without changing the strategy's trading market. The live view includes:
+
+- A selected-market overview and read-only price history.
+- A native order-book display and spread information.
+- Mark price, oracle price, funding, and open-interest context.
+- Source and provider-health information with timestamps.
+- Visible connecting, stale, unavailable, reconnecting, and recovery states.
+- Layouts checked on desktop, tablet, and mobile sizes.
+
+This workspace can still show a useful disabled/unavailable state even when the original operational terminal is not connected.
+
+### Phase 15.4 — Market vs Research Comparison and Explainability
+
+HyperAMM can now show **actual observed market evidence next to a completed hypothetical PAPER simulation** for the same selected market.
+
+For example, a user can inspect a BTC order-book midpoint observed by the read-only service and compare it with the midpoint assumed by a completed BTC research scenario. Where the evidence supports it, the interface also shows differences in bid/ask prices, spread, funding, and visible book depth.
+
+The comparison explains which numbers can be compared, which are missing, and how the results were produced. Existing simulation performance, including PAPER profit and loss, remains clearly labeled **hypothetical**.
+
+These numbers are not necessarily from the same point in time. A live snapshot compared with an older synthetic scenario is **not** a matched historical backtest, proof that the strategy would have filled, or evidence of realized profit.
+
+Research results submitted by the browser are structurally checked but are **not authenticated proof of a previous server-run simulation**. The comparison feature is computational and does not automatically optimize, trade, or apply new strategy settings.
+
+### Phase 15.5 — Security, Regression and Final Acceptance (not implemented yet)
+
+Phase 15.5 is the remaining planned work for final security review, WebSocket and SDK lifecycle testing, frontend stale-data display, full regression, real-browser checks, and permitted live-provider acceptance. The repository must not describe this phase as complete until the work and its evidence are actually present.
+
+## What is different in the terminal today?
+
+The original twelve-page navigation remains. Inside the **Markets** page, users now have three distinct ways to inspect information:
+
+1. **Operational Market:** The existing strategy-facing market and quote evidence.
+2. **Live Market Intelligence:** Independent read-only BTC/ETH/SOL exchange observations, if available and enabled.
+3. **Market vs Research:** A frozen comparison between a selected market observation and a separately completed PAPER simulation.
+
+The **Simulation** and **Vault** pages have also become more capable research interfaces. They let users experiment with controlled hypotheses and view results without making those experiments authoritative for real orders or capital.
+
+## Testing and development status
+
+Phases 13, 14, 14.6 and 15.1–15.4 have merged code and documented local acceptance. The most recent full-suite results recorded for **Phase 15.4** were:
+
+- **1,649 backend tests passed**.
+- **602 frontend tests passed**.
+- **TypeScript checking and the production frontend build passed**.
+- **15 Chromium browser workflows were recorded across six viewport sizes**, using controlled local/fixture evidence.
+
+Those are results **reported in the Phase 15.4 acceptance document**, not a claim that this documentation update reran the test suite. Read [Phase 15.4 acceptance](docs/PHASE154_ACCEPTANCE.md) for the exact conditions and findings, or the earlier [15.3](docs/PHASE153_ACCEPTANCE.md), [15.2](docs/PHASE152_ACCEPTANCE.md), and [15.1](docs/PHASE151_ACCEPTANCE.md) reports.
+
+## What HyperAMM does not yet claim
+
+- **No production-mainnet execution.** Guarded TESTNET code and PAPER tests are not proof of completed signed venue acceptance.
+- **No unrestricted public or multi-user deployment.** The current application is designed for local, single-operator research. Loopback and CORS checks are not user authentication.
+- **No guaranteed live external data.** Genuine Hyperliquid REST/WebSocket connection, reconnect/soak behavior, and permitted provider access must be verified separately from fixtures.
+- **No permanent market-history database.** Bounded observation history and optional Redis caches are not durable exchange-history storage.
+- **No real or automatically trusted research profits.** Simulated fills, funding, returns and comparisons remain hypothetical and limited by their inputs.
+- **No autonomous ML trading.** Predictive models remain SHADOW research, not final quote authority.
+- **No simultaneous BTC/ETH/SOL portfolio trading or historical market replay engine.** Those are not part of the currently merged scope.
+- **No Pyth integration or added execution signing authority.** The provider and risk-authority boundaries remain as documented.
+
+An external venue connection may also be unavailable depending on configuration, geographic restrictions, or applicable data-access terms. The project does not offer a workaround for venue restrictions.
+
+## Updated short description
+
+**HyperAMM is an open-source, research-focused Hyperliquid market-making platform built with Python, FastAPI, React, and TypeScript. It combines virtual AMM liquidity models, adaptive quoting, deterministic risk controls, supervisory agents, simulated accounting, strategy research, and a professional trading terminal. The platform also includes independent read-only BTC/ETH/SOL market intelligence and a way to explain differences between observed market conditions and hypothetical PAPER simulations.**
+
+HyperAMM remains a **local research system**, not a production-mainnet trading service. Its strongest engineering distinction is that strategies, agents, and research can provide information or proposals while separate deterministic checks retain control over executable orders.
+
+## Further reading
+
+- [Full dated changelog](CHANGELOG.md) — all merged PRs and what they changed.
+- [Roadmap](docs/ROADMAP.md) — implementation history, remaining phases, and acceptance gates.
+- [Codebase guide](CODEBASE.md) — where backend/frontend features live and how the pieces connect.
+- [Architecture](docs/ARCHITECTURE.md) — how information moves from market data to strategy, risk, execution, and accounting.
+- [Audit 1.0](AUDIT_REPORT_1.0.md) and [Audit 2.0](AUDIT_REPORT_2.0.md) — reviewed limitations and hardening findings.
+
