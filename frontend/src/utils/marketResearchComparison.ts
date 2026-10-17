@@ -47,6 +47,7 @@ export function checkedResearchSummary(r:ResearchEvidenceSummary): ResearchEvide
     && fingerprint(r.dataset_fingerprint) && fingerprint(r.strategy_fingerprint) && typeof r.engine_version==='string'
     && /^[A-Z_]{1,64}$/.test(r.scenario) && r.performance && int(r.performance.frame_count,2)
     && int(r.performance.fill_count,0,1000000));
+  requireThat(/^[a-zA-Z0-9._-]{1,64}$/.test(r.engine_version) && metricFields.every(k=>k in r.performance));
   requireThat(r.market_profile_fingerprint===null || fingerprint(r.market_profile_fingerprint));
   requireThat((r.market_profile_version===null && r.market_profile_fingerprint===null) || r.market_profile_version==='phase146-v1' && fingerprint(r.market_profile_fingerprint));
   requireThat((r.metadata_status===null && r.metadata_source===null) || (r.metadata_status==='DEMO_PROFILE' && r.metadata_source==='PINNED_RESEARCH_FIXTURE') || (r.metadata_status==='EXCHANGE_VERIFIED' && r.metadata_source==='OFFICIAL_SDK_NATIVE_META'));
@@ -81,6 +82,28 @@ export type ComparisonBoundary = {market:LiveMarketId; liveSelection:number; liv
 export function sameBoundary(a:ComparisonBoundary,b:ComparisonBoundary) {
   return (Object.keys(a) as Array<keyof ComparisonBoundary>).every(k=>a[k]===b[k]);
 }
+// Own cancellation independently of React render/effect timing. A retired ticket
+// can never become current again, even if every selected identity changes back.
+export class ComparisonRequestGate {
+  private generation=0;
+  private controller:AbortController|null=null;
+  retire() {++this.generation;this.controller?.abort();}
+  begin() {
+    this.retire();this.controller=new AbortController();
+    return {generation:this.generation,signal:this.controller.signal};
+  }
+  accepts(ticket:{generation:number;signal:AbortSignal},captured:ComparisonBoundary,current:ComparisonBoundary|null) {
+    return !ticket.signal.aborted && ticket.generation===this.generation && !!current && sameBoundary(captured,current);
+  }
+}
+
+export function capturedEvidenceLabel(data:MarketResearchComparisonResult, component:'book'|'context', historicalReason:string|null=null) {
+  const observed=data.observed,s=observed.snapshot;
+  if(!(component==='book'?s.order_book:s.perp_context))return 'UNAVAILABLE';
+  if(historicalReason)return 'HISTORICAL';
+  if(s.status[component==='book'?'l2_freshness':'perp_freshness']==='STALE' || s.status.metadata_freshness==='STALE')return 'STALE';
+  return (component==='book'?observed.book_eligible:observed.context_eligible)?'CURRENT / ELIGIBLE AT CAPTURE':'HISTORICAL / INELIGIBLE';
+}
 export function checkedMarketComparison(v:MarketResearchComparisonResult, req:MarketResearchComparisonRequest, boundary:ComparisonBoundary): MarketResearchComparisonResult {
   requireThat(v && v.contract_version==='phase154-v1' && v.read_only===true && v.market===req.market
     && liveTimestamp(v.generated_at) && statuses.includes(v.comparison_status) && v.research);
@@ -110,11 +133,21 @@ export function checkedMarketComparison(v:MarketResearchComparisonResult, req:Ma
   requireThat(v.observed.book_eligible===!!(metadata && s.order_book && status.l2_freshness==='FRESH')
     && v.observed.context_eligible===!!(metadata && s.perp_context && status.perp_freshness==='FRESH'));
   const bookMetrics=new Set(['midpoint','best_bid','best_ask','spread_quote','spread_bps','bid_depth_base','ask_depth_base']);
+  const b=s.order_book,p=s.perp_context;
+  const expectedObserved={midpoint:b?.midpoint??null,best_bid:b?.best_bid??null,best_ask:b?.best_ask??null,
+    mark_price:p?.mark_price??null,oracle_price:p?.oracle_price??null,spread_quote:b?.spread??null,spread_bps:b?.spread_bps??null,
+    funding_rate:p?.funding_rate??null,open_interest_base:p?.open_interest_base??null,
+    bid_depth_base:v.observed.bid_depth_base,ask_depth_base:v.observed.ask_depth_base};
+  const canonical=(value:string|null)=>value===null?null:plainFinancial(value)!.replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'').replace(/^-0$/,'0');
   for(const m of v.metrics) {
     requireThat(comparisonMetricNames.includes(m.metric_name) && !found.has(m.metric_name) && statuses.includes(m.comparison_status)
       && typeof m.reason==='string' && m.reason.length<=500 && ['quote/base','quote','bps','raw rate','base'].includes(m.unit));
     found.add(m.metric_name);
-    for(const value of [m.observed_value,m.research_assumed_value,m.absolute_difference,m.difference_bps])requireThat(financialString(value,true));
+    for(const value of [m.observed_value,m.research_assumed_value])requireThat(financialString(value,true));
+    // Relative output differences can legitimately exceed the bounded input range.
+    for(const value of [m.absolute_difference,m.difference_bps])requireThat(value===null || typeof value==='string' && value.length<=256 && /^-?\d+(?:\.\d+)?$/.test(value) && Number.isFinite(Number(value)));
+    requireThat(canonical(m.observed_value)===canonical(expectedObserved[m.metric_name])
+      && canonical(m.research_assumed_value)===canonical(v.research.assumptions?.[m.metric_name]??null));
     const comparable=['COMPARABLE','PARTIAL'].includes(m.comparison_status);
     requireThat(comparable ? m.observed_value!==null && m.research_assumed_value!==null && m.absolute_difference!==null : m.absolute_difference===null && m.difference_bps===null);
     if(req.market!==req.research.research_market)requireThat(m.comparison_status==='NOT_COMPARABLE');
@@ -128,11 +161,12 @@ export function checkedMarketComparison(v:MarketResearchComparisonResult, req:Ma
   requireThat(e && e.interpretation==='CROSS_CONTEXT_DESCRIPTIVE_ONLY' && ['COMPLETE_FOR_SUPPORTED_METRICS','PARTIAL','INSUFFICIENT','UNAVAILABLE'].includes(e.completeness)
     && textList(e.available_metrics) && textList(e.missing_metrics) && textList(e.statements) && textList(v.limitations));
   requireThat(e.available_metrics.length+e.missing_metrics.length===comparisonMetricNames.length && new Set([...e.available_metrics,...e.missing_metrics]).size===comparisonMetricNames.length);
+  requireThat(v.metrics.every(m=>(['COMPARABLE','PARTIAL'].includes(m.comparison_status)?e.available_metrics:e.missing_metrics).includes(m.metric_name)));
   return v;
 }
-export function pairedPriceEvidence(r:MarketResearchComparisonResult) {
+export function pairedPriceEvidence(r:MarketResearchComparisonResult,historicalReason:string|null=null) {
   const m=r.metrics.find(x=>x.metric_name==='midpoint');
-  return {observed:{value:m?.observed_value??null,time:r.provenance.l2_source_timestamp,label:'Observed native L2 exchange time'},
+  return {observed:{value:m?.observed_value??null,time:r.provenance.l2_source_timestamp,label:`${capturedEvidenceLabel(r,'book',historicalReason)} · Observed native L2 exchange time`},
     research:{value:m?.research_assumed_value??null,time:r.provenance.research_frame_timestamp,label:'Hypothetical last dataset frame time'}};
 }
 

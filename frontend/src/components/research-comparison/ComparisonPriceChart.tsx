@@ -2,8 +2,8 @@ import type {MarketResearchComparisonResult} from '../../types';
 import {pairedPriceEvidence,comparisonTimestamp} from '../../utils/marketResearchComparison';
 import {Panel} from '../TerminalPrimitives';
 import {livePrice} from '../../utils/format';
-export function ComparisonPriceChart({data}:{data:MarketResearchComparisonResult}) {
-  const pair=pairedPriceEvidence(data);
+export function ComparisonPriceChart({data,historicalReason=null}:{data:MarketResearchComparisonResult;historicalReason?:string|null}) {
+  const pair=pairedPriceEvidence(data,historicalReason);
   // Static paired evidence graphic: no common timeline, offsets, candles or interpolation.
   return <Panel title="Price · two independent contexts" meta="STATIC PAIRED CAPTURE">
     <div className="comparisonPair" role="img" aria-label="Observed and hypothetical midpoints with independent source timestamps">

@@ -15,5 +15,7 @@ async def compare_market(body: ResearchMarketComparisonRequest, request: Request
         snapshot = request.app.state.live_market_streams.snapshot(body.market)
         return compare(body, snapshot)
     except Exception as exc:
-        logger.exception('Market research comparison failed')
-        raise HTTPException(status_code=500, detail='Market research comparison unavailable') from exc
+        # Do not emit exception text/tracebacks that can contain provider secrets.
+        logger.error('Market research comparison failed (%s)', type(exc).__name__)
+        raise HTTPException(status_code=500, detail='Market research comparison unavailable',
+                            headers={'Cache-Control': 'no-store'}) from exc

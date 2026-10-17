@@ -6,12 +6,20 @@ from app.dependencies import runtime
 from app.strategy.models import StrategyConfig
 from app.amm.diagnostics import effective_liquidity
 from app.strategy.quote_engine import StrategyFeasibilityError
+from pydantic import ConfigDict
+
+
+class StrategyUpdateRequest(StrategyConfig):
+    """Reject misspelled/protected API fields before any lifecycle transition."""
+    model_config = ConfigDict(extra="forbid")
+
+
 router=APIRouter(tags=['strategy'])
 @router.get('/strategy')
 async def get_strategy(rt=Depends(runtime)):return sanitize_public_payload(rt.strategy.model_dump(mode="json"))
 @router.put('/strategy')
-async def put_strategy(config:StrategyConfig,rt=Depends(runtime)):
-    try:return sanitize_public_payload((await rt.update_config(config)).model_dump(mode="json"))
+async def put_strategy(config:StrategyUpdateRequest,rt=Depends(runtime)):
+    try:return sanitize_public_payload((await rt.update_config(StrategyConfig.model_validate(config.model_dump()))).model_dump(mode="json"))
     except StrategyFeasibilityError as exc:raise HTTPException(status_code=422,detail=sanitize_public_text(exc)) from exc
 @router.post('/strategy/start')
 async def start(rt=Depends(runtime)):

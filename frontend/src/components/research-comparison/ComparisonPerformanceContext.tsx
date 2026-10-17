@@ -8,6 +8,7 @@ export function ComparisonPerformanceContext({research:r}:{research:ResearchEvid
   const fraction=(v:string|null)=>v===null?'Unavailable':`${shiftDecimal(v,2)}%`;
   return <Panel title="Completed PAPER performance · hypothetical" meta={`${r.research_market}-PERP · ${r.scenario}`} className="comparisonPerformance">
     <p>The completed simulation's own accounting and fills produced these values. The observed snapshot did not generate those fills; no new performance was calculated.</p>
+    <p className="muted">These are client-supplied PAPER results, not authenticated server execution records or observed live PnL.</p>
     <Metrics items={[
       ['Hypothetical session PnL · quote',decimal(p.session_pnl)],['Hypothetical return · percent',`${decimal(p.return_pct)}%`],
       ['Hypothetical realized PnL · quote',decimal(p.realized_pnl)],['Hypothetical unrealized PnL · quote',decimal(p.unrealized_pnl)],

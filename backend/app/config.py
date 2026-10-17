@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     yfinance_symbol: str = "ETH-USD"
     yfinance_stale_after_seconds: float = Field(default=30, gt=0, le=300)
 
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://[::1]:5173"
 
     redis_enabled: bool = False
     redis_required: bool = False
@@ -109,6 +109,15 @@ class Settings(BaseSettings):
         if self.live_stream_reconnect_initial_seconds > self.live_stream_reconnect_max_seconds:
             raise ValueError("stream reconnect initial must not exceed maximum")
         return self
+
+    @field_validator("cors_origins")
+    @classmethod
+    def local_browser_origins(cls, value):
+        from app.deployment import is_loopback, parse_origin
+        for origin in (x.strip() for x in value.split(",") if x.strip()):
+            if not is_loopback(parse_origin(origin)[1]):
+                raise ValueError("CORS origins must be explicit local HTTP(S) origins")
+        return value
 
     @property
     def cors_origin_list(self) -> list[str]:

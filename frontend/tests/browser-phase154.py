@@ -7,7 +7,7 @@ SIZES=[(1920,1080),(1440,900),(1366,768),(1024,768),(768,900),(390,844)]
 
 async def main(args):
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
-    work=ROOT/'work/browser154';work.mkdir(parents=True,exist_ok=True)
+    work=ROOT/'work'/getattr(args,'work_name','browser154');work.mkdir(parents=True,exist_ok=True)
     report={'fixture_notice':'DETERMINISTIC FIXTURE ACCEPTANCE — NOT LIVE VENUE DATA','workflows':[],'viewports':[],'page_errors':[],'mutations':[]}
     started=time.monotonic()
     env={**os.environ,'MARKET_DATA_MODE':'DEMO','EXECUTION_MODE':'PAPER','ENABLE_HYPERLIQUID_TESTNET_ORDERS':'false','LIVE_OBSERVATIONS_ENABLED':'false','LIVE_STREAMS_ENABLED':'false'}
@@ -144,6 +144,7 @@ async def main(args):
         assert sum('/simulation/run' in r['url'] for r in report['mutations'])==3
         assert not report['page_errors'],report['page_errors']
         passed('Six responsive viewports, zero document overflow/page exceptions; only three explicit PAPER runs and comparison POSTs')
+        if getattr(args,'extra_acceptance',None):await args.extra_acceptance(locals())
         await browser.close()
     finally:
         for proc in servers:

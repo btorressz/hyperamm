@@ -4,7 +4,7 @@ import {api} from '../api/client';
 import {useMarketResearchComparisonStore} from '../stores/marketResearchComparison';
 import {useLiveMarketStore} from '../stores/liveMarkets';
 import {useResearchMarketStore} from '../stores/researchMarkets';
-import {checkedMarketComparison,sameBoundary,type ComparisonBoundary} from '../utils/marketResearchComparison';
+import {checkedMarketComparison,ComparisonRequestGate,type ComparisonBoundary} from '../utils/marketResearchComparison';
 import {liveFreshness} from '../utils/liveMarketEvidence';
 
 export function comparisonBoundary(requestGeneration:number):ComparisonBoundary|null {
@@ -17,29 +17,29 @@ export function comparisonBoundary(requestGeneration:number):ComparisonBoundary|
 }
 export function useMarketResearchComparison(now:number) {
   const r=useMarketResearchComparisonStore(),l=useLiveMarketStore(),epoch=useResearchMarketStore(s=>s.evidenceEpoch);
-  const requestGeneration=useRef(0),abort=useRef<AbortController|null>(null);
+  // The gate owns AbortController and a monotonic generation across requests.
+  const gate=useRef(new ComparisonRequestGate());
   const mutation=useMutation({retry:false,gcTime:0,mutationFn:async()=>{
-    abort.current?.abort();const controller=new AbortController();abort.current=controller;
-    const token=++requestGeneration.current,boundary=comparisonBoundary(token);
+    const ticket=gate.current.begin(),token=ticket.generation,boundary=comparisonBoundary(token);
     if(!boundary)throw new Error('Choose a completed PAPER result first.');
     const selected=useMarketResearchComparisonStore.getState().results.find(x=>x.id===boundary.researchRun)!;
     const req={market:boundary.market,research:structuredClone(selected.research)};
-    const data=await api.compareMarketResearch(req,controller.signal);
+    const data=await api.compareMarketResearch(req,ticket.signal);
     const current=comparisonBoundary(token);
-    if(controller.signal.aborted || token!==requestGeneration.current || !current || !sameBoundary(boundary,current))
+    if(!gate.current.accepts(ticket,boundary,current))
       throw new Error('Comparison response retired after research, market or observer changed. Explicitly compare again.');
     const checked=checkedMarketComparison(data,req,boundary);
     useMarketResearchComparisonStore.getState().freeze({data:checked,boundary,receivedAt:performance.now(),historicalReason:null});
     return checked;
   }});
   useEffect(()=>{
-    ++requestGeneration.current;abort.current?.abort();
+    gate.current.retire();
     useMarketResearchComparisonStore.getState().retire('Market, research, observer or browser connection boundary changed.');
   },[r.version,l.selectionEpoch,l.boundaryVersion,l.observerInstanceId,l.connectionGeneration,epoch]);
-  useEffect(()=>()=>{++requestGeneration.current;abort.current?.abort();useMarketResearchComparisonStore.getState().retire('Workspace closed; retained comparison is historical.');},[]);
+  useEffect(()=>()=>{gate.current.retire();useMarketResearchComparisonStore.getState().retire('Workspace closed; retained comparison is historical.');},[]);
   useEffect(()=>{
     const a=r.artifact;if(!a || a.historicalReason)return;
-    const frozen=liveFreshness({snapshot:a.data.observed.snapshot,receivedAt:a.receivedAt,transitSeconds:Math.max(0,(Date.now()-Date.parse(a.data.observed.snapshot.status.evaluated_at))/1000-(performance.now()-a.receivedAt)/1000)},Math.max(now,performance.now()),true);
+    const frozen=liveFreshness({snapshot:a.data.observed.snapshot,receivedAt:a.receivedAt,transitSeconds:a.transitSeconds??0},Math.max(now,performance.now()),true);
     if(a.data.observed.book_eligible && !frozen.book || a.data.observed.context_eligible && !frozen.perp)
       useMarketResearchComparisonStore.getState().retire('Captured source freshness expired. A newer live publication does not renew this artifact.');
   },[now,r.artifact]);
