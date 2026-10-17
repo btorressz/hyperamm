@@ -1144,3 +1144,21 @@ security/regression, substantive review and external acceptance closure. Genuine
 venue delivery/times/reconnect/soak, macOS, permitted providers/Redis and signed
 TESTNET gates remain open. Comparison is descriptive across contexts, not live
 performance attribution or a matched historical backtest. Phase 15 is not complete.
+
+
+## Phase 15.5A — Integrity & Offline Acceptance
+
+IMPLEMENTED / CLOUD OFFLINE ACCEPTANCE; draft review only. Exact local HTTP/WS
+origins and Host/framing checks, bounded writes, safe validation/credential
+diagnostics, strict strategy update inputs, stale/historical research labels and
+response/session integrity are covered by added adversarial regression suites.
+Real Chromium and actual ephemeral Redis acceptance are recorded in
+[Phase 15.5A acceptance](PHASE155A_ACCEPTANCE.md), with independently executed
+baseline/final counts and [macOS reproduction](PHASE155A_MACOS_FALLBACK.md).
+
+Genuine SDK metadata remains blocked by the configured proxy (403); fixture
+evidence is not venue acceptance. Phase 15.5B retains SDK connection lifecycle,
+REST/WS, reconnection/subscription/cleanup, provider integrity, queues/history and
+long-running soak work. No changes to those reserved modules, signing authority,
+strategy economics or operational accounting. Phase 15 is not complete; do not
+merge automatically or begin Phase 16/17.

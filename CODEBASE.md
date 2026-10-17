@@ -1147,3 +1147,28 @@ At the inspected main revision, `backend/pyproject.toml` and `frontend/package.j
 
 For change chronology use [`CHANGELOG.md`](CHANGELOG.md); for current implementation and local acceptance see [`docs/ROADMAP.md`](docs/ROADMAP.md), the latest applicable [`PHASE154_ACCEPTANCE.md`](docs/PHASE154_ACCEPTANCE.md), and targeted source modules. Update this guide whenever a later phase is actually merged; do not pre-document planned 15.5, 16 or 17 code as implemented.
 
+
+
+## Phase 15.5A — Local/API integrity and offline acceptance
+
+The local HTTP/WS boundary now enforces strictly parsed loopback Host and exact
+configured browser origins (or same origin), rejects forwarding/duplicate security
+headers, and runs before request body admission. `Settings.cors_origins` validates
+explicit local HTTP(S) origins. `ResearchBodyLimit` retains its existing import but
+now bounds all write methods to 64 KiB, coalesces chunks and validates framing.
+All API validation errors omit raw input/context and untrusted unknown-field names;
+structured credential keys redact their whole values. The strategy API uses an
+extra-forbid request subclass and converts back to the unchanged domain model.
+
+Comparison charts identify eligible-at-capture, stale, unavailable and historical
+observations; historical deltas remain labeled. Source-value consistency, required
+PAPER metrics and completeness partitions are validated in the browser. A shared
+request gate owns abort/generation checks; frozen artifacts detach input objects,
+capture transit age once and expire using monotonic elapsed time. Evicted research
+selections clear rather than retaining an unavailable ID. No wire status or
+execution/accounting/AMM/risk authority changes.
+
+See [acceptance](docs/PHASE155A_ACCEPTANCE.md),
+[security findings](docs/PHASE155A_SECURITY_FINDINGS.md), and
+[macOS fallback](docs/PHASE155A_MACOS_FALLBACK.md). Phase 15.5B streaming/provider
+modules remain untouched. Full Phase 15 and genuine venue acceptance remain open.

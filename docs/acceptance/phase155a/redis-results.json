@@ -1,0 +1,15 @@
+{
+  "classification": "PASS",
+  "checks": [
+    "Actual Redis startup, PING and application health CONNECTED",
+    "Two actual Pub/Sub terminal sockets share identity and release all clients",
+    "Coordinated actual PAPER worker preserves operational configuration",
+    "Actual TTL cache, Lua capacity rejection/release and expiring worker heartbeat",
+    "Actual Redis outage rejects research, reports DEGRADED and preserves manual kill",
+    "Actual Redis recovery cannot clear kill or change strategy",
+    "Application, relay and research lifespan shutdown completes"
+  ],
+  "fixture_notice": "Actual local Redis; DEMO/PAPER only; no venue requests",
+  "redis_version": "8.0.2",
+  "elapsed_seconds": 0.35
+}

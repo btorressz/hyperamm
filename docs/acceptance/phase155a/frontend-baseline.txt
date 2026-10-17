@@ -1,0 +1,9 @@
+✔ terminal material PriceEvidence continues rejecting Yahoo identity (3.176593ms)
+ℹ tests 602
+ℹ suites 0
+ℹ pass 602
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9975.34536
