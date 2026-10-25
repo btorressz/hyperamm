@@ -7,7 +7,7 @@ import {ComparisonPriceChart} from './ComparisonPriceChart';
 import {ComparisonMetricTable} from './ComparisonMetricTable';
 import {ComparisonConfidence} from './ComparisonConfidence';
 import {ComparisonPerformanceContext} from './ComparisonPerformanceContext';
-import {comparisonTimestamp} from '../../utils/marketResearchComparison';
+import {comparisonTimestamp,capturedEvidenceLabel} from '../../utils/marketResearchComparison';
 import '../../phase154.css';
 export function MarketResearchWorkspace() {
   const {now}=useLiveMarket();
@@ -37,6 +37,7 @@ export function MarketResearchWorkspace() {
       <div className="comparisonEvidenceGrid">
         <Panel title="Observed native market" meta={`${data.market}-PERP · ${data.observed.snapshot.observation_status}`}>
           <p>{data.observed.snapshot.status.connection_state} · {data.observed.snapshot.metadata.source} · {data.observed.snapshot.metadata.metadata_status}</p>
+          <p><strong>Book: {capturedEvidenceLabel(data,'book',artifact.historicalReason)}</strong><br/><strong>Context: {capturedEvidenceLabel(data,'context',artifact.historicalReason)}</strong></p>
           <p>L2 {data.observed.snapshot.status.l2_freshness} · captured age {data.observed.snapshot.status.l2_age_seconds??'Unavailable'}s<br/>Context {data.observed.snapshot.status.perp_freshness} · captured receipt age {data.observed.snapshot.status.perp_age_seconds??'Unavailable'}s</p>
           <p>L2 source: {data.observed.snapshot.order_book?.source??'Unavailable'}<br/>Context source: {data.observed.snapshot.perp_context?.source??'Unavailable'}</p>
           <p>Acquisition gap: {data.observed.acquisition_gap_seconds??'Unavailable'} seconds. Context economic event time: UNKNOWN.</p>
@@ -47,14 +48,14 @@ export function MarketResearchWorkspace() {
           <p>Comparison eligibility: <strong>{data.comparison_status}</strong></p>
         </Panel>
       </div>
-      <ComparisonPriceChart data={data}/>
-      <ComparisonMetricTable title="Price & spread differences" metrics={data.metrics.filter(m=>['midpoint','best_bid','best_ask','mark_price','oracle_price','spread_quote','spread_bps'].includes(m.metric_name))}/>
-      <ComparisonMetricTable title="Liquidity & book assumptions" metrics={data.metrics.filter(m=>m.metric_name.includes('depth'))}/>
+      <ComparisonPriceChart data={data} historicalReason={artifact.historicalReason}/>
+      <ComparisonMetricTable title="Price & spread differences" historicalReason={artifact.historicalReason} metrics={data.metrics.filter(m=>['midpoint','best_bid','best_ask','mark_price','oracle_price','spread_quote','spread_bps'].includes(m.metric_name))}/>
+      <ComparisonMetricTable title="Liquidity & book assumptions" historicalReason={artifact.historicalReason} metrics={data.metrics.filter(m=>m.metric_name.includes('depth'))}/>
       <Panel title="Visible depth measurement" meta="TOP FIVE DISTINCT PRICES PER SIDE · BASE UNITS">
         <p>Observed native book {data.observed.depth_level_count} retained levels per side · {data.observed.snapshot.order_book?.truncated?'TRUNCATED to reported visible levels':'bounded visible depth'}.</p>
         <p>Research: {data.research.assumptions?.depth_level_count??'Unavailable'} modeled levels per side. Repeated modeled prices or fewer than five levels block a like-for-like depth delta. Neither side establishes executable liquidity.</p>
       </Panel>
-      <ComparisonMetricTable title="Funding & perpetual context" metrics={data.metrics.filter(m=>['funding_rate','open_interest_base'].includes(m.metric_name))}/>
+      <ComparisonMetricTable title="Funding & perpetual context" historicalReason={artifact.historicalReason} metrics={data.metrics.filter(m=>['funding_rate','open_interest_base'].includes(m.metric_name))}/>
       <Panel title="Funding conventions" meta="RAW RATES · NO ANNUALIZATION"><p>Native venue: raw hourly rate; economic event time unknown. Research: raw scenario rate per sampled research interval. {data.research.research_configuration?`Captured interval: ${data.research.research_configuration.normalized_config.paper_funding_interval_seconds}s.`:'Research accounting interval provenance unavailable.'} The subtraction is descriptive; it does not compare settled payments.</p></Panel>
       <ComparisonPerformanceContext research={data.research}/>
       <ComparisonConfidence data={data}/>

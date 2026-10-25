@@ -20,6 +20,15 @@ _SECRET = re.compile(
     + _VALUE
 )
 _PRIVATE_KEY = re.compile(r"0x[0-9a-fA-F]{64}\b")
+_CREDENTIAL_FIELDS = frozenset({
+    "authorization", "proxyauthorization", "apikey", "xapikey", "accesstoken",
+    "refreshtoken", "token", "clientsecret", "secret", "privatekey", "password",
+    "hyperliquidprivatekey", "redstoneapikey", "coingeckoapikey",
+})
+
+
+def credential_field(key):
+    return isinstance(key, str) and re.sub(r"[-_]", "", key).lower() in _CREDENTIAL_FIELDS
 
 
 def sanitize_public_text(value, *, secrets=(), max_length=PUBLIC_TEXT_MAX):
@@ -39,7 +48,8 @@ def sanitize_public_diagnostic(value):
     """Sanitize every string within an explicitly selected diagnostic container."""
     if isinstance(value, dict):
         return {sanitize_public_text(k) if isinstance(k, str) else k:
-                sanitize_public_diagnostic(v) for k, v in value.items()}
+                "[REDACTED]" if credential_field(k) else sanitize_public_diagnostic(v)
+                for k, v in value.items()}
     if isinstance(value, (list, tuple)):
         return [sanitize_public_diagnostic(v) for v in value]
     return sanitize_public_text(value) if isinstance(value, str) else value
@@ -47,6 +57,8 @@ def sanitize_public_diagnostic(value):
 
 def sanitize_public_payload(value, key=None):
     """Copy serialized observations, selecting only allowlisted diagnostic fields."""
+    if credential_field(key):
+        return "[REDACTED]"
     if key in PUBLIC_DIAGNOSTIC_FIELDS:
         return sanitize_public_diagnostic(value)
     if isinstance(value, dict):

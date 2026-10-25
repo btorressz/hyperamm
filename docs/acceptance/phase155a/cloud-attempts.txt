@@ -1,0 +1,35 @@
+Captured excerpt: public-metadata-attempt.log
+BLOCKED: ProxyError HTTPSConnectionPool(host='api.hyperliquid.xyz', port=443): Max retries exceeded with url: /info (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden')))
+
+Captured excerpt: redis-install.log
+W: Unable to read /etc/apt/apt.conf.d/80-applied-apt-retries - open (13: Permission denied)
+E: Unable to locate package redis-server
+E: Unable to locate package redis-tools
+
+Captured excerpt: testclient-diagnostic.log
+Timeout (0:00:10)!
+Thread 0x00007f594fbff6c0 (most recent call first):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/selectors.py", line 468 in select
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 1961 in _run_once
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2548 in run
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/anyio/_core/_eventloop.py", line 83 in run
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/anyio/from_thread.py", line 538 in run_blocking_portal
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 1012 in run
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007f5956c44740 (most recent call first):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/threading.py", line 355 in wait
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 451 in result
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2780 in run_sync_from_thread
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/anyio/from_thread.py", line 119 in run_sync
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/anyio/from_thread.py", line 303 in _spawn_task_from_thread
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/anyio/from_thread.py", line 384 in start_task_soon
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/starlette/testclient.py", line 510 in __enter__
+  File "/workspace/hyperamm/backend/tests/test_agent_expansion.py", line 358 in test_agent_apis_preserve_shape_filter_bounds_and_private_artifact_boundary
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/_pytest/python.py", line 157 in pytest_pyfunc_call
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/workspace/hyperamm/work/phase155a/venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec

@@ -5,9 +5,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.responses import JSONResponse
 from app.deployment import LocalOnlyBoundary, validate_local_deployment
+from app.diagnostics import sanitize_public_text
 from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
@@ -84,18 +84,29 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="HyperAMM API", version="0.12.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
-app.add_middleware(LocalOnlyBoundary)
 app.add_middleware(ResearchBodyLimit)
+# Reject unauthorized peers/origins before reading even a partial request body.
+app.add_middleware(LocalOnlyBoundary, allowed_origins=settings.cors_origin_list)
 
 
 @app.exception_handler(RequestValidationError)
 async def research_validation_errors(request, exc):
-    if any(segment in request.url.path for segment in ("/research-vault/", "/simulation/", "/live-markets/", "/research-market-comparison/")):
-        # Do not echo credentials, oversized/nonfinite inputs or exception ctx.
-        return JSONResponse(status_code=422, content={"detail": [
-            {"loc": list(error["loc"]), "msg": error["msg"], "type": error["type"]}
-            for error in exc.errors()]})
-    return await request_validation_exception_handler(request, exc)
+    # Validation output is public on every API, including operational inputs.
+    # Unknown field names and dict keys are supplied by the caller too.
+    errors = []
+    secrets = tuple(v for v in (settings.hyperliquid_private_key, settings.redstone_api_key,
+                               settings.coingecko_api_key) if v)
+    for error in exc.errors()[:50]:
+        loc = list(error["loc"])
+        if error["type"] == "extra_forbidden" or "[key]" in loc:
+            loc = loc[:1]
+        errors.append({"loc": [sanitize_public_text(v, secrets=secrets, max_length=80)
+                               if isinstance(v, str) else v for v in loc],
+                       "msg": "Unexpected request field" if error["type"] == "extra_forbidden"
+                              else sanitize_public_text(error["msg"], secrets=secrets),
+                       "type": error["type"]})
+    return JSONResponse(status_code=422, content={"detail": errors}, headers={"Cache-Control": "no-store"})
+
 
 
 for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, research_market_comparison_router, live_markets_router, accounting.router, terminal.router):

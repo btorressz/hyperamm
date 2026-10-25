@@ -1,0 +1,101 @@
+{
+  "environment": "Fresh venv: pip install -e backend[test]; no ml/redis/yahoo extras",
+  "versions": {
+    "redis": "8.1.0",
+    "fakeredis": "2.40.0",
+    "starlette": "1.8.0",
+    "anyio": "4.15.1",
+    "pytest": "8.4.2"
+  },
+  "runs": [
+    {
+      "name": "normal-extra-full",
+      "classification": "PASS",
+      "passed": 1821,
+      "failed": 0,
+      "skipped": 1,
+      "elapsed_seconds": 58.3
+    },
+    {
+      "name": "redis-lifespan-1",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.97
+    },
+    {
+      "name": "redis-lifespan-2",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.96
+    },
+    {
+      "name": "redis-lifespan-3",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.99
+    },
+    {
+      "name": "redis-lifespan-4",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 1.0
+    },
+    {
+      "name": "redis-lifespan-5",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 1.0
+    },
+    {
+      "name": "redis-lifespan-6",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.98
+    },
+    {
+      "name": "redis-lifespan-7",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 1.01
+    },
+    {
+      "name": "redis-lifespan-8",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.97
+    },
+    {
+      "name": "redis-lifespan-9",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.99
+    },
+    {
+      "name": "redis-lifespan-10",
+      "classification": "PASS",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.95
+    }
+  ],
+  "classification": "PASS"
+}

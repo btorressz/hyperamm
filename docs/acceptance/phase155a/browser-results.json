@@ -1,0 +1,482 @@
+{
+  "fixture_notice": "DETERMINISTIC FIXTURE ACCEPTANCE \u2014 NOT LIVE VENUE DATA",
+  "workflows": [
+    "No completed result: comparison disabled and Simulation navigation available",
+    "Real BTC PAPER run with live switches disabled: assumptions and performance survive; observed unavailable",
+    "BTC explicit capture shows actual Decimal price/spread/funding/book differences and independent source timestamps",
+    "New live publication never silently recalculates frozen comparison",
+    "Stale context and fresh L2: price/spread remain eligible while mark/funding are unavailable",
+    "Insufficient visible levels: unavailable numerical depth comparison without invented liquidity",
+    "ETH selection keeps BTC research identity, retires historical artifact and blocks cross-asset deltas; authority unchanged",
+    "ETH real PAPER result explicitly selected with matching normalized observations",
+    "SOL real PAPER result explicitly selected with matching normalized observations",
+    "Navigation retains bounded historical comparison; no implicit capture or research mutation",
+    "Observer restart during delayed POST retires completion; prior artifact stays historical",
+    "Explicit refresh captures new observer/generation after resynchronization",
+    "Captured freshness expires despite a newer live publication; economic artifact is unchanged and historical",
+    "Legacy completed result: hypothetical performance retained, missing assumptions explained without synthesized controls",
+    "Six responsive viewports, zero document overflow/page exceptions; only three explicit PAPER runs and comparison POSTs",
+    "Real HTTP boundary rejects unrelated localhost/remote/null/non-HTTP origins and forwarding headers; configured Vite access succeeds",
+    "Retained stale midpoint is visible with STALE label and original source time; no stale numerical price delta",
+    "Real browser offline/online preserves exact artifact as HISTORICAL; reconnect never silently reactivates it",
+    "Component unmount during an actual pending POST rejects its delayed completion",
+    "503 comparison error is visible; invalid completed research cannot replace valid retained evidence",
+    "All terminal routes plus three Markets views at 1920px: visible headings/navigation and zero document overflow",
+    "All terminal routes plus three Markets views at 1440px: visible headings/navigation and zero document overflow",
+    "All terminal routes plus three Markets views at 1366px: visible headings/navigation and zero document overflow",
+    "All terminal routes plus three Markets views at 1024px: visible headings/navigation and zero document overflow",
+    "All terminal routes plus three Markets views at 768px: visible headings/navigation and zero document overflow",
+    "All terminal routes plus three Markets views at 390px: visible headings/navigation and zero document overflow",
+    "Desktop navigation links and mobile drawer navigate to Dashboard and close correctly",
+    "Unavailable provider and disabled live states render safely after navigation"
+  ],
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    }
+  ],
+  "page_errors": [],
+  "mutations": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:5173/api/v1/research-market-comparison/compare"
+    }
+  ],
+  "terminal_viewports": [
+    {
+      "route": "dashboard",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "markets",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "simulation",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "vault",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "agents",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "risk",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "execution",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "settings",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "logs",
+      "width": 1920,
+      "height": 1080,
+      "result": "PASS"
+    },
+    {
+      "route": "dashboard",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "markets",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "simulation",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "vault",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "agents",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "risk",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "execution",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "settings",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "logs",
+      "width": 1440,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "dashboard",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "markets",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "simulation",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "vault",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "agents",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "risk",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "execution",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "settings",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "logs",
+      "width": 1366,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "dashboard",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "markets",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "simulation",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "vault",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "agents",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "risk",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "execution",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "settings",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "logs",
+      "width": 1024,
+      "height": 768,
+      "result": "PASS"
+    },
+    {
+      "route": "dashboard",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "markets",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "simulation",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "vault",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "agents",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "risk",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "execution",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "settings",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "logs",
+      "width": 768,
+      "height": 900,
+      "result": "PASS"
+    },
+    {
+      "route": "dashboard",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "markets",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "simulation",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "vault",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "agents",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "risk",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "execution",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "settings",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    },
+    {
+      "route": "logs",
+      "width": 390,
+      "height": 844,
+      "result": "PASS"
+    }
+  ],
+  "screenshots": [
+    "btc-comparison-1440.png",
+    "comparison-1440.png",
+    "comparison-390.png",
+    "live-markets-1440.png",
+    "market-comparison-1440.png",
+    "market-comparison-390.png",
+    "simulation-1440.png",
+    "stale-evidence-1440.png"
+  ],
+  "classification": "PASS",
+  "elapsed_seconds": 44.47
+}

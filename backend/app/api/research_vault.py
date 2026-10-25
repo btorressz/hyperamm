@@ -62,29 +62,53 @@ async def compare_configs(proposal: ResearchComparisonRequest, request: Request,
 
 
 class ResearchBodyLimit:
-    """Bound proposal parsing before Pydantic, including chunked requests."""
+    """64 KiB pre-parsing bound for API writes, including chunked bodies.
+
+    Retain the original middleware name for existing imports. Coalesce chunks so
+    one-byte fragments cannot create an unbounded list of ASGI message objects.
+    """
     def __init__(self, app, max_bytes=65536):
         self.app, self.max_bytes = app, max_bytes
 
     async def __call__(self, scope, receive, send):
-        path = scope.get("path", "")
-        if scope["type"] != "http" or scope.get("method") != "POST" or not any(
-                segment in path for segment in ("/research-vault/", "/simulation/", "/research-market-comparison/")):
+        if scope["type"] != "http" or scope.get("method") not in {"POST", "PUT", "PATCH", "DELETE"}:
             return await self.app(scope, receive, send)
-        messages, size = [], 0
+
+        async def reject(status, detail):
+            from starlette.responses import JSONResponse
+            await JSONResponse({"detail": detail}, status_code=status,
+                               headers={"Cache-Control": "no-store"})(scope, receive, send)
+
+        lengths = [v for k, v in scope.get("headers", []) if k.lower() == b"content-length"]
+        transfer = [v for k, v in scope.get("headers", []) if k.lower() == b"transfer-encoding"]
+        if len(lengths) > 1 or lengths and transfer:
+            return await reject(400, "Ambiguous request framing")
+        expected = None
+        if lengths:
+            raw = lengths[0]
+            if not raw or len(raw) > 20 or not raw.isdigit():
+                return await reject(400, "Invalid content length")
+            expected = int(raw)
+            if expected > self.max_bytes:
+                return await reject(413, f"Research payload exceeds {self.max_bytes} bytes")
+        body = bytearray()
         while True:
             message = await receive()
             if message["type"] == "http.disconnect":
                 return
-            size += len(message.get("body", b""))
-            if size > self.max_bytes:
-                await send({"type": "http.response.start", "status": 413,
-                            "headers": [(b"content-type", b"application/json")]})
-                await send({"type": "http.response.body", "body": b'{"detail":"Research payload exceeds 65536 bytes"}'})
-                return
-            messages.append(message)
+            chunk = message.get("body", b"")
+            if len(body) + len(chunk) > self.max_bytes:
+                return await reject(413, f"Research payload exceeds {self.max_bytes} bytes")
+            body.extend(chunk)
             if not message.get("more_body", False):
                 break
+        if expected is not None and expected != len(body):
+            return await reject(400, "Content length does not match request body")
+        pending = True
         async def replay():
-            return messages.pop(0) if messages else await receive()
+            nonlocal pending
+            if pending:
+                pending = False
+                return {"type": "http.request", "body": bytes(body), "more_body": False}
+            return await receive()
         await self.app(scope, replay, send)

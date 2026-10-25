@@ -377,8 +377,11 @@ deployment is unsupported. CORS is browser policy, **not authentication**.
 
 Startup rejects non-loopback `--host`/`--bind` and `UVICORN_HOST`, and worker
 counts other than one in `--workers`/`-w`, `WEB_CONCURRENCY` or `UVICORN_WORKERS`.
-HTTP and WebSocket requests require a loopback peer, local Host, and local browser
-Origin when present; forwarded headers do not grant access. These checks do not
+HTTP and WebSocket requests require a loopback peer and strictly parsed local Host.
+Browser Origin must match the request origin or an exact local origin configured
+in `CORS_ORIGINS` (default localhost/127.0.0.1/[::1] on port 5173). Unrelated
+localhost ports, ambiguous security headers and forwarded headers are rejected.
+API write bodies share a 64 KiB pre-parsing bound, including chunked requests. These checks do not
 make a loopback proxy or separately launched backend processes supported. Use
 one instance only; there is no multi-process coordination. Local Uvicorn reload
 remains supported. Starlette's in-process test transport is accepted for tests.

@@ -1,0 +1,41 @@
+{
+  "baseline_commit": "e656a51c3d378f787281f6e4ba5d6ad020e48135",
+  "final_implementation_commit": "c85d8bd5513c37c5b5fd63e4755ac1a55e395f32",
+  "backend": {
+    "baseline_passed": 1649,
+    "final_passed": 1822,
+    "failed": 0,
+    "skipped": 0,
+    "added": 173
+  },
+  "frontend": {
+    "baseline_passed": 602,
+    "final_passed": 641,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "added": 39
+  },
+  "typecheck": "PASS",
+  "build": "PASS",
+  "pip_check": "PASS",
+  "compileall": "PASS",
+  "chromium": {
+    "classification": "PASS",
+    "workflows": 28,
+    "viewports": 6,
+    "terminal_route_viewport_checks": 54,
+    "page_exceptions": 0
+  },
+  "actual_redis": {
+    "classification": "PASS",
+    "checks": 7,
+    "version": "8.0.2"
+  },
+  "public_sdk_metadata": {
+    "classification": "BLOCKED",
+    "reason": "Configured proxy CONNECT 403 Forbidden"
+  },
+  "macos": "NOT RUN",
+  "signed_orders": "NOT APPLICABLE"
+}

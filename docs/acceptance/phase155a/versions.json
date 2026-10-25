@@ -1,0 +1,20 @@
+{
+  "python": "3.12.14",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "fastapi": "0.143.3",
+  "starlette": "1.8.0",
+  "pydantic": "2.14.1",
+  "pytest": "8.4.2",
+  "pytest-asyncio": "0.26.0",
+  "anyio": "4.15.1",
+  "httpx": "0.28.1",
+  "hyperliquid-python-sdk": "0.24.0",
+  "numpy": "2.5.4",
+  "scikit-learn": "1.9.1",
+  "redis": "6.4.0",
+  "fakeredis": "2.40.0",
+  "yfinance": "1.7.0",
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "chromium": "Chromium 151.0.7922.173 built on Debian GNU/Linux 13 (trixie)"
+}
