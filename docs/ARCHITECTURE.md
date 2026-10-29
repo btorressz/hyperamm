@@ -570,3 +570,15 @@ HyperAmmRuntime, StrategyConfig, MarketDataService, ReferenceService, agent/risk
 FinalQuoteAuthorization, orders/fills/positions/accounting/reservations/kill or
 TESTNET eligibility. Real seeded authority tests and actual Chromium checks are
 recorded in [Phase 15.4 acceptance](PHASE154_ACCEPTANCE.md).
+
+
+## Phase 15.5B — October 29, 2026 update
+
+The independent observation path still owns one official SDK connection and six
+listed-native subscriptions, without operational authority. Rejection preserves
+last accepted values with original timestamps and DEGRADED state; delivery proof
+and the REST recovery barrier determine readiness. Recovery is paced/isolated per
+market, history rejects retired generations, cleanup uncertainty blocks another
+owner, and a cancelled runner cannot skip worker drain. Lazy simulation package
+exports avoid initializing the research engine when importing observation models.
+See [the verified implementation and boundaries](PHASE155B_ACCEPTANCE.md).

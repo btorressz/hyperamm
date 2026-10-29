@@ -1,0 +1,27 @@
+{
+  "classification": "PASS",
+  "evidence": "OFFLINE FAKE SDK \u2014 NOT VENUE DELIVERY",
+  "requested_seconds": 30.0,
+  "max_cycles": 1000,
+  "cycles_completed": 298,
+  "maximum_observed_queue_size": 8,
+  "dropped_events": 2682,
+  "rejected_events": 8046,
+  "retired_callback_attempts": 894,
+  "history_retained": {
+    "BTC": 32,
+    "ETH": 32,
+    "SOL": 32
+  },
+  "history_gaps": {
+    "BTC": 596,
+    "ETH": 596,
+    "SOL": 596
+  },
+  "duration_seconds": 30.2484,
+  "subscriber_count_after_shutdown": 0,
+  "remaining_owned_threads": 0,
+  "remaining_owned_tasks": 0,
+  "leaked_or_uncertain_sdk_resources": 0,
+  "sdk_connections_created": 299
+}

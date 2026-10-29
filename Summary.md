@@ -2570,3 +2570,14 @@ HyperAMM remains a **local research system**, not a production-mainnet trading s
 - [Architecture](docs/ARCHITECTURE.md) — how information moves from market data to strategy, risk, execution, and accounting.
 - [Audit 1.0](AUDIT_REPORT_1.0.md) and [Audit 2.0](AUDIT_REPORT_2.0.md) — reviewed limitations and hardening findings.
 
+
+
+## Phase 15.5B — October 29, 2026 update
+
+Phase 15.5A merged in PR #54. Phase 15.5B now hardens the independent public
+BTC/ETH/SOL observation layer and has Linux offline acceptance: 1916 backend and
+652 frontend tests pass, 47 actual Chromium workflows pass, and a short bounded
+fake-SDK soak completed without owned resource leaks. One genuine venue metadata
+attempt was blocked by the Cloud proxy; macOS/local/Replit and long venue soak
+remain unverified. This does not grant trading readiness or complete Phase 15.
+See [the new acceptance report](docs/PHASE155B_ACCEPTANCE.md).

@@ -277,3 +277,15 @@ The history covers **all 53 merged pull requests (#1–#53)** and the separately
 ## Historical audits and acceptance
 
 For deeper investigation, consult [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), [architecture](docs/ARCHITECTURE.md), [development roadmap](docs/ROADMAP.md), and Phase 15 acceptance reports ([15.1](docs/PHASE151_ACCEPTANCE.md), [15.2](docs/PHASE152_ACCEPTANCE.md), [15.3](docs/PHASE153_ACCEPTANCE.md), [15.4](docs/PHASE154_ACCEPTANCE.md)). PR bodies contain their contemporaneous tests, limitations and implementation detail. **A merged PR is not by itself proof of production, signing, market-data licensing or external-network acceptance.**
+
+
+## Phase 15.5B — October 29, 2026 update
+
+Phase 15.5B hardens the existing read-only SDK lifecycle, bounded ingress,
+retained accepted evidence, REST recovery, history generation/deduplication and
+provider health. A narrow React badge fix follows stream degradation immediately;
+lazy research exports fix a standalone import cycle. Added deterministic,
+soak, opt-in genuine SDK and real Chromium integration coverage. Linux offline
+acceptance passes; genuine venue access remains blocked and final Phase 15
+acceptance remains the owner's combined review. PR #54's security controls remain.
+See [acceptance](docs/PHASE155B_ACCEPTANCE.md).

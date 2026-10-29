@@ -407,3 +407,14 @@ Research metadata retains its own DEMO_PROFILE/EXCHANGE_VERIFIED attribution and
 never inherits operational/live authority. Component freshness/source timestamps
 and unknown context event time remain explicit; client research execution is not
 independently authenticated. See [Phase 15.4 acceptance](PHASE154_ACCEPTANCE.md).
+
+
+## Phase 15.5B — October 29, 2026 update
+
+Native observational health now reports source degradation after rejected updates
+and DISABLED for disabled sources. Cached browser health follows a newly degraded
+native stream immediately. Midpoint, oracle and mark remain one Hyperliquid group;
+context event time remains unknown. RedStone WS/HTTP remain one provider; external
+mappings do not activate collectors, add consensus votes or acquire authority.
+Existing ProviderStatus vocabulary is unchanged; unavailable mapping/source/error
+states stay explicit. See [findings](PHASE155B_SECURITY_FINDINGS.md).

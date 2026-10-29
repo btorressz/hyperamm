@@ -382,3 +382,14 @@ explicitly NOT_COMPARABLE. Legacy missing assumptions/configuration are explaine
 without inventing controls or presets. All actions remain accessible with local
 scrolling tables and a single-column mobile layout. See
 [Phase 15.4 acceptance](PHASE154_ACCEPTANCE.md).
+
+
+## Phase 15.5B — October 29, 2026 update
+
+Live Market Intelligence retains accepted values when new callbacks fail
+validation. DEGRADED source state immediately suppresses a cached HEALTHY native
+provider badge, without waiting for the provider polling interval. Receipt age,
+exchange L2 time and unverified context event time remain separate. The existing
+layout, selection, history, frozen comparison and PAPER flows are preserved.
+Actual desktop/mobile fixture screenshots and 47 browser workflows are linked in
+[Phase 15.5B acceptance](PHASE155B_ACCEPTANCE.md).

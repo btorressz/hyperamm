@@ -1172,3 +1172,16 @@ See [acceptance](docs/PHASE155A_ACCEPTANCE.md),
 [security findings](docs/PHASE155A_SECURITY_FINDINGS.md), and
 [macOS fallback](docs/PHASE155A_MACOS_FALLBACK.md). Phase 15.5B streaming/provider
 modules remain untouched. Full Phase 15 and genuine venue acceptance remain open.
+
+
+## Phase 15.5B — October 29, 2026 update
+
+The read-only streaming owner now bounds callback traversal before serialization,
+retains accepted evidence through rejected callbacks, isolates paced REST book
+recovery per market, rejects retired history generations and verifies bounded
+SDK manager/ping joins with cancellation-safe worker drain. Provider health and
+cached React native badges reflect degradation immediately. Simulation public
+exports load lazily to avoid a standalone observation import cycle; economics
+are unchanged. See [acceptance](docs/PHASE155B_ACCEPTANCE.md),
+[findings](docs/PHASE155B_SECURITY_FINDINGS.md) and
+[external fallback](docs/PHASE155B_EXTERNAL_ACCEPTANCE.md).

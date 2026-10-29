@@ -1,0 +1,913 @@
+FFFFFFFFFFFFFFFFFFFFF.FFFFF.FFFFFF.                                      [100%]
+=================================== FAILURES ===================================
+__________ test_invalid_update_retains_valid_evidence[channel-l2Book] __________
+
+kind = 'l2Book', mutation = 'channel'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+            assert (state.book, state.context, service.history.query('BTC').points) == before
+>           assert state.rejected == 1 and state.connection == 'DEGRADED'
+E           AssertionError: assert (0 == 1)
+E            +  where 0 = MarketState(metadata=LiveMarketMetadata(market='BTC', dex='', metadata_status='EXCHANGE_VERIFIED', source='OFFICIAL_SD...Decimal('60010'), Decimal('2'), 3),))), seen={'l2Book'}, barrier=True, reconnects=0, rejected=0, dropped=0, error=None).rejected
+
+tests/test_phase155b_stream_integrity.py:30: AssertionError
+______ test_invalid_update_retains_valid_evidence[channel-activeAssetCtx] ______
+
+kind = 'activeAssetCtx', mutation = 'channel'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+>           assert not service.accept('BTC', kind, raw, 1, clock())
+E           AssertionError: assert not True
+E            +  where True = accept('BTC', 'activeAssetCtx', {'channel': 'trades', 'data': {'coin': 'BTC', 'ctx': {'funding': '-0.0001', 'markPx': '60000', 'midPx': '60000', 'openInterest': '100', ...}}}, 1, datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc))
+E            +    where accept = <app.market_data.live_streams.LiveMarketStreamService object at 0x7fc529c2ab70>.accept
+E            +    and   datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc) = <test_phase151_live_markets.Clock object at 0x7fc529c28320>()
+
+tests/test_phase155b_stream_integrity.py:28: AssertionError
+__________ test_invalid_update_retains_valid_evidence[symbol-l2Book] ___________
+
+kind = 'l2Book', mutation = 'symbol'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+______ test_invalid_update_retains_valid_evidence[symbol-activeAssetCtx] _______
+
+kind = 'activeAssetCtx', mutation = 'symbol'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+__________ test_invalid_update_retains_valid_evidence[nested-l2Book] ___________
+
+kind = 'l2Book', mutation = 'nested'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+______ test_invalid_update_retains_valid_evidence[nested-activeAssetCtx] _______
+
+kind = 'activeAssetCtx', mutation = 'nested'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_________ test_invalid_update_retains_valid_evidence[nonfinite-l2Book] _________
+
+kind = 'l2Book', mutation = 'nonfinite'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_____ test_invalid_update_retains_valid_evidence[nonfinite-activeAssetCtx] _____
+
+kind = 'activeAssetCtx', mutation = 'nonfinite'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+___________ test_invalid_update_retains_valid_evidence[zero-l2Book] ____________
+
+kind = 'l2Book', mutation = 'zero'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_______ test_invalid_update_retains_valid_evidence[zero-activeAssetCtx] ________
+
+kind = 'activeAssetCtx', mutation = 'zero'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_________ test_invalid_update_retains_valid_evidence[negative-l2Book] __________
+
+kind = 'l2Book', mutation = 'negative'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_____ test_invalid_update_retains_valid_evidence[negative-activeAssetCtx] ______
+
+kind = 'activeAssetCtx', mutation = 'negative'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+__________ test_invalid_update_retains_valid_evidence[extreme-l2Book] __________
+
+kind = 'l2Book', mutation = 'extreme'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+______ test_invalid_update_retains_valid_evidence[extreme-activeAssetCtx] ______
+
+kind = 'activeAssetCtx', mutation = 'extreme'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+___________ test_invalid_update_retains_valid_evidence[array-l2Book] ___________
+
+kind = 'l2Book', mutation = 'array'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_______ test_invalid_update_retains_valid_evidence[array-activeAssetCtx] _______
+
+kind = 'activeAssetCtx', mutation = 'array'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+___________ test_invalid_update_retains_valid_evidence[text-l2Book] ____________
+
+kind = 'l2Book', mutation = 'text'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_______ test_invalid_update_retains_valid_evidence[text-activeAssetCtx] ________
+
+kind = 'activeAssetCtx', mutation = 'text'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_________ test_invalid_update_retains_valid_evidence[timestamp-l2Book] _________
+
+kind = 'l2Book', mutation = 'timestamp'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+_____ test_invalid_update_retains_valid_evidence[timestamp-activeAssetCtx] _____
+
+kind = 'activeAssetCtx', mutation = 'timestamp'
+
+    @pytest.mark.parametrize('kind', ['l2Book', 'activeAssetCtx'])
+    @pytest.mark.parametrize('mutation', ['channel', 'symbol', 'nested', 'nonfinite', 'zero', 'negative', 'extreme', 'array', 'text', 'timestamp'])
+    async def test_invalid_update_retains_valid_evidence(kind, mutation):
+        service, sdk, clock = await prepared()
+        try:
+            state = service.states['BTC']
+            before = (state.book, state.context, service.history.query('BTC').points)
+            raw = {'channel': kind, 'data': book('BTC')} if kind == 'l2Book' else sdk.ctx('BTC')
+            if mutation == 'channel': raw['channel'] = 'trades'
+            elif mutation == 'symbol': raw['data']['coin'] = 'xyz:BTC'
+            elif mutation == 'nested': raw['data'] = {'data': raw['data']}
+            elif mutation == 'array': raw = []
+            elif mutation == 'text': raw = '{broken json'
+            elif mutation == 'timestamp':
+                if kind == 'l2Book': raw['data']['time'] = 10**100
+                else: raw['data']['coin'] = 'ETH'
+            else:
+                value = {'nonfinite': 'NaN', 'zero': '0', 'negative': '-1', 'extreme': '9'*81}[mutation]
+                if kind == 'l2Book': raw['data']['levels'][0][0]['px'] = value
+                else: raw['data']['ctx']['markPx'] = value
+            assert not service.accept('BTC', kind, raw, 1, clock())
+>           assert (state.book, state.context, service.history.query('BTC').points) == before
+E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
+E             
+E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
+E             Use -v to get more diff
+
+tests/test_phase155b_stream_integrity.py:29: AssertionError
+___________ test_stale_replay_and_future_book_do_not_retime[-11000] ____________
+
+delta = -11000
+
+    @pytest.mark.parametrize('delta', [-11000, -1, 2000])
+    async def test_stale_replay_and_future_book_do_not_retime(delta):
+        service, _, clock = await prepared()
+        try:
+            before = service.states['BTC'].book
+            raw = book('BTC'); raw['time'] += delta
+            assert not service.accept('BTC', 'l2Book', raw, 1, clock())
+>           assert service.states['BTC'].book == before
+E           AssertionError: assert None == StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), a... midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E            +  where None = MarketState(metadata=LiveMarketMetadata(market='BTC', dex='', metadata_status='EXCHANGE_VERIFIED', source='OFFICIAL_SD...l('60010'), Decimal('2'), 3),))), seen=set(), barrier=False, reconnects=0, rejected=1, dropped=0, error='INVALID_DATA').book
+
+tests/test_phase155b_stream_integrity.py:42: AssertionError
+____________ test_stale_replay_and_future_book_do_not_retime[2000] _____________
+
+delta = 2000
+
+    @pytest.mark.parametrize('delta', [-11000, -1, 2000])
+    async def test_stale_replay_and_future_book_do_not_retime(delta):
+        service, _, clock = await prepared()
+        try:
+            before = service.states['BTC'].book
+            raw = book('BTC'); raw['time'] += delta
+            assert not service.accept('BTC', 'l2Book', raw, 1, clock())
+>           assert service.states['BTC'].book == before
+E           AssertionError: assert None == StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), a... midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
+E            +  where None = MarketState(metadata=LiveMarketMetadata(market='BTC', dex='', metadata_status='EXCHANGE_VERIFIED', source='OFFICIAL_SD...l('60010'), Decimal('2'), 3),))), seen=set(), barrier=False, reconnects=0, rejected=1, dropped=0, error='INVALID_DATA').book
+
+tests/test_phase155b_stream_integrity.py:42: AssertionError
+_______________ test_conflict_requires_new_valid_delivery_proof ________________
+
+    async def test_conflict_requires_new_valid_delivery_proof():
+        service, sdk, clock = await prepared()
+        try:
+            service.accept('BTC','l2Book',book('BTC'),1,clock())
+            service.accept('BTC','activeAssetCtx',sdk.ctx('BTC'),1,clock())
+            assert service.snapshot('BTC').observation_status == 'AVAILABLE'
+            raw=book('BTC'); raw['levels'][0][0]['sz']='2'
+            assert not service.accept('BTC','l2Book',raw,1,clock())
+            service.accept('BTC','activeAssetCtx',sdk.ctx('BTC'),1,clock())
+            assert service.snapshot('BTC').observation_status != 'AVAILABLE'
+>           assert service.states['BTC'].book.bids[0].size == 1
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'NoneType' object has no attribute 'bids'
+
+tests/test_phase155b_stream_integrity.py:57: AttributeError
+_____________ test_old_generation_cannot_append_newer_evidence[L2] _____________
+
+kind = 'L2'
+
+    @pytest.mark.parametrize('kind',['L2','PERP_CONTEXT'])
+    def test_old_generation_cannot_append_newer_evidence(kind):
+        history=LiveObservationHistory('owner',3)
+        assert history.append(point(2,0,kind))
+>       assert not history.append(point(1,1,kind))
+E       AssertionError: assert not True
+E        +  where True = append(LiveHistoryPoint(market='BTC', observer_instance_id='owner', connection_generation=1, kind='L2', source='OFFICIAL_SDK_...ark=None, oracle=None, funding=None, open_interest=None, observation_status=<LiveObservationStatus.PARTIAL: 'PARTIAL'>))
+E        +    where append = <app.market_data.live_history.LiveObservationHistory object at 0x7fc529bcef30>.append
+E        +    and   LiveHistoryPoint(market='BTC', observer_instance_id='owner', connection_generation=1, kind='L2', source='OFFICIAL_SDK_...ark=None, oracle=None, funding=None, open_interest=None, observation_status=<LiveObservationStatus.PARTIAL: 'PARTIAL'>) = point(1, 1, 'L2')
+
+tests/test_phase155b_history_integrity.py:17: AssertionError
+________ test_old_generation_cannot_append_newer_evidence[PERP_CONTEXT] ________
+
+kind = 'PERP_CONTEXT'
+
+    @pytest.mark.parametrize('kind',['L2','PERP_CONTEXT'])
+    def test_old_generation_cannot_append_newer_evidence(kind):
+        history=LiveObservationHistory('owner',3)
+        assert history.append(point(2,0,kind))
+>       assert not history.append(point(1,1,kind))
+E       AssertionError: assert not True
+E        +  where True = append(LiveHistoryPoint(market='BTC', observer_instance_id='owner', connection_generation=1, kind='PERP_CONTEXT', source='OFF...100'), funding=Decimal('0'), open_interest=Decimal('1'), observation_status=<LiveObservationStatus.PARTIAL: 'PARTIAL'>))
+E        +    where append = <app.market_data.live_history.LiveObservationHistory object at 0x7fc529bbce60>.append
+E        +    and   LiveHistoryPoint(market='BTC', observer_instance_id='owner', connection_generation=1, kind='PERP_CONTEXT', source='OFF...100'), funding=Decimal('0'), open_interest=Decimal('1'), observation_status=<LiveObservationStatus.PARTIAL: 'PARTIAL'>) = point(1, 1, 'PERP_CONTEXT')
+
+tests/test_phase155b_history_integrity.py:17: AssertionError
+____ test_context_economics_deduplicated_across_reconnect_with_explicit_gap ____
+
+    def test_context_economics_deduplicated_across_reconnect_with_explicit_gap():
+        history=LiveObservationHistory('owner',3)
+        assert history.append(point(kind='PERP_CONTEXT'))
+        history.gap('BTC')
+>       assert not history.append(point(2,1,'PERP_CONTEXT'))
+E       AssertionError: assert not True
+E        +  where True = append(LiveHistoryPoint(market='BTC', observer_instance_id='owner', connection_generation=2, kind='PERP_CONTEXT', source='OFF...100'), funding=Decimal('0'), open_interest=Decimal('1'), observation_status=<LiveObservationStatus.PARTIAL: 'PARTIAL'>))
+E        +    where append = <app.market_data.live_history.LiveObservationHistory object at 0x7fc529bbd190>.append
+E        +    and   LiveHistoryPoint(market='BTC', observer_instance_id='owner', connection_generation=2, kind='PERP_CONTEXT', source='OFF...100'), funding=Decimal('0'), open_interest=Decimal('1'), observation_status=<LiveObservationStatus.PARTIAL: 'PARTIAL'>) = point(2, 1, 'PERP_CONTEXT')
+
+tests/test_phase155b_history_integrity.py:24: AssertionError
+_________ test_subscription_scope_is_enforced_before_sdk[DOGE-l2Book] __________
+
+market = 'DOGE', kind = 'l2Book'
+
+    @pytest.mark.parametrize('market,kind',[('DOGE','l2Book'),('BTC','trades'),('xyz:ETH','activeAssetCtx')])
+    def test_subscription_scope_is_enforced_before_sdk(market,kind):
+        client=SDKObservationClient(1,1);client.info=SimpleNamespace(subscribe=Mock())
+>       with pytest.raises(ValueError):client.subscribe(market,kind,lambda _:None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_phase155b_sdk_lifecycle.py:14: Failed
+__________ test_subscription_scope_is_enforced_before_sdk[BTC-trades] __________
+
+market = 'BTC', kind = 'trades'
+
+    @pytest.mark.parametrize('market,kind',[('DOGE','l2Book'),('BTC','trades'),('xyz:ETH','activeAssetCtx')])
+    def test_subscription_scope_is_enforced_before_sdk(market,kind):
+        client=SDKObservationClient(1,1);client.info=SimpleNamespace(subscribe=Mock())
+>       with pytest.raises(ValueError):client.subscribe(market,kind,lambda _:None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_phase155b_sdk_lifecycle.py:14: Failed
+____ test_subscription_scope_is_enforced_before_sdk[xyz:ETH-activeAssetCtx] ____
+
+market = 'xyz:ETH', kind = 'activeAssetCtx'
+
+    @pytest.mark.parametrize('market,kind',[('DOGE','l2Book'),('BTC','trades'),('xyz:ETH','activeAssetCtx')])
+    def test_subscription_scope_is_enforced_before_sdk(market,kind):
+        client=SDKObservationClient(1,1);client.info=SimpleNamespace(subscribe=Mock())
+>       with pytest.raises(ValueError):client.subscribe(market,kind,lambda _:None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_phase155b_sdk_lifecycle.py:14: Failed
+___________ test_duplicate_subscription_and_owner_open_are_rejected ____________
+
+    def test_duplicate_subscription_and_owner_open_are_rejected():
+        client=SDKObservationClient(1,1);client.info=SimpleNamespace(subscribe=Mock(return_value=1))
+        client.subscribe('BTC','l2Book',lambda _:None)
+>       with pytest.raises(RuntimeError):client.subscribe('BTC','l2Book',lambda _:None)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'RuntimeError'>
+
+tests/test_phase155b_sdk_lifecycle.py:20: Failed
+______ test_cleanup_joins_are_bounded_and_uncertain_owner_retained[False] ______
+
+stuck = False
+
+    @pytest.mark.parametrize('stuck',[False,True])
+    def test_cleanup_joins_are_bounded_and_uncertain_owner_retained(stuck):
+        client=SDKObservationClient(1,.01)
+        threads=[SimpleNamespace(ident=1,join=Mock(),is_alive=lambda:stuck) for _ in range(2)]
+        manager,ping=threads
+        manager.ping_sender=ping;manager.stop_event=SimpleNamespace(set=Mock());manager.ws=SimpleNamespace(close=Mock())
+        info=SimpleNamespace(ws_manager=manager,session=SimpleNamespace(close=Mock()),disconnect_websocket=Mock(side_effect=AssertionError('unbounded stop')))
+        client.info=info
+        if stuck:
+            with pytest.raises(RuntimeError,match='cleanup incomplete'):client.close()
+            assert client.info is info
+        else:
+>           client.close();client.close();assert client.info is None
+            ^^^^^^^^^^^^^^
+
+tests/test_phase155b_sdk_lifecycle.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <app.market_data.live_streams.SDKObservationClient object at 0x7fc529c005c0>
+
+    def close(self):
+        errors = []
+        if self.info is not None:
+            for subscription, handle in self.handles:
+                try:
+                    self.info.unsubscribe(subscription.copy(), handle)
+                except Exception:
+                    # A dead socket can reject unsubscribe; verified manager teardown
+                    # still retires all of that connection's handles.
+                    log.warning('Observation subscription release required socket teardown')
+            manager = getattr(self.info, 'ws_manager', None)
+            if manager is not None:
+                try:
+                    self.info.disconnect_websocket()
+                except Exception:
+                    errors.append('socket stop failed')
+                for thread in (manager, manager.ping_sender):
+                    if thread.ident is not None:
+                        thread.join(timeout=self.shutdown_timeout)
+                    if thread.is_alive():
+                        errors.append('SDK thread still running')
+        for client in (self.bootstrap, self.info):
+            session = getattr(client, 'session', None)
+            if session is not None:
+                try:
+                    session.close()
+                except Exception:
+                    errors.append('session close failed')
+        if errors:
+>           raise RuntimeError('Read-only SDK cleanup incomplete')
+E           RuntimeError: Read-only SDK cleanup incomplete
+
+app/market_data/live_streams.py:109: RuntimeError
+______ test_cleanup_joins_are_bounded_and_uncertain_owner_retained[True] _______
+
+stuck = True
+
+    @pytest.mark.parametrize('stuck',[False,True])
+    def test_cleanup_joins_are_bounded_and_uncertain_owner_retained(stuck):
+        client=SDKObservationClient(1,.01)
+        threads=[SimpleNamespace(ident=1,join=Mock(),is_alive=lambda:stuck) for _ in range(2)]
+        manager,ping=threads
+        manager.ping_sender=ping;manager.stop_event=SimpleNamespace(set=Mock());manager.ws=SimpleNamespace(close=Mock())
+        info=SimpleNamespace(ws_manager=manager,session=SimpleNamespace(close=Mock()),disconnect_websocket=Mock(side_effect=AssertionError('unbounded stop')))
+        client.info=info
+        if stuck:
+            with pytest.raises(RuntimeError,match='cleanup incomplete'):client.close()
+            assert client.info is info
+        else:
+            client.close();client.close();assert client.info is None
+        for thread in threads:thread.join.assert_called_once_with(timeout=.01)
+>       manager.stop_event.set.assert_called_once();info.disconnect_websocket.assert_not_called()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase155b_sdk_lifecycle.py:38: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Mock id='140484785436624'>
+
+    def assert_called_once(self):
+        """assert that the mock was called only once.
+        """
+        if not self.call_count == 1:
+            msg = ("Expected '%s' to have been called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+>           raise AssertionError(msg)
+E           AssertionError: Expected 'mock' to have been called once. Called 0 times.
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/unittest/mock.py:928: AssertionError
+=============================== warnings summary ===============================
+../../../../.hyperamm/venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/.hyperamm/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[channel-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[channel-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[symbol-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[symbol-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[nested-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[nested-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[nonfinite-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[nonfinite-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[zero-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[zero-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[negative-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[negative-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[extreme-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[extreme-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[array-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[array-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[text-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[text-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[timestamp-l2Book]
+FAILED tests/test_phase155b_stream_integrity.py::test_invalid_update_retains_valid_evidence[timestamp-activeAssetCtx]
+FAILED tests/test_phase155b_stream_integrity.py::test_stale_replay_and_future_book_do_not_retime[-11000]
+FAILED tests/test_phase155b_stream_integrity.py::test_stale_replay_and_future_book_do_not_retime[2000]
+FAILED tests/test_phase155b_stream_integrity.py::test_conflict_requires_new_valid_delivery_proof
+FAILED tests/test_phase155b_history_integrity.py::test_old_generation_cannot_append_newer_evidence[L2]
+FAILED tests/test_phase155b_history_integrity.py::test_old_generation_cannot_append_newer_evidence[PERP_CONTEXT]
+FAILED tests/test_phase155b_history_integrity.py::test_context_economics_deduplicated_across_reconnect_with_explicit_gap
+FAILED tests/test_phase155b_sdk_lifecycle.py::test_subscription_scope_is_enforced_before_sdk[DOGE-l2Book]
+FAILED tests/test_phase155b_sdk_lifecycle.py::test_subscription_scope_is_enforced_before_sdk[BTC-trades]
+FAILED tests/test_phase155b_sdk_lifecycle.py::test_subscription_scope_is_enforced_before_sdk[xyz:ETH-activeAssetCtx]
+FAILED tests/test_phase155b_sdk_lifecycle.py::test_duplicate_subscription_and_owner_open_are_rejected
+FAILED tests/test_phase155b_sdk_lifecycle.py::test_cleanup_joins_are_bounded_and_uncertain_owner_retained[False]
+FAILED tests/test_phase155b_sdk_lifecycle.py::test_cleanup_joins_are_bounded_and_uncertain_owner_retained[True]
+32 failed, 3 passed, 1 warning in 1.50s

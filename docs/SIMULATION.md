@@ -1167,3 +1167,14 @@ and eligibility, excluding processing time, evaluation time and advancing ages.
 Freshness transitions retire eligibility; unchanged economic captures retain a
 stable fingerprint. [Acceptance](PHASE154_ACCEPTANCE.md) records actual tests and
 remaining Phase 15.5/external gates.
+
+
+## Phase 15.5B — October 29, 2026 update
+
+Simulation public exports now load on demand to prevent importing the engine
+through shared market profiles during standalone observation/provider imports.
+All exported classes/functions and simulation economics are preserved. Actual
+seeded PAPER fills, orders, ledger, reservations, kill and authorization remain
+unchanged under adversarial observation actions. The browser's Phase 15.4
+comparison stays frozen until an explicit refresh, including new stream ticks
+and reconnects. See [15.5B acceptance](PHASE155B_ACCEPTANCE.md).

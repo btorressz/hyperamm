@@ -1,0 +1,44 @@
+Actual setup and external attempts, October 29, 2026.
+
+Initial sandbox git fetch/pip: proxy connection denied by command network sandbox.
+Same configured proxy with supported network execution: PASS for GitHub/packages.
+No policy/TLS/proxy settings changed.
+
+Initial npm cache used unwritable /home/agent/.npm; workspace cache and explicit
+npm ci --bin-links=true restored 27 locked packages. Manifest/lockfile unchanged.
+
+Initial all-extra baseline: Pydantic 2.13.5, 1821 passed, 1 generated-schema failure.
+Installed previously accepted Pydantic 2.14.1 within existing declared range:
+unchanged-base full suite 1822 passed. Schema/generator/test unchanged.
+
+A sandbox-only focused asyncio run stalled in loopback/event-loop scheduling and
+was terminated. Supported local network execution: focused/full runs completed.
+Initial pre-fix sandbox results are not used as defect reproduction; a separate
+detached baseline worktree with supported execution reproduced 32 failing cases.
+
+First focused implementation run: 18 original context tests expected deleted
+values. Their assertion was strengthened to require exact retained valid evidence,
+DEGRADED status, rejected count and removed channel proof; cross-market assertions
+retained. All original cases and the full suite pass. No test was removed/skipped.
+
+Provider-only collection exposed the original eager simulation import cycle;
+lazy exports fixed it. Three fresh-process import tests and 27 provider/isolation
+checks then passed independently. Full suite rerun: 1916 passed.
+
+Early new Chromium reconnect runs failed because Playwright 1.64.1 treated an async
+false wait_for_function predicate as satisfied (isolated async()=>false returned
+False in 0.062s rather than waiting). New/reused harness path now explicitly polls
+resolved page.evaluate booleans; final 6 new and 28 reused workflows passed.
+Actual screenshot review exposed cached provider HEALTHY after degraded stream;
+small production badge fix plus rendered/Chromium regressions passed.
+
+Genuine official SDK attempt: ProxyError; configured proxy CONNECT returned
+403 Forbidden for api.hyperliquid.xyz. BLOCKED. Stopped after this single metadata
+attempt. No alternate route/endpoint, VPN or TLS/proxy change. See external-results.json.
+
+Additional Redis setup attempt: no redis-server binary available. Workspace-only
+apt metadata request used the existing configured snapshot.debian.org sources;
+configured proxy returned 403 Forbidden. Package download could not locate
+redis-server/redis-tools/liblzf1. No real Redis test executed in 15.5B. Historical
+15.5A's seven actual Redis checks remain prior evidence; current pytest Redis
+fixtures pass. No apt/system configuration change or substitute service introduced.

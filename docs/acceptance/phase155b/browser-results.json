@@ -1,0 +1,29 @@
+{
+  "classification": "PASS",
+  "evidence": "DETERMINISTIC SDK FIXTURES \u2014 NOT LIVE VENUE DATA",
+  "workflows": [
+    "Production observer accepts fake SDK callbacks and streams actual normalized BTC evidence to Chromium",
+    "BTC/ETH/SOL selection isolates actual server-owned stream snapshots",
+    "Actual observer disconnect/reconnect retires SDK client and browser generation then resynchronizes",
+    "Rejected wrong-channel callback retains evidence with DEGRADED native provider status",
+    "Browser offline/online retires current evidence; mobile recovers without overflow",
+    "Browser navigation releases the production service subscriber"
+  ],
+  "page_errors": [],
+  "screenshots": [
+    "fixture-btc-overview-desktop.png",
+    "fixture-eth-orderbook-desktop.png",
+    "fixture-sol-perpetual-desktop.png",
+    "fixture-degraded-provider-desktop.png",
+    "fixture-disconnected-desktop.png",
+    "fixture-live-intelligence-mobile.png"
+  ],
+  "resources_after_navigation": {
+    "subscribers": 0,
+    "generation": 2,
+    "sdk_clients": 2,
+    "active_sdk_clients": 1,
+    "retired_clients_closed": true
+  },
+  "duration_seconds": 12.317
+}

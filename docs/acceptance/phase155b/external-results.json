@@ -1,0 +1,25 @@
+{
+  "classification": "BLOCKED",
+  "evidence": "GENUINE PUBLIC READ-ONLY SDK ATTEMPT",
+  "execution_platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "python": "3.12.14",
+  "sdk_version": "0.24.0",
+  "started_at": "2026-10-29T21:03:01.595222+00:00",
+  "authority": "NONE",
+  "read_only": true,
+  "independent_source_groups": [
+    "HYPERLIQUID"
+  ],
+  "trading_readiness": "NOT APPLICABLE",
+  "checks": {
+    "sdk_import": "PASS",
+    "native_metadata": "BLOCKED",
+    "sdk_cleanup": "NOT APPLICABLE"
+  },
+  "observations": {},
+  "subscriptions": [],
+  "error_type": "ProxyError",
+  "error_code": "NETWORK_ERROR",
+  "sanitized_failure": "Configured proxy CONNECT returned 403 Forbidden.",
+  "duration_seconds": 0.059
+}
