@@ -22,7 +22,7 @@ export function LiveMarketsView() {
     </div>
     <LivePerpMetrics context={snap?.perp_context ?? null} current={f.perp} decimals={decimals} market={s.selectedLiveMarket}/>
     {providers.isError&&<p role="alert">Provider evidence unavailable: {providers.error.message} <button onClick={()=>void providers.refetch()}>Retry provider evidence</button></p>}
-    <LiveProviderStatus evidence={providers.data ?? null} now={Math.max(now,performance.now())} current={s.current} bookCurrent={f.book} perpCurrent={f.perp} bookBudget={snap?.status.l2_stale_after_seconds ?? 10} perpBudget={snap?.status.perp_stale_after_seconds ?? 30}/>
+    <LiveProviderStatus evidence={providers.data ?? null} now={Math.max(now,performance.now())} current={s.current} bookCurrent={f.book} perpCurrent={f.perp} bookBudget={snap?.status.l2_stale_after_seconds ?? 10} perpBudget={snap?.status.perp_stale_after_seconds ?? 30} sourceDegraded={snap?.status.connection_state==='DEGRADED' || snap?.status.last_error_code!=null}/>
     {history.isError&&<p role="alert">Retained history unavailable: {history.error.message}</p>}
     <LiveMarketHistory history={acceptedHistory} limit={limit} onLimit={setLimit} refresh={()=>void history.refetch()} decimals={decimals}/>
   </div>;

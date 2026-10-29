@@ -59,9 +59,14 @@ def provider_health(snapshot):
         age = (status.l2_age_seconds if book else status.perp_age_seconds) if available else None
         fresh = status.l2_freshness if book else status.perp_freshness
         state = 'ERROR' if not available else 'STALE' if fresh != 'FRESH' else 'HEALTHY' if book else 'DEGRADED'
+        if state == 'HEALTHY' and status.last_error_code is not None:
+            state = 'DEGRADED'
+        if status.connection_state == 'DISABLED':
+            state = 'DISABLED'
         verified = snapshot.metadata.metadata_status == 'EXCHANGE_VERIFIED' and status.metadata_freshness == 'FRESH'
         if not verified:
-            available, timestamp, receipt, age, state = False, None, None, None, 'ERROR'
+            available, timestamp, receipt, age = False, None, None, None
+            state = 'DISABLED' if status.connection_state == 'DISABLED' else 'ERROR'
         mapping = LiveProviderMapping(market=market, provider=provider, native_symbol=market if verified else None,
             expected_source_id=f'hyperliquid:{market}:{provider.value}' if verified else None,
             transport='NATIVE', mapping_status='VALIDATED' if verified else 'UNVERIFIED', enabled=verified,

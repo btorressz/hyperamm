@@ -14,6 +14,7 @@ class LiveObservationHistory:
         self._gaps = dict.fromkeys(MARKETS, 0)
         self._last_l2 = dict.fromkeys(MARKETS, None)
         self._last_context = dict.fromkeys(MARKETS, None)
+        self._generation = dict.fromkeys(MARKETS, 0)
 
     def gap(self, market):
         self._gaps[market] += 1
@@ -22,6 +23,9 @@ class LiveObservationHistory:
         if point.observer_instance_id != self.instance_id:
             raise ValueError('history process mismatch')
         market = point.market
+        if point.connection_generation < self._generation[market]:
+            return False
+        self._generation[market] = point.connection_generation
         values = self._points[market]
         if point.kind == 'L2':
             previous = self._last_l2[market]
@@ -29,7 +33,7 @@ class LiveObservationHistory:
                 return False
             self._last_l2[market] = point.source_timestamp
         else:
-            identity = (point.connection_generation, point.mark, point.oracle,
+            identity = (point.mark, point.oracle,
                         point.funding, point.open_interest)
             if identity == self._last_context[market]:
                 return False

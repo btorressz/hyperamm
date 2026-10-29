@@ -1162,3 +1162,14 @@ REST/WS, reconnection/subscription/cleanup, provider integrity, queues/history a
 long-running soak work. No changes to those reserved modules, signing authority,
 strategy economics or operational accounting. Phase 15 is not complete; do not
 merge automatically or begin Phase 16/17.
+
+
+## Phase 15.5B — October 29, 2026 update
+
+Phase 15.5B is implemented and offline accepted for draft review: streaming SDK
+ownership/recovery, source/history integrity, provider health and integration
+acceptance. Final runs: 1916 backend / 652 frontend passes, 47 Chromium workflows
+(6 new plus 28 reused security/comparison plus 13 source/terminal-independence), and 30.2484s offline soak. Genuine venue access remains
+BLOCKED; independent macOS/local/Replit and new real Redis acceptance remain
+open. The owner must decide the combined Phase 15 disposition. Phase 16/17 has
+not started. See [acceptance](PHASE155B_ACCEPTANCE.md).

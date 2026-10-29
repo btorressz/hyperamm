@@ -27,6 +27,38 @@ MAX_WIRE_BYTES = 64 * 1024
 SUBSCRIBER_QUEUE_CAPACITY = 8
 
 
+def bounded_callback_wire(raw):
+    """Bound traversal before serialization, including deeply nested/huge SDK values."""
+    pending, nodes, text_size = [(raw, 0)], 0, 0
+    while pending:
+        value, depth = pending.pop()
+        nodes += 1
+        if nodes > 8192 or depth > 16:
+            raise ValueError('callback structure exceeds bound')
+        if isinstance(value, str):
+            text_size += len(value)
+            if text_size > MAX_WIRE_BYTES:
+                raise ValueError('callback text exceeds bound')
+        elif type(value) in (dict, list):
+            if len(value) > 8192 or len(pending) + len(value) * 2 > 16384:
+                raise ValueError('callback container exceeds bound')
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    if not isinstance(key, str):
+                        raise ValueError('callback keys must be strings')
+                    pending.extend(((key, depth + 1), (child, depth + 1)))
+            else:
+                pending.extend((child, depth + 1) for child in value)
+        elif type(value) is int and value.bit_length() > 256:
+            raise ValueError('callback integer exceeds bound')
+        elif value is not None and type(value) not in (bool, int, float):
+            raise ValueError('unsupported callback value')
+    wire = json.dumps(raw, separators=(',', ':'), allow_nan=False)
+    if len(wire.encode('utf-8')) > MAX_WIRE_BYTES:
+        raise ValueError('oversized callback')
+    return wire
+
+
 def utcnow():
     return datetime.now(timezone.utc)
 
@@ -39,6 +71,8 @@ class SDKObservationClient:
         self.handles = []
 
     def open(self):
+        if self.info is not None or self.bootstrap is not None:
+            raise RuntimeError('SDK client already owns resources')
         from hyperliquid.info import Info
         from hyperliquid.utils.constants import MAINNET_API_URL
         self.bootstrap = open_read_only_info({'universe': []}, self.timeout)
@@ -64,7 +98,11 @@ class SDKObservationClient:
         return HyperliquidMarketDataAdapter._socket_ready(self.info)
 
     def subscribe(self, market, kind, callback):
+        if market not in MARKETS or kind not in {'l2Book', 'activeAssetCtx'}:
+            raise ValueError('unsupported observation subscription')
         subscription = {'type': kind, 'coin': market}
+        if any(existing == subscription for existing, _ in self.handles):
+            raise RuntimeError('duplicate observation subscription')
         handle = self.info.subscribe(subscription.copy(), callback)
         self.handles.append((subscription, handle))
         return handle
@@ -90,14 +128,21 @@ class SDKObservationClient:
             manager = getattr(self.info, 'ws_manager', None)
             if manager is not None:
                 try:
-                    self.info.disconnect_websocket()
+                    # SDK 0.24 stop() joins the ping sender without a deadline.
+                    # Use its same stop primitives, then verify BOTH bounded joins.
+                    manager.stop_event.set()
+                    manager.ws.close()
                 except Exception:
                     errors.append('socket stop failed')
-                for thread in (manager, manager.ping_sender):
-                    if thread.ident is not None:
-                        thread.join(timeout=self.shutdown_timeout)
-                    if thread.is_alive():
-                        errors.append('SDK thread still running')
+                for thread in (manager, getattr(manager, 'ping_sender', None)):
+                    if thread is not None:
+                        try:
+                            if thread.ident is not None:
+                                thread.join(timeout=self.shutdown_timeout)
+                            if thread.is_alive():
+                                errors.append('SDK thread still running')
+                        except Exception:
+                            errors.append('SDK thread join failed')
         for client in (self.bootstrap, self.info):
             session = getattr(client, 'session', None)
             if session is not None:
@@ -123,12 +168,13 @@ class BoundedIngress:
         self.closed = False
 
     def offer(self, market, kind, generation, raw):
+        with self.lock:
+            if self.closed:
+                return
         received = self.clock()
         # SDK already decoded the message. Bound retained messages before enqueue.
         try:
-            wire = json.dumps(raw, separators=(',', ':'), allow_nan=False)
-            if len(wire.encode('utf-8')) > MAX_WIRE_BYTES:
-                raise ValueError('oversized callback')
+            wire = bounded_callback_wire(raw)
         except (ValueError, TypeError, RecursionError):
             wire = None
         with self.lock:
@@ -177,6 +223,7 @@ class MarketState:
     rejected: int = 0
     dropped: int = 0
     error: str | None = None
+    recovery_after: float = 0
 
 
 class LiveMarketStreamService:
@@ -265,6 +312,8 @@ class LiveMarketStreamService:
             observation = 'UNAVAILABLE'
         elif 'STALE' in (bs, cs, ms):
             observation = 'STALE'
+        elif state.error and (state.book is not None or state.context is not None):
+            observation = 'DEGRADED'
         elif connection == 'CONNECTED' and bs == cs == ms == 'FRESH':
             observation = 'AVAILABLE'
         elif state.book is not None or state.context is not None:
@@ -341,6 +390,10 @@ class LiveMarketStreamService:
         if isinstance(raw, dict) and raw.get('channel') == 'subscriptionResponse':
             return False  # An acknowledgement is not usable economic evidence.
         try:
+            if not isinstance(raw, dict) or ('channel' in raw and raw['channel'] != kind):
+                raise ValueError('stream channel mismatch')
+            if observed_at > self._clock():
+                raise ValueError('future receipt timestamp')
             if kind == 'l2Book':
                 if not state.barrier:
                     return False
@@ -403,30 +456,34 @@ class LiveMarketStreamService:
             state.rejected += 1
             state.error = 'CONFLICT' if state.error == 'CONFLICT' else 'INVALID_DATA'
             state.connection = 'DEGRADED'
+            state.seen.discard(kind)
             if kind == 'l2Book':
-                state.book = None
                 state.barrier = False
                 self.history.gap(market)
-            else:
-                state.context = None
+            # Keep the last accepted values and their original timestamps for
+            # historical display. Invalid input cannot overwrite that evidence.
             publish()
             return False
 
     async def _bootstrap_book(self, market):
         state = self.states[market]
-        state.barrier = True
-        raw, received = await self._call(self._client.book, market)
-        self.accept(market, 'l2Book', raw, state.generation, received, source='OFFICIAL_SDK_REST')
-        # An identical same-event REST boundary can restore retained economics.
-        if state.book is None and state.barrier:
+        state.barrier = False
+        try:
+            raw, received = await self._call(self._client.book, market)
+            state.barrier = True
+            self.accept(market, 'l2Book', raw, state.generation, received, source='OFFICIAL_SDK_REST')
+            # Only a fresh accepted event or an identical watermark establishes
+            # the boundary; retaining older evidence does not establish recovery.
             book = normalize_book(raw, state.metadata, received,
                 future_tolerance=self.future_tolerance, max_levels=self.max_levels)
-            if (state.watermark and (book.source_timestamp, book_economic_identity(raw)) == state.watermark
-                and -self.future_tolerance <= (received-book.source_timestamp).total_seconds() <= self.l2_budget):
+            if (not state.barrier or (book.source_timestamp, book_economic_identity(raw)) != state.watermark
+                or not -self.future_tolerance <= (received-book.source_timestamp).total_seconds() <= self.l2_budget):
+                raise ValueError('missing valid recovery book')
+            if state.book is None:
                 state.book = StreamBookObservation(**book.model_dump(exclude={'source'}), source='OFFICIAL_SDK_REST')
-        if state.book is None:
+        except BaseException:
             state.barrier = False
-            raise ValueError('missing valid recovery book')
+            raise
 
     async def _attempt(self):
         self._generation += 1
@@ -438,6 +495,7 @@ class LiveMarketStreamService:
             state.connection, state.subscription = 'CONNECTING', 'NONE'
             state.book = state.context = None
             state.barrier = False
+            state.recovery_after = 0
             state.seen.clear()
             if generation > 1:
                 state.reconnects += 1
@@ -514,8 +572,13 @@ class LiveMarketStreamService:
                     state.seen.clear()
                     self.history.gap(market)
                     self.publish(market)
-                if not state.barrier:
-                    await self._bootstrap_book(market)
+                if not state.barrier and asyncio.get_running_loop().time() >= state.recovery_after:
+                    state.recovery_after = asyncio.get_running_loop().time() + max(.25, self.retry_initial)
+                    try:
+                        await self._bootstrap_book(market)
+                    except Exception:
+                        # One bad market's recovery must not retire the others.
+                        state.connection, state.error = 'DEGRADED', 'INVALID_DATA'
                 for kind, old_generation, wire, observed in values[market]:
                     # A browser consumes latest normalized state per bounded batch;
                     # accepted component arrivals still each enter owned history.
@@ -571,7 +634,11 @@ class LiveMarketStreamService:
 
     async def _drain(self):
         if self._runner is not None:
-            await asyncio.shield(self._runner)
+            try:
+                await asyncio.shield(self._runner)
+            except asyncio.CancelledError:
+                if not self._runner.cancelled():
+                    raise
         if self._client is not None:
             try:
                 await self._call(self._client.close)

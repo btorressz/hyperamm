@@ -249,3 +249,14 @@ policy excludes `api.hyperliquid.xyz` and grants no VPN/TCP access. Intercepted
 actual SDK tests establish compatibility and thread ownership, not live operation,
 rate-limit calibration or venue availability. External acceptance remains open
 for a network-permitted Mac environment; TLS and proxy policy must stay intact.
+
+
+## Phase 15.5B — October 29, 2026 update
+
+Official SDK 0.24.0 remains the observation transport. The owner rejects duplicate
+subscriptions, validates channels, retires generations, preserves last accepted
+evidence and performs individually bounded manager/ping joins using the SDK's
+stop primitives. Cleanup uncertainty prevents replacement. The genuine October 29
+metadata attempt received configured proxy CONNECT 403 and stopped; no live venue
+messages are claimed. The opt-in supported-SDK runner, exact command and permitted
+local/Replit prerequisites are in [external acceptance](PHASE155B_EXTERNAL_ACCEPTANCE.md).

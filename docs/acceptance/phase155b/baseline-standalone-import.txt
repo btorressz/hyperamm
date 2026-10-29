@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/workspace/hyperamm/work/phase155b-baseline/backend/app/references/live_provider_integrity.py", line 5, in <module>
+    from app.market_data.live_models import Evidence, LiveMarketId, PositiveDecimal
+  File "/workspace/hyperamm/work/phase155b-baseline/backend/app/market_data/live_models.py", line 12, in <module>
+    from app.simulation.market_profiles import ResearchPerpMarketId
+  File "/workspace/hyperamm/work/phase155b-baseline/backend/app/simulation/__init__.py", line 2, in <module>
+    from .engine import SimulationEngine
+  File "/workspace/hyperamm/work/phase155b-baseline/backend/app/simulation/engine.py", line 25, in <module>
+    from .metrics import MetricsAccumulator
+  File "/workspace/hyperamm/work/phase155b-baseline/backend/app/simulation/metrics.py", line 7, in <module>
+    from .models import SimulationMetrics
+  File "/workspace/hyperamm/work/phase155b-baseline/backend/app/simulation/models.py", line 15, in <module>
+    from app.market_data.live_models import Evidence, FinancialDecimal, PositiveDecimal, NonnegativeDecimal
+ImportError: cannot import name 'Evidence' from partially initialized module 'app.market_data.live_models' (most likely due to a circular import) (/workspace/hyperamm/work/phase155b-baseline/backend/app/market_data/live_models.py)
