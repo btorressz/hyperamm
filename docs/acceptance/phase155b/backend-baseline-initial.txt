@@ -33,7 +33,7 @@ __________________ test_generated_terminal_schema_is_current ___________________
         spec.loader.exec_module(module)
 >       assert module.build_contract() == json.loads((ROOT/'frontend/src/contracts/terminal.schema.json').read_text())
 E       AssertionError: assert {'$defs': {'A...t', ...], ...} == {'$defs': {'A...t', ...], ...}
-E         
+E
 E         Omitting 5 identical items, use -vv to show
 E         Differing items:
 E         {'properties': {'accounting': {'additionalProperties': False, 'properties': {'accounting_fingerprint': {'format': 'sha...$defs/QuoteLevel'}, 'title': 'Agent Quotes', 'type': 'array'}, 'agents': {'$ref': '#/$defs/AgentSystemSnapshot'}, ...}} != {'properties': {'accounting': {'additionalProperties': False, 'properties': {'accounting_fingerprint': {'format': 'sha...$defs/QuoteLevel'}, 'title': 'Agent Quotes', 'type': 'array'}, 'agents': {'$ref': '#/$defs/AgentSystemSnapshot'}, ...}}

@@ -89,7 +89,7 @@ kind = 'l2Book', mutation = 'symbol'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -121,7 +121,7 @@ kind = 'activeAssetCtx', mutation = 'symbol'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -153,7 +153,7 @@ kind = 'l2Book', mutation = 'nested'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -185,7 +185,7 @@ kind = 'activeAssetCtx', mutation = 'nested'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -217,7 +217,7 @@ kind = 'l2Book', mutation = 'nonfinite'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -249,7 +249,7 @@ kind = 'activeAssetCtx', mutation = 'nonfinite'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -281,7 +281,7 @@ kind = 'l2Book', mutation = 'zero'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -313,7 +313,7 @@ kind = 'activeAssetCtx', mutation = 'zero'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -345,7 +345,7 @@ kind = 'l2Book', mutation = 'negative'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -377,7 +377,7 @@ kind = 'activeAssetCtx', mutation = 'negative'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -409,7 +409,7 @@ kind = 'l2Book', mutation = 'extreme'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -441,7 +441,7 @@ kind = 'activeAssetCtx', mutation = 'extreme'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -473,7 +473,7 @@ kind = 'l2Book', mutation = 'array'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -505,7 +505,7 @@ kind = 'activeAssetCtx', mutation = 'array'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -537,7 +537,7 @@ kind = 'l2Book', mutation = 'text'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -569,7 +569,7 @@ kind = 'activeAssetCtx', mutation = 'text'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -601,7 +601,7 @@ kind = 'l2Book', mutation = 'timestamp'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (None, Stream... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 0 diff: None != StreamBookObservation(market='BTC', bids=(LiveBookLevel(price=Decimal('60000'), size=Decimal('1'), order_count=2),), asks=(LiveBookLevel(price=Decimal('60010'), size=Decimal('2'), order_count=3),), source_timestamp=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), source='OFFICIAL_SDK_REST', best_bid=Decimal('60000'), best_ask=Decimal('60010'), midpoint=Decimal('60005'), spread=Decimal('10'), spread_bps=Decimal('1.666527789350887426047829348'), truncated=False)
 E             Use -v to get more diff
 
@@ -633,7 +633,7 @@ kind = 'activeAssetCtx', mutation = 'timestamp'
             assert not service.accept('BTC', kind, raw, 1, clock())
 >           assert (state.book, state.context, service.history.query('BTC').points) == before
 E           AssertionError: assert (StreamBookOb... 'PARTIAL'>))) == (StreamBookOb... 'PARTIAL'>)))
-E             
+E
 E             At index 1 diff: None != StreamPerpObservation(market='BTC', source='OFFICIAL_SDK_REST', source_timestamp=None, observed_at=datetime.datetime(2026, 10, 10, 20, 0, tzinfo=datetime.timezone.utc), mark_price=Decimal('60000'), oracle_price=Decimal('60000'), funding_rate=Decimal('-0.0001'), open_interest_base=Decimal('100'), open_interest_notional=Decimal('6000000'), provider_mid_price=Decimal('60000'), premium=Decimal('0.001'), mark_oracle_basis_bps=Decimal('0'), mark_mid_basis_bps=Decimal('0'), oracle_mid_basis_bps=Decimal('0'), event_time_verified=False)
 E             Use -v to get more diff
 
@@ -795,8 +795,8 @@ stuck = False
 >           client.close();client.close();assert client.info is None
             ^^^^^^^^^^^^^^
 
-tests/test_phase155b_sdk_lifecycle.py:36: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_phase155b_sdk_lifecycle.py:36:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = <app.market_data.live_streams.SDKObservationClient object at 0x7fc529c005c0>
 
@@ -854,8 +854,8 @@ stuck = True
 >       manager.stop_event.set.assert_called_once();info.disconnect_websocket.assert_not_called()
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_phase155b_sdk_lifecycle.py:38: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_phase155b_sdk_lifecycle.py:38:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = <Mock id='140484785436624'>
 
