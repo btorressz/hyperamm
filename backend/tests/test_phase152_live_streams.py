@@ -125,7 +125,11 @@ async def test_conflicting_full_depth_beyond_returned_levels(streams):
 async def test_context_validation_and_no_cross_market_writes(streams,market,field,value):
     service,sdk,clock=streams;raw=sdk.ctx(market);raw['data']['ctx'][field]=value
     others={m:service.snapshot(m) for m in MARKETS if m!=market}
-    assert not service.accept(market,'activeAssetCtx',raw,1,clock()) and service.snapshot(market).perp_context is None
+    retained=service.snapshot(market).perp_context
+    assert not service.accept(market,'activeAssetCtx',raw,1,clock())
+    assert service.snapshot(market).perp_context == retained
+    assert service.snapshot(market).observation_status == 'DEGRADED'
+    assert service.states[market].rejected == 1 and 'activeAssetCtx' not in service.states[market].seen
     assert all(service.snapshot(m)==v for m,v in others.items())
 
 async def test_context_wrong_symbol_and_reused_basis(streams):
