@@ -34,6 +34,10 @@ class SimulationService:
         from app.research_replay.runner import catalog
         return catalog(storage_root)
 
+    async def historical_summaries(self, *, storage_root):
+        from app.research_replay.runner import summaries
+        return summaries(storage_root)
+
     async def historical_provenance(self, *, storage_root, dataset_id):
         from app.research_replay.runner import provenance
         return provenance(storage_root, dataset_id)

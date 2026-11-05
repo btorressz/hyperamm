@@ -6,6 +6,7 @@ from app.infrastructure.research import ResearchUnavailableError
 from app.research_replay.contracts import HistoricalReplayRequest, HistoricalReplayResult, ReplayRejected
 from app.research_replay.models import Identifier
 from app.research_replay.provenance import HistoricalDatasetProvenance
+from app.research_replay.summary import HistoricalDatasetSummary
 from app.simulation.executor import ResearchBusyError
 
 router = APIRouter(prefix="/historical-replay", tags=["historical-replay"])
@@ -35,6 +36,12 @@ async def execute(http_request, operation, **inputs):
 async def datasets(request: Request, response: Response):
     response.headers.update(NO_STORE)
     return await execute(request, "historical_catalog")
+
+
+@router.get("/dataset-summaries", response_model=tuple[HistoricalDatasetSummary, ...])
+async def dataset_summaries(request: Request, response: Response):
+    response.headers.update(NO_STORE)
+    return await execute(request, "historical_summaries")
 
 
 @router.get("/provenance", response_model=HistoricalDatasetProvenance)
