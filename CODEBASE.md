@@ -1,10 +1,73 @@
 # HyperAMM — Codebase & Repository Guide
 
-> **Developer orientation and source map** for the Python/FastAPI + React/TypeScript HyperAMM repository. This document describes the tracked source at Git revision `50f6ab9b42cb`, after merged PR #43 (October 9, 2026). Update it as implementations change.
+> **Developer orientation and source map — updated November 5, 2026, through merged PR #60 (Phase 16.4).** The original Phase 1–15 file inventory and the dated October 14 repository audit are retained as historical architectural context. The current paths and Phase 16 additions are documented below. Implementation being merged is distinct from native/browser, cross-platform, and external venue acceptance.
 
 **Purpose.** This is a code navigation and dependency guide: what the directories/files do, which code calls which domain, what information crosses each boundary, how to run or test it, and where changes belong. For project history see [README](README.md), [Summary](Summary.md), [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md).
 
 **System identity.** HyperAMM is a *virtual AMM quote compiler for Hyperliquid's central limit order book (CLOB)*, **not** a deployed/custodial AMM pool. The mathematical constant-product/concentrated curve proposes order-book liquidity. **PAPER** is the default; **guarded Hyperliquid TESTNET** is optional. There is **no mainnet/custody/withdrawal/bridging capability**. Supported deployment is loopback, single operator, one backend worker—not a public SaaS or remotely exposed trading service.
+
+## Current architecture additions — Phases 15–16 (2026-11-05)
+
+**Code status:** Phases 15.5A/B (PRs #54/#55) and 16.1A–16.4 (PRs #56–#60) are merged. The operational core remains one `HyperAmmRuntime` and the shared local `SimulationExecutor`; no second market-making engine, replay worker, signer or research-authoritative strategy path was introduced. **Combined Phase 15 acceptance is open** for genuine permitted Hyperliquid delivery, longer native soak and independent macOS verification. **Phase 16.4 was merged without reported native Python/Node, frontend TypeScript/build, full regression, or Chromium acceptance.** See [CHANGELOG.md](CHANGELOG.md) and [Phase 16.4 acceptance](docs/PHASE164_ACCEPTANCE.md).
+
+### Three intentionally separate paths
+
+```text
+Operational market_data/perp/references
+  → QuoteEngine → Inventory/Adaptation/Agents → RiskFirewall
+  → FinalQuoteAuthorization → OrderManager → PAPER / opt-in TESTNET
+                  (real operational economic authority)
+
+Phase 15: opt-in public Hyperliquid SDK REST / WebSocket
+  → market_data.live_observations / live_streams / live_history
+  → api.live_markets / live_market_streams
+  → React components/markets / research-comparison
+                  (observation-only, never strategy or order authority)
+
+Phase 16: trusted local JSON admission, no web collector
+  → research_replay.importers / validation → HistoricalStorage (private POSIX)
+  → research_replay.runner / adapter / contracts
+  → SAME SimulationExecutor → SimulationEngine / PAPER / accounting / risk
+  → api.historical_replay (bounded local research APIs)
+  → React components/replay (display and hypothetical comparisons)
+                  (no live subscription, account signer or auto-deployment)
+```
+
+**Source truth:** `phase16-replay-v1` distinguishes `RECORDED_NATIVE` from `SYNTHETIC_FIXTURE`; original order-book/context observations, receipt clocks, observer generations and explicit gaps stay immutable. Source identity, rights and certain provider time labels are **operator/user assertions**, not independently authenticated. Content SHA-256 is an integrity/reproducibility fingerprint, **not** a signature, proof of market completeness or license verification. Missing mark/oracle/funding/open-interest or valid depth yields explicit rejection/exclusion; no history or economics is imputed.
+
+### New backend file ownership
+
+| Module | Responsibility / constraints |
+|---|---|
+| [`market_data/live_models.py`](backend/app/market_data/live_models.py), [`live_observations.py`](backend/app/market_data/live_observations.py) | Typed official SDK observation-only REST snapshots, coherence, freshness and source identity for BTC/ETH/SOL |
+| [`live_stream_models.py`](backend/app/market_data/live_stream_models.py), [`live_streams.py`](backend/app/market_data/live_streams.py), [`live_history.py`](backend/app/market_data/live_history.py) | Immutable stream source/status, bounded callbacks/subscriptions/history, observer generation/retirement, gap and provider-health handling |
+| [`api/live_markets.py`](backend/app/api/live_markets.py), [`api/live_market_streams.py`](backend/app/api/live_market_streams.py) | Bounded read-only native-market and streaming HTTP/WebSocket routes; no operational strategy mutation |
+| [`api/research_market_comparison.py`](backend/app/api/research_market_comparison.py) | Snapshotted market-versus-hypothetical research comparison, separate provenance, no automatic computation/trading |
+| [`research_replay/models.py`](backend/app/research_replay/models.py), [`provenance.py`](backend/app/research_replay/provenance.py) | Immutable historical evidence, source assertions, coverage/gaps and component/dataset fingerprints |
+| [`research_replay/validation.py`](backend/app/research_replay/validation.py), [`importers.py`](backend/app/research_replay/importers.py), [`storage.py`](backend/app/research_replay/storage.py) | Bounded trusted local JSON admission; descriptor-relative symlink/special-file checks; owner-only POSIX vault, atomic no-clobber writes, locks, corruption/readback verification |
+| [`research_replay/contracts.py`](backend/app/research_replay/contracts.py), [`adapter.py`](backend/app/research_replay/adapter.py), [`runner.py`](backend/app/research_replay/runner.py) | Versioned replay request/result contracts; chronological receipt adapter; explicit gap/segment resets and structured missing-economics rejection; isolate each PAPER simulation in the *existing* research worker |
+| [`research_replay/summary.py`](backend/app/research_replay/summary.py), [`api/historical_replay.py`](backend/app/api/historical_replay.py) | Bounded, read-only dataset summary/catalog/provenance and computational replay API; no raw-data download, browser ingestion or execution authority |
+| [`execution/research.py`](backend/app/execution/research.py), [`execution/paper.py`](backend/app/execution/paper.py), [`simulation/engine.py`](backend/app/simulation/engine.py) | Phase 16.3 `phase163-v1` opt-in latency, slippage, depth participation and partial-fill sensitivities; reuse exact Decimal accounting/risk and preserve crossing-only baseline |
+
+### New frontend file ownership
+
+| Module | Responsibility / constraints |
+|---|---|
+| [`components/markets/`](frontend/src/components/markets/), [`components/research-comparison/`](frontend/src/components/research-comparison/) | Independent native BTC/ETH/SOL evidence, chart/book/health, observation versus hypothetical research comparisons |
+| [`components/replay/HistoricalReplayWorkspace.tsx`](frontend/src/components/replay/HistoricalReplayWorkspace.tsx) | Phase 16.4 research-only coordinator mounted within [`pages/Simulation.tsx`](frontend/src/pages/Simulation.tsx); no extra sidebar page |
+| [`components/replay/ReplayDatasetSelector.tsx`](frontend/src/components/replay/ReplayDatasetSelector.tsx), [`ReplayProvenance.tsx`](frontend/src/components/replay/ReplayProvenance.tsx) | Stored metadata selection, permission/source limits, receipt coverage, gaps and fingerprints |
+| [`components/replay/ReplayControls.tsx`](frontend/src/components/replay/ReplayControls.tsx), [`ReplayMarketChart.tsx`](frontend/src/components/replay/ReplayMarketChart.tsx), [`ReplayOrderBook.tsx`](frontend/src/components/replay/ReplayOrderBook.tsx) | Browser-only play/pause/segment navigation; retained L2/mark/oracle frames, no fabricated OHLCV or live ticks |
+| [`components/replay/ReplayExecutionAssumptions.tsx`](frontend/src/components/replay/ReplayExecutionAssumptions.tsx), [`ReplayPerformance.tsx`](frontend/src/components/replay/ReplayPerformance.tsx), [`ReplayComparison.tsx`](frontend/src/components/replay/ReplayComparison.tsx) | Versioned hypothetical execution inputs, isolated per-segment PnL/risk/trace and backend-derived baseline/model comparison |
+| [`types/replay.ts`](frontend/src/types/replay.ts), [`utils/replayEvidence.ts`](frontend/src/utils/replayEvidence.ts), [`api/client.ts`](frontend/src/api/client.ts), [`phase164.css`](frontend/src/phase164.css) | Strict display types/defensive request retirement and bounded validation, historical API client, scoped terminal styling; UI validation cannot authenticate evidence |
+| [`tests/phase164-replay.test.cjs`](frontend/tests/phase164-replay.test.cjs), [`backend/tests/test_phase164_catalog.py`](backend/tests/test_phase164_catalog.py) | Added focused catalog/validation tests; presence is **not** evidence that tests ran at PR #60 |
+
+### Local historical replay operation and API
+
+- `HISTORICAL_REPLAY_ROOT` is an **optional backend setting** (see [`config.py`](backend/app/config.py)). If unset, replay HTTP APIs return 503. The operator must pre-provision a trusted owner-only POSIX directory and explicitly import a permitted local JSON record through `import_file` and `HistoricalStorage.save`. No browser upload, automatic collector or supplied licensed native archive exists.
+- Phase 16 APIs: `GET /api/v1/historical-replay/datasets` (IDs), `GET /dataset-summaries` (typed bounded metadata), `GET /provenance?dataset_id=...`, and `POST /run` (isolated computational PAPER replay). All require the local deployment boundary, use no-store responses and the existing single-slot worker. Busy work returns 429, disabled admission 503, rejected/incomplete evidence 422.
+- The request binds dataset ID + fingerprint, market, receipt pairing/interval policy, available economic evidence, precision, frame/trace budgets and optional PAPER execution sensitivity. `SimulationService`, `SimulationExecutor`, `SimulationEngine` and `SimulationTrace` are reused. Cancellations do not free worker admission while a computation still owns it.
+- Results carry source/configuration/model/result provenance and independent accounting segments. A replay gap, source reset or unviable frame does **not** establish a continuous return. Baseline-versus-modeled session PnL and fill-count differences come from the backend, **not frontend financial recomputation**.
+- **Next phases are not implemented:** 16.5 scenario/replay comparison, 16.6 final adversarial acceptance, and 17 shared-capital portfolio research. Three unchanged static documentation checks failed in Phase 16.1B–16.3 full backend runs, while focused suites passed; Phase 16.4 had no native/browser result reported before merge.
 
 ## 1. Fast orientation
 
@@ -19,7 +82,7 @@
 | How does the terminal get data? | [`service.py`](backend/app/terminal/service.py) → [`websocket.py`](backend/app/api/websocket.py) → [`terminalSocket.ts`](frontend/src/utils/terminalSocket.ts) → [`terminal.ts`](frontend/src/stores/terminal.ts) |
 | How does UI invoke actions? | [`client.ts`](frontend/src/api/client.ts) → FastAPI `/api/v1/` router → `HyperAmmRuntime` method |
 | How to find a test? | `backend/tests/` (pytest), `frontend/tests/` (Node test runner and optional Chromium harness) |
-| Current acceptance gaps? | [`PHASE1321_ACCEPTANCE.md`](docs/PHASE1321_ACCEPTANCE.md) and [`ROADMAP.md`](docs/ROADMAP.md) |
+| Current acceptance gaps? | [`PHASE155B_ACCEPTANCE.md`](docs/PHASE155B_ACCEPTANCE.md), [`PHASE164_ACCEPTANCE.md`](docs/PHASE164_ACCEPTANCE.md) and [`CHANGELOG.md`](CHANGELOG.md) |
 
 ## 2. Repository shape
 
@@ -38,7 +101,7 @@ hyperamm/
 │   │   ├── deployment.py        # loopback and single-worker boundary
 │   │   ├── market_data/  amm/  strategy/  agents/
 │   │   ├── references/   risk/ execution/ accounting/
-│   │   ├── simulation/   research/ml/ terminal/ infrastructure/ api/
+│   │   ├── simulation/   research_replay/ research/ml/ terminal/ infrastructure/ api/
 │   │   └── dependencies.py / diagnostics.py
 │   ├── scripts/                  # terminal schema generator
 │   └── tests/                    # pytest unit/integration/acceptance
@@ -161,7 +224,9 @@ Normalizes LIVE Hyperliquid and explicit DEMO L2/market/perpetual evidence; enfo
 | [`mock.py`](backend/app/market_data/mock.py) | Deterministic DEMO data source used for local development/tests; it remains explicitly simulated. |
 | [`models.py`](backend/app/market_data/models.py) | Normalized market/book/level contracts, data mode, timestamps, freshness and sequence metadata. |
 | [`perp_context.py`](backend/app/market_data/perp_context.py) | Normalizes mark, oracle, funding, open interest and account-position context; includes deterministic DEMO context. |
-| [`service.py`](backend/app/market_data/service.py) | Starts/stops the selected adapter, accepts ordered updates, exposes the current snapshot and notifies runtime listeners. |
+| [`service.py`](backend/app/market_data/service.py) | Starts/stops the selected operational adapter, accepts ordered updates, exposes the current snapshot and notifies runtime listeners. |
+| [`live_models.py`](backend/app/market_data/live_models.py), [`live_observations.py`](backend/app/market_data/live_observations.py) | Phase 15 independent read-only native snapshot models and service; never changes operational market selection. |
+| [`live_stream_models.py`](backend/app/market_data/live_stream_models.py), [`live_streams.py`](backend/app/market_data/live_streams.py), [`live_history.py`](backend/app/market_data/live_history.py) | Phase 15 bounded SDK stream lifecycle, retained evidence, freshness, generation and history with explicit gaps. |
 
 ## 4.2 Backend package: `amm/`
 
@@ -315,6 +380,8 @@ Reuses strategy/risk/execution/accounting in isolated deterministic PAPER scenar
 | [`service.py`](backend/app/simulation/service.py) | Research-facing facade that forces DEMO/PAPER strategy copies and exposes scenario/optimization operations. |
 | [`version.py`](backend/app/simulation/version.py) | Code-owned simulation engine version used in provenance/fingerprints. |
 
+**Phase 16 separation:** [`backend/app/research_replay/`](backend/app/research_replay/) owns immutable historical evidence/admission/replay adapters and typed receipts. It does **not** replace `simulation/replay.py` or create a second simulator; `simulation/engine.py` and the same one-slot worker remain authoritative for hypothetical PAPER execution.
+
 ## 4.10 Backend package: `terminal/`
 
 Publishes read-only versioned snapshots/history/events without influencing the engine.
@@ -350,6 +417,10 @@ Thin REST/WebSocket routers that delegate into lifespan-owned runtime/research s
 | [`strategy.py`](backend/app/api/strategy.py) | Strategy state/config plus approved start/stop/update controls and AMM/market/perp summaries. |
 | [`terminal.py`](backend/app/api/terminal.py) | Read-only bounded terminal history/events APIs. |
 | [`websocket.py`](backend/app/api/websocket.py) | Primary current-state `/ws/terminal` stream. |
+| [`live_markets.py`](backend/app/api/live_markets.py), [`live_market_streams.py`](backend/app/api/live_market_streams.py) | Phase 15 separate read-only public-market REST/WebSocket observation. |
+| [`research_market_comparison.py`](backend/app/api/research_market_comparison.py) | Observed-versus-hypothetical comparison, no execution. |
+| [`research_markets.py`](backend/app/api/research_markets.py), [`research_vault.py`](backend/app/api/research_vault.py) | Isolated research market catalog, presets and assumptions. |
+| [`historical_replay.py`](backend/app/api/historical_replay.py) | Phase 16 local read-only catalog/provenance and computational replay with no ingestion or signer interface. |
 
 ## 5. Backend top-level and optional infrastructure
 
@@ -521,6 +592,10 @@ Thin REST/WebSocket routers that delegate into lifespan-owned runtime/research s
 | Observe agents | Agents panel | `api.agents` | Read-only bounded agent state/events |
 | Observe vault/ledger | Vault and REST | `api.accounting` | Read-only economic snapshots/ledger |
 | Run scenario or optimize | Simulation → `api.simulation` | `SimulationExecutor` / SimulationService | Isolated PAPER research; never auto-deploy |
+| Observe native BTC/ETH/SOL | Markets → `api.live_markets` / `api.live_market_streams` | Independent official SDK observation service | Read-only provider data, distinct from strategy evidence |
+| Compare observation vs research | Markets → `api.research_market_comparison` | Bounded research comparison policy | Separate source epochs and hypothetical outputs |
+| Browse admitted history | Replay Studio → `api.historical_replay` dataset/provenance GETs | Existing `HistoricalStorage` via shared executor | No raw archive download or browser ingestion |
+| Run historical PAPER replay | Replay Studio → `api.historical_replay.run` | `research_replay.runner` / shared `SimulationExecutor` | Partial segment returns, zero live trading authority; 429 busy |
 
 Typical API prefixes/routes are described in [README's API map](README.md) and directly under `backend/app/api/`. The OpenAPI explorer at `http://127.0.0.1:8000/docs` reflects current mounted REST handlers. WebSocket is `/ws/terminal`, outside the REST prefix.
 
@@ -971,11 +1046,11 @@ actual checks and remaining external/Phase 15.5 gates; Phase 15 is not complete.
 
 ---
 
-## 13. Repository review addendum — 2026-10-14 (current merged main)
+## 13. Historical repository review addendum — 2026-10-14 snapshot (superseded by 2026-11-05 source map)
 
 > **Preservation and version note.** Sections 1–12 and the existing Phase 13.3–15.4 notes above are intentionally preserved verbatim. The opening reference to `50f6ab9b42cb` is the source baseline at which this guide was originally written, not the latest commit or the full state of the software. This addendum reviews `main` after merged PR #53 and subsequent documentation commits through `f0fac078c35b993752f955b068fb361172b770db`. It does not silently promote older acceptance results or rewrite historical notes.
 
-### 13.1 Verified present-day repository shape
+### 13.1 Verified repository shape at the October 14 snapshot
 
 A recursive GitHub tree inspection on 2026-10-14 returned **510 tracked files** (including documentation, screenshots, test fixtures, and other non-source artifacts). In that tree: `backend/app/` contains 146 files, `backend/tests/` 58, `frontend/src/` 137, `frontend/tests/` 45, and `docs/` 102. These counts describe the inspected tree, not a software release version. All **53 pull requests #1–#53 were merged** by this baseline; Phase 15.5 has not been implemented in that history.
 
@@ -1126,11 +1201,11 @@ Actual tracked browser harnesses and fixture owners include `frontend/tests/brow
 | Phase 13 interface work | Merged; local/browser evidence recorded in Phase 13 acceptance files. |
 | Phase 14 Research Vault and Phase 14.6 native research selection | Merged; isolated PAPER functionality and local fixture/browser acceptance documented. |
 | Phase 15.1–15.4 | Merged; independent observation/streaming UI and read-only research comparison locally fixture-accepted. |
-| Phase 15.5 | **Planned, not implemented** at the inspected baseline: security/regression/final acceptance and further authorized external checks. |
+| Phase 15.5 | **Historical October 14 disposition:** planned then; **15.5A/B have since merged** in PRs #54–#55. Combined external/macOS acceptance is still open. |
 | External real market access | Not established by fixture tests; network permissions, actual event-time/reconnect behavior and appropriate venue/data rights require independent evidence. |
 | Signed TESTNET lifecycle | Guarded support exists, but no signed exchange-order acceptance is claimed here. |
 | Production / remote multi-user | Not supported: missing operator authentication, durability, public deployment hardening, external execution proof and operational acceptance. |
-| Future Phase 16/17 plans | Not part of the implemented code tree; historical replay and multi-market portfolio research remain proposals, not deployed features. |
+| Phase 16 / 17 | **Updated disposition:** Phase 16.1A–16.4 merged in PRs #56–#60, though 16.4 native/browser acceptance was not reported. Phase 16.5–16.6 and multi-market shared-capital Phase 17 remain planned. |
 
 ### 13.10 Navigation for the next developer
 
@@ -1145,9 +1220,11 @@ Actual tracked browser harnesses and fixture owners include `frontend/tests/brow
 
 At the inspected main revision, `backend/pyproject.toml` and `frontend/package.json` still declare package version `0.4.0`; `backend/app/main.py` constructs the FastAPI app with `version="0.12.0"` and its root GET still responds with a `phase` value of `"1-12"`. Those are **existing code labels, not proof that newer Phase 13–15 implementations are absent** or that a production release was certified. The older headings and branch/PR instructions above are preserved as historical context rather than current work instructions.
 
-For change chronology use [`CHANGELOG.md`](CHANGELOG.md); for current implementation and local acceptance see [`docs/ROADMAP.md`](docs/ROADMAP.md), the latest applicable [`PHASE154_ACCEPTANCE.md`](docs/PHASE154_ACCEPTANCE.md), and targeted source modules. Update this guide whenever a later phase is actually merged; do not pre-document planned 15.5, 16 or 17 code as implemented.
+For change chronology use [`CHANGELOG.md`](CHANGELOG.md); for current implementation and local acceptance see [`docs/ROADMAP.md`](docs/ROADMAP.md), the latest applicable [`PHASE154_ACCEPTANCE.md`](docs/PHASE154_ACCEPTANCE.md), and targeted source modules. Current merged modules through Phase 16.4 are documented in the November 5 source map at the top of this guide. Do not label Phases 16.5–16.6 or 17 as implemented before their code and acceptance exist.
 
 
+
+> **Historical review note:** Sections 13.1–13.11 describe the inspected October 14 snapshot; earlier statements about which later phases were *planned* must not be read as current repository status. The November 5 source map at the beginning of this document is the maintained source of truth for Phase 15.5 and 16.1–16.4.
 
 ## Phase 15.5A — Local/API integrity and offline acceptance
 
@@ -1185,3 +1262,30 @@ exports load lazily to avoid a standalone observation import cycle; economics
 are unchanged. See [acceptance](docs/PHASE155B_ACCEPTANCE.md),
 [findings](docs/PHASE155B_SECURITY_FINDINGS.md) and
 [external fallback](docs/PHASE155B_EXTERNAL_ACCEPTANCE.md).
+
+## Phase 16.1–16.4 — November 5, 2026 source/acceptance addendum
+
+The accepted code-path boundary is **trusted local evidence → immutable evidence vault → bounded deterministic research worker → hypothetical PAPER results → display**. Backend history is **not** the bounded `/ws/terminal` session history and **not** the Phase 15 live-observation history. Historical source timestamps and user permission attestations are not exchange/license authentication.
+
+### Phase 16.1A/B: bounded historical data
+
+`research_replay/models.py`/`provenance.py` define receipt-ordered native-vs-synthetic contracts, immutable L2/context components, gaps and fingerprints. `validation.py`/`importers.py` validate operator-provided bounded JSON; `storage.py` atomically admits into an owner-only 256-dataset POSIX vault with no-clobber/read-back verification. No automatic licensed-data download, ZIP decompression or browser upload. Tests: [16.1B](docs/PHASE161B_ACCEPTANCE.md) records **146 focused passes**; full backend **2,058 passes / 3 baseline static failures / 1 optional skip**.
+
+### Phase 16.2: chronological replay and isolation
+
+`research_replay/adapter.py`, `contracts.py`, `runner.py` reuse the Phase 10 `SimulationEngine`/single `SimulationExecutor` and same PAPER accounting, authorization, cancel/shutdown behavior. Chronological receipt batches, missing-economics exclusion and explicit generation/gap resets guarantee segments do not secretly carry capital/positions/risk. Frozen response fingerprints and canonical per-segment archives retain model/source identity. Tests: [16.2](docs/PHASE162_ACCEPTANCE.md) records **205 focused passes** and **2,102 full backend passes / 3 baseline static failures / 1 skip**.
+
+### Phase 16.3: optional execution sensitivity
+
+`execution/research.py`, `execution/paper.py`, `simulation/engine.py`, and `research_replay/runner.py` retain unchanged baseline crossing semantics while adding opt-in `phase163-v1` latency, depth/participation, slippage, partial-fill sensitivity and backend-computed per-segment baseline/model delta. No passive queue position or actual fill claim. Tests: [16.3](docs/PHASE163_ACCEPTANCE.md) records **376 focused passes** and **2,244 full backend passes / 3 baseline static failures / 1 skip**. These are historic PR results, not a new suite run.
+
+### Phase 16.4: Historical Replay Studio (merged; acceptance pending)
+
+`research_replay/summary.py` and `api/historical_replay.py` expose bounded metadata/provenance under the same local admission and one-slot worker. The `components/replay/` React subtree mounts inside `pages/Simulation.tsx`, navigates retained frames without live subscriptions, renders typed market/book provenance and shows independent hypothetical PAPER segment metrics/baseline comparisons. New backend/frontend tests are present but **the PR #60 author did not execute native test dependencies, TypeScript/Vite builds or Chromium acceptance**; full integration remains open even though PR #60 merged. See [16.4 acceptance](docs/PHASE164_ACCEPTANCE.md).
+
+### Pending acceptance and roadmap
+
+- **Phase 15:** external permission, genuine official SDK data, long-run and independent macOS acceptance; offline fixtures and 47 Chromium workflows under PR #55 are **not** exchange proof.
+- **Phase 16.4:** native end-to-end run, `npm run typecheck`, `npm run build`, `npm test`, full backend tests, Chromium dataset/model/zero-fill/gap/429/503 paths, and unchanged operational strategy/risk/signer state. Three baseline static scans of `docs/PHASE155B_ACCEPTANCE.md` remain historically failing and need documented disposition, not silent suppression.
+- **Future only:** 16.5 controlled scenario-versus-replay comparison, 16.6 full adversarial acceptance, Phase 17 multi-market shared-capital research. There is no shared-capital BTC/ETH/SOL portfolio engine in this repository.
+
