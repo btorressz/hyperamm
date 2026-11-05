@@ -2,15 +2,68 @@
 
 All notable merged changes to **HyperAMM** are documented here, in reverse chronological order. This is a retrospective change history, not a declaration that all features are production-ready.
 
-The history covers **all 53 merged pull requests (#1–#53)** and the separately committed README contributors update through **2026-10-13**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
+The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
 ## Project status and release boundaries
 
 - The repository began this recorded PR history at **Phase 4.1**; earlier Phase 1–4 foundation is not reconstructed from PR titles.
-- **Phases 15.1–15.4 are merged and locally/fixture accepted. Phase 15.5 remains planned** as of this changelog; no Phase 16/17 implementation is claimed.
+- **Phases 15.1–15.5B are merged**, with substantial offline/fixture acceptance. **Final combined Phase 15 acceptance remains open**, particularly permitted genuine Hyperliquid delivery and independent macOS validation.
+- **Phases 16.1A–16.4 are merged**: historical evidence contracts, bounded import/storage, deterministic segmented replay, opt-in PAPER execution sensitivity, and the Historical Replay Studio. **The merged Phase 16.4 frontend/backend changes have not yet received reported native regression, build, or Chromium acceptance.** Phases 16.5–16.6 and Phase 17 remain future work.
+- Phase 16 historical source, permission and timing labels are user assertions, not independently authenticated data rights or a complete historical market record. Replay and its hypothetical fills do not confer live trading authority.
 - HyperAMM defaults to **DEMO/PAPER**, with live public observation opt-in. Phase 15 market intelligence and research comparisons do not authorize execution.
 - Local fixture and Chromium acceptance **do not establish real Hyperliquid connectivity, U.S. access permission, market-data licensing, commercial deployment readiness, or real-trading performance**. Historical audit findings and environment-dependent gates are detailed in the phase acceptance and audit documents.
 - The current supported research/observation universe is **BTC-PERP, ETH-PERP, SOL-PERP**; existing operational strategy authority remains separate.
+
+## 2026-11-05
+
+### [#60 — Phase 16.4: Historical Replay Studio & Dataset Summary](https://github.com/btorressz/hyperamm/pull/60)
+- **Added:** Read-only, bounded historical dataset summaries with market, source kind, receipt-time coverage, gaps, counts and dataset fingerprints, using the existing private storage and single research-worker admission.
+- **Added:** React Historical Replay Studio within Simulation & Optimization: dataset/provenance selection, frame timeline, retained price and L2 views, execution-assumption controls, per-segment PAPER metrics and backend-computed baseline-versus-modeled comparisons.
+- **Enhanced:** Existing chart, simulation-trace, metrics, React Query and request-client infrastructure reused without a second simulator, market-stream path or execution authority.
+- **Security:** Segments remain independent; no fabricated continuous returns, passive fills, exchange times, source authentication or licensed-data claims. The UI does not upload, modify or expose raw datasets.
+- **Tests/Status:** Focused Python and frontend tests were **added but not executed** in the implementation environment; TypeScript/build, full regression, Chromium/browser integration and operational isolation acceptance were **not run before this PR was merged**. Merge does **not** imply Phase 16.4 acceptance. See [16.4 acceptance plan](docs/PHASE164_ACCEPTANCE.md).
+
+### [#59 — Phase 16.3: PAPER Execution Realism](https://github.com/btorressz/hyperamm/pull/59)
+- **Added:** Frozen `phase163-v1` modeled-crossing execution assumptions for order/cancel latency, adverse slippage, observed-depth traversal, participation and partial fills, with exact Decimal bounds and fingerprints.
+- **Enhanced:** Existing PAPER execution, simulation, risk, accounting and replay components; per-level fills use observed retained book evidence and shared depth budgets, with deterministic cancellation precedence and no inferred hidden liquidity or queue priority.
+- **Added:** Per-segment baseline-versus-modeled research archives and checked fill/PnL deltas under otherwise identical inputs, without continuous returns across historical gaps.
+- **Tests:** **376 focused tests passed**; full backend **2,244 passed, 3 failed, 1 skipped**. Three static documentation failures were also present on the untouched baseline; the full suite was **not green**. No new backend regressions were reported. See [16.3 acceptance](docs/PHASE163_ACCEPTANCE.md).
+- **Limitations:** Hypothetical sensitivities are not calibrated venue execution or proof of real fills, latency, funding settlement or performance.
+
+### [#58 — Phase 16.2: Deterministic Historical Market Replay](https://github.com/btorressz/hyperamm/pull/58)
+- **Added:** Deterministic BTC/ETH/SOL receipt-ordered replay of securely admitted historical datasets via the existing `SimulationEngine`, `SimulationService`, PAPER accounting and single-slot executor; local read-only catalog/provenance and computational replay APIs.
+- **Security:** Missing book, mark, oracle, funding or open-interest evidence triggers structured exclusion/rejection; gaps, observer changes and excessive intervals reset independent segments instead of silently carrying state across discontinuities.
+- **Added:** Frozen request/result receipts binding dataset identity, source labels, captured configurations, original component observations, modeling assumptions and canonical engine-result archives.
+- **Tests:** **205 focused tests passed**; full backend **2,102 passed, 3 failed, 1 skipped**. The three previously present static documentation failures were reproduced on the untouched baseline; full suite **not green**. See [16.2 acceptance](docs/PHASE162_ACCEPTANCE.md).
+- **Limitations:** No authenticated licensed native history, continuous coverage, passive-fill proof, real venue soak or frontend acceptance established at this stage.
+
+### [#57 — Phase 16.1B: Historical Import Validation, Storage & Adversarial Acceptance](https://github.com/btorressz/hyperamm/pull/57)
+- **Added:** Bounded local JSON admission, strict chronology/identity/time validation, user-permission assertion checks and a private owner-only POSIX historical evidence vault.
+- **Security:** Descriptor-relative file reads, traversal/link and concurrent-mutation rejection, atomic no-clobber publication, rollback, read-back integrity, corruption detection and storage budgets; preserves operational strategy, risk, signing and PAPER worker isolation.
+- **Tests:** **146 focused 16.1A/B tests passed**; full backend **2,058 passed, 3 failed, 1 skipped**. Three baseline-only static documentation failures persisted; full suite **not green**. See [16.1B acceptance](docs/PHASE161B_ACCEPTANCE.md).
+- **Limitations:** Source authenticity and permitted use are asserted, not independently verified; local storage trust/crash-recovery and native delivery have separate acceptance requirements.
+
+## 2026-10-29
+
+### [#56 — Phase 16.1A: Historical Data Contracts & Provenance](https://github.com/btorressz/hyperamm/pull/56)
+- **Added:** Immutable versioned `phase16-replay-v1` BTC/ETH/SOL recorded-native and synthetic research contracts with strict Decimal/book values, source receipt clocks, observer generations, declared gaps and bounded coverage.
+- **Added:** Canonical SHA-256 component/dataset provenance and explicit distinction between user-asserted permitted recording and local synthetic fixtures.
+- **Tests/Status:** Syntax compilation passed and **12 focused tests** passed in an isolated stand-in harness; full native repository regression **was not run at this PR**. Later 16.1B acceptance ran its tests natively. See [16.1A contracts](docs/PHASE161A_CONTRACTS.md).
+- **Scope:** Contracts only at this stage; no importer, historical executor, new API or live-trading authority.
+
+### [#55 — Phase 15.5B: Live Stream Reliability, Provider Integrity & Integration Acceptance](https://github.com/btorressz/hyperamm/pull/55)
+- **Fixed:** Official SDK observer lifecycle, subscriber cleanup, wrong-channel/malformed callback rejection, REST bootstrap recovery, source-generation/history integrity and degraded provider-health presentation.
+- **Enhanced:** Bounded ingress, per-market recovery, lazy research exports and retained last-known-good evidence. Maintained six BTC/ETH/SOL public observation subscriptions and separation from order/risk/signing authority.
+- **Tests:** **1,916 backend / 652 frontend tests passed**, TypeScript/build passed and **47 Chromium workflows** completed with deterministic offline/fixture evidence. A short offline reconnect soak completed; it is not a genuine venue soak.
+- **Limitations:** Genuine official SDK access was proxy-blocked; independent macOS, actual venue delivery and final combined Phase 15 acceptance were **not completed**. See [15.5B acceptance](docs/PHASE155B_ACCEPTANCE.md).
+
+## 2026-10-25
+
+### [#54 — Phase 15.5A: Integrity & Offline Acceptance](https://github.com/btorressz/hyperamm/pull/54)
+- **Security:** Tightened same-origin/loopback HTTP and WebSocket handling, request framing and size limits, credential redaction, strict strategy-update admission and sanitized API errors.
+- **Enhanced:** Frontend source freshness, historical/retired evidence labels, request cancellation and generation guards, and preserved operational PAPER execution authority.
+- **Tests:** **1,822 backend / 641 frontend tests passed**, TypeScript/build passed, **28 Chromium workflows** completed and seven actual Redis checks passed. A fresh optional-dependency environment had one expected optional ML skip.
+- **Limitations:** Independent macOS, genuine venue delivery and full cross-platform/system acceptance remained outstanding. See [15.5A acceptance](docs/PHASE155A_ACCEPTANCE.md).
 
 ## 2026-10-13
 
@@ -276,16 +329,5 @@ The history covers **all 53 merged pull requests (#1–#53)** and the separately
 
 ## Historical audits and acceptance
 
-For deeper investigation, consult [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), [architecture](docs/ARCHITECTURE.md), [development roadmap](docs/ROADMAP.md), and Phase 15 acceptance reports ([15.1](docs/PHASE151_ACCEPTANCE.md), [15.2](docs/PHASE152_ACCEPTANCE.md), [15.3](docs/PHASE153_ACCEPTANCE.md), [15.4](docs/PHASE154_ACCEPTANCE.md)). PR bodies contain their contemporaneous tests, limitations and implementation detail. **A merged PR is not by itself proof of production, signing, market-data licensing or external-network acceptance.**
+For deeper investigation, consult [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), [architecture](docs/ARCHITECTURE.md), [development roadmap](docs/ROADMAP.md), Phase 15 reports ([15.1](docs/PHASE151_ACCEPTANCE.md), [15.2](docs/PHASE152_ACCEPTANCE.md), [15.3](docs/PHASE153_ACCEPTANCE.md), [15.4](docs/PHASE154_ACCEPTANCE.md), [15.5A](docs/PHASE155A_ACCEPTANCE.md), [15.5B](docs/PHASE155B_ACCEPTANCE.md)), and Phase 16 documentation ([16.1A](docs/PHASE161A_CONTRACTS.md), [16.1B](docs/PHASE161B_ACCEPTANCE.md), [16.2](docs/PHASE162_ACCEPTANCE.md), [16.3](docs/PHASE163_ACCEPTANCE.md), [16.4](docs/PHASE164_ACCEPTANCE.md)). PR bodies contain their contemporaneous tests, limitations and implementation detail. **A merged PR is not by itself proof of production, signed execution, market-data licensing, genuine venue delivery or completed independent acceptance.**
 
-
-## Phase 15.5B — October 29, 2026 update
-
-Phase 15.5B hardens the existing read-only SDK lifecycle, bounded ingress,
-retained accepted evidence, REST recovery, history generation/deduplication and
-provider health. A narrow React badge fix follows stream degradation immediately;
-lazy research exports fix a standalone import cycle. Added deterministic,
-soak, opt-in genuine SDK and real Chromium integration coverage. Linux offline
-acceptance passes; genuine venue access remains blocked and final Phase 15
-acceptance remains the owner's combined review. PR #54's security controls remain.
-See [acceptance](docs/PHASE155B_ACCEPTANCE.md).
