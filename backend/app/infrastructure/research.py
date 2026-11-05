@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from pydantic import TypeAdapter
 
-from app.simulation.executor import ResearchBusyError
+from app.simulation.executor import ResearchBusyError, RESEARCH_OPERATIONS
 from app.simulation.version import SIMULATION_ENGINE_VERSION
 from .redis import InfrastructureUnavailable
 
@@ -35,7 +35,7 @@ class CoordinatedSimulationExecutor:
         self._closed = False
 
     async def execute(self, operation, **inputs):
-        if operation not in {"run_scenario", "optimize", "compare_research_configs"}:
+        if operation not in RESEARCH_OPERATIONS:
             raise ValueError("unknown research operation")
         if self._closed:
             raise ResearchBusyError("Phase 10 research worker is shutting down")

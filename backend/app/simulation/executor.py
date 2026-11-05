@@ -10,6 +10,8 @@ from typing import Any
 from .service import SimulationService
 
 logger = logging.getLogger(__name__)
+RESEARCH_OPERATIONS = frozenset({"run_scenario", "optimize", "compare_research_configs",
+                                 "historical_catalog", "historical_provenance", "replay_history"})
 
 
 class ResearchBusyError(Exception):
@@ -43,7 +45,7 @@ class SimulationExecutor:
             self._busy = False
 
     async def execute(self, operation: str, **inputs):
-        if operation not in {"run_scenario", "optimize", "compare_research_configs"}:
+        if operation not in RESEARCH_OPERATIONS:
             raise ValueError("unknown research operation")
         with self._lock:
             if self._closed:
