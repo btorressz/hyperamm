@@ -7,6 +7,7 @@ from decimal import Decimal
 from app.agents import AgentConfig,AgentSupervisor,AgentTelemetryStore,build_agent_evidence,transform_quotes
 from app.execution.order_manager import OrderManager
 from app.execution.paper import PaperExecutionAdapter
+from app.execution.research import MODEL_LIMITATIONS
 from app.market_data.history import MarketPriceHistory
 from app.risk.authorization import authorize,fingerprint
 from app.risk.firewall import RiskFirewall,RiskFirewallConfig
@@ -67,7 +68,9 @@ class SimulationEngine:
         scenario:str|None=None,
         predictive_model:LogisticModelArtifact|None=None,
         market_profile=None,
+        execution_evidence_keys=None,
     )->SimulationResult:
+        simulation_config=SimulationConfig.model_validate_json(simulation_config.model_dump_json())
         frames=bounded_frames(dataset,simulation_config.max_frames)
         strategy=strategy_config.model_copy(deep=True)
         agents=agent_config.model_copy(deep=True)
@@ -84,7 +87,7 @@ class SimulationEngine:
         accounting_payload=simulation_config.accounting.model_dump()
         accounting_payload["paper_initial_equity_quote"]=simulation_config.initial_equity_quote
         accounting=AccountingService(strategy.market,config=AccountingConfig.model_validate(accounting_payload),clock=clock)
-        paper=PaperExecutionAdapter(clock=clock)
+        paper=PaperExecutionAdapter(clock=clock, assumptions=simulation_config.execution)
         history=MarketPriceHistory(max_samples=max(1000,strategy.volatility_window_samples,agents.regime_momentum_window_samples))
         telemetry=AgentTelemetryStore()
         supervisor=AgentSupervisor(agents)
@@ -155,6 +158,8 @@ class SimulationEngine:
         strategy_fingerprint=stable_fingerprint(strategy)
         run_fingerprint=stable_fingerprint({
             **({"research_market_profile": market_profile.evidence()} if market_profile is not None else {}),
+            **({"execution_assumptions_fingerprint": simulation_config.execution.fingerprint,
+                "execution_evidence_keys": execution_evidence_keys} if simulation_config.execution.modeled else {}),
             "engine_version":version.SIMULATION_ENGINE_VERSION,
             "dataset_fingerprint":dataset.fingerprint,
             "strategy":strategy,
@@ -180,7 +185,11 @@ class SimulationEngine:
             )
             # Bind this frame before resting-order or immediate submit fills can occur.
             fill_refs=refs
-            paper.update_market(frame.market)
+            if simulation_config.execution.modeled and execution_evidence_keys is not None:
+                key, received_at = execution_evidence_keys[frame.sequence]
+                paper.update_market(frame.market, evidence_key=key, evidence_at=received_at)
+            else:
+                paper.update_market(frame.market)
             inventory=build_inventory_state(
                 market=strategy.market,position=accounting.position.position_base,
                 target=strategy.target_inventory_base,soft_limit=strategy.soft_inventory_limit_base,
@@ -297,7 +306,10 @@ class SimulationEngine:
             engine_version=version.SIMULATION_ENGINE_VERSION,
             run_fingerprint=run_fingerprint,scenario=scenario or dataset.source,
             dataset_fingerprint=dataset.fingerprint,strategy_fingerprint=strategy_fingerprint,
-            metrics=final_metrics,trace=list(trace or []),simulated=True,limitations=list(LIMITATIONS),
+            metrics=final_metrics,trace=list(trace or []),simulated=True,limitations=list(MODEL_LIMITATIONS if simulation_config.execution.modeled else LIMITATIONS),
+            **({"pending_cancellation_deadlines": paper.pending_cancellation_deadlines} if simulation_config.execution.modeled else {}),
+            execution_assumptions=simulation_config.execution.model_dump(mode="json"),
+            execution_assumptions_fingerprint=simulation_config.execution.fingerprint,
             orders=[o.model_dump(mode="json") for o in paper.all_orders()],
             fills=[f.model_dump(mode="json") for f in paper.fills.all()],
             vault=accounting.snapshot(),accounting_ledger=accounting.ledger.entries(500),

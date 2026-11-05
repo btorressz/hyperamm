@@ -2,6 +2,7 @@
 import json
 
 from app.simulation.config import SimulationConfig
+from app.execution.research import PaperExecutionAssumptions
 from app.simulation.market_profiles import ResearchPerpMarketMetadata, profile
 from app.simulation.models import stable_fingerprint
 from .adapter import prepare_replay, segment_dataset
@@ -38,22 +39,38 @@ async def replay(service, *, storage_root, request, strategy, agents, risk):
     agents_copy, risk_copy = agents.model_copy(deep=True), risk.model_copy(deep=True)
     simulation = execution.accounting.to_simulation(SimulationConfig(max_frames=request.max_frames,
         record_trace=request.record_trace, trace_max_points=request.trace_max_points))
+    simulation = simulation.model_copy(update={"execution": execution.paper})
     captured = dict(strategy=strategy_copy.model_dump(mode="json"),
         agents=agents_copy.model_dump(mode="json"), risk=risk_copy.model_dump(mode="json"),
         simulation=simulation.model_dump(mode="json"), market_profile=selected.model_dump(mode="json"))
     results = []
     for index, segment in enumerate(plan):
-        result = await service.engine.run(dataset=segment_dataset(segment, request),
+        engine_inputs = dict(dataset=segment_dataset(segment, request),
             strategy_config=strategy_copy, agent_config=agents_copy, risk_config=risk_copy,
-            simulation_config=simulation, scenario="historical-replay", market_profile=selected)
+            scenario="historical-replay", market_profile=selected)
+        comparison = {}
+        if execution.paper.modeled:
+            # Sequential calls share the original admitted worker slot. Every
+            # call builds the existing engine's isolated risk/accounting state.
+            baseline = await service.engine.run(**engine_inputs,
+                simulation_config=simulation.model_copy(update={"execution": PaperExecutionAssumptions()}))
+            baseline_archive = canonical_json(baseline)
+            comparison = dict(baseline_result_json=baseline_archive,
+                baseline_result_fingerprint=stable_fingerprint(json.loads(baseline_archive)))
+        result = await service.engine.run(**engine_inputs, simulation_config=simulation,
+            **({"execution_evidence_keys": {frame.sequence: (stable_fingerprint(frame.book_observation), frame.book_observation.received_at)
+                for frame in segment.evidence}} if execution.paper.modeled else {}))
+        if execution.paper.modeled:
+            comparison.update(session_pnl_delta=result.metrics.session_pnl - baseline.metrics.session_pnl,
+                fill_count_delta=result.metrics.fill_count - baseline.metrics.fill_count)
         archive = canonical_json(result)
-        results.append(ReplaySegmentResult(segment_index=index, reset_reason=segment.reset_reason,
+        results.append(ReplaySegmentResult(**comparison, segment_index=index, reset_reason=segment.reset_reason,
             dataset_fingerprint=result.dataset_fingerprint, run_fingerprint=result.run_fingerprint,
             frames=segment.evidence, frame_count=result.metrics.frame_count,
             starting_equity=result.metrics.starting_equity, ending_equity=result.metrics.ending_equity,
             session_pnl=result.metrics.session_pnl, fill_count=result.metrics.fill_count,
             simulation_result_json=archive, simulation_result_fingerprint=stable_fingerprint(json.loads(archive))))
-    values = dict(request=request, request_fingerprint=stable_fingerprint(request),
+    values = dict(execution_assumptions_fingerprint=execution.paper.fingerprint, request=request, request_fingerprint=stable_fingerprint(request),
         modeling_fingerprint=stable_fingerprint((request.policy, request.execution)),
         provenance=describe_provenance(dataset), declared_gaps=dataset.gaps,
         examined_observation_count=examined, frame_count=sum(x.frame_count for x in results),

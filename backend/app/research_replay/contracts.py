@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import json
 from typing import Literal
+from decimal import Decimal
 
-from pydantic import AwareDatetime, Field, StrictBool, StrictInt, model_validator
+from pydantic import AwareDatetime, Field, StrictBool, StrictInt, field_validator, model_serializer, model_validator
 
 from app.market_data.live_models import Evidence, FinancialDecimal
+from app.execution.research import PaperExecutionAssumptions
 from app.simulation.market_profiles import ResearchPerpMarketId
 from app.simulation.models import stable_fingerprint
 from app.simulation.research_vault import ResearchVaultConfig
@@ -34,7 +36,24 @@ class ReplayExecutionAssumptions(Evidence):
     strategy_scaling: Literal["EXISTING_DEMO_MARKET_PROFILE"] = "EXISTING_DEMO_MARKET_PROFILE"
     fill_model: Literal["PAPER_CROSSING_ONLY"] = "PAPER_CROSSING_ONLY"
     external_references: Literal["UNAVAILABLE"] = "UNAVAILABLE"
+    paper: PaperExecutionAssumptions = Field(default_factory=PaperExecutionAssumptions)
     accounting: ResearchVaultConfig = Field(default_factory=ResearchVaultConfig)
+
+    @model_serializer(mode="wrap")
+    def retain_legacy_shape(self, handler):
+        values = handler(self)
+        if "paper" not in self.model_fields_set and not self.paper.modeled:
+            values.pop("paper", None)
+        return values
+
+    @field_validator("accounting", mode="before")
+    @classmethod
+    def exact_accounting(cls, value):
+        if isinstance(value, dict):
+            for name in ("initial_equity_quote", "paper_maker_fee_bps", "paper_taker_fee_bps", "max_capital_utilization"):
+                if name in value:
+                    PaperExecutionAssumptions.exact_decimal(value[name])
+        return value
 
 
 class HistoricalReplayRequest(Evidence):
@@ -112,11 +131,38 @@ class ReplaySegmentResult(Evidence):
     # A canonical JSON archive preserves the existing engine's complete output
     # without embedding mutable SimulationResult/list/dict objects in a receipt.
     simulation_result_json: str
+    baseline_result_json: str | None = None
+    baseline_result_fingerprint: Fingerprint | None = None
+    session_pnl_delta: FinancialDecimal | None = None
+    fill_count_delta: StrictInt | None = None
+
+    @model_serializer(mode="wrap")
+    def retain_legacy_shape(self, handler):
+        values = handler(self)
+        for name in ("baseline_result_json", "baseline_result_fingerprint", "session_pnl_delta", "fill_count_delta"):
+            if name not in self.model_fields_set and getattr(self, name) is None:
+                values.pop(name, None)
+        return values
 
     @model_validator(mode="after")
     def archive_identity(self):
         if stable_fingerprint(json.loads(self.simulation_result_json)) != self.simulation_result_fingerprint:
             raise ValueError("simulation result archive fingerprint mismatch")
+        comparison = (self.baseline_result_json, self.baseline_result_fingerprint,
+                      self.session_pnl_delta, self.fill_count_delta)
+        if any(x is not None for x in comparison):
+            if any(x is None for x in comparison):
+                raise ValueError("incomplete baseline comparison")
+            baseline = json.loads(self.baseline_result_json)
+            modeled = json.loads(self.simulation_result_json)
+            if stable_fingerprint(baseline) != self.baseline_result_fingerprint:
+                raise ValueError("baseline archive fingerprint mismatch")
+            if (baseline["dataset_fingerprint"] != self.dataset_fingerprint
+                    or baseline["strategy_fingerprint"] != modeled["strategy_fingerprint"]):
+                raise ValueError("baseline comparison inputs differ")
+            if (self.session_pnl_delta != self.session_pnl - Decimal(baseline["metrics"]["session_pnl"])
+                    or self.fill_count_delta != self.fill_count - baseline["metrics"]["fill_count"]):
+                raise ValueError("baseline comparison delta mismatch")
         return self
 
 
@@ -129,6 +175,7 @@ class HistoricalReplayResult(Evidence):
     request: HistoricalReplayRequest
     request_fingerprint: Fingerprint
     modeling_fingerprint: Fingerprint
+    execution_assumptions_fingerprint: Fingerprint | None = None
     provenance: HistoricalDatasetProvenance
     declared_gaps: tuple[HistoricalGap, ...]
     examined_observation_count: StrictInt
@@ -145,13 +192,23 @@ class HistoricalReplayResult(Evidence):
         "Missing economics and L2 are never imputed; unavailable frames and short segments are excluded explicitly.",
         "Each segment starts with fresh PAPER orders, inventory, history, risk and accounting; no combined return is claimed.",
         "Recorded labels are user assertions; snapshots never establish continuous coverage, queue position or actual passive fills.",
-        "Crossing-only PAPER fills and sampled funding are hypothetical; Phase 16.3 execution realism is excluded.",
+        "Crossing-only baseline and optional bounded execution sensitivities produce hypothetical PAPER fills; no real passive fills are claimed.",
         "External provider references remain unavailable; existing risk authorization can suppress all quotes.",
         "Virtual reserves and size scaling use the existing fixed demo market profile, not historical venue metadata.",
     )
 
+    @model_serializer(mode="wrap")
+    def retain_legacy_shape(self, handler):
+        values = handler(self)
+        if "execution_assumptions_fingerprint" not in self.model_fields_set and self.execution_assumptions_fingerprint is None:
+            values.pop("execution_assumptions_fingerprint", None)
+        return values
+
     @model_validator(mode="after")
     def receipt_identity(self):
+        if (self.execution_assumptions_fingerprint is not None
+                and self.execution_assumptions_fingerprint != self.request.execution.paper.fingerprint):
+            raise ValueError("execution assumptions fingerprint mismatch")
         if self.request_fingerprint != stable_fingerprint(self.request):
             raise ValueError("replay request fingerprint mismatch")
         if self.modeling_fingerprint != stable_fingerprint((self.request.policy, self.request.execution)):

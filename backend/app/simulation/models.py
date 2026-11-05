@@ -256,6 +256,9 @@ class ResearchMarketAssumptions(Evidence):
 
 
 class SimulationResult(ResearchMarketEvidence):
+    pending_cancellation_deadlines: dict[str, datetime] | None = None
+    execution_assumptions: dict | None = None
+    execution_assumptions_fingerprint: str | None = None
     research_assumptions: ResearchMarketAssumptions | None = None
     research_configuration:dict|None=None
     engine_version:str
