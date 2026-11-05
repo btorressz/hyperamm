@@ -1,26 +1,25 @@
-#  HyperAMM
-## Adaptive Virtual AMM & Market-Making Engine for Hyperliquid
+# HyperAMM
+### Adaptive Virtual AMM, Market-Making & PAPER Research Terminal for Hyperliquid
 
-## Current review status (2026-10-07)
+**HyperAMM converts virtual AMM liquidity curves into tick/size-normalized Hyperliquid CLOB quotes.** Its Python/FastAPI engine combines constant-product and concentrated-liquidity modeling with inventory skew, perpetual context, market adaptation, deterministic supervisory agents, a risk firewall and final execution authorization. Its React/TypeScript terminal separates operational controls from read-only market intelligence and offline PAPER research.
 
-# Note: This project is open-source and currently under active development. Feel free to explore the codebase, review the implementation, and follow its progress as new features and improvements are added.
+> **Open source · active development · local/single-operator architecture.** This repository is an engineering and research project, **not** a production-ready trading service, investment product, custody system or verified profitable strategy. PAPER/DEMO is the default; TESTNET signing is separately guarded. No mainnet trading, withdrawal, transfer or bridging path is implemented.
 
-Phases 1–12 are implemented, including all 12 active terminal pages. Implementation,
-local fixture acceptance and live/external-provider acceptance are separate gates.
-Historical acceptance counts below describe their merge milestones, not the current
-suite. Phase 6–12 review status is not promoted by local tests; external provider,
-authority and operational limitations remain tracked in
-[Audit 1.0](AUDIT_REPORT_1.0.md). Recent hardening closed A1-018 through A1-023;
-A1-024 through A1-027 are informational scope boundaries documented rather than
-implemented as new runtime authority. PAPER remains deterministic and crossing-only;
-TESTNET remains guarded. No mainnet,
-custody or money movement is supported. History is bounded, in memory and limited
-to the current session.
+## Current project status — November 5, 2026
 
+| Workstream | Merged implementation | Acceptance / boundary |
+| --- | --- | --- |
+| Core AMM, inventory, perp context, reference risk, supervisory agents and Vault (Phases 1–12) | Operational pipeline, deterministic PAPER simulation, guarded optional TESTNET, 12-page terminal | Historical local/fixture acceptance; external, platform and production gates remain |
+| Institutional UX and research (Phases 13–14.6) | Analytics, Execution/Markets UX, Research Vault presets/comparisons, BTC/ETH/SOL isolated PAPER market selection | Local/browser acceptance does not establish venue performance |
+| Read-only native market intelligence (Phases 15.1–15.5B, PRs #50–#55) | Official SDK REST/WS observation, L2/perp contexts, stream freshness, bounded history, provider health, observer lifecycle hardening | **Combined Phase 15 not closed:** genuine permitted venue connectivity, long soak and independent macOS acceptance outstanding |
+| Historical research contracts and importer (Phases 16.1A/B, PRs #56–#57) | Immutable provenance, bounded secure local JSON admission, owner-only POSIX evidence vault | Source/permission labels are user assertions; no authenticated historical-feed or license proof |
+| Deterministic replay and modeled PAPER execution (Phases 16.2–16.3, PRs #58–#59) | Receipt-ordered replay, explicit segment resets, missing-economics rejection, optional latency/slippage/depth/partial-fill sensitivity | No verified real fills, queue priority, market completeness or production forecast |
+| Historical Replay Studio (Phase 16.4, PR #60) | React dataset selector, frame navigation, historical book/chart views, per-segment metrics, baseline-versus-modeled comparisons | **Merged but native frontend/backend regression and Chromium acceptance not yet reported** |
+| Next (Phases 16.5–16.6, then 17) | Scenario/replay comparison, adversarial acceptance, then multi-market portfolio research | Planned; not implemented or accepted here |
 
-**HyperAMM converts a mathematical AMM liquidity curve into discrete order-book liquidity for Hyperliquid.** It is not an on-chain pool. The system uses virtual constant-product reserves as a deterministic liquidity model, samples that curve around a market-derived fair value, optionally concentrates liquidity near the reference range, normalizes prices/sizes, and reconciles the desired ladder into resting CLOB orders.
+The current **research and independent live-observation universe** is **BTC-PERP, ETH-PERP and SOL-PERP**. That does not expand the operational strategy market or permit switching live execution through the research UI. Operational market data, independent read-only observation and the historical PAPER replay vault are **three separate evidence paths**.
 
-Phases 1–12 are implemented / in review, including deterministic supervisory agents, simulation + bounded optimization, research vault/accounting and the full operator terminal as one integrated Python/FastAPI + React/TypeScript system. PAPER is the default execution mode; signed Hyperliquid testnet orders are separately guarded. Mainnet trading, withdrawals, transfers and bridging are deliberately out of scope.
+Details and actual milestone tests: [CHANGELOG.md](CHANGELOG.md), [CODEBASE.md](CODEBASE.md), [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), and the [Phase 15.5B](docs/PHASE155B_ACCEPTANCE.md) / [Phase 16.4](docs/PHASE164_ACCEPTANCE.md) acceptance documents.
 
 ## Why a virtual AMM?
 
@@ -48,30 +47,39 @@ Hyperliquid L2 / Demo Feed
  PAPER execution or guarded TESTNET
 ```
 
-## Phase 1–11 capabilities
+## Capabilities at a glance
 
-- **Phase 1 — Market data + paper execution:** normalized L2/BBO state, WebSocket subscription adapter, initial L2 snapshot, monotonic exchange-time handling, reconnection/degraded states, explicit deterministic demo feed, paper orders/fills, optional testnet adapter.
-- **Phase 2 — Virtual constant-product AMM:** invariant, marginal price, reserve initialization/recentering, base→quote and quote→base virtual swaps, curve-state calculations.
-- **Phase 3 — AMM curve → CLOB compiler:** deterministic bid/ask levels, tick and size normalization, stable side ordering, no-cross checks, and stateful quote reconciliation.
-- **Phase 4 — Concentrated liquidity:** bounded deterministic weighting that shifts more fixed liquidity near fair value as concentration increases.
-- **Phase 5 — Inventory-aware quoting:** normalized PAPER/TESTNET inventory, bounded reservation-price and side-size skew, hard-limit side suppression, inventory freshness/version checks, and terminal controls/visibility.
-- **Phase 6 — Volatility + order-book imbalance adaptation:** bounded rolling mid-price volatility, normalized top-N L2 imbalance, widening-only spread adaptation, conservative size/depth reduction, market-state version binding, and terminal explainability.
-- **Phase 7 — Perpetual vAMM context:** normalized mark/oracle/funding/OI context, bounded perp strategy reference, AMM recentering, shared TESTNET position observability, freshness/version authority, and terminal explainability.
-- **Phase 8 — Reference integrity + institutional risk firewall:** normalized multi-source price evidence, deterministic quorum/consensus, source health and freshness, signed deviation matrix, projected exposure, liquidation/PnL guards, NORMAL/WIDEN/REDUCE/HALT postures, hysteresis/recovery, SHA-256 authorization fingerprints, and final pre-transmission authority binding.
-- **Phase 9 — Supervisory agents (IMPLEMENTED / IN REVIEW):** deterministic regime, adverse-selection markout and execution-quality analysis; conservative supervisor composition; bounded quote widening/size/level reduction; agent provenance bound into final authorization.
-- **Phase 10 — Strategy simulation + bounded optimization (IMPLEMENTED / IN REVIEW):** deterministic scenario/replay datasets, scenario-time PAPER execution, production-stack simulation, research metrics, reproducible fingerprints, and deterministic grid search across an explicit strategy/agent allowlist.
+| Area | What is implemented |
+| --- | --- |
+| **AMM and quote generation · Phases 1–4.1** | Virtual constant-product `x*y=k` reserves, concentrated liquidity, deterministic CLOB ladder sampling, venue price/size normalization, KEEP/CREATE/REPLACE/CANCEL |
+| **Inventory and market adaptation · Phases 5–7** | Inventory-aware price/size skew, hard limits, realized volatility, L2 imbalance, mark/oracle/funding/open-interest context and bounded reference recentering |
+| **Risk and agents · Phases 8–9** | Source freshness and role-aware reference integrity, exposure/capital checks, NORMAL/WIDEN/REDUCE/HALT firewall, deterministic/heuristic supervisor, optional **ML SHADOW** research |
+| **Simulation and accounting · Phases 10–11** | Isolated deterministic scenarios, bounded grid optimizer, research accounting presets, average-cost PAPER ledger, fees/funding assumptions, equity/drawdown and capital authorization |
+| **React operator terminal · Phases 12–14.6** | Twelve active pages, charts, quote/execution evidence, risk/Vault views, log/settings/analytics UX, Research Vault controls and BTC/ETH/SOL PAPER market selection |
+| **Independent market intelligence · Phase 15** | Opt-in BTC/ETH/SOL public Hyperliquid SDK REST + WS observer, L2 book, mark/oracle/funding/OI, stream diagnostics, bounded time-aware history, provider integrity and Market vs Research comparison |
+| **Historical market replay · Phase 16** | Immutable BTC/ETH/SOL source contracts, secure bounded local datasets, deterministic receipt-order replay, explicit gaps/segment resets, per-segment PAPER accounting, modeled crossing controls and Historical Replay Studio |
 
-- **Phase 11 — Deterministic research vault/accounting (IMPLEMENTED / IN REVIEW):** one shared average-cost authority for runtime/simulation, immutable idempotent ledger, simulated PAPER fees/funding, settled research capital, equity/drawdown, conservative capital reservations, accounting-bound authorization, TESTNET partial truth, read-only APIs and Vault observability.
+The operational path still runs **normalized market evidence → AMM/strategy → inventory/perp/adaptation → supervisory recommendations → risk firewall → final quote authorization → order reconciliation → PAPER or guarded TESTNET**. The Phase 15 observer cannot supply execution authority. Phase 16 cannot import data or deploy a strategy from the browser; it runs independent computational research through the existing one-slot simulator.
 
-A minimal Phase 1–4 risk authority enforces freshness, level count, per-order size, aggregate notional, minimum price, quote distance, execution state and a kill switch. The kill switch cancels active strategy orders and blocks new quote generation.
+For detailed earlier implementations, keep reading the phase notes below. For changed files and component-level boundaries, see [CODEBASE.md](CODEBASE.md).
 
 ## Technology
 
-Backend: Python 3.12+, FastAPI, Pydantic v2, Decimal math, asyncio, `websockets`, `httpx`, official `hyperliquid-python-sdk`, pytest. Frontend: React, TypeScript, Vite, TanStack Query, Zustand, Lightweight Charts, native WebSocket.
+| Layer | Stack |
+| --- | --- |
+| Backend | Python 3.12+, FastAPI, Pydantic v2, asyncio, exact `Decimal` financial math, `httpx`, `websockets`, official `hyperliquid-python-sdk` |
+| Operational & research execution | Reused AMM/strategy engine, risk firewall, final authorization, simulated PAPER adapter, bounded single-slot `SimulationExecutor`; optional ephemeral Redis coordination |
+| Historical replay storage | Strict immutable Pydantic contracts, SHA-256 content fingerprints, owner-only **local POSIX** filesystem vault, bounded JSON read/admission |
+| Frontend | React 19, TypeScript, Vite, TanStack Query, Zustand, Lightweight Charts v5, native WebSocket |
+| Tests | pytest, Node frontend test harness, TypeScript/Vite checks and independently executed Chromium scenarios where recorded |
 
-## Quick start
+No Docker, Kubernetes or GitHub Actions infrastructure is required. PostgreSQL-based durable operational accounting and production deployment are **not** part of the current implementation.
 
-Copy optional configuration:
+## Quick start — native local development
+
+Requirements: Python **3.12+**, Node.js/npm, and a supported loopback desktop environment. Run the backend and frontend in **separate terminals**. These commands assume you start at the repository root (`hyperamm/`).
+
+Create a local config file from the tracked example (do not commit credentials):
 
 ```bash
 cp .env.example .env
@@ -80,124 +88,58 @@ cp .env.example .env
 ### Backend
 
 ```bash
-cd hyperamm/backend
+cd backend
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -e '.[test]'
-pytest
+python -m pip install -e '.[test]'
+python -m pytest tests -q
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-API: `http://127.0.0.1:8000` · OpenAPI: `http://127.0.0.1:8000/docs`
+API: `http://127.0.0.1:8000` · interactive local OpenAPI: `http://127.0.0.1:8000/docs`.
 
-### Frontend
+### Frontend — 12-page terminal
 
-```bash
-cd hyperamm/frontend
-npm install
-npm run build
-npm run dev
-```
+The dark React operator terminal includes **Dashboard, Markets, Strategy, AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation & Optimization, Logs and Settings**.
 
-Terminal: `http://127.0.0.1:5173`
+The **Markets** page separates operational evidence, opt-in independent Hyperliquid live-market intelligence and historical-vs-hypothetical Market/Research comparisons. The **Simulation & Optimization** page houses deterministic scenarios, bounded optimization, Research Vault comparisons and the new **Historical Replay Studio**, without a second app or new sidebar route.
 
-## Demo-data mode
+Historical market charts are limited to admitted observation data; there is no fabricated tick stream, candle history or inferred perpetual-context exchange event timestamp. Results are labeled **PAPER / SIMULATED**, and displayed research configurations cannot silently alter the trading strategy.
 
-The provided `.env.example` deliberately starts with:
+## Tests and acceptance
 
-```text
-MARKET_DATA_MODE=DEMO
-EXECUTION_MODE=PAPER
-```
+Normal backend tests exercise AMM/invariant math, inventory, quote validity, provider timing, risk authorization, lifecycle and PAPER accounting; later suites add native observation integrity, historical import/storage, deterministic replay, modeled execution sensitivity and operational-state isolation. Frontend tests cover typed evidence, charts, session retirement, route behavior, and specific research-view guardrails. Normal fixture tests do not require live venue credentials.
 
-Demo values are generated deterministically and are visibly labeled as simulated. HyperAMM does **not** silently use demo values when a LIVE feed fails.
+| Recorded milestone | Reported validation | Important caveat |
+| --- | --- | --- |
+| Phase 15.5A · [PR #54](https://github.com/btorressz/hyperamm/pull/54) | 1,822 backend; 641 frontend; 28 Chromium workflows; 7 actual Redis checks | Offline/fixture evidence; external/macOS gates remain |
+| Phase 15.5B · [PR #55](https://github.com/btorressz/hyperamm/pull/55) | 1,916 backend; 652 frontend; 47 Chromium workflows | Genuine Hyperliquid delivery proxy-blocked; final Phase 15 acceptance open |
+| Phase 16.1B · [PR #57](https://github.com/btorressz/hyperamm/pull/57) | 146 focused; full backend 2,058 passed / 3 failed / 1 skipped | Three static documentation failures reproduced on unchanged base |
+| Phase 16.2 · [PR #58](https://github.com/btorressz/hyperamm/pull/58) | 205 focused; full backend 2,102 passed / 3 failed / 1 skipped | Same baseline failures; no real native history or frontend acceptance |
+| Phase 16.3 · [PR #59](https://github.com/btorressz/hyperamm/pull/59) | 376 focused; full backend 2,244 passed / 3 failed / 1 skipped | Same baseline failures; hypothetical execution only |
+| Phase 16.4 · [PR #60](https://github.com/btorressz/hyperamm/pull/60) | New focused tests and acceptance plan committed | **No native Python/Node, TypeScript/build, full regression or Chromium run reported for this merged PR** |
 
-To use public Hyperliquid data without a wallet:
+The three Phase 16.1B–16.3 baseline failures were static scans involving unchanged `docs/PHASE155B_ACCEPTANCE.md`; the one skip is optional ML training without scikit-learn. **Do not claim the full backend suite is green.** These are per-PR historical reports, not fresh tests for the current README update.
 
-```text
-MARKET_DATA_MODE=LIVE
-```
+Before releasing or treating Phase 16.4 as accepted, run native Python/Node suites, `npm run typecheck`, `npm run build`, `npm test`, actual Chromium replay/retirement/error-path acceptance, and independent operational isolation checks. Details: [16.4 acceptance plan](docs/PHASE164_ACCEPTANCE.md).
 
-## Paper execution
+## Safety and authority boundaries
 
-PAPER orders are in-memory strategy orders with explicit status, timestamps and client order IDs. The deterministic simulator fills an order only when it touches/crosses the normalized market. Every such fill is labeled `SIMULATED PAPER FILL`.
+- **Default DEMO/PAPER.** TESTNET signing requires explicit opt-in, backend-only credentials, and authoritative checks; no mainnet execution, deposits, withdrawals, transfers, custody or bridging features.
+- **Local/single-operator only.** Bind loopback `127.0.0.1` and one backend worker; exact local HTTP/WS Host/Origin/peer guards and write-body limits are **not** public authentication or a remote deployment model.
+- **No new trading authority through research.** Phase 15 observation, Yahoo SHADOW research, Research Vault presets and Phase 16 replay have no strategy/risk/quote/signing authority.
+- **Fail-closed evidence.** Stale/missing/invalid market observations cannot authorize new orders. Historical missing economics are rejected or explicitly excluded, never imputed as venue history.
+- **Source and result provenance is scoped.** Content SHA-256 fingerprints are reproducibility identities, not authenticity, licensed-use evidence, signatures or complete source archives.
+- **No fabricated economic outcomes.** Order-book snapshots do not establish actual queue position, unobserved trades, passive fills, real order latency, continuous history or reproducible future returns.
+- **Secrets and infrastructure remain backend-only.** Do not commit `.env`, wallet keys or external provider credentials. Optional Redis is ephemeral coordination, not a durable execution ledger.
 
-## Optional Hyperliquid testnet mode
+## Limitations and outstanding acceptance
 
-Testnet signing is off by default. To enable it intentionally:
+Research-mode software is **not** production authorization. Phase 15's independent public-stream observer was hardened with meaningful offline SDK, fixture and Chromium tests, but genuine live delivery and independent macOS verification remain open. Phase 16 can process **bounded locally admitted** recorded-native or explicitly synthetic histories; data rights, external authenticity and market coverage remain user assertions. Historical simulations intentionally reset all PAPER state on gaps and model unobserved execution effects only as separately labeled hypotheses.
 
-```text
-EXECUTION_MODE=TESTNET
-ENABLE_HYPERLIQUID_TESTNET_ORDERS=true
-HYPERLIQUID_ACCOUNT_ADDRESS=0x...
-HYPERLIQUID_PRIVATE_KEY=...
-```
+Live operating/reference data and TESTNET signing remain governed by the existing runtime and final risk authority; neither the historical Replay Studio nor the market-comparison UI can deploy a candidate. Optional Redis does not enable distributed execution, and accounting is a non-custodial in-memory operational/PAPER session ledger. The local historical evidence vault is **separate owner-only file storage**, not durable operational accounting.
 
-The key remains backend-only. The testnet adapter uses post-only `Alo` limit orders and deterministic SDK client order IDs. No mainnet execution path is implemented.
-
-## API surface
-
-```text
-GET  /api/v1/health
-GET  /api/v1/markets/{market}
-GET  /api/v1/markets/{market}/book
-GET  /api/v1/strategy
-PUT  /api/v1/strategy
-POST /api/v1/strategy/start
-POST /api/v1/strategy/stop
-GET  /api/v1/amm/state
-GET  /api/v1/amm/curve
-GET  /api/v1/amm/quotes
-GET  /api/v1/positions
-GET  /api/v1/vault
-GET  /api/v1/accounting/pnl
-GET  /api/v1/accounting/position
-GET  /api/v1/accounting/ledger
-GET  /api/v1/accounting/events
-GET  /api/v1/terminal/history
-GET  /api/v1/terminal/events
-GET  /api/v1/market-adaptation
-GET  /api/v1/perp-context
-GET  /api/v1/orders
-GET  /api/v1/fills
-GET  /api/v1/references
-GET  /api/v1/risk
-GET  /api/v1/risk/evidence
-GET  /api/v1/risk/events
-GET  /api/v1/risk/authorization
-GET  /api/v1/agents
-GET  /api/v1/agents/events
-GET  /api/v1/simulation/scenarios
-POST /api/v1/simulation/run
-POST /api/v1/simulation/optimize
-POST /api/v1/risk/kill
-POST /api/v1/risk/resume
-WS   /ws/terminal
-```
-
-## Frontend
-
-The terminal uses a dark institutional layout with selected-market/feed/execution/risk state in the header, rolling market + fair-value charting, Hyperliquid L2, an AMM liquidity view, quote ladder, strategy controls, metric cards, kill-switch controls, supervisory-agent observability, and a focused Simulation & Optimization research page. All 12 pages are active: Dashboard, Markets, Strategy, AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation & Optimization, Logs and Settings; simulation is visibly labeled SIMULATED / NO LIVE ORDERS and has no auto-deploy action.
-
-## Tests
-
-The backend suite covers constant-product invariants, marginal price, both virtual swap directions, invalid reserves, deterministic sampling, concentrated normalization and concentration behavior, bid/ask ordering, no-cross guarantees, price/size normalization, deterministic quote generation, inventory policy, rolling volatility history, realized-volatility scoring, top-N L2 imbalance, Phase 6 spread/size adaptation, KEEP/CREATE/REPLACE/CANCEL reconciliation, strategy validation, stale feed rejection, risk validation, kill switch, paper lifecycle/fills, API lifecycle, and the disabled-testnet transmission guard.
-
-Live Hyperliquid integration is intentionally not required by normal unit tests.
-
-## Safety model
-
-- PAPER default.
-- TESTNET signing requires explicit opt-in plus a backend key.
-- No mainnet execution implementation.
-- No withdrawal, transfer or bridge methods.
-- No browser signing secrets.
-- `.env` and generated secrets are excluded from source control/ZIP packaging.
-- LIVE feed failures are surfaced as degraded/unavailable rather than replaced with fabricated prices.
-
-## Limitations
-
-Phase 8 adds deterministic multi-source reference integrity and institutional risk authorization. Phase 9 supervisory agents are implemented / in review. Phase 10 simulation is offline PAPER research with deterministic crossing-only fills and reuses Phase 11 accounting with optional simulated fees and deterministic funding intervals. It does not model exchange latency, queue priority, hidden liquidity, or stochastic fill probability. Accounting is an in-memory research session ledger; durable wallet custody and production mainnet trading remain out of scope.
+Phase 16.4 is **merged but acceptance-incomplete**. The next planned work is **16.5 scenario-vs-replay comparison, 16.6 adversarial acceptance**, and later **Phase 17 multi-market shared-capital portfolio research**. Do not equate a merged feature or historical test count with a fully validated deployment.
 
 ### Audit informational boundaries (A1-024–A1-027)
 
@@ -208,19 +150,66 @@ Phase 8 adds deterministic multi-source reference integrity and institutional ri
 
 ## Documentation
 
-- `docs/ARCHITECTURE.md`
-- `docs/AMM_MATH.md`
-- `docs/HYPERLIQUID_INTEGRATION.md`
-- `docs/ROADMAP.md`
-- `docs/REFERENCE_INTEGRITY.md`
-- `docs/RISK_FIREWALL.md`
-- `docs/AGENTS.md`
-- `docs/SIMULATION.md`
-- `docs/ACCOUNTING.md`
+| Guide | Purpose |
+| --- | --- |
+| [CHANGELOG.md](CHANGELOG.md) | Merged PR history through Phase 16.4 and limitations |
+| [CODEBASE.md](CODEBASE.md) | Repository structure and architecture/authority inventory |
+| [Architecture](docs/ARCHITECTURE.md) · [AMM math](docs/AMM_MATH.md) | Core runtime pipeline, curve and sizing math |
+| [Hyperliquid integration](docs/HYPERLIQUID_INTEGRATION.md) | Operational feed, SDK and guarded TESTNET boundaries |
+| [Reference integrity](docs/REFERENCE_INTEGRITY.md) · [Risk firewall](docs/RISK_FIREWALL.md) | Evidence/quorum and final-authority constraints |
+| [Agents](docs/AGENTS.md) · [Simulation](docs/SIMULATION.md) · [Accounting](docs/ACCOUNTING.md) | Supervision, PAPER scenarios and Vault economics |
+| [Phase 15.5A](docs/PHASE155A_ACCEPTANCE.md) · [Phase 15.5B](docs/PHASE155B_ACCEPTANCE.md) | Local/browser security and live-observer acceptance gaps |
+| [16.1A](docs/PHASE161A_CONTRACTS.md) · [16.1B](docs/PHASE161B_ACCEPTANCE.md) | Historical evidence and bounded secure storage |
+| [16.2](docs/PHASE162_ACCEPTANCE.md) · [16.3](docs/PHASE163_ACCEPTANCE.md) · [16.4](docs/PHASE164_ACCEPTANCE.md) | Historical replay, execution sensitivities and UI acceptance plan |
+| [Development roadmap](docs/ROADMAP.md) | Detailed historical phased implementation notes; status may lag the changelog |
 
-## 12-phase roadmap
+## Development milestones
 
-Phases 1–8 are implemented. Phase 9 supervisory agents are IMPLEMENTED / IN REVIEW. Phase 10 deterministic simulation + bounded optimization is IMPLEMENTED / IN REVIEW. Phase 11 deterministic research vault/accounting is IMPLEMENTED / IN REVIEW. Phase 12 React operator terminal is IMPLEMENTED / IN REVIEW; see [Terminal](docs/TERMINAL.md).
+**Implemented/merged:** Phases 1–12 (core trading/research/terminal), 13–14.6 (institutional UX and customizable PAPER research), 15.1–15.5B (read-only native market intelligence and hardening), 16.1A–16.4 (historical research and Replay Studio).
+
+**Acceptance still required:** combined Phase 15 permitted live/macOS checks and Phase 16.4 native+browser integration checks.
+
+**Planned:** Phase 16.5 comparative scenario-vs-history research, 16.6 final regression/security acceptance, then Phase 17 shared-capital BTC/ETH/SOL portfolio research. See [CHANGELOG.md](CHANGELOG.md) for merged work and [Phase 16 acceptance](docs/PHASE164_ACCEPTANCE.md) for outstanding gates.
+
+The detailed historical Phase 4–12 descriptions below document how the existing operational engine was built; they are preserved for technical context.
+
+## Phases 13–14.6 — Institutional terminal and Research Vault
+
+Phase 13 introduced a consistent institutional layout, accessible navigation, richer Execution/Risk/Vault/Agents pages, session-aware Logs and Settings, and the improved Analytics/Simulation workspace. Phase 14 added bounded Research Vault presets and validated custom accounting assumptions, with controlled baseline-versus-custom comparisons. Phase 14.6 added isolated **BTC/ETH/SOL PAPER research selection** with typed market metadata and fingerprints. None of these browser selections changes the operational market or promotes research outcomes to live execution.
+
+## Phase 15 — Independent public Hyperliquid market intelligence
+
+Phases 15.1–15.5B added read-only official SDK REST and WebSocket observation for **BTC, ETH and SOL perpetuals**. Markets exposes actual accepted L2 depth, midpoint/spread, mark/oracle/funding/OI, receipt-vs-source timestamps, freshness, provider health, reconnects and bounded historical observations. The Market vs Research view compares independently timed native observations and hypothetical PAPER evidence without claiming simultaneous ticks or implying fills.
+
+The Phase 15.5A/B hardening improves local security, trusted-source identity, bounded callback processing, SDK ownership/cleanup, recovery, history integrity and stale/degraded UI. It has substantial recorded offline and browser acceptance, **not verified genuine venue delivery**. The complete Phase 15 external/macOS gate remains open. See [Phase 15.5A](docs/PHASE155A_ACCEPTANCE.md) and [15.5B](docs/PHASE155B_ACCEPTANCE.md).
+
+## Historical Replay Studio — Phase 16
+
+Phase 16 uses an independent evidence and research path. It **does not** add a historical exchange feed or alter the live runtime:
+
+1. **16.1A / 16.1B — contracts and secure admission:** Immutable `phase16-replay-v1` recorded-native versus synthetic contracts, explicit observation/gap/receipt identity, owner-only POSIX JSON vault and deterministic content fingerprints. The library exposes bounded local `import_file` / `HistoricalStorage.save` utilities for trusted operator-side admission, **not a browser upload or automatic exchange-history collector**.
+2. **16.2 — deterministic replay:** The existing single-slot `SimulationExecutor` drives chronological receipt-time replay through the production research engine. Missing actual L2, mark, oracle, funding or OI is excluded/rejected, not invented. Observer resets, declared gaps and interval breaks create separate fresh PAPER segments. Source time remains distinct from receipt time.
+3. **16.3 — modeled crossing sensitivities:** Baseline PAPER behavior is preserved. Opt-in model settings allow declared latency, slippage, observed-depth participation and partial-fill sensitivity, with existing accounting and authoritative per-segment baseline comparisons. These are **hypothetical**, not calibrated real execution.
+4. **16.4 — React Replay Studio:** Under **Simulation & Optimization** (`#/simulation`), choose a previously admitted dataset, inspect source/coverage/provenance, select modeling assumptions, run a bounded replay, navigate independent segments and frames, inspect historical price/book, simulated equity/risk/PnL and baseline-versus-modeled deltas.
+
+### Enable a trusted local historical vault (optional)
+
+Historical replay is **disabled** until you explicitly provision `HISTORICAL_REPLAY_ROOT` in the backend environment. On a local POSIX filesystem, for example:
+
+```bash
+mkdir -p "$HOME/.hyperamm/replay"
+chmod 700 "$HOME/.hyperamm" "$HOME/.hyperamm/replay"
+# Add an absolute, trusted path to your root .env file:
+# HISTORICAL_REPLAY_ROOT=/absolute/path/to/your/private/replay
+```
+
+The configured directory must be owned by the backend user, restricted to that user, and under trusted path ancestors; unsafe roots fail closed. **Setting a directory does not import datasets.** An operator must supply permitted-use assertions and validate/admit bounded local JSON files through the existing Python importer/storage interfaces. There is no bundled genuine historic market data, exchange archival downloader, raw-data browser upload or automatic import. With no admitted dataset, the Studio is empty. When unset, the historical API responds with **503**.
+
+The UI's `GET /historical-replay/dataset-summaries` selector only exposes dataset metadata; `GET /historical-replay/provenance` explains source/time trust limits; `POST /historical-replay/run` performs simulated computation in the **existing** research worker. A busy worker returns 429; malformed or incomplete historical economic evidence is rejected explicitly. The browser's play button changes **displayed frame position**, not the exchange or runtime.
+
+Each segment's equity and PnL are independent, so no cross-gap aggregate return is shown. Recorded-native labels, source-time assertions, licensing and fingerprint identities are **not independently authenticated**. Model slippage/latency and fill results do **not** validate hidden liquidity, real network delays or future profitability.
+
+**Status:** [PR #60](https://github.com/btorressz/hyperamm/pull/60) is merged, but native Python/Node, TypeScript/Vite and Chromium acceptance for 16.4 **was not reported before merge**. Follow [the Phase 16.4 acceptance plan](docs/PHASE164_ACCEPTANCE.md) before treating it as finished.
 
 ## Phase 4.1 acceptance and hardening
 
@@ -359,7 +348,7 @@ observational system health. Read-only `/api/v1/terminal/history` (3600 retained
 points, at most 1000 per response) and `/api/v1/terminal/events` (500 retained
 and at most 500 per response) keep history outside live snapshots.
 
-History is in-memory and current-session only. PAPER/DEMO remains simulated;
+Operational terminal history is in-memory and current-session only (the Phase 16 owner-only historical evidence vault is separate). PAPER/DEMO remains simulated;
 TESTNET fills and unsupported accounting economics remain explicitly unavailable.
 Existing risk, supervision, execution and accounting authority/formulas are
 unchanged. No custody, money movement or autonomous candidate deployment is added.
