@@ -4,19 +4,26 @@
 
 ---
 
-## Current review status (2026-10-07)
+## Current project status — November 5, 2026
 
-Phases 1–12 are implemented, including all 12 active terminal pages. Implementation,
-local fixture acceptance and live/external-provider acceptance are separate gates.
-Historical acceptance counts below describe their merge milestones, not the current
-suite. Phase 6–12 review status is not promoted by local tests; external provider,
-authority and operational limitations remain tracked in
-[Audit 1.0](AUDIT_REPORT_1.0.md). Recent hardening closed A1-018 through A1-023;
-A1-024 through A1-027 are informational scope boundaries documented rather than
-implemented as new runtime authority. PAPER remains deterministic and crossing-only;
-TESTNET remains guarded. No mainnet,
-custody or money movement is supported. History is bounded, in memory and limited
-to the current session.
+**HyperAMM now includes merged implementations through Phase 16.4 ([PR #60](https://github.com/btorressz/hyperamm/pull/60))**, not just the original Phases 1–12. It remains a local, single-operator, research-focused Hyperliquid virtual AMM / CLOB market-making system with default DEMO/PAPER, separately guarded TESTNET, and no production mainnet, custody or money movement.
+
+| Scope | Merged implementation | Acceptance boundary |
+| --- | --- | --- |
+| Phases 1–12 | Virtual AMM, quote reconciliation, inventory/perpetual adaptation, risk firewall, supervisory agents, accounting, simulation, 12-page React terminal | Historical fixture/local acceptance, not production |
+| Phases 13–14.6 | Institutional operator UX, Research Vault, independent BTC/ETH/SOL PAPER market selection | No browser-controlled operational market switching |
+| Phases 15.1–15.5B | Read-only BTC/ETH/SOL official SDK REST/WebSocket observation, source/freshness/health diagnostics, comparison and hardening | Genuine permitted venue delivery, independent macOS and long-run acceptance remain open |
+| Phases 16.1A–16.1B | Strict historical provenance and source/gap contracts, bounded JSON import, private owner-only POSIX vault | Native-recording and permission claims are user assertions, not verified licenses |
+| Phase 16.2 | Deterministic receipt-ordered historical replay, segment resets, explicit missing-economics rejection | No inferred complete market history |
+| Phase 16.3 | Opt-in hypothetical crossing latency, slippage, retained-depth/participation and partial fills | No proof of actual exchange fills, queue priority or network latency |
+| Phase 16.4 | Historical Replay Studio within Simulation & Optimization: dataset selection, playback, charts/order book, provenance, independent PAPER performance and baseline comparison | **Merged, but native Python/Node, TypeScript/build, full regression and Chromium acceptance were not reported** |
+| Phases 16.5–16.6 and 17 | Scenario comparison, final hardening, shared-capital multi-market research | Planned; not merged |
+
+**Architecture separation:** Operational market feeds → AMM/strategy → agents → RiskFirewall → FinalQuoteAuthorization → PAPER/guarded TESTNET is authoritative. Phase 15 independent native observations are **read-only**. Phase 16 uses only explicitly admitted **local research evidence** and the existing one-slot `SimulationExecutor` for hypothetical PAPER analysis; it never submits exchange orders, grants signing authority or changes operational strategy. Operational terminal history remains bounded and in-memory, while Phase 16's *separate* historical vault holds selected validated local datasets.
+
+**Source and test truth:** Native-recorded labels, source timestamps, rights and SHA-256 identifiers do not establish authenticated exchange history, license rights, continuous market coverage or real execution. Phase 15.5B recorded 1,916 backend + 652 frontend passes and 47 controlled Chromium workflows, but genuine external access was proxy-blocked. Phase 16.3 recorded 376 focused passes and 2,244 backend passes with **3 reproduced baseline-only static failures and 1 optional skip**; this was not a green full suite. Phase 16.4 has new tests but no recorded native/build/browser acceptance.
+
+See [README.md](README.md), [CODEBASE.md](CODEBASE.md), [CHANGELOG.md](CHANGELOG.md), [15.5B acceptance](docs/PHASE155B_ACCEPTANCE.md), and [16.4 acceptance](docs/PHASE164_ACCEPTANCE.md). The original detailed Phase 1–12 discussion below is retained as a historical engineering narrative, not the current feature cutoff.
 
 ## 🚀 Overview
 
@@ -2353,9 +2360,9 @@ It should not yet be described as:
 
 ---
 
-# Latest HyperAMM updates — October 14, 2026
+# Historical HyperAMM update — October 14, 2026 (superseded by November 5)
 
-> **About this update:** Everything above is the original detailed Phase 1–12 summary and has been kept unchanged. This section explains, in plain English, the important features, improvements, and fixes merged afterward. The earlier "Current review status (2026-10-07)" is a historical snapshot, not today's full feature list.
+> **Historical snapshot:** Earlier Phase 1–12 descriptions are retained for engineering context. This October 14 section describes the state then; the November 5 status above and Phase 16 section below supersede old current-status and planned-work claims.
 
 ## What HyperAMM can do now
 
@@ -2518,9 +2525,9 @@ These numbers are not necessarily from the same point in time. A live snapshot c
 
 Research results submitted by the browser are structurally checked but are **not authenticated proof of a previous server-run simulation**. The comparison feature is computational and does not automatically optimize, trade, or apply new strategy settings.
 
-### Phase 15.5 — Security, Regression and Final Acceptance (not implemented yet)
+### Phase 15.5A/B — Security, regression and SDK lifecycle (merged)
 
-Phase 15.5 is the remaining planned work for final security review, WebSocket and SDK lifecycle testing, frontend stale-data display, full regression, real-browser checks, and permitted live-provider acceptance. The repository must not describe this phase as complete until the work and its evidence are actually present.
+PRs [#54](https://github.com/btorressz/hyperamm/pull/54) and [#55](https://github.com/btorressz/hyperamm/pull/55) merged local/API security, lifecycle, stream integrity, recovery and observation hardening. PR #55 reported **1,916 backend, 652 frontend and 47 Chromium tests/workflows passed**, but **genuine permitted Hyperliquid delivery, independent macOS, and long-lived venue soak remain open**. The combined Phase 15 acceptance is *not* complete; see [Phase 15.5B](docs/PHASE155B_ACCEPTANCE.md).
 
 ## What is different in the terminal today?
 
@@ -2530,35 +2537,39 @@ The original twelve-page navigation remains. Inside the **Markets** page, users 
 2. **Live Market Intelligence:** Independent read-only BTC/ETH/SOL exchange observations, if available and enabled.
 3. **Market vs Research:** A frozen comparison between a selected market observation and a separately completed PAPER simulation.
 
-The **Simulation** and **Vault** pages have also become more capable research interfaces. They let users experiment with controlled hypotheses and view results without making those experiments authoritative for real orders or capital.
+The **Simulation & Optimization** page now also includes Phase 16.4 Historical Replay Studio, where previously admitted local BTC/ETH/SOL histories can be replayed into independent PAPER segments and examined through chart, order book and execution-comparison views. The **Vault** page remains a separate accounting/research-configuration interface. None of these browser selections grant operational trading authority.
 
-## Testing and development status
+## Testing and development status (updated November 5)
 
-Phases 13, 14, 14.6 and 15.1–15.4 have merged code and documented local acceptance. The most recent full-suite results recorded for **Phase 15.4** were:
+These are historical per-PR results, not a fresh independent test run:
 
-- **1,649 backend tests passed**.
-- **602 frontend tests passed**.
-- **TypeScript checking and the production frontend build passed**.
-- **15 Chromium browser workflows were recorded across six viewport sizes**, using controlled local/fixture evidence.
+| Milestone | Recorded results | Caveat |
+| --- | --- | --- |
+| [15.5A · PR #54](https://github.com/btorressz/hyperamm/pull/54) | 1,822 backend + 641 frontend; 28 Chromium workflows; 7 real Redis checks | Offline fixtures; venue/macOS verification open |
+| [15.5B · PR #55](https://github.com/btorressz/hyperamm/pull/55) | 1,916 backend + 652 frontend; 47 Chromium workflows | Genuine SDK metadata proxy-blocked |
+| [16.1B · PR #57](https://github.com/btorressz/hyperamm/pull/57) | 146 focused passes; full backend 2,058 passed / 3 failed / 1 skipped | Same 3 static documentation failures on untouched base |
+| [16.2 · PR #58](https://github.com/btorressz/hyperamm/pull/58) | 205 focused passes; 2,102 full backend passed / 3 failed / 1 skipped | Same baseline failures; no licensed native history proof |
+| [16.3 · PR #59](https://github.com/btorressz/hyperamm/pull/59) | 376 focused passes; 2,244 full backend passed / 3 failed / 1 skipped | Same static failures; fills hypothetical |
+| [16.4 · PR #60](https://github.com/btorressz/hyperamm/pull/60) | Tests added; **native and Chromium suites not executed by author** | Compilation, backend, browser and operational isolation acceptance open |
 
-Those are results **reported in the Phase 15.4 acceptance document**, not a claim that this documentation update reran the test suite. Read [Phase 15.4 acceptance](docs/PHASE154_ACCEPTANCE.md) for the exact conditions and findings, or the earlier [15.3](docs/PHASE153_ACCEPTANCE.md), [15.2](docs/PHASE152_ACCEPTANCE.md), and [15.1](docs/PHASE151_ACCEPTANCE.md) reports.
+The three pre-existing full-backend failures concern static scans of unchanged `docs/PHASE155B_ACCEPTANCE.md`; one optional ML/scikit-learn test skipped. **The full backend suite was not green.** Phase 16.4 still requires actual Python/Node tests, TypeScript/Vite, browser replay/segment/error cases and operational strategy/risk/signer isolation. See [16.4 acceptance](docs/PHASE164_ACCEPTANCE.md).
 
 ## What HyperAMM does not yet claim
 
 - **No production-mainnet execution.** Guarded TESTNET code and PAPER tests are not proof of completed signed venue acceptance.
 - **No unrestricted public or multi-user deployment.** The current application is designed for local, single-operator research. Loopback and CORS checks are not user authentication.
 - **No guaranteed live external data.** Genuine Hyperliquid REST/WebSocket connection, reconnect/soak behavior, and permitted provider access must be verified separately from fixtures.
-- **No permanent market-history database.** Bounded observation history and optional Redis caches are not durable exchange-history storage.
+- **No continuously authenticated market-history database.** Operational/Phase 15 histories and optional Redis caches are bounded/ephemeral. Phase 16 separately persists deliberately admitted historical research files in an owner-only POSIX vault, without automatic full-market capture, exchange authenticity or licensed data guarantees.
 - **No real or automatically trusted research profits.** Simulated fills, funding, returns and comparisons remain hypothetical and limited by their inputs.
 - **No autonomous ML trading.** Predictive models remain SHADOW research, not final quote authority.
-- **No simultaneous BTC/ETH/SOL portfolio trading or historical market replay engine.** Those are not part of the currently merged scope.
+- **No simultaneous BTC/ETH/SOL portfolio execution or shared-capital portfolio engine.** Phase 16 *does* implement deterministic single-market historical replay and a React Replay Studio; Phase 17 shared-capital portfolio research remains future work.
 - **No Pyth integration or added execution signing authority.** The provider and risk-authority boundaries remain as documented.
 
 An external venue connection may also be unavailable depending on configuration, geographic restrictions, or applicable data-access terms. The project does not offer a workaround for venue restrictions.
 
 ## Updated short description
 
-**HyperAMM is an open-source, research-focused Hyperliquid market-making platform built with Python, FastAPI, React, and TypeScript. It combines virtual AMM liquidity models, adaptive quoting, deterministic risk controls, supervisory agents, simulated accounting, strategy research, and a professional trading terminal. The platform also includes independent read-only BTC/ETH/SOL market intelligence and a way to explain differences between observed market conditions and hypothetical PAPER simulations.**
+**HyperAMM is an open-source Hyperliquid virtual AMM/CLOB market-making and quantitative PAPER research platform built with Python/FastAPI and React/TypeScript. It combines adaptive liquidity modeling, deterministic risk/final authorization, supervisory agents, accounting, scenario simulation, read-only BTC/ETH/SOL market intelligence and bounded historical evidence import, replay, modeled execution sensitivity and an integrated Historical Replay Studio.**
 
 HyperAMM remains a **local research system**, not a production-mainnet trading service. Its strongest engineering distinction is that strategies, agents, and research can provide information or proposals while separate deterministic checks retain control over executable orders.
 
@@ -2572,7 +2583,7 @@ HyperAMM remains a **local research system**, not a production-mainnet trading s
 
 
 
-## Phase 15.5B — October 29, 2026 update
+## Historical Phase 15.5B — October 29, 2026 update
 
 Phase 15.5A merged in PR #54. Phase 15.5B now hardens the independent public
 BTC/ETH/SOL observation layer and has Linux offline acceptance: 1916 backend and
@@ -2581,3 +2592,35 @@ fake-SDK soak completed without owned resource leaks. One genuine venue metadata
 attempt was blocked by the Cloud proxy; macOS/local/Replit and long venue soak
 remain unverified. This does not grant trading readiness or complete Phase 15.
 See [the new acceptance report](docs/PHASE155B_ACCEPTANCE.md).
+
+## Phase 16.1A–16.4 — Historical Replay & PAPER Execution Research (November 5, 2026)
+
+Phase 16 adds a **new research evidence path** to HyperAMM—not a new exchange broker, an automatic historical market collector, a second simulation engine or portfolio-scale live trading.
+
+### 16.1A/B — Immutable historical evidence and secure local storage
+
+Frozen `phase16-replay-v1` contracts in `backend/app/research_replay/models.py` and `provenance.py` capture BTC/ETH/SOL L2 and perpetual-context observations, ordered receipts, observer generations, explicit gaps, recorded-native versus synthetic labels, and SHA-256 fingerprints. `validation.py` / `importers.py` accept bounded, operator-asserted permitted local JSON; `storage.py` provides an owner-only POSIX vault with atomic no-clobber publication, locks and revalidation. There is **no browser upload, licensed-history downloader or authenticated source attestation**. Data rights, source identity and native timestamp labeling are user assertions.
+
+### 16.2 — Deterministic receipt-order replay
+
+`research_replay/adapter.py`, `runner.py` and `contracts.py` reuse the same one-slot `SimulationExecutor`, `SimulationEngine`, PAPER execution, risk authorization and accounting. Receipt batches preserve sequence and original evidence, missing L2/mark/oracle/funding/OI is not fabricated, and gaps/observer resets/unavailable frames create independent segments with fresh state. Results retain source/model/configuration/fill metrics and archived traces with fingerprints. There is **no continuous PnL or return across declared gaps**.
+
+### 16.3 — Bounded simulated execution sensitivities
+
+Frozen `phase163-v1` assumptions optionally model order/cancel latency, adverse slippage, retained-depth traversal, participation and partial fills, while retaining the existing crossing-only baseline. Separate baseline/modeled PAPER runs within each historical segment produce backend-computed PnL/fill-count deltas. These numbers **are not authenticated actual fills, hidden liquidity, queue priority, network delays or trading forecasts**.
+
+### 16.4 — Historical Replay Studio
+
+Within the **Simulation & Optimization** React page, the merged `components/replay/` workspace selects previously admitted datasets, displays source/receipt-time provenance, provides bounded replay/execution settings, navigates independent frame timelines, renders observed L2/mark/oracle and PAPER segment metrics and shows backend-calculated baseline-versus-modeled results. React playback is **display navigation only**; it never submits a trade. The existing charting library, state architecture and one worker are reused.
+
+To use the optional studio, an operator pre-provisions a trusted owner-only local POSIX vault and sets `HISTORICAL_REPLAY_ROOT=/absolute/trusted/path` in backend configuration, then explicitly imports/adopts a permitted JSON dataset through the existing Python importer and `HistoricalStorage`. If no root is configured the historical endpoints return 503; busy research returns 429, and rejected evidence 422. Merely configuring the path does not create an authenticated market history or load data.
+
+**Acceptance:** Phase 16.4 [PR #60](https://github.com/btorressz/hyperamm/pull/60) is merged, but native backend/frontend tests, TypeScript/build and Chromium were **not executed in its implementation environment**. Do not report this milestone as independently accepted. See [Phase 16.4 acceptance plan](docs/PHASE164_ACCEPTANCE.md).
+
+### Remaining research roadmap
+
+- Phase 16.5 — Scenario versus historical replay comparison and explainability (**planned**).
+- Phase 16.6 — Regression, security and cross-platform/live-permission acceptance (**planned**).
+- Phase 17 — BTC/ETH/SOL shared-capital multi-market portfolio research (**planned**, not currently executable).
+
+The Phase 15 read-only observer remains separate from Phase 16 stored replay; neither one changes the operational strategy's selected market, risk, signer, orders or capital. See [CODEBASE.md](CODEBASE.md), [CHANGELOG.md](CHANGELOG.md), [README.md](README.md), and [Phase 16.2](docs/PHASE162_ACCEPTANCE.md) / [16.3](docs/PHASE163_ACCEPTANCE.md) / [16.4](docs/PHASE164_ACCEPTANCE.md) documentation.
