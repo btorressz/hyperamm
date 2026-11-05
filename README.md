@@ -98,13 +98,80 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 API: `http://127.0.0.1:8000` · interactive local OpenAPI: `http://127.0.0.1:8000/docs`.
 
-### Frontend — 12-page terminal
+### Frontend
 
-The dark React operator terminal includes **Dashboard, Markets, Strategy, AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation & Optimization, Logs and Settings**.
+From a **second terminal** at the repository root:
 
-The **Markets** page separates operational evidence, opt-in independent Hyperliquid live-market intelligence and historical-vs-hypothetical Market/Research comparisons. The **Simulation & Optimization** page houses deterministic scenarios, bounded optimization, Research Vault comparisons and the new **Historical Replay Studio**, without a second app or new sidebar route.
+```bash
+cd frontend
+npm install
+npm run typecheck
+npm run build
+npm test
+npm run dev
+```
 
-Historical market charts are limited to admitted observation data; there is no fabricated tick stream, candle history or inferred perpetual-context exchange event timestamp. Results are labeled **PAPER / SIMULATED**, and displayed research configurations cannot silently alter the trading strategy.
+Terminal: `http://127.0.0.1:5173`. Vite proxies `/api` and `/ws` to the local backend. These are instructions to reproduce validation, not claims that the latest full suite is green. See [tests and acceptance](#tests-and-acceptance).
+
+## Market modes and independent native observation
+
+The tracked [`.env.example`](.env.example) starts in deterministic research mode:
+
+```dotenv
+MARKET=ETH
+MARKET_DATA_MODE=DEMO
+EXECUTION_MODE=PAPER
+```
+
+DEMO observations are visibly simulated. To select operational public market data (without changing execution mode), `MARKET_DATA_MODE=LIVE` is available. Failed LIVE data does **not** silently fall back to DEMO.
+
+Phase 15's **independent read-only BTC/ETH/SOL market observer** is different from the operational market mode. Enable its opt-in public REST and WebSocket observations with:
+
+```dotenv
+LIVE_OBSERVATIONS_ENABLED=true
+LIVE_STREAMS_ENABLED=true
+```
+
+`LIVE_STREAMS_ENABLED` requires `LIVE_OBSERVATIONS_ENABLED`. The Markets page shows native order books, mark/oracle/funding/OI, source and receipt times, provider health, reconnects and explicit gaps. These observation endpoints cannot sign orders or change the active operational market. Genuine permitted Hyperliquid delivery and independent macOS acceptance remain open after Phase 15.5B.
+
+## PAPER and optional TESTNET execution
+
+Normal operational PAPER orders and built-in deterministic scenario simulation use the existing crossing-only hypothetical fill model. The **Phase 16.3 historical replay** additionally supports opt-in receipt-clock order/cancel latency, slippage, observed-depth participation and partial-fill sensitivities. They are hypothetical modeling controls, **not** evidence of real exchange execution, queue priority or market latency.
+
+TESTNET signing is **disabled by default**. Only if explicitly intended, configure backend-only credentials and enable the guarded TESTNET path:
+
+```dotenv
+EXECUTION_MODE=TESTNET
+ENABLE_HYPERLIQUID_TESTNET_ORDERS=true
+HYPERLIQUID_ACCOUNT_ADDRESS=0x...
+HYPERLIQUID_PRIVATE_KEY=...
+```
+
+The existing TESTNET adapter uses guarded Hyperliquid post-only `Alo` limit orders and authoritative risk checks. Never put a private key in frontend code or commit it. No production mainnet order, custody, withdrawal, transfer or bridging path is implemented.
+
+## Selected API surface
+
+All HTTP paths below use the `/api/v1` prefix and assume a trusted **local** operator; HTTP loopback restrictions are not public remote authentication.
+
+| Area | Selected endpoints |
+| --- | --- |
+| Operations | `GET /health`, `GET /strategy`, `PUT /strategy`, `POST /strategy/start`, `POST /strategy/stop`, `POST /risk/kill`, `POST /risk/resume` |
+| AMM/risk/agents | `GET /amm/state`, `GET /amm/curve`, `GET /amm/quotes`, `GET /risk/evidence`, `GET /risk/authorization`, `GET /agents/events` |
+| Market/reference | `GET /market-adaptation`, `GET /perp-context`, `GET /references`, `GET /references/observations` |
+| Vault & terminal | `GET /vault`, `GET /accounting/pnl`, `GET /accounting/ledger`, `GET /terminal/history`, `GET /terminal/events` |
+| Simulation & research | `GET /simulation/scenarios`, `POST /simulation/run`, `POST /simulation/optimize`, `GET /research-markets`, `GET /research-vault/presets`, `POST /research-vault/compare`, `POST /research-market-comparison/compare` |
+| Native market observations | `GET /live-markets/overview`, `GET /live-markets/{market}/snapshot`, `GET /live-markets/{market}/stream-status`, `GET /live-markets/{market}/history`, `GET /live-markets/{market}/references` |
+| Historical replay | `GET /historical-replay/datasets`, `GET /historical-replay/dataset-summaries`, `GET /historical-replay/provenance?dataset_id=...`, `POST /historical-replay/run` |
+
+Operational terminal WebSocket: `/ws/terminal`. The historical replay APIs execute isolated PAPER research; they are **not** exchange order or browser dataset-upload endpoints. See local `/docs` for the authoritative route schemas.
+
+## React terminal and research UX
+
+The institutional React terminal contains twelve active pages: **Dashboard, Markets, Strategy, AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation & Optimization, Logs and Settings**.
+
+Markets separates operational evidence from independently observed read-only native markets and the Market vs Research comparison. Simulation & Optimization contains deterministic scenario studies, Research Vault comparisons and the new Historical Replay Studio; this reuses the existing charting and research machinery rather than adding another application.
+
+Historical replay charts render admitted source observations only; there is no invented OHLCV, synthetic exchange event timestamp or continuous price series across gaps. Browser replay controls navigate already-returned PAPER frames, not live trades, and cannot deploy a research strategy.
 
 ## Tests and acceptance
 
