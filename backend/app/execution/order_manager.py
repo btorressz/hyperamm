@@ -44,6 +44,11 @@ class OrderManager:
                 if uncertain or any(o.status == "UNKNOWN" for o in remaining) or getattr(self.execution, "_needs_verification", set()):
                     raise RuntimeError("unresolved execution exposure prevents CREATE/REPLACE")
                 if any(o.client_order_id in cancelled_ids for o in remaining):
+                    pending = getattr(self.execution, "cancellation_pending", lambda cid: False)
+                    if all(pending(o.client_order_id) for o in remaining if o.client_order_id in cancelled_ids):
+                        # Modeled PAPER cancellation retains exposure. Recompute
+                        # and reauthorize a replacement on a later frame.
+                        continue
                     raise RuntimeError("replacement cancellation unconfirmed")
                 request = self.request_for(market, action.desired)
                 # Preserve legacy zero-argument PAPER/research callbacks.
