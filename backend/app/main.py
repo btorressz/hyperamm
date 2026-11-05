@@ -16,6 +16,7 @@ from app.market_data.live_observations import LiveMarketObservationService
 from app.market_data.live_streams import LiveMarketStreamService
 from app.api.live_market_streams import router as live_market_streams_router
 from app.api.live_markets import router as live_markets_router
+from app.api.historical_replay import router as historical_replay_router
 from app.market_data.models import MarketDataMode
 from app.strategy.models import ExecutionMode
 from app.api.research_market_comparison import router as research_market_comparison_router
@@ -35,6 +36,8 @@ async def lifespan(app: FastAPI):
     validate_local_deployment()
     app.state.runtime = HyperAmmRuntime(settings)
     app.state.simulation_executor = SimulationExecutor()
+    # Trusted, pre-provisioned owner-only evidence root; no implicit admission.
+    app.state.historical_replay_root = settings.historical_replay_root
     app.state.live_market_observer = LiveMarketObservationService(settings)
     app.state.live_market_streams = LiveMarketStreamService(settings)
     app.state.research_market_catalog = HyperliquidMetadataCatalog(
@@ -109,7 +112,7 @@ async def research_validation_errors(request, exc):
 
 
 
-for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, research_vault_router, research_markets_router, research_market_comparison_router, live_markets_router, accounting.router, terminal.router):
+for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, historical_replay_router, research_vault_router, research_markets_router, research_market_comparison_router, live_markets_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 app.include_router(live_market_streams_router)

@@ -30,6 +30,18 @@ class SimulationService:
     def scenarios(self):
         return scenario_catalog()
 
+    async def historical_catalog(self, *, storage_root):
+        from app.research_replay.runner import catalog
+        return catalog(storage_root)
+
+    async def historical_provenance(self, *, storage_root, dataset_id):
+        from app.research_replay.runner import provenance
+        return provenance(storage_root, dataset_id)
+
+    async def replay_history(self, **inputs):
+        from app.research_replay.runner import replay
+        return await replay(self, **inputs)
+
     async def compare_research_configs(self, *, scenario, frames, strategy, agents, risk,
                                        simulation, baseline: ResearchProposal, custom: ResearchProposal, market_profile=None):
         # One request captures all runtime inputs before admission. One dataset and
