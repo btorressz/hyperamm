@@ -27,6 +27,7 @@ import "../phase10.css";
 import "../phase1331.css";
 import "../phase1332.css";
 import "../phase14.css";
+import { HistoricalReplayWorkspace } from "../components/replay/HistoricalReplayWorkspace";
 export function Simulation() {
   const researchState = useResearchVaultStore();
   const marketState = useResearchMarketStore();
@@ -166,6 +167,7 @@ export function Simulation() {
         </div>
         <Badge tone="blue">SIMULATED · PAPER · OFFLINE</Badge>
       </div>
+      <HistoricalReplayWorkspace />
       <Panel
         title="Configure isolated research"
         meta="DETERMINISTIC CROSSING FILLS"

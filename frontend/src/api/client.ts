@@ -15,6 +15,7 @@ import type {
   ResearchCatalog, ResearchProposal, ResearchPreviewResponse, ResearchComparison,
   ResearchMarketCatalog, LiveMarketId, LiveMarketStreamStatus, LiveMarketHistory, LiveProviderHealth, LiveStreamSnapshot,
 } from "../types";
+import type { ReplaySummary, ReplayProvenance, HistoricalReplayRequest, HistoricalReplayResult } from '../types/replay';
 import type { AgentName } from '../utils/researchEvidence';
 const API = "/api/v1";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -57,11 +58,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return r.json();
 }
+async function historicalRequest<T>(path:string,init?:RequestInit):Promise<T> {
+  const response=await fetch(API+path,{...init,headers:{'Content-Type':'application/json'},cache:'no-store'});
+  if(!response.ok){
+    if(response.status===429)throw new Error('Shared research worker busy. Retry after its current job completes; cancelling a browser request does not stop a running job.');
+    if(response.status===503)throw new Error('Historical replay vault or research admission unavailable. Configure private local storage in the backend.');
+    if(response.status===422){
+      const wire=await response.json().catch(()=>null);
+      const detail=wire?.detail;
+      const issues=Array.isArray(detail?.issues)?detail.issues.slice(0,8).map((i:{code?:string;missing_fields?:string[]})=>(i.code??'REJECTED')+(Array.isArray(i.missing_fields)&&i.missing_fields.length?' ('+i.missing_fields.join(', ')+')':'')).join('; '):null;
+      throw new Error(issues?'Historical replay rejected: '+issues:'Historical evidence or replay settings rejected (422).');
+    }
+    throw new Error('Historical research request failed (HTTP '+response.status+').');
+  }
+  return response.json() as Promise<T>;
+}
 function livePath(market: LiveMarketId, resource: string) {
   if (!['BTC','ETH','SOL'].includes(market)) throw new Error('Unsupported live market');
   return `/live-markets/${market}/${resource}`;
 }
 export const api = {
+  historicalReplaySummaries: (signal?:AbortSignal)=>historicalRequest<ReplaySummary[]>('/historical-replay/dataset-summaries',{signal}),
+  historicalReplayProvenance: (id:string,signal?:AbortSignal)=>historicalRequest<ReplayProvenance>('/historical-replay/provenance?dataset_id='+encodeURIComponent(id),{signal}),
+  historicalReplayRun: (body:HistoricalReplayRequest,signal?:AbortSignal)=>historicalRequest<HistoricalReplayResult>('/historical-replay/run',{method:'POST',body:JSON.stringify(body),signal}),
   compareMarketResearch: (body: MarketResearchComparisonRequest, signal?: AbortSignal) =>
     request<MarketResearchComparisonResult>('/research-market-comparison/compare', {method:'POST', body:JSON.stringify(body), signal, cache:'no-store'}),
   liveStreamStatus: (market: LiveMarketId, signal?: AbortSignal) =>
