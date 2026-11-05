@@ -1,0 +1,28 @@
+
+/* Phase 16.4: historical research only. Inherit the existing dark terminal palette. */
+.replayWorkspace { min-width: 0; padding: 14px 0 8px; border-top: 1px solid #23364a; }
+.replayWorkspace .replayControls { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 16px; align-items: flex-end; }
+.replayControls label { display: flex; flex-direction: column; gap: 5px; flex: 1 1 160px; min-width: 130px; font-size: 12px; color: #b8c8dc; }
+.replayControls select, .replayControls input { width: 100%; padding: 9px; background: #0b1725; color: #e5edf6; border: 1px solid #36506a; border-radius: 6px; }
+.replayControls button { min-height: 36px; }
+.replayControls .replayCheck { display: inline-flex; align-items: center; flex-direction: row; flex: 1 1 175px; }
+.replayCheck input { width: auto; }
+.replayDetails { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 10px; padding: 12px 16px; margin: 0; }
+.replayDetails>div { min-width: 0; }
+.replayDetails dt { font-size: 11px; color: #91a8bc; }
+.replayDetails dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: 12px; }
+.replayHash { font-size: 11px; overflow-wrap: anywhere; }
+.replayColumns { display: grid; grid-template-columns: minmax(0,1.55fr) minmax(270px,0.8fr); gap: 14px; }
+.replayColumns>*, .replayCompare>* { min-width: 0; }
+.replayBook { max-height: 330px; overflow: auto; margin: 10px; }
+.replaySliderLabel { display: block; padding: 0 16px; font-size: 12px; }
+.replaySliderLabel input { width: 100%; }
+.replayPrices { display: flex; flex-wrap: wrap; gap: 14px; padding: 8px 16px; font-size: 12px; }
+.replayPrices strong { display: block; font-variant-numeric: tabular-nums; }
+.replayCompare { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 12px; }
+.replayCompare>div { padding: 8px; border: 1px solid #253c51; border-radius: 6px; }
+.replayDetailsDisclosure { padding: 12px 16px; }
+.replayDetailsDisclosure>summary { cursor: pointer; }
+.replayIssues { max-height: 250px; overflow: auto; padding: 0 16px 0 26px; font-size: 12px; overflow-wrap: anywhere; }
+.replayWorkspace .inlineError { margin: 12px 16px; }
+@media (max-width: 850px) { .replayColumns,.replayCompare { grid-template-columns: 1fr; } .replayControls label { flex-basis: 100%; } }

@@ -78,7 +78,7 @@ export default function App() {
   }, [mobile, closeNavigation]);
   let content: ReactNode;
   if (!t)
-    content = page === 'Markets' ? <Markets t={null} /> : page === 'Settings' ? <Settings t={null} historical /> : (
+    content = page === 'Markets' ? <Markets t={null} /> : page === 'Settings' ? <Settings t={null} historical /> : page === 'Simulation & Optimization' ? <Simulation /> : (
       <Loading title="Connecting to HyperAMM…">
         Waiting for a valid backend terminal snapshot.
       </Loading>

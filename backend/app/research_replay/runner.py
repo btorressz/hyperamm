@@ -9,6 +9,7 @@ from .adapter import prepare_replay, segment_dataset
 from .contracts import HistoricalReplayRequest, HistoricalReplayResult, ReplaySegmentResult
 from .provenance import describe_provenance
 from .storage import HistoricalStorage
+from .summary import HistoricalDatasetSummary
 
 
 def canonical_json(value):
@@ -20,6 +21,13 @@ def canonical_json(value):
 
 def catalog(storage_root):
     return HistoricalStorage(storage_root).list_ids()
+
+
+def summaries(storage_root):
+    """Catalog only: validated immutable metadata, no raw L2 or file admission."""
+    vault = HistoricalStorage(storage_root)
+    return tuple(HistoricalDatasetSummary.from_dataset(vault.read(identifier))
+                 for identifier in vault.list_ids())
 
 
 def provenance(storage_root, dataset_id):

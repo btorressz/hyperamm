@@ -11,7 +11,7 @@ from .service import SimulationService
 
 logger = logging.getLogger(__name__)
 RESEARCH_OPERATIONS = frozenset({"run_scenario", "optimize", "compare_research_configs",
-                                 "historical_catalog", "historical_provenance", "replay_history"})
+                                 "historical_catalog", "historical_summaries", "historical_provenance", "replay_history"})
 
 
 class ResearchBusyError(Exception):
