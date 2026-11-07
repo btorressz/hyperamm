@@ -1,0 +1,40 @@
+{
+  "baseline_main": "baef856a3322c922acc1cc2a6db86572100295a7",
+  "implementation_commit": "ae79b389963705da6db146763d5a00e6c3ac9dc9",
+  "classification": "NOT GREEN \u2014 three reproduced pre-existing static documentation failures",
+  "focused_backend": {
+    "passed": 348,
+    "failed": 0,
+    "skipped": 0
+  },
+  "untouched_backend": {
+    "passed": 2247,
+    "failed": 3,
+    "skipped": 1
+  },
+  "final_backend": {
+    "passed": 2260,
+    "failed": 3,
+    "skipped": 1
+  },
+  "frontend": {
+    "passed": 685,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "PASS",
+    "production_build": "PASS"
+  },
+  "browser": {
+    "classification": "PASS",
+    "workflow_count": 16,
+    "page_errors": [],
+    "unexpected_console_errors": [],
+    "duration_seconds": 27.321
+  },
+  "optional": {
+    "ml": "SKIPPED \u2014 sklearn not installed",
+    "physical_redis_daemon": "NOT RUN \u2014 redis-server not installed",
+    "genuine_exchange_recording": "NOT RUN \u2014 generated fixtures only"
+  },
+  "acceptance_ready": false
+}

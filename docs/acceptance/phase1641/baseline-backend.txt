@@ -1,0 +1,120 @@
+...................................................s.................... [  3%]
+........................................................................ [  6%]
+........................................................................ [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+......................F................................................. [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 28%]
+........................................................................ [ 31%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 67%]
+........................................................................ [ 70%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+........................................................................ [ 79%]
+........................................................................ [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+....F.........................................................F......... [ 99%]
+...................                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_no_github_actions_or_forbidden_oracle_added _______________
+
+    def test_no_github_actions_or_forbidden_oracle_added():
+        assert not (ROOT/'.github').exists()
+        forbidden=re.compile(r'\bpyth\b',re.IGNORECASE)
+        hits=[]
+        for base in (ROOT/'backend'/'app',ROOT/'backend'/'tests',ROOT/'docs',ROOT/'README.md'):
+            paths=[base] if base.is_file() else base.rglob('*')
+            for path in paths:
+                if not path.is_file() or path.resolve()==Path(__file__).resolve():
+                    continue
+                if path.suffix.lower() not in {'.py','.md','.txt',''}:
+                    continue
+                try:
+                    text=path.read_text()
+                except UnicodeDecodeError:
+                    continue
+                if forbidden.search(text):
+                    hits.append(str(path.relative_to(ROOT)))
+>       assert hits==[]
+E       AssertionError: assert ['docs/PHASE1...CCEPTANCE.md'] == []
+E         
+E         Left contains one more item: 'docs/PHASE155B_ACCEPTANCE.md'
+E         Use -v to get more diff
+
+tests/test_phase10_static.py:61: AssertionError
+_________ test_repository_contains_no_forbidden_oracle_provider_token __________
+
+    def test_repository_contains_no_forbidden_oracle_provider_token():
+        forbidden=re.compile(r'\bpyth\b',re.IGNORECASE)
+        candidates=[
+            ROOT/'backend'/'app',
+            ROOT/'backend'/'tests',
+            ROOT/'docs',
+            ROOT/'README.md',
+            ROOT/'.env.example',
+            ROOT/'backend'/'pyproject.toml',
+        ]
+        hits=[]
+        for candidate in candidates:
+            paths=[candidate] if candidate.is_file() else list(candidate.rglob('*'))
+            for path in paths:
+                if path.resolve()==Path(__file__).resolve():
+                    continue
+                if not path.is_file() or path.suffix.lower() not in {'.py','.md','.toml','.txt','.example',''}:
+                    continue
+                try:text=path.read_text()
+                except UnicodeDecodeError:continue
+                if forbidden.search(text):
+                    hits.append(str(path.relative_to(ROOT)))
+>       assert hits==[]
+E       AssertionError: assert ['docs/PHASE1...CCEPTANCE.md'] == []
+E         
+E         Left contains one more item: 'docs/PHASE155B_ACCEPTANCE.md'
+E         Use -v to get more diff
+
+tests/test_phase8_static.py:33: AssertionError
+________ test_phase9_does_not_create_github_actions_or_forbidden_oracle ________
+
+    def test_phase9_does_not_create_github_actions_or_forbidden_oracle():
+        assert not (ROOT/".github").exists()
+        forbidden=re.compile(r"\bpyth\b",re.IGNORECASE)
+        hits=[]
+        for root in (ROOT/"backend"/"app",ROOT/"backend"/"tests",ROOT/"docs",ROOT/"README.md"):
+            paths=[root] if root.is_file() else root.rglob("*")
+            for path in paths:
+                if not path.is_file() or path.resolve()==Path(__file__).resolve():continue
+                if path.suffix.lower() not in {".py",".md",".txt",""}:continue
+                try:text=path.read_text()
+                except UnicodeDecodeError:continue
+                if forbidden.search(text):hits.append(str(path.relative_to(ROOT)))
+>       assert hits==[]
+E       AssertionError: assert ['docs/PHASE1...CCEPTANCE.md'] == []
+E         
+E         Left contains one more item: 'docs/PHASE155B_ACCEPTANCE.md'
+E         Use -v to get more diff
+
+tests/test_phase9_static.py:55: AssertionError
+=============================== warnings summary ===============================
+../../../../backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/hyperamm/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_agent_expansion.py:406: could not import 'sklearn': No module named 'sklearn'
+3 failed, 2247 passed, 1 skipped, 1 warning in 87.52s (0:01:27)

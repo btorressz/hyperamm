@@ -1,0 +1,158 @@
+{
+  "classification": "PASS",
+  "fixture_notice": "GENERATED FIXTURES / USER-ASSERTED LABELS \u2014 NOT LIVE EXCHANGE ACCEPTANCE",
+  "workflows": [
+    "Navigation and baseline HTTP PAPER replay work with no operational terminal connection; zero fills, missing metrics, retained chart/L2 and isolation",
+    "BTC/ETH/SOL selections verify actual catalog/provenance and market-specific backend results",
+    "Late provenance for a previous selection cannot replace current ETH source evidence",
+    "Rapid repeated DOM submissions admit one HTTP replay request",
+    "Actual occupied worker produces a sanitized 429 browser banner",
+    "Modeled HTTP run uses latency/slippage/depth/partial controls, independent backend baseline; playback stops at final frame and resets across explicit gap",
+    "1920/1440/1024/768/390 widths resize actual charts with no horizontal page overflow",
+    "Observer generation boundary produces separate PAPER segments",
+    "Explicit test-configured reference firewall permits actual modeled partial PAPER fills and backend Decimal comparison without changing seeded operational state",
+    "Actual structured 422 missing-economics/zero-viable rejection is visible",
+    "Actual shared worker returns 429; delayed BTC response cannot overwrite a newer ETH selection",
+    "Model edits retire pending results without claiming backend computation was cancelled",
+    "Navigation/unmount retires pending responses; remounted Studio starts without obsolete result",
+    "Empty vault, storage-disabled 503 and explicit refresh recovery retire removed dataset results",
+    "Actual backend shutdown/restart gives safe network error and successful retry",
+    "Original actual scenario simulation, bounded optimizer and Research Vault navigation remain functional"
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "WebSocket connection to 'ws://127.0.0.1:5173/ws/terminal' failed: Error during WebSocket handshake: Unexpected response code: 403",
+    "WebSocket connection to 'ws://127.0.0.1:5173/ws/terminal' failed: Error during WebSocket handshake: Unexpected response code: 403",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "WebSocket connection to 'ws://127.0.0.1:5173/ws/terminal' failed: Error during WebSocket handshake: Unexpected response code: 403",
+    "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)",
+    "WebSocket connection to 'ws://127.0.0.1:5173/ws/terminal' failed: Error during WebSocket handshake: Unexpected response code: 403",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/simulation/optimize"
+    }
+  ],
+  "viewports": [
+    {
+      "width": 1920,
+      "scroll": 1920,
+      "chart_width": 1083.65625,
+      "classification": "PASS"
+    },
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "chart_width": 767.0625,
+      "classification": "PASS"
+    },
+    {
+      "width": 1024,
+      "scroll": 1024,
+      "chart_width": 520,
+      "classification": "PASS"
+    },
+    {
+      "width": 768,
+      "scroll": 768,
+      "chart_width": 548,
+      "classification": "PASS"
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "chart_width": 364,
+      "classification": "PASS"
+    }
+  ],
+  "screenshots": [
+    "fixture-worker-busy-429.png",
+    "fixture-modeled-gap-1920.png",
+    "fixture-modeled-gap-1440.png",
+    "fixture-modeled-gap-1024.png",
+    "fixture-modeled-gap-768.png",
+    "fixture-modeled-gap-390.png",
+    "fixture-positive-partial-fills.png",
+    "fixture-missing-economics-422.png",
+    "fixture-disabled-503.png"
+  ],
+  "browser_version": "151.0.7922.173",
+  "unexpected_console_errors": [],
+  "duration_seconds": 27.321
+}
