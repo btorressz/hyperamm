@@ -337,6 +337,7 @@ export function HistoryChart({
         )}
       <details className="researchInset">
         <summary>Inspect chart observations</summary>
+        {points.length>200&&<p className="muted">Table shows the first 200 of {points.length} observations. The chart retains all supplied frame identities.</p>}
         <div
           className="tableWrap"
           tabIndex={0}
@@ -353,7 +354,7 @@ export function HistoryChart({
               </tr>
             </thead>
             <tbody>
-              {points.map((p, i) => (
+              {points.slice(0,200).map((p, i) => (
                 <tr key={`${p.sequence}:${i}`}>
                   <td>{p.sequence}</td>
                   <td>{p.timestamp}</td>

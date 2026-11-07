@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api/client';
-import type { HistoricalReplayResult, ReplayArchive, ReplaySummary } from '../../types/replay';
+import type { HistoricalReplayResult, ReplayArchive } from '../../types/replay';
 import { checkedReplayProvenance, checkedReplayResult, checkedReplaySummaries,
   paperInputError, readSegmentArchive, researchPaperDefaults } from '../../utils/replayEvidence';
 import { useTerminalStore } from '../../stores/terminal';
@@ -38,17 +38,21 @@ export function HistoricalReplayWorkspace() {
   const requestEpoch=useRef(0);
   const busy=useRef(false);
   const terminalIdentity=useTerminalStore(s=>(s.terminal?.process_id ?? '')+':'+(s.terminal?.session_id ?? ''));
+  // Keep query promises shared through StrictMode remounts: aborting the HTTP
+  // waiter would leave its admitted worker busy for the immediate replacement.
   const catalog=useQuery({queryKey:['phase164-dataset-summaries'],queryFn:async()=>checkedReplaySummaries(await api.historicalReplaySummaries()),
     retry:false,refetchOnWindowFocus:false});
   const datasets=catalog.data??[];
   const item=datasets.find(x=>x.dataset_id===selected)??null;
   const provenance=useQuery({queryKey:['phase164-provenance',item?.dataset_id,item?.dataset_fingerprint],
     queryFn:()=>api.historicalReplayProvenance(item!.dataset_id).then(p=>checkedReplayProvenance(p,item!)),
-    enabled:!!item,retry:false,refetchOnWindowFocus:false});
+    enabled:!!item&&!pending,retry:false,staleTime:Infinity,refetchOnWindowFocus:false});
   const resetResult=useCallback(()=>{
     requestEpoch.current+=1; setResult(null);setSegmentIndex(0);setFrameIndex(0);setPlaying(false);setError('');
   },[]);
   useEffect(()=>()=>{requestEpoch.current+=1},[]);
+  // Refetch/removal may change identity without a selector event.
+  useEffect(()=>{resetResult()},[item?.dataset_id,item?.dataset_fingerprint,resetResult]);
   // Mark retained results historical when process/session changes; never associate them with new operational state.
   const [resultIdentity,setResultIdentity]=useState('');
   const isRetired=!!result && !!resultIdentity && resultIdentity!==terminalIdentity;
@@ -64,7 +68,7 @@ export function HistoricalReplayWorkspace() {
     (validAge===null?'Component age must be 0–30000 ms.':null) ||
     (validInterval===null?'Frame interval must be 1–60000 ms.':null);
   const run=async()=>{
-    if(busy.current||!item||validation||validSize===null||validFrames===null||validAge===null||validInterval===null)return;
+    if(busy.current||!item||!provenance.data||provenance.isError||provenance.isFetching||catalog.isError||catalog.isFetching||validation||validSize===null||validFrames===null||validAge===null||validInterval===null)return;
     const epoch=++requestEpoch.current;
     busy.current=true;setPending(true);setError('');setResult(null);setPlaying(false);
     const captured={dataset_id:item.dataset_id,dataset_fingerprint:item.dataset_fingerprint,market:item.market,
@@ -75,7 +79,7 @@ export function HistoricalReplayWorkspace() {
       const response=checkedReplayResult(await api.historicalReplayRun(captured),captured);
       if(requestEpoch.current!==epoch)return;
       setResult(response);setSegmentIndex(0);setFrameIndex(0);setResultIdentity(terminalIdentity);
-    }catch(e){if(requestEpoch.current===epoch)setError(e instanceof Error?e.message:'Historical replay request failed.');}
+    }catch(e){if(requestEpoch.current===epoch)setError(e instanceof TypeError?'Historical backend connection unavailable. Retry when it returns; a lost browser request does not stop an admitted research job.':e instanceof Error?e.message:'Historical replay request failed.');}
     finally{busy.current=false;setPending(false);}
   };
   const segment=result?.segments[segmentIndex]??null;
@@ -96,14 +100,14 @@ export function HistoricalReplayWorkspace() {
     {catalog.isError&&<StatusBanner tone="bad">Historical dataset catalog unavailable. Configure the private HISTORICAL_REPLAY_ROOT on the backend, or retry. No live market history is substituted.</StatusBanner>}
     <ReplayDatasetSelector datasets={datasets} selected={item?.dataset_id??''} onSelect={updateSelected}
       refreshing={catalog.isFetching} refresh={()=>{resetResult();void catalog.refetch()}}/>
-    {item&&provenance.isError&&<StatusBanner tone="bad">Selected dataset provenance is unavailable or has changed. Reload the catalog before running.</StatusBanner>}
+    {item&&provenance.isError&&<StatusBanner tone="bad">Selected dataset provenance is unavailable or has changed. Reload the catalog before running. <button type="button" disabled={pending||provenance.isFetching} onClick={()=>void provenance.refetch()}>Retry provenance</button></StatusBanner>}
     <ReplayExecutionAssumptions paper={paper} change={updateModel}
       sizeDecimals={sizeDecimals} setSizeDecimals={changeNumber(setSizeDecimals)}
       maxFrames={maxFrames} setMaxFrames={changeNumber(setMaxFrames)}
       maxAge={maxAge} setMaxAge={changeNumber(setMaxAge)}
       maxInterval={maxInterval} setMaxInterval={changeNumber(setMaxInterval)}/>
     <div className="actions"><button className="primary" type="button"
-      disabled={pending||!item||!provenance.data||!!validation||catalog.isFetching}
+      disabled={pending||!item||!provenance.data||provenance.isError||provenance.isFetching||catalog.isError||!!validation||catalog.isFetching}
       onClick={()=>void run()}>{pending?'Research worker running…':'Run Historical PAPER Replay'}</button>
       {validation&&<span role="alert" className="inlineError">{validation}</span>}
     </div>
@@ -124,7 +128,7 @@ export function HistoricalReplayWorkspace() {
       </div>}
       {archive?.error&&<StatusBanner tone="bad">{archive.error}</StatusBanner>}
       {segment&&archive?.modeled&&<>
-        <ReplayPerformance archive={archive.modeled as ReplayArchive} segment={segment}/>
+        <ReplayPerformance key={segment.run_fingerprint} archive={archive.modeled as ReplayArchive} segment={segment}/>
         <ReplayComparison segment={segment} modeled={archive.modeled as ReplayArchive} baseline={archive.baseline as ReplayArchive|null}/>
       </>}
     </div>}

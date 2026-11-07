@@ -10,7 +10,7 @@ from pydantic import AwareDatetime, Field, StrictBool, StrictInt, field_validato
 from app.market_data.live_models import Evidence, FinancialDecimal
 from app.execution.research import PaperExecutionAssumptions
 from app.simulation.market_profiles import ResearchPerpMarketId
-from app.simulation.models import stable_fingerprint
+from app.simulation.models import SimulationResult, stable_fingerprint
 from app.simulation.research_vault import ResearchVaultConfig
 from .models import Fingerprint, HistoricalGap, HistoricalObservation, Identifier
 from .provenance import HistoricalDatasetProvenance
@@ -130,8 +130,8 @@ class ReplaySegmentResult(Evidence):
     simulation_result_fingerprint: Fingerprint
     # A canonical JSON archive preserves the existing engine's complete output
     # without embedding mutable SimulationResult/list/dict objects in a receipt.
-    simulation_result_json: str
-    baseline_result_json: str | None = None
+    simulation_result_json: str = Field(max_length=16_000_000)
+    baseline_result_json: str | None = Field(default=None, max_length=16_000_000)
     baseline_result_fingerprint: Fingerprint | None = None
     session_pnl_delta: FinancialDecimal | None = None
     fill_count_delta: StrictInt | None = None
@@ -148,22 +148,47 @@ class ReplaySegmentResult(Evidence):
     def archive_identity(self):
         if stable_fingerprint(json.loads(self.simulation_result_json)) != self.simulation_result_fingerprint:
             raise ValueError("simulation result archive fingerprint mismatch")
+        modeled = SimulationResult.model_validate_json(self.simulation_result_json)
+        self._check_archive(modeled)
+        if (modeled.run_fingerprint != self.run_fingerprint
+                or modeled.metrics.fill_count != self.fill_count
+                or any(getattr(modeled.metrics, name) != getattr(self, name)
+                       for name in ("starting_equity", "ending_equity", "session_pnl"))):
+            raise ValueError("segment simulation identity or metrics mismatch")
         comparison = (self.baseline_result_json, self.baseline_result_fingerprint,
                       self.session_pnl_delta, self.fill_count_delta)
         if any(x is not None for x in comparison):
             if any(x is None for x in comparison):
                 raise ValueError("incomplete baseline comparison")
             baseline = json.loads(self.baseline_result_json)
-            modeled = json.loads(self.simulation_result_json)
             if stable_fingerprint(baseline) != self.baseline_result_fingerprint:
                 raise ValueError("baseline archive fingerprint mismatch")
-            if (baseline["dataset_fingerprint"] != self.dataset_fingerprint
-                    or baseline["strategy_fingerprint"] != modeled["strategy_fingerprint"]):
+            parsed_baseline = SimulationResult.model_validate_json(self.baseline_result_json)
+            self._check_archive(parsed_baseline)
+            if (parsed_baseline.strategy_fingerprint != modeled.strategy_fingerprint
+                    or parsed_baseline.engine_version != modeled.engine_version
+                    or parsed_baseline.run_fingerprint == modeled.run_fingerprint
+                    or (parsed_baseline.execution_assumptions or {}).get("mode") == "MODELED_CROSSING"):
                 raise ValueError("baseline comparison inputs differ")
             if (self.session_pnl_delta != self.session_pnl - Decimal(baseline["metrics"]["session_pnl"])
                     or self.fill_count_delta != self.fill_count - baseline["metrics"]["fill_count"]):
                 raise ValueError("baseline comparison delta mismatch")
         return self
+
+    def _check_archive(self, archive):
+        # Source dataset identity and engine segment identity are intentionally
+        # different. Bind only to this segment, using existing result contracts.
+        if (not archive.simulated or archive.scenario != "historical-replay"
+                or archive.dataset_fingerprint != self.dataset_fingerprint
+                or archive.metrics.frame_count != self.frame_count
+                or len(self.frames) != self.frame_count):
+            raise ValueError("archive does not belong to replay segment")
+        frames = {f.sequence: f.evaluated_at for f in self.frames}
+        previous = -1
+        for point in archive.trace:
+            if point.sequence <= previous or frames.get(point.sequence) != point.timestamp:
+                raise ValueError("archive trace does not belong to replay segment")
+            previous = point.sequence
 
 
 class HistoricalReplayResult(Evidence):

@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import type { ReplayArchive, ReplaySegment } from '../../types/replay';
 import { SimulationPanel } from '../SimulationPanel';
 import { SimulationTrace } from '../simulation/SimulationTrace';
 import { Panel, Metrics } from '../TerminalPrimitives';
 import { livePrice } from '../../utils/format';
 export function ReplayPerformance({archive,segment}:{archive:ReplayArchive;segment:ReplaySegment}) {
+  const [traceOpen,setTraceOpen]=useState(false);
   return <section className="stack" aria-label="Selected segment PAPER performance">
     <Panel title="Segment-only PAPER results" meta={'SEGMENT '+(segment.segment_index+1)+' · NO CROSS-GAP RETURNS'}>
       <Metrics items={[
@@ -15,9 +17,9 @@ export function ReplayPerformance({archive,segment}:{archive:ReplayArchive;segme
       <p className="muted panelNote">Capital resets for every historical segment. No result here is an uninterrupted portfolio return.</p>
     </Panel>
     <SimulationPanel m={archive.metrics}/>
-    <details className="replayDetailsDisclosure">
+    <details className="replayDetailsDisclosure" onToggle={e=>setTraceOpen(e.currentTarget.open)}>
       <summary>Explore segment equity, PnL, inventory, risk and execution trace</summary>
-      <SimulationTrace result={archive}/>
+      {traceOpen&&<SimulationTrace result={archive} requestedCap={Math.min(500,segment.frame_count)}/>}
     </details>
   </section>;
 }
