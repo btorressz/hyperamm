@@ -97,7 +97,7 @@ The Chromium harness owns loopback Uvicorn (`127.0.0.1:8000`) and Vite (`127.0.0
 
 ## Baseline and regression results
 
-Retained command output: [untouched baseline](acceptance/phase1641/baseline-backend.txt), [final backend](acceptance/phase1641/final-backend.txt), [focused backend](acceptance/phase1641/focused-backend.txt), [frontend compile/build/tests](acceptance/phase1641/frontend.txt), and [standalone imports](acceptance/phase1641/standalone-imports.txt). [Machine-readable summary](acceptance/phase1641/test-results.json) records the disposition and counts.
+Retained command output (trailing whitespace normalized): [untouched baseline](acceptance/phase1641/baseline-backend.txt), [final backend](acceptance/phase1641/final-backend.txt), [focused backend](acceptance/phase1641/focused-backend.txt), [frontend compile/build/tests](acceptance/phase1641/frontend.txt), and [standalone imports](acceptance/phase1641/standalone-imports.txt). [Machine-readable summary](acceptance/phase1641/test-results.json) records the disposition and counts.
 
 | Run | Passed | Failed | Skipped | Meaning |
 | --- | ---: | ---: | ---: | --- |

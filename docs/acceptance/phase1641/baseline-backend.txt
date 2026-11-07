@@ -52,7 +52,7 @@ _______________ test_no_github_actions_or_forbidden_oracle_added _______________
                     hits.append(str(path.relative_to(ROOT)))
 >       assert hits==[]
 E       AssertionError: assert ['docs/PHASE1...CCEPTANCE.md'] == []
-E         
+E
 E         Left contains one more item: 'docs/PHASE155B_ACCEPTANCE.md'
 E         Use -v to get more diff
 
@@ -83,7 +83,7 @@ _________ test_repository_contains_no_forbidden_oracle_provider_token __________
                     hits.append(str(path.relative_to(ROOT)))
 >       assert hits==[]
 E       AssertionError: assert ['docs/PHASE1...CCEPTANCE.md'] == []
-E         
+E
 E         Left contains one more item: 'docs/PHASE155B_ACCEPTANCE.md'
 E         Use -v to get more diff
 
@@ -104,7 +104,7 @@ ________ test_phase9_does_not_create_github_actions_or_forbidden_oracle ________
                 if forbidden.search(text):hits.append(str(path.relative_to(ROOT)))
 >       assert hits==[]
 E       AssertionError: assert ['docs/PHASE1...CCEPTANCE.md'] == []
-E         
+E
 E         Left contains one more item: 'docs/PHASE155B_ACCEPTANCE.md'
 E         Use -v to get more diff
 
