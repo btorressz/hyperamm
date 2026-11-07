@@ -14,6 +14,13 @@ The history covers **all 60 merged pull requests (#1–#60)** and the separately
 - Local fixture and Chromium acceptance **do not establish real Hyperliquid connectivity, U.S. access permission, market-data licensing, commercial deployment readiness, or real-trading performance**. Historical audit findings and environment-dependent gates are detailed in the phase acceptance and audit documents.
 - The current supported research/observation universe is **BTC-PERP, ETH-PERP, SOL-PERP**; existing operational strategy authority remains separate.
 
+## Unreleased
+
+### Phase 16.4.1 — Historical Replay Studio Acceptance & Hardening
+
+- **Fixed:** Segment/archive identity and trace validation, exact microsecond receipt ordering, captured request/provenance lifecycle, bounded response parsing and chart/trace rendering.
+- **Tests:** Native importer/storage/HTTP/PAPER/isolation fixtures, active Phase 15 subscription preservation and actual Chromium workflows at five screen widths. TypeScript/build and 685 frontend tests pass; focused backend 348 pass. Full backend remains **NOT GREEN** with three reproduced pre-existing documentation failures. See [acceptance report](docs/PHASE1641_ACCEPTANCE.md).
+
 ## 2026-11-05
 
 ### [#60 — Phase 16.4: Historical Replay Studio & Dataset Summary](https://github.com/btorressz/hyperamm/pull/60)

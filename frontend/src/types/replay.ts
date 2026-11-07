@@ -1,4 +1,4 @@
-import type { SimulationResult } from './index';
+import type { ResearchVaultConfig, SimulationResult } from './index';
 
 export type ReplayMarket = 'BTC' | 'ETH' | 'SOL';
 export type ReplaySourceKind = 'RECORDED_NATIVE' | 'SYNTHETIC_FIXTURE';
@@ -45,9 +45,14 @@ export type PaperResearchAssumptions = {
 };
 export type HistoricalReplayRequest = {
   dataset_id: string; dataset_fingerprint: string; market: ReplayMarket;
-  execution: { size_decimals: number; paper: PaperResearchAssumptions };
-  policy: { max_component_age_ms: number; max_frame_interval_ms: number };
-  max_frames: number; record_trace: true; trace_max_points: number;
+  execution: { size_decimals: number; paper: PaperResearchAssumptions;
+    metadata?: 'USER_ASSERTED_RESEARCH_PRECISION'; strategy_scaling?: 'EXISTING_DEMO_MARKET_PROFILE';
+    fill_model?: 'PAPER_CROSSING_ONLY'; external_references?: 'UNAVAILABLE'; accounting?: ResearchVaultConfig };
+  replay_version?: 'phase162-v1'; start_at?: string | null; end_at?: string | null;
+  policy: { max_component_age_ms: number; max_frame_interval_ms: number;
+    pairing?: 'RECEIPT_BATCH_LAST_COMPONENT'; missing_economics?: 'REJECT_FRAME';
+    discontinuity?: 'RESET_ALL_SIMULATION_STATE' };
+  max_frames: number; record_trace: boolean; trace_max_points: number;
 };
 export type ReplaySegment = {
   segment_index: number; reset_reason: string; dataset_fingerprint: string;
@@ -65,8 +70,8 @@ export type HistoricalReplayResult = {
   provenance: ReplayProvenance; declared_gaps: ReplayGap[];
   examined_observation_count: number; frame_count: number;
   issues: ReplayIssue[]; segments: ReplaySegment[];
-  captured_configuration_fingerprint: string; result_fingerprint: string;
+  captured_configuration_json: string; captured_configuration_fingerprint: string; result_fingerprint: string;
   limitations: string[];
 };
-export type ReplayArchive = Pick<SimulationResult, 'metrics' | 'trace' | 'engine_version' |
+export type ReplayArchive = { execution_assumptions?: PaperResearchAssumptions | null; execution_assumptions_fingerprint?: string | null } & Pick<SimulationResult, 'metrics' | 'trace' | 'engine_version' |
   'run_fingerprint' | 'dataset_fingerprint' | 'simulated' | 'limitations'> & SimulationResult;

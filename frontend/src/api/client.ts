@@ -58,20 +58,45 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return r.json();
 }
+// Bound bytes before parsing untrusted research JSON, including chunked bodies.
+export async function readHistoricalJson(response:Response, limit=64_000_000):Promise<unknown> {
+  const length=response.headers.get('Content-Length');
+  if(length && Number(length)>limit){await response.body?.cancel();throw new Error('Historical response exceeds the browser evidence budget.');}
+  const reader=response.body?.getReader();
+  if(!reader)throw new Error('Historical response is unavailable.');
+  const decoder=new TextDecoder('utf-8',{fatal:true});
+  let size=0,wire='';
+  try{
+    for(;;){const {done,value}=await reader.read();if(done)break;
+      size+=value.byteLength;
+      if(size>limit)throw new Error('Historical response exceeds the browser evidence budget.');
+      wire+=decoder.decode(value,{stream:true});
+    }
+    wire+=decoder.decode();
+    return JSON.parse(wire) as unknown;
+  }catch{await reader.cancel().catch(()=>{});throw new Error('Historical response is malformed or exceeds the browser evidence budget.');}
+  finally{reader.releaseLock();}
+}
 async function historicalRequest<T>(path:string,init?:RequestInit):Promise<T> {
   const response=await fetch(API+path,{...init,headers:{'Content-Type':'application/json'},cache:'no-store'});
   if(!response.ok){
     if(response.status===429)throw new Error('Shared research worker busy. Retry after its current job completes; cancelling a browser request does not stop a running job.');
     if(response.status===503)throw new Error('Historical replay vault or research admission unavailable. Configure private local storage in the backend.');
     if(response.status===422){
-      const wire=await response.json().catch(()=>null);
-      const detail=wire?.detail;
-      const issues=Array.isArray(detail?.issues)?detail.issues.slice(0,8).map((i:{code?:string;missing_fields?:string[]})=>(i.code??'REJECTED')+(Array.isArray(i.missing_fields)&&i.missing_fields.length?' ('+i.missing_fields.join(', ')+')':'')).join('; '):null;
+      const wire=await readHistoricalJson(response,64000).catch(()=>null) as {detail?:{issues?:unknown[]}}|null;
+      const allowedCodes=['INCOMPLETE_FRAME','COMPONENT_TOO_OLD','SHORT_SEGMENT','NO_VIABLE_FRAMES','FRAME_LIMIT','SEGMENT_LIMIT','IDENTITY_MISMATCH'];
+      const allowedFields=['order_book','perp_context','mark_price','oracle_price','funding_rate','open_interest_base','positive_l2_sizes'];
+      const issues=Array.isArray(wire?.detail?.issues)?wire.detail.issues.slice(0,8).map(raw=>{
+        const i=raw as {code?:unknown;missing_fields?:unknown[]}|null;
+        const code=typeof i?.code==='string'&&allowedCodes.includes(i.code)?i.code:'REJECTED';
+        const fields=Array.isArray(i?.missing_fields)?i.missing_fields.filter((f):f is string=>typeof f==='string'&&allowedFields.includes(f)).slice(0,7):[];
+        return code+(fields.length?' ('+fields.join(', ')+')':'');
+      }).join('; '):null;
       throw new Error(issues?'Historical replay rejected: '+issues:'Historical evidence or replay settings rejected (422).');
     }
     throw new Error('Historical research request failed (HTTP '+response.status+').');
   }
-  return response.json() as Promise<T>;
+  return await readHistoricalJson(response) as T;
 }
 function livePath(market: LiveMarketId, resource: string) {
   if (!['BTC','ETH','SOL'].includes(market)) throw new Error('Unsupported live market');

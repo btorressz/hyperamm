@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { ReplayFrame, ReplaySegment } from '../../types/replay';
 import { HistoryChart, type HistoryLine } from '../HistoryChart';
 import { Panel } from '../TerminalPrimitives';
@@ -11,7 +12,7 @@ const lines:HistoryLine[]=[
   {key:'oracle',label:'Oracle (context receipt)',color:'#b7a2ff',unit:'quote/base'}
 ];
 export function ReplayMarketChart({segment,frame}:{segment:ReplaySegment;frame:ReplayFrame|null}) {
-  const points=segment.frames.map(f=>({sequence:f.sequence,timestamp:f.evaluated_at,...framePrices(f)}));
+  const points=useMemo(()=>segment.frames.map(f=>({sequence:f.sequence,timestamp:f.evaluated_at,...framePrices(f)})),[segment]);
   const p=frame?framePrices(frame):null;
   return <Panel title="Historical market observations" meta="RECEIPT-ORDERED · PER SEGMENT">
     <HistoryChart points={points} lines={lines} axis="frame" height={260} fitKey={segment.run_fingerprint}/>

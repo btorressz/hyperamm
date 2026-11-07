@@ -85,13 +85,13 @@ const views: Array<[string, HistoryLine[]]> = [
     ],
   ],
 ];
-export function SimulationTrace({ result }: { result: SimulationResult }) {
+export function SimulationTrace({ result, requestedCap=250 }: { result: SimulationResult; requestedCap?: number }) {
   const points = traceFrames(result.trace);
   return (
     <section aria-label="Simulation trace">
       <h2>Explore simulated frames</h2>
       <p className="muted">
-        {points.length} returned trace points shown · requested cap 250 ·{" "}
+        {points.length} returned trace points shown · requested cap {requestedCap} ·{" "}
         {result.metrics.frame_count} simulated frames. Frame index is
         display-only; original backend sequences and timestamps remain
         inspectable. Same-second frames stay distinct; missing values are gaps.

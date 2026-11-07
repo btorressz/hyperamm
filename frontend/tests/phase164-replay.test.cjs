@@ -16,11 +16,10 @@ test('catalog accepts bounded IDs without promoting source authority',()=>{
  }
 });
 test('provenance must bind current dataset',()=>{
- const source={dataset_fingerprint:sha,source_kind:'RECORDED_NATIVE',
-  authority:'NONE',read_only:true,source_authenticated:false,licensing_independently_verified:false,
-  observation_count:4,limitations:[]};
- assert.equal(r.checkedReplayProvenance(source,summary()).authority,'NONE');
- assert.throws(()=>r.checkedReplayProvenance({...source,dataset_fingerprint:'b'.repeat(64)},summary()));
+ const source=structuredClone(require('./fixtures/phase1641-native.json').cases[0].provenance);
+ const selected=structuredClone(require('./fixtures/phase1641-native.json').cases[0].summary);
+ assert.equal(r.checkedReplayProvenance(source,selected).authority,'NONE');
+ assert.throws(()=>r.checkedReplayProvenance({...source,dataset_fingerprint:'b'.repeat(64)},selected));
 });
 test('model inputs have strict bounds and defaults',()=>{
  const p=r.researchPaperDefaults();assert.equal(r.paperInputError(p),null);
