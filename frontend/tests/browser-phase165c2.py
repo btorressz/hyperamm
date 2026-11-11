@@ -94,7 +94,8 @@ async def main(args):
                 response_bytes=int(response.headers.get('content-length','0'))))
             return value
         async def shot(name):
-            await studio.scroll_into_view_if_needed();await page.screenshot(path=str(out/name),full_page=True);report['screenshots'].append(name)
+            await page.evaluate('window.scrollTo(0,0)')
+            await page.screenshot(path=str(out/name),full_page=True);report['screenshots'].append(name)
         await select();before=await status();result=await run();after=await status()
         assert before['authority']==after['authority'] and before['subscriptions']==after['subscriptions']
         assert result['receipt']['foundation']['classification']=='CONTEXT_ONLY'
@@ -120,7 +121,10 @@ async def main(args):
             if args.phase165d:
                 for name,region in [('metrics','PAPER metrics — two separate evidence paths'),('equity','Simulated equity')]:
                     filename=f'{name}-{width}.png'
-                    await studio.get_by_role('region',name=region,exact=True).first.screenshot(path=str(out/filename))
+                    # Isolated component captures omit fixed global chrome;
+                    # unchanged full-page screenshots above retain the shell.
+                    await studio.get_by_role('region',name=region,exact=True).first.screenshot(path=str(out/filename),
+                        style='.topbar,.sidebar,.skipLink{visibility:hidden!important}')
                     report['screenshots'].append(filename)
         await page.set_viewport_size({'width':1440,'height':900})
         passed('1920/1440/1024/768/390 responsive layouts, chart resizing, wrapped fingerprints and decimal cells')
