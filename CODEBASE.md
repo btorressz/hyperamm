@@ -1,14 +1,14 @@
 # HyperAMM — Codebase & Repository Guide
 
-> **Developer orientation and source map — updated November 5, 2026, through merged PR #60 (Phase 16.4).** The original Phase 1–15 file inventory and the dated October 14 repository audit are retained as historical architectural context. The current paths and Phase 16 additions are documented below. Implementation being merged is distinct from native/browser, cross-platform, and external venue acceptance.
+> **Developer orientation — current status reviewed November 11, 2026, through merged PR #66 (Phase 16.5C.2).** The November 5 source map, original Phase 1–15 inventory and dated October 14 audit are retained as historical architectural context. Current comparison paths and final acceptance are linked below. Merged implementation remains distinct from cross-platform and external venue acceptance.
 
 **Purpose.** This is a code navigation and dependency guide: what the directories/files do, which code calls which domain, what information crosses each boundary, how to run or test it, and where changes belong. For project history see [README](README.md), [Summary](Summary.md), [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md).
 
 **System identity.** HyperAMM is a *virtual AMM quote compiler for Hyperliquid's central limit order book (CLOB)*, **not** a deployed/custodial AMM pool. The mathematical constant-product/concentrated curve proposes order-book liquidity. **PAPER** is the default; **guarded Hyperliquid TESTNET** is optional. There is **no mainnet/custody/withdrawal/bridging capability**. Supported deployment is loopback, single operator, one backend worker—not a public SaaS or remotely exposed trading service.
 
-## Current architecture additions — Phases 15–16 (2026-11-05)
+## Current architecture additions — Phases 15–16 (2026-11-11)
 
-**Code status:** Phases 15.5A/B (PRs #54/#55) and 16.1A–16.4 (PRs #56–#60) are merged. The operational core remains one `HyperAmmRuntime` and the shared local `SimulationExecutor`; no second market-making engine, replay worker, signer or research-authoritative strategy path was introduced. **Combined Phase 15 acceptance is open** for genuine permitted Hyperliquid delivery, longer native soak and independent macOS verification. **Phase 16.4 was merged without reported native Python/Node, frontend TypeScript/build, full regression, or Chromium acceptance.** See [CHANGELOG.md](CHANGELOG.md) and [Phase 16.4 acceptance](docs/PHASE164_ACCEPTANCE.md).
+**Code status:** Phases 15.5A/B and 16.1A–16.5C.2 are merged through PR #66. The operational core remains one `HyperAmmRuntime` and the shared local `SimulationExecutor`. Comparison reuses same-job scenario provenance, independent replay segments and the existing quantitative engine. Phase 16.4.1/C.2 recorded native/frontend/Chromium acceptance; independent D-phase findings and actual current results are in [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md). Genuine permitted venue delivery, source licensing and independent macOS verification remain separate gates. The November 5 inventories and October audit below retain their historical context.
 
 ### Three intentionally separate paths
 
@@ -67,7 +67,7 @@ Phase 16: trusted local JSON admission, no web collector
 - Phase 16 APIs: `GET /api/v1/historical-replay/datasets` (IDs), `GET /dataset-summaries` (typed bounded metadata), `GET /provenance?dataset_id=...`, and `POST /run` (isolated computational PAPER replay). All require the local deployment boundary, use no-store responses and the existing single-slot worker. Busy work returns 429, disabled admission 503, rejected/incomplete evidence 422.
 - The request binds dataset ID + fingerprint, market, receipt pairing/interval policy, available economic evidence, precision, frame/trace budgets and optional PAPER execution sensitivity. `SimulationService`, `SimulationExecutor`, `SimulationEngine` and `SimulationTrace` are reused. Cancellations do not free worker admission while a computation still owns it.
 - Results carry source/configuration/model/result provenance and independent accounting segments. A replay gap, source reset or unviable frame does **not** establish a continuous return. Baseline-versus-modeled session PnL and fill-count differences come from the backend, **not frontend financial recomputation**.
-- **Next phases are not implemented:** 16.5 scenario/replay comparison, 16.6 final adversarial acceptance, and 17 shared-capital portfolio research. Three unchanged static documentation checks failed in Phase 16.1B–16.3 full backend runs, while focused suites passed; Phase 16.4 had no native/browser result reported before merge.
+- **Current comparison:** `POST /api/v1/research-comparison/scenario-historical` runs bounded replay and same-job scenario evidence sequentially in the shared worker, then projects descriptive metrics and independent traces. See the comparison integration source map at the end of this guide. Phase 16.6 and Phase 17 remain future work. Historical static failures and their D-phase documentation correction are recorded in the final acceptance report.
 
 ## 1. Fast orientation
 

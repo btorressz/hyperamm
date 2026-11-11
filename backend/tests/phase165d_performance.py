@@ -5,6 +5,7 @@ near-limit jobs are deliberately expensive. No additional application worker.
 """
 import argparse
 import asyncio
+from datetime import timedelta
 import hashlib
 import json
 import os
@@ -25,16 +26,29 @@ from phase165d_fixtures import bounded_dataset
 from test_phase146_research_markets import demo
 
 
-async def main(output):
+async def main(output, selected_case='all'):
     report = dict(status='FAIL', fixture_notice='Generated synthetic PAPER evidence, no exchange authentication',
         environment=dict(platform=platform.platform(), python=platform.python_version(), logical_cpus=os.cpu_count()), cases=[])
-    cases = [(1000,1,0,False), (4999,1,0,False), (64,32,0,False), (4,1,1000,False), (128,1,0,True)]
+    cases = [(1000,1,0,False,False), (4999,1,0,False,False), (64,32,0,False,False),
+             (4,1,1000,False,False), (128,1,0,True,False), (64,32,0,False,True)]
+    if selected_case=='high-gaps':cases=cases[-1:]
     try:
-        for frames, segments, missing, modeled in cases:
+        for frames, segments, missing, modeled, high_gaps in cases:
             with tempfile.TemporaryDirectory(prefix='phase165d-') as temp:
                 root=Path(temp);(root/'vault').mkdir(mode=0o700)
                 vault=HistoricalStorage(root/'vault')
-                d=admit(vault,root/'incoming',bounded_dataset(frames,segments,missing,modeled))
+                generated=bounded_dataset(frames,segments,missing,modeled)
+                if high_gaps:
+                    from app.research_replay.validation import validate_bytes
+                    raw=generated.model_dump(mode='json');raw['dataset_fingerprint']=None
+                    anchor=generated.gaps[0].start_at
+                    # Many disjoint declared outages in one unobserved interval
+                    # remain one reset; no fabricated market observations.
+                    raw['gaps']=[dict(start_at=(anchor+timedelta(microseconds=2*i)).isoformat(),
+                        end_at=(anchor+timedelta(microseconds=2*i+1)).isoformat(),reason='DISCONNECT')
+                        for i in range(994)]+raw['gaps'][1:]
+                    generated=validate_bytes(json.dumps(raw).encode())
+                d=admit(vault,root/'incoming',generated)
                 original={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (root/'vault').glob('*.json')}
                 historical=dict(dataset_id=d.dataset_id,dataset_fingerprint=d.dataset_fingerprint,market='BTC',
                     execution=dict(size_decimals=5),max_frames=5000,trace_max_points=250,
@@ -61,7 +75,7 @@ async def main(output):
                     fills=next(r for r in result.receipt.rows if r.name=='fill_count').historical_segment.value
                     if modeled:assert fills>0
                     measured=dict(historical_frames=frames,scenario_frames=request.frames,source_observations=len(d.observations),
-                        segments=segments,issues=len(result.issues)+result.omitted_issues,omitted_issues=result.omitted_issues,
+                        segments=segments,declared_gaps=len(result.declared_gaps),issues=len(result.issues)+result.omitted_issues,omitted_issues=result.omitted_issues,
                         modeled=modeled,worker_seconds=round(elapsed,6),serialization_seconds=round(serialization,6),response_bytes=len(wire),
                         scenario_trace_points=len(result.scenario_trace.points),historical_trace_points=len(result.historical_trace.points),
                         fills=str(fills),process_peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
@@ -89,4 +103,6 @@ async def main(output):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--output',required=True)
-    asyncio.run(main(parser.parse_args().output))
+    parser.add_argument('--case',choices=['all','high-gaps'],default='all')
+    args=parser.parse_args()
+    asyncio.run(main(args.output,args.case))
