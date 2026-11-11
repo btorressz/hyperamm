@@ -120,10 +120,10 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
         state={retired?'retired':pending?'running':error?'error':response&&!current?'retired':current?'complete':'idle'}/>
       {response&&!current&&<StatusBanner>Retired result: captured {response.data.request.research_market} scenario / {response.data.request.historical.dataset_id}, segment {response.data.request.segment_index+1}. Run again for the current inputs or backend session. Financial displays are hidden.</StatusBanner>}
       {selectionCurrent&&<Panel title="Independent historical segments" meta="SELECTION RERUNS VALIDATED EVIDENCE">
-        <label>Selected historical segment<select aria-label="Comparison historical segment" value={segmentIndex} disabled={pending}
+        <div className="replayControls"><label>Selected historical segment<select aria-label="Comparison historical segment" value={segmentIndex} disabled={pending}
           onChange={e=>{const index=Number(e.target.value);epoch.current++;setSegmentIndex(index);void run(index)}}>
           {response.data.segments.map(s=><option key={s.segment_index} value={s.segment_index}>Segment {s.segment_index+1} · {s.reset_reason} · {s.frame_count} frames</option>)}
-        </select></label>
+        </select></label></div>
         <p className="muted panelNote">{response.data.segment_count} independent segments. Each resets capital, positions, orders and risk. Selection reruns the bounded replay and scenario; there is no persistent result session.</p>
         <details><summary>Receipt gaps and excluded evidence</summary>
           {response.data.declared_gaps.map((g,i)=><p key={i}>{g.reason} · {g.start_at} → {g.end_at}</p>)}

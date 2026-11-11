@@ -1,7 +1,7 @@
 
 /* Phase 16.4: historical research only. Inherit the existing dark terminal palette. */
 .replayWorkspace { min-width: 0; padding: 14px 0 8px; border-top: 1px solid #23364a; }
-.replayWorkspace .replayControls { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 16px; align-items: flex-end; }
+.replayWorkspace .replayControls, .srcWorkspace .replayControls { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 16px; align-items: flex-end; }
 .replayControls label { display: flex; flex-direction: column; gap: 5px; flex: 1 1 160px; min-width: 130px; font-size: 12px; color: #b8c8dc; }
 .replayControls select, .replayControls input { width: 100%; padding: 9px; background: #0b1725; color: #e5edf6; border: 1px solid #36506a; border-radius: 6px; }
 .replayControls button { min-height: 36px; }

@@ -123,6 +123,7 @@ async def main(args):
         if args.phase166c:
             preview=studio.get_by_role('region',name='Research workload preview',exact=True)
             assert 'BTC-PERP' in await preview.inner_text()
+            assert await studio.locator('.replayControls').first.evaluate('(n)=>getComputedStyle(n).display')=='flex'
             assert (await preview.inner_text()).count('4 of 5,000 maximum')==2
         before=await status();result=await run();after=await status()
         assert before['authority']==after['authority'] and before['subscriptions']==after['subscriptions']
@@ -140,7 +141,11 @@ async def main(args):
         await shot('btc-context-and-traces-1440.png')
         if args.phase166c:
             await studio.get_by_role('status',name='Scenario comparison research state').filter(has_text='COMPLETE').wait_for()
-            await studio.screenshot(path=str(out/'comparison-complete-1440.png'),style='.topbar,.sidebar,.skipLink{visibility:hidden!important}')
+            assert await studio.get_by_role('combobox',name='Comparison historical segment',exact=True).evaluate('(n)=>getComputedStyle(n).backgroundColor')=='rgb(11, 23, 37)'
+            # A readable viewport capture binds preflight, status and independent
+            # receipt evidence without committing an 8,000-pixel page image.
+            await studio.get_by_role('region',name='Research workload preview',exact=True).evaluate('(n)=>window.scrollTo(0,n.getBoundingClientRect().top+window.scrollY-10)')
+            await page.screenshot(path=str(out/'comparison-complete-1440.png'),style='.topbar,.sidebar,.skipLink{visibility:hidden!important}')
             report['screenshots'].append('comparison-complete-1440.png')
         passed('Actual BTC comparison, backend metrics, zero fills, unavailable metric, separate original charts, inspectable provenance, operational isolation')
         for width,height in SIZES:
