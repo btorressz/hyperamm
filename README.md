@@ -279,6 +279,10 @@ Each segment's equity and PnL are independent, so no cross-gap aggregate return 
 
 **Status:** [PR #60](https://github.com/btorressz/hyperamm/pull/60) is merged, but native Python/Node, TypeScript/Vite and Chromium acceptance for 16.4 **was not reported before merge**. Follow [the Phase 16.4 acceptance plan](docs/PHASE164_ACCEPTANCE.md) before treating it as finished.
 
+### Phase 16.6C research UX and local operator guidance
+
+Historical Replay and Scenario vs Historical now share request-status, sanitized recovery guidance and source-derived workload previews. These displays do **not** report server-side percent progress, ETA or cancellation success. Large frame ceilings do not guarantee viable historical frames. See the [Phase 16.6C.1 local research runbook](docs/PHASE166C1_RELEASE_UX.md) for startup, private historical storage, 422/429/503 diagnostics, worker constraints and external acceptance limitations.
+
 ## Phase 4.1 acceptance and hardening
 
 Constant-product **incremental reserve movement** now drives quote sizes.

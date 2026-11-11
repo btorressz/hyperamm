@@ -12,6 +12,10 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 Public live Hyperliquid market data can be enabled with `MARKET_DATA_MODE=LIVE`. Signed testnet execution additionally requires `EXECUTION_MODE=TESTNET`, `ENABLE_HYPERLIQUID_TESTNET_ORDERS=true`, and a testnet signing key supplied through environment variables. Mainnet execution is intentionally absent.
 
+### Phase 16.6C.1 local research troubleshooting
+
+For optional historical replay, configure the existing trusted private `HISTORICAL_REPLAY_ROOT` and admit data using the existing secure operator-side importer. The browser cannot upload arbitrary history. The backend's `/health` endpoint reports general market/Redis health, **not** per-job research progress or archive authenticity. The frontend preflight/status panels use existing validated dataset metadata and HTTP errors, without guessing ETA, progress or worker cancellation. See [the research UX and local release runbook](../docs/PHASE166C1_RELEASE_UX.md).
+
 ### Audit 1.0: dependency hygiene (A1-017)
 
 HyperAMM has no current direct NumPy usage in its runtime, tests, or tooling.
