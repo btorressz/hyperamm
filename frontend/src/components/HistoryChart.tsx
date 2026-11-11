@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createChart,
   ColorType,
@@ -11,7 +11,7 @@ import {
 import {
   historySeries,
   needsFit,
-  boundedObservations,
+  chartObservationIndex,
   chartCoordinate,
   type Observation,
 } from "../utils/terminalHistory";
@@ -180,6 +180,22 @@ export function HistoryChart({
       values: Array<[string, string]>;
     } | null>(null);
   evidence.current = { points, lines };
+  // Rebuild indexes and chart coordinates only when source data or axes change.
+  // Tooltip state changes never require a fresh projection of all frames.
+  const observationIndex = useMemo(
+    () => chartObservationIndex(points as Observation[], axis), [points, axis],
+  );
+  const observationIndexRef = useRef(observationIndex);
+  observationIndexRef.current = observationIndex;
+  const { plotted, hasPlottedValues } = useMemo(() => {
+    const plotted = lines.map((line) => ({
+      line, data: seriesCoordinates(points as ChartPoint[], line, axis),
+    }));
+    return {
+      plotted,
+      hasPlottedValues: plotted.some(({ data }) => data.some((p) => p.value !== null)),
+    };
+  }, [points, lines, axis]);
   useEffect(() => {
     if (!container.current) return;
     const c = createChart(container.current, {
@@ -221,17 +237,7 @@ export function HistoryChart({
         setTooltip(null);
         return;
       }
-      const displayed =
-        axis === "frame"
-          ? evidence.current.points
-          : boundedObservations(evidence.current.points as Observation[], 1000);
-      const p = [...displayed]
-        .reverse()
-        .find((p) =>
-          axis === "frame"
-            ? p.sequence === Number(param.time)
-            : Math.floor(Date.parse(p.timestamp) / 1000) === Number(param.time),
-        );
+      const p = observationIndexRef.current.get(Number(param.time));
       if (!p) {
         setTooltip(null);
         return;
@@ -262,19 +268,16 @@ export function HistoryChart({
     const c = chart.current;
     if (!c) return;
     reconcileSeries(c, series.current, lines);
-    let hasValues = false;
-    for (const line of lines) {
-      const data = seriesCoordinates(points as ChartPoint[], line, axis);
-      hasValues ||= data.some((p) => p.value !== null);
+    for (const { line, data } of plotted) {
       const entry = series.current.get(line.key);
       if (entry) plotSegments(c, entry, line, data);
     }
-    if (needsFit(fitted.current, fitKey, hasValues)) {
+    if (needsFit(fitted.current, fitKey, hasPlottedValues)) {
       c.timeScale().fitContent();
       fitted.current = fitKey;
       setTooltip(null);
     }
-  }, [points, lines, fitKey, height, axis]);
+  }, [plotted, lines, fitKey, height, axis, hasPlottedValues]);
   return (
     <div className="researchChart">
       <div className="chartLegend">
@@ -324,12 +327,7 @@ export function HistoryChart({
           No observations available for this view.
         </p>
       )}
-      {!!points.length &&
-        !lines.some((line) =>
-          seriesCoordinates(points as ChartPoint[], line, axis).some(
-            (p) => p.value !== null,
-          ),
-        ) && (
+      {!!points.length && !hasPlottedValues && (
           <p className="emptyEvidence">
             Plotted values are unavailable in these observations. Missing
             evidence is not zero.

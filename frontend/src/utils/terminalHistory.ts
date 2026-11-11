@@ -33,6 +33,25 @@ export function boundedObservations(
     .sort((a, b) => a.sequence - b.sequence)
     .slice(-Math.max(1, Math.min(1000, limit)));
 }
+/** Index chart points per data revision, not per crosshair movement.
+ * Frame: preserve the final same-sequence observation.
+ * Time: preserve boundedObservations' latest-per-second semantics.
+ */
+export function chartObservationIndex(
+  points: Observation[],
+  axis: "time" | "frame",
+): Map<number, Observation> {
+  const displayed = axis === "frame" ? points : boundedObservations(points, 1000);
+  const index = new Map<number, Observation>();
+  for (const point of displayed) {
+    const key = axis === "frame"
+      ? point.sequence
+      : Math.floor(Date.parse(point.timestamp) / 1000);
+    if (Number.isFinite(key)) index.set(key, point);
+  }
+  return index;
+}
+
 export function mergeHistory(
   state: ChartHistory,
   history: TerminalHistory,
