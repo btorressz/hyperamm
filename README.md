@@ -281,7 +281,7 @@ Each segment's equity and PnL are independent, so no cross-gap aggregate return 
 
 ### Phase 16.6C research UX and local operator guidance
 
-Historical Replay and Scenario vs Historical now share request-status, sanitized recovery guidance and source-derived workload previews. These displays do **not** report server-side percent progress, ETA or cancellation success. Large frame ceilings do not guarantee viable historical frames. See the [Phase 16.6C.1 local research runbook](docs/PHASE166C1_RELEASE_UX.md) for startup, private historical storage, 422/429/503 diagnostics, worker constraints and external acceptance limitations.
+Historical Replay and Scenario vs Historical now share request-status, sanitized recovery guidance and source-derived workload previews. These displays do **not** report server-side percent progress, ETA or cancellation success. Large frame ceilings do not guarantee viable historical frames. See the [Phase 16.6C.1 local research runbook](docs/PHASE166C1_RELEASE_UX.md) for startup, private historical storage, 422/429/503 diagnostics, worker constraints and external acceptance limitations. [Phase 16.6C.2 acceptance](docs/PHASE166C2_ACCEPTANCE.md) records real local FastAPI/Chromium validation, connection retirement, native regression results and six actual screenshots; physical Redis and external gates remain separate.
 
 ## Phase 4.1 acceptance and hardening
 

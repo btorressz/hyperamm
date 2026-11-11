@@ -83,3 +83,65 @@ test('diagnostics never echo untrusted provider credentials or raw traceback tex
  assert.equal(undef.kind,'unknown');
  assert.ok(!JSON.stringify(undef).includes(secret));
 });
+
+test('workload accepts all research markets, source assertions, execution models and independent frame edits',()=>{
+ for(const market of ['BTC','ETH','SOL'])for(const source_kind of ['SYNTHETIC_FIXTURE','RECORDED_NATIVE'])for(const executionMode of ['BASELINE','MODELED_CROSSING']){
+  const w=u.researchWorkload({dataset:{...dataset,market,source_kind},replayFrames:'4999',scenarioFrames:'2',executionMode});
+  assert.equal(w.fields.find(x=>x.label==='Research market').value,market+'-PERP');
+  assert.equal(w.fields.find(x=>x.label==='Source label').value,source_kind==='RECORDED_NATIVE'?'User-asserted recording':'Synthetic fixture');
+  assert.equal(w.fields.find(x=>x.label==='Scenario frame limit').value,'2 of 5,000 maximum');
+  assert.equal(w.large,true);
+ }
+ assert.equal(u.researchWorkload({dataset,replayFrames:'2',scenarioFrames:'1000',executionMode:'BASELINE'}).large,true);
+});
+
+test('shared status and diagnostics expose accessible roles and bounded messages',()=>{
+ const React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
+ const {ResearchRunStatus}=require(path.join(process.env.TERMINAL_TEST_BUILD,'components/research/ResearchRunStatus.js'));
+ const {ResearchDiagnostics}=require(path.join(process.env.TERMINAL_TEST_BUILD,'components/research/ResearchDiagnostics.js'));
+ assert.equal(renderToStaticMarkup(React.createElement(ResearchRunStatus,{state:'idle',operation:'Historical replay'})),'');
+ for(const state of ['running','complete','retired','error']){
+  const html=renderToStaticMarkup(React.createElement(ResearchRunStatus,{state,operation:'Historical replay'}));
+  assert.match(html,/role="status"/);assert.match(html,/aria-live="polite"/);
+  assert.doesNotMatch(html,/\d+%|worker running|cancellation successful/i);
+ }
+ const html=renderToStaticMarkup(React.createElement(ResearchDiagnostics,{error:new Error('HTTP 500 /private/path token=unsafe')}));
+ assert.match(html,/role="alert"/);assert.doesNotMatch(html,/unsafe|\/private\/path/);
+});
+
+test('real HTTP status responses through the actual API client produce safe shared guidance',async()=>{
+ const http=require('node:http'),{once}=require('node:events');
+ const {api}=require(path.join(process.env.TERMINAL_TEST_BUILD,'api/client.js'));
+ const fixture=require('./fixtures/phase165c2-response.json');
+ let status=200;
+ const server=http.createServer((req,res)=>{
+  req.resume();res.writeHead(typeof status==='number'?status:200,{'Content-Type':'application/json'});
+  if(status==='disconnect'){res.flushHeaders();res.write('{');setTimeout(()=>res.destroy(),20);return;}
+  if(status==='malformed'){res.end('{');return;}
+  if(status==='invalid-utf8'){res.end(Buffer.from([255]));return;}
+  res.end(JSON.stringify(status===200?fixture:{detail:'Traceback /private/path API_KEY=unsafe'}));
+ });
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const original=global.fetch;
+ global.fetch=(url,init)=>original(new URL(url,'http://127.0.0.1:'+server.address().port),init);
+ try{
+  assert.equal((await api.scenarioHistoricalComparison(fixture.request)).receipt.foundation.classification,'CONTEXT_ONLY');
+  status='disconnect';
+  await assert.rejects(()=>api.scenarioHistoricalComparison(fixture.request),error=>{
+   assert.equal(u.diagnoseResearchError(error).kind,'connection');return true;
+  });
+  for(const invalid of ['malformed','invalid-utf8']){
+   status=invalid;
+   await assert.rejects(()=>api.scenarioHistoricalComparison(fixture.request),error=>{
+    assert.equal(u.diagnoseResearchError(error).kind,'validation');return true;
+   });
+  }
+  for(const [code,kind] of [[413,'size'],[422,'validation'],[429,'busy'],[503,'storage'],[500,'server']]){
+   status=code;
+   await assert.rejects(()=>api.scenarioHistoricalComparison(fixture.request),error=>{
+    assert.equal(u.diagnoseResearchError(error).kind,kind);
+    assert.doesNotMatch(error.message,/unsafe|private\/path|Traceback/);return true;
+   });
+  }
+ }finally{global.fetch=original;await new Promise(resolve=>server.close(resolve))}
+});

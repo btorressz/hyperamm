@@ -4,6 +4,14 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 16.6C.2
+
+- Correct Historical Replay connection/session retirement and hide stale financial evidence; preserve retired status for invalidated pending research in both Studios.
+- Restore reused desktop replay-control spacing in Comparison Studio.
+- Describe pending requests as awaiting responses; improve backend-startup guidance and distinguish interrupted HTTP streams, malformed evidence and byte limits.
+- Reuse existing FastAPI, PAPER engines, worker lifecycle, Redis/storage contracts and Chromium framework for native/local integration and responsive acceptance.
+- Add focused real-HTTP configuration tests, accessible shared-component/API tests, six actual Chromium screenshots and [compact acceptance findings](docs/PHASE166C2_ACCEPTANCE.md). Physical Redis remains blocked; external source/platform/trading acceptance is separate.
+
 ## Project status and release boundaries
 
 - The repository began this recorded PR history at **Phase 4.1**; earlier Phase 1–4 foundation is not reconstructed from PR titles.

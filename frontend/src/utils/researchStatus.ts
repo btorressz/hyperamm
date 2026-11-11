@@ -38,7 +38,7 @@ export function diagnoseResearchError(error: unknown): ResearchDiagnosis {
   };
   if (/500|internal|failed on the server/.test(message)) return {
     kind:'server', title:'Research could not be completed',
-    action:'Review sanitized local backend diagnostics and retry after the service is healthy. No orders or strategies were activated by the research request.',
+    action:'Check that the local backend is running, review sanitized local diagnostics and retry after service recovery. No orders or strategies were activated by the research request.',
   };
   return {
     kind:'unknown', title:'Research request was not completed',

@@ -20,6 +20,7 @@ async def main(args):
         'LIVE_OBSERVATIONS_ENABLED':'false','LIVE_STREAMS_ENABLED':'false','REDIS_ENABLED':'false',
         'PHASE1641_FIXTURE_ROOT':tempfile.mkdtemp(prefix='vaults-',dir=work)}
     if args.phase165d:env['PHASE165D_LARGE_FIXTURES']='1'
+    if args.phase166c:env['PHASE166C_FIXTURES']='1'
     logs=[(work/'backend.log').open('w'),(work/'vite.log').open('w')];processes=[];started=time.monotonic()
     def backend():
         proc=subprocess.Popen([args.python,'-m','uvicorn','phase1641_browser_backend:app','--app-dir',str(ROOT/'frontend/tests'),
@@ -30,7 +31,7 @@ async def main(args):
             os.killpg(proc.pid,signal.SIGTERM)
             try:proc.wait(timeout=10)
             except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait(timeout=5)
-    server=backend()
+    server=None if args.phase166c else backend()
     processes.append(subprocess.Popen(['npm','run','dev','--','--host','127.0.0.1','--port','5173','--strictPort'],
         cwd=ROOT/'frontend',stdout=logs[1],stderr=subprocess.STDOUT,start_new_session=True))
     def passed(name):report['workflows'].append(name);print('PASS '+name,flush=True)
@@ -45,7 +46,8 @@ async def main(args):
         await page.add_init_script("""window.__comparisonResponses=[];const originalFetch=window.fetch;
           window.fetch=async(...args)=>{const r=await originalFetch(...args);
             if(String(args[0]).endsWith('/research-comparison/scenario-historical'))
-              r.clone().json().then(value=>window.__comparisonResponses.push({status:r.status,value}));
+              r.clone().json().then(value=>window.__comparisonResponses.push({status:r.status,value}))
+                .catch(()=>window.__comparisonResponses.push({status:r.status,value:null,body_unavailable:true}));
             return r;};""")
         page.on('pageerror',lambda e:report['page_errors'].append(str(e)))
         page.on('console',lambda m:report['console_errors'].append(m.text) if m.type=='error' else None)
@@ -59,6 +61,13 @@ async def main(args):
                         if (await ctx.request.get('http://127.0.0.1:8000/api/v1/health',timeout=1000)).status==200:return
                     except Exception:pass
                     await asyncio.sleep(.1)
+        if args.phase166c:
+            await page.goto('http://127.0.0.1:5173/#/simulation')
+            await page.get_by_role('button',name='Historical replay',exact=True).click()
+            await page.get_by_role('alert',name='Research diagnostics',exact=True).filter(has_text='Check that the local backend is running').wait_for()
+            assert not await page.get_by_role('heading',name='Replay receipt',exact=True).count()
+            passed('16.6C browser opened before backend startup: Vite HTTP 500 with backend availability guidance and no substituted evidence')
+            server=backend()
         await ready()
         async def control(**changes):
             r=await ctx.request.post('http://127.0.0.1:8000/__fixture__/replay-control',data=changes);assert r.status==200,await r.text();return await r.json()
@@ -68,9 +77,19 @@ async def main(args):
                 while (await status())['busy']:await asyncio.sleep(.05)
         await control(terminal=True)
         await page.goto('http://127.0.0.1:5173/#/simulation')
+        if args.phase166c:await page.reload()
         await page.get_by_role('heading',name='Simulation & Optimization',exact=True).wait_for()
         await page.get_by_role('button',name='Historical replay',exact=True).click()
         await page.get_by_role('heading',name='Historical Replay Studio',exact=True).wait_for()
+        if args.phase166c:
+            async def restart(kill=False):
+                nonlocal server
+                if kill and server.poll() is None:
+                    os.killpg(server.pid,signal.SIGKILL);server.wait(timeout=5)
+                else:stop(server)
+                server=backend();await ready();await control(terminal=True)
+            from phase166c_acceptance import research_acceptance
+            await research_acceptance(page,ctx,control,status,idle,restart,out,report,passed)
         await page.get_by_role('button',name='Scenario vs historical',exact=True).click()
         studio=page.get_by_role('region',name='Scenario vs Historical Replay Comparison Studio',exact=True)
         async def enabled():
@@ -97,9 +116,16 @@ async def main(args):
                 response_bytes=int(response.headers.get('content-length','0'))))
             return value
         async def shot(name):
+            if args.phase166c:return
             await page.evaluate('window.scrollTo(0,0)')
             await page.screenshot(path=str(out/name),full_page=True);report['screenshots'].append(name)
-        await select();before=await status();result=await run();after=await status()
+        await select()
+        if args.phase166c:
+            preview=studio.get_by_role('region',name='Research workload preview',exact=True)
+            assert 'BTC-PERP' in await preview.inner_text()
+            assert await studio.locator('.replayControls').first.evaluate('(n)=>getComputedStyle(n).display')=='flex'
+            assert (await preview.inner_text()).count('4 of 5,000 maximum')==2
+        before=await status();result=await run();after=await status()
         assert before['authority']==after['authority'] and before['subscriptions']==after['subscriptions']
         assert result['receipt']['foundation']['classification']=='CONTEXT_ONLY'
         assert await studio.locator('canvas').count()>=12
@@ -113,6 +139,14 @@ async def main(args):
         missing=studio.get_by_role('row').filter(has=page.get_by_role('rowheader',name='Fill activity ratio',exact=False))
         assert 'Unavailable' in await missing.inner_text()
         await shot('btc-context-and-traces-1440.png')
+        if args.phase166c:
+            await studio.get_by_role('status',name='Scenario comparison research state').filter(has_text='COMPLETE').wait_for()
+            assert await studio.get_by_role('combobox',name='Comparison historical segment',exact=True).evaluate('(n)=>getComputedStyle(n).backgroundColor')=='rgb(11, 23, 37)'
+            # A readable viewport capture binds preflight, status and independent
+            # receipt evidence without committing an 8,000-pixel page image.
+            await studio.get_by_role('region',name='Research workload preview',exact=True).evaluate('(n)=>window.scrollTo(0,n.getBoundingClientRect().top+window.scrollY-10)')
+            await page.screenshot(path=str(out/'comparison-complete-1440.png'),style='.topbar,.sidebar,.skipLink{visibility:hidden!important}')
+            report['screenshots'].append('comparison-complete-1440.png')
         passed('Actual BTC comparison, backend metrics, zero fills, unavailable metric, separate original charts, inspectable provenance, operational isolation')
         for width,height in SIZES:
             await page.set_viewport_size({'width':width,'height':height});await asyncio.sleep(.2)
@@ -199,6 +233,18 @@ async def main(args):
         assert not await studio.get_by_role('heading',name='Research pairing status',exact=True).count()
         await select();r=await run();assert r['provenance']['dataset_fingerprint']==saved_identity
         passed('Backend restart retires receipts; retained admitted evidence reproduces identity')
+        if args.phase166c:
+            await control(delay=1)
+            await enabled()
+            async with page.expect_request(lambda r:r.url.endswith(URL)):
+                await studio.get_by_role('button',name='Run Scenario / Historical Comparison',exact=True).click()
+            async with asyncio.timeout(10):
+                while not (await status())['busy']:await asyncio.sleep(.03)
+            await restart(kill=True)
+            await studio.get_by_role('status',name='Scenario comparison research state').filter(has_text='RETIRED').wait_for(timeout=30000)
+            assert not await studio.get_by_role('heading',name='Research pairing status',exact=True).count()
+            await select();await run()
+            passed('16.6C real process interruption during comparison retires pending evidence; reconnect requires a manual validated rerun')
         # Existing workspace regressions use their actual engines and API.
         await page.get_by_role('button',name='Historical replay',exact=True).click()
         replay=page.get_by_role('region',name='Historical Replay Studio',exact=True)
@@ -326,7 +372,7 @@ async def main(args):
             await chart_acceptance(ctx, report, out)
             passed('Actual HistoryChart hover, replaced points/lines, live updates, axes, zero/signed/null values, reset and unmount/remount; browser lookup and React profiling')
         assert not report['page_errors'],report['page_errors']
-        report['unexpected_console_errors']=[e for e in report['console_errors'] if not any(token in e for token in ('WebSocket','status of 404','status of 422','status of 429','status of 503','status of 500','ERR_CONNECTION_REFUSED'))]
+        report['unexpected_console_errors']=[e for e in report['console_errors'] if not any(token in e for token in ('WebSocket','status of 404','status of 413','status of 422','status of 429','status of 503','status of 500','ERR_CONNECTION_REFUSED'))]
         assert not report['unexpected_console_errors'],report['unexpected_console_errors']
         # Keep cancellations and deliberate backend-restart failures visible.
         report['unexpected_network_failures']=[r for r in report['network_failures']
@@ -346,6 +392,7 @@ async def main(args):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--python',default=str(ROOT/'backend/.venv/bin/python'))
     p.add_argument('--chromium',default='/usr/bin/chromium');p.add_argument('--output',default=str(ROOT/'docs/acceptance/phase165c2'))
+    p.add_argument('--phase166c',action='store_true',help='Run shared status, diagnostics, workload and local recovery acceptance; retain six representative screenshots')
     p.add_argument('--phase165d',action='store_true',help='Run additional hardening and bounded large-render acceptance')
     p.add_argument('--phase166a',action='store_true',help='Run native chart lifecycle, rapid segment switching and browser profiling probes')
     asyncio.run(main(p.parse_args()))

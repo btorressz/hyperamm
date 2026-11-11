@@ -1,7 +1,7 @@
 import type { ResearchRunState } from '../../utils/researchStatus';
 
 const messages:Record<Exclude<ResearchRunState,'idle'>,{title:string;detail:string}>={
-  running:{title:'Research request submitted',detail:'Awaiting the existing single research worker and validated backend response. Per-frame progress and completion time are not available.'},
+  running:{title:'Research request submitted',detail:'Awaiting a validated backend response. Submission does not establish that worker capacity has been acquired. Per-frame progress and completion time are not available.'},
   complete:{title:'Research result available',detail:'Validated PAPER research evidence is ready to inspect. It does not authorize orders, live execution or paired-performance claims.'},
   retired:{title:'Previous research evidence retired',detail:'Selected inputs or backend session changed. Submit a new request for current evidence; do not reuse previous financial displays.'},
   error:{title:'Research request not completed',detail:'See the diagnostic guidance below. The browser cannot determine whether a disconnected backend worker has stopped.'},

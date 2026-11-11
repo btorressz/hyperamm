@@ -15,7 +15,7 @@ from phase1641_fixtures import admit, dataset
 
 ROOT=Path(__file__).resolve().parents[2]
 WORK=Path(os.environ.get('PHASE1641_FIXTURE_ROOT',str(ROOT/'work/browser1641')));WORK.mkdir(parents=True,exist_ok=True)
-mode={'delay':0,'terminal':False,'runs':0,'provenance_delay':0}
+mode={'delay':0,'terminal':False,'runs':0,'provenance_delay':0,'failure':False}
 class OfflineCatalog:
     async def catalog(self):
         return ResearchMarketCatalog(markets=tuple(profile(ResearchPerpMarketMetadata(market=m,
@@ -27,6 +27,7 @@ app=main.app;original=app.router.lifespan_context;run_engine=SimulationEngine.ru
 async def delayed_engine(self,**kwargs):
     mode['runs']+=1
     await asyncio.sleep(mode['delay'])
+    if mode['failure']:raise RuntimeError('/private/fixture/path API_KEY=fixture-secret Traceback')
     return await run_engine(self,**kwargs)
 SimulationEngine.run=delayed_engine
 
@@ -37,10 +38,17 @@ async def lifespan(application):
     for m in MARKETS:
         for kind in ('complete','gap','generation','missing','crossing'):
             if f'{m}-{kind}-fixture' not in vault.list_ids():admit(vault,WORK/'incoming',dataset(kind,m))
-    if os.environ.get('PHASE165D_LARGE_FIXTURES') == '1':
+    if os.environ.get('PHASE165D_LARGE_FIXTURES') == '1' or os.environ.get('PHASE166C_FIXTURES') == '1':
         from phase165d_fixtures import bounded_dataset
         generated = bounded_dataset(1000)
         if generated.dataset_id not in vault.list_ids():admit(vault,WORK/'incoming',generated)
+    if os.environ.get('PHASE166C_FIXTURES') == '1':
+        import json
+        from app.research_replay.validation import validate_bytes
+        raw=dataset().model_dump(mode='json')
+        raw.update(dataset_id='BTC-'+('long-admitted-identifier-'*5)[:116],dataset_fingerprint=None)
+        raw['source']['source_id']='phase166c-long-source'
+        if raw['dataset_id'] not in vault.list_ids():admit(vault,WORK/'incoming',validate_bytes(json.dumps(raw).encode()))
     async with original(application):
         application.state.historical_replay_root=str(WORK/'vault')
         yield
@@ -60,7 +68,7 @@ async def delayed_provenance(request,call_next):
 @app.post('/__fixture__/replay-control')
 async def control(request:Request):
     change=await request.json()
-    for k in ('delay','terminal','provenance_delay'):
+    for k in ('delay','terminal','provenance_delay','failure'):
         if k in change:mode[k]=change[k]
     if 'fixture_reference_firewall' in change:
         # Explicit test setup, never a browser/product request or public API.

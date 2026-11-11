@@ -69,14 +69,20 @@ export async function readHistoricalJson(response:Response, limit=64_000_000):Pr
   const decoder=new TextDecoder('utf-8',{fatal:true});
   let size=0,wire='';
   try{
-    for(;;){const {done,value}=await reader.read();if(done)break;
+    for(;;){const {done,value}=await reader.read().catch(()=>{
+        throw new Error('Historical backend connection interrupted. The admitted job may still be processing.');
+      });if(done)break;
       size+=value.byteLength;
       if(size>limit)throw new Error('Historical response exceeds the browser evidence budget.');
       wire+=decoder.decode(value,{stream:true});
     }
     wire+=decoder.decode();
     return JSON.parse(wire) as unknown;
-  }catch{await reader.cancel().catch(()=>{});throw new Error('Historical response is malformed or exceeds the browser evidence budget.');}
+  }catch(error){
+    await reader.cancel().catch(()=>{});
+    if(error instanceof SyntaxError || error instanceof TypeError)throw new Error('Historical response is invalid or malformed.');
+    throw error;
+  }
   finally{reader.releaseLock();}
 }
 async function historicalRequest<T>(path:string,init?:RequestInit,limit=64_000_000):Promise<T> {

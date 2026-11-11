@@ -32,6 +32,8 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
   const [selected,setSelected]=useState(''),[scenario,setScenario]=useState('QUIET'),[frames,setFrames]=useState('120');
   const [paper,setPaper]=useState(researchPaperDefaults),[size,setSize]=useState('5');
   const [maxFrames,setMaxFrames]=useState('250'),[age,setAge]=useState('0'),[interval,setInterval]=useState('1000');
+  const [retired,setRetired]=useState(false);
+  const submitted=useRef(false);
   const [segmentIndex,setSegmentIndex]=useState(0),[pending,setPending]=useState(false),[error,setError]=useState('');
   const [response,setResponse]=useState<{data:ScenarioHistoricalResponse;key:string;session:string;epoch:number}|null>(null);
   const [json,setJson]=useState(''),[localReceipt,setLocalReceipt]=useState<QuantitativeComparisonReceipt|null>(null),[showImport,setShowImport]=useState(false);
@@ -48,10 +50,10 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
     market.selectedResearchMarket,market.marketSelectionVersion,market.evidenceEpoch,market.marketProfileFingerprint,
     vault.draftVersion,vault.evidenceEpoch,vault.useForResearch,vault.lastValidatedFingerprint]);
   const latest=useRef({inputKey,session});latest.current={inputKey,session};
-  const invalidate=()=>{epoch.current++;setError('');setLocalReceipt(null);setSegmentIndex(0)};
+  const invalidate=()=>{epoch.current++;setRetired(submitted.current);setError('');setLocalReceipt(null);setSegmentIndex(0)};
   // A connection/input transition permanently retires evidence, including a
   // reconnect to the same process. Returning to the old key cannot revive it.
-  useEffect(()=>{epoch.current++;setLocalReceipt(null);setSegmentIndex(0)},[inputKey,session]);
+  useEffect(()=>{epoch.current++;setRetired(submitted.current);setLocalReceipt(null);setSegmentIndex(0)},[inputKey,session]);
   useEffect(()=>()=>{epoch.current++;controller.current?.abort()},[]);
   const current=!!response&&response.epoch===epoch.current&&response.key===inputKey&&response.session===session&&response.data.receipt.selected_segment_index===segmentIndex;
   const selectionCurrent=!!response&&response.epoch===epoch.current&&response.key===inputKey&&response.session===session;
@@ -74,7 +76,7 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
       segment_index:index,include_traces:true,trace_point_limit:120};
     const token=++epoch.current,key=inputKey,identity=session;
     const abort=new AbortController();controller.current=abort;
-    busy.current=true;setPending(true);setError('');setLocalReceipt(null);setResponse(null);
+    submitted.current=true;setRetired(false);busy.current=true;setPending(true);setError('');setLocalReceipt(null);setResponse(null);
     try{
       const data=await api.scenarioHistoricalComparison(captured,abort.signal);
       if(epoch.current!==token||latest.current.inputKey!==key||latest.current.session!==identity)return;
@@ -112,16 +114,16 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
         maxFrames={maxFrames} setMaxFrames={update(setMaxFrames)} maxAge={age} setMaxAge={update(setAge)} maxInterval={interval} setMaxInterval={update(setInterval)}/>
       <ReplayProvenance summary={item} provenance={provenance.data??null} result={null} frame={null}/>
       <ResearchWorkloadPreview dataset={item} replayFrames={maxFrames} scenarioFrames={frames} executionMode={paper.mode}/>
-      <div className="actions"><button type="button" className="primary" disabled={!ready} onClick={()=>void run()}>{pending?'Comparison worker running…':'Run Scenario / Historical Comparison'}</button></div>
+      <div className="actions"><button type="button" className="primary" disabled={!ready} onClick={()=>void run()}>{pending?'Awaiting comparison response…':'Run Scenario / Historical Comparison'}</button></div>
       {validation&&<p role="alert" className="inlineError">{validation}</p>}
       <ResearchRunStatus operation="Scenario comparison"
-        state={pending?'running':error?'error':response&&!current?'retired':current?'complete':'idle'}/>
+        state={retired?'retired':pending?'running':error?'error':response&&!current?'retired':current?'complete':'idle'}/>
       {response&&!current&&<StatusBanner>Retired result: captured {response.data.request.research_market} scenario / {response.data.request.historical.dataset_id}, segment {response.data.request.segment_index+1}. Run again for the current inputs or backend session. Financial displays are hidden.</StatusBanner>}
       {selectionCurrent&&<Panel title="Independent historical segments" meta="SELECTION RERUNS VALIDATED EVIDENCE">
-        <label>Selected historical segment<select aria-label="Comparison historical segment" value={segmentIndex} disabled={pending}
+        <div className="replayControls"><label>Selected historical segment<select aria-label="Comparison historical segment" value={segmentIndex} disabled={pending}
           onChange={e=>{const index=Number(e.target.value);epoch.current++;setSegmentIndex(index);void run(index)}}>
           {response.data.segments.map(s=><option key={s.segment_index} value={s.segment_index}>Segment {s.segment_index+1} · {s.reset_reason} · {s.frame_count} frames</option>)}
-        </select></label>
+        </select></label></div>
         <p className="muted panelNote">{response.data.segment_count} independent segments. Each resets capital, positions, orders and risk. Selection reruns the bounded replay and scenario; there is no persistent result session.</p>
         <details><summary>Receipt gaps and excluded evidence</summary>
           {response.data.declared_gaps.map((g,i)=><p key={i}>{g.reason} · {g.start_at} → {g.end_at}</p>)}
