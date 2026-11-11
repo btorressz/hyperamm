@@ -1289,3 +1289,12 @@ The accepted code-path boundary is **trusted local evidence → immutable eviden
 - **Phase 16.4:** native end-to-end run, `npm run typecheck`, `npm run build`, `npm test`, full backend tests, Chromium dataset/model/zero-fill/gap/429/503 paths, and unchanged operational strategy/risk/signer state. Three baseline static scans of `docs/PHASE155B_ACCEPTANCE.md` remain historically failing and need documented disposition, not silent suppression.
 - **Future only:** 16.5 controlled scenario-versus-replay comparison, 16.6 full adversarial acceptance, Phase 17 multi-market shared-capital research. There is no shared-capital BTC/ETH/SOL portfolio engine in this repository.
 
+
+
+### Phase 16.5C.2 comparison integration files
+
+- `backend/app/api/research_scenario_replay_comparison.py`: thin local computational comparison route.
+- `backend/app/research_replay/transport.py`: bounded request/response contracts, original trace projection and storage-error translation inside the historical evidence boundary.
+- `SimulationService.compare_scenario_historical`: one allowlisted executor operation reusing same-job scenario provenance, existing replay and `compare_quantitative_paper`.
+- Existing `frontend/src/components/scenario-replay-comparison/` now submits typed requests through `api/client.ts` and validates captured request, receipt, selected archive and capped trace identities. Existing replay controls and Lightweight Charts remain owners of forms and plots.
+- `backend/tests/test_phase165c2_integration.py`, `frontend/tests/phase165c2-comparison.test.cjs`, `frontend/tests/browser-phase165c2.py`: native and real local Chromium integration; [acceptance report](docs/PHASE165C2_ACCEPTANCE.md) and `docs/acceptance/phase165c2/` contain actual results.

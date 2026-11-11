@@ -46,6 +46,42 @@ class SimulationService:
         from app.research_replay.runner import replay
         return await replay(self, **inputs)
 
+    async def compare_scenario_historical(self, *, storage_root, request, strategy, agents, risk, market_profile):
+        from app.research_replay.transport import (
+            ScenarioHistoricalRequest, ScenarioHistoricalResponse, SegmentIdentity, project_trace, MAX_RESPONSE_BYTES,
+            comparison_history,
+        )
+        from app.research_replay.quantitative import compare_quantitative_paper
+        from app.simulation.models import SimulationResult, stable_fingerprint
+        request = ScenarioHistoricalRequest.model_validate_json(request.model_dump_json())
+        if market_profile is None or market_profile.market != request.research_market:
+            raise ValueError("scenario research profile mismatch")
+        # All stages run sequentially inside the already admitted worker. Never
+        # recursively enter execute(); no runtime/account/signer is passed here.
+        historical = await comparison_history(self, storage_root=storage_root, request=request.historical,
+            strategy=strategy, agents=agents, risk=risk)
+        if request.segment_index >= len(historical.segments):
+            raise ValueError("historical segment unavailable")
+        scenario = await self.run_scenario(scenario=request.scenario.value, frames=request.frames,
+            strategy=strategy, agents=agents, risk=risk, simulation=request.simulation,
+            research=request.research, market_profile=market_profile, include_comparison_provenance=True)
+        receipt = compare_quantitative_paper(scenario=scenario, historical=historical, segment_index=request.segment_index)
+        selected = historical.segments[request.segment_index]
+        archive = SimulationResult.model_validate_json(selected.simulation_result_json)
+        result = ScenarioHistoricalResponse(request=request, request_fingerprint=stable_fingerprint(request), receipt=receipt,
+            segment_count=len(historical.segments), segments=tuple(SegmentIdentity(
+                segment_index=s.segment_index, reset_reason=s.reset_reason, frame_count=s.frame_count,
+                window_start=s.frames[0].evaluated_at, window_end=s.frames[-1].evaluated_at,
+                dataset_fingerprint=s.dataset_fingerprint, run_fingerprint=s.run_fingerprint,
+                simulation_result_fingerprint=s.simulation_result_fingerprint) for s in historical.segments),
+            provenance=historical.provenance, declared_gaps=historical.declared_gaps,
+            issues=historical.issues[:100], omitted_issues=max(0,len(historical.issues)-100),
+            scenario_trace=project_trace(scenario.result, receipt.foundation.classification, request),
+            historical_trace=project_trace(archive, receipt.foundation.classification, request, selected.frames))
+        if len(result.model_dump_json().encode("utf-8")) > MAX_RESPONSE_BYTES:
+            raise ValueError("comparison response exceeds transport budget; reduce trace point limit")
+        return result
+
     async def compare_research_configs(self, *, scenario, frames, strategy, agents, risk,
                                        simulation, baseline: ResearchProposal, custom: ResearchProposal, market_profile=None):
         # One request captures all runtime inputs before admission. One dataset and

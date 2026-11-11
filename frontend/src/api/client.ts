@@ -17,6 +17,8 @@ import type {
 } from "../types";
 import type { ReplaySummary, ReplayProvenance, HistoricalReplayRequest, HistoricalReplayResult } from '../types/replay';
 import type { AgentName } from '../utils/researchEvidence';
+import type { ScenarioHistoricalRequest, ScenarioHistoricalResponse } from '../types/scenarioReplayComparison';
+import { checkedComparisonResponse } from '../utils/scenarioReplayComparison';
 const API = "/api/v1";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${API}${path}`, {
@@ -77,7 +79,7 @@ export async function readHistoricalJson(response:Response, limit=64_000_000):Pr
   }catch{await reader.cancel().catch(()=>{});throw new Error('Historical response is malformed or exceeds the browser evidence budget.');}
   finally{reader.releaseLock();}
 }
-async function historicalRequest<T>(path:string,init?:RequestInit):Promise<T> {
+async function historicalRequest<T>(path:string,init?:RequestInit,limit=64_000_000):Promise<T> {
   const response=await fetch(API+path,{...init,headers:{'Content-Type':'application/json'},cache:'no-store'});
   if(!response.ok){
     if(response.status===429)throw new Error('Shared research worker busy. Retry after its current job completes; cancelling a browser request does not stop a running job.');
@@ -96,13 +98,16 @@ async function historicalRequest<T>(path:string,init?:RequestInit):Promise<T> {
     }
     throw new Error('Historical research request failed (HTTP '+response.status+').');
   }
-  return await readHistoricalJson(response) as T;
+  return await readHistoricalJson(response,limit) as T;
 }
 function livePath(market: LiveMarketId, resource: string) {
   if (!['BTC','ETH','SOL'].includes(market)) throw new Error('Unsupported live market');
   return `/live-markets/${market}/${resource}`;
 }
 export const api = {
+  scenarioHistoricalComparison: async(body:ScenarioHistoricalRequest,signal?:AbortSignal):Promise<ScenarioHistoricalResponse> =>
+    checkedComparisonResponse(await historicalRequest('/research-comparison/scenario-historical',
+      {method:'POST',body:JSON.stringify(body),signal},1_000_000),body),
   historicalReplaySummaries: (signal?:AbortSignal)=>historicalRequest<ReplaySummary[]>('/historical-replay/dataset-summaries',{signal}),
   historicalReplayProvenance: (id:string,signal?:AbortSignal)=>historicalRequest<ReplayProvenance>('/historical-replay/provenance?dataset_id='+encodeURIComponent(id),{signal}),
   historicalReplayRun: (body:HistoricalReplayRequest,signal?:AbortSignal)=>historicalRequest<HistoricalReplayResult>('/historical-replay/run',{method:'POST',body:JSON.stringify(body),signal}),

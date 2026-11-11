@@ -1,0 +1,6 @@
+Native suite summary. Unmodified full logs retained in the task work directory.
+_______________ test_no_github_actions_or_forbidden_oracle_added _______________
+_________ test_repository_contains_no_forbidden_oracle_provider_token __________
+________ test_phase9_does_not_create_github_actions_or_forbidden_oracle ________
+SKIPPED [1] tests/test_agent_expansion.py:406: could not import 'sklearn': No module named 'sklearn'
+3 failed, 2395 passed, 1 skipped, 1 warning in 137.61s (0:02:17)

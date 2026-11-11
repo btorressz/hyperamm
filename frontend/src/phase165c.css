@@ -33,3 +33,16 @@
 .srcTraceColumns .researchChart{min-width:0}
 @media (max-width:850px){.srcPairing{grid-template-columns:1fr}.srcDimensions,.srcTwoSources,.srcTraceColumns{grid-template-columns:1fr}.researchViewTabs button{flex:1 1 180px}}
 @media (max-width:480px){.researchViewTabs button{flex-basis:100%;text-align:left}.srcMetricGroup{padding:10px 8px}.srcDimensions,.srcTwoSources,.srcTraceColumns{padding:9px}.srcPairing{padding:9px}}
+/* Bounded transport disclosures and compact independent metrics. */
+.srcWorkspace pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:11px;padding:12px}
+.srcWorkspace label{min-width:0;max-width:100%}
+.srcWorkspace select,.srcWorkspace input{max-width:100%;min-width:0}
+.srcWorkspace>*,.srcWorkspace .panel,.srcWorkspace details{min-width:0}
+.srcTraceColumns .twoColumns{grid-template-columns:minmax(0,1fr)}
+.srcExact:focus-visible{outline:2px solid #74c3ff;outline-offset:2px}
+@media(max-width:480px){
+  .srcMetricsTable table{min-width:0;font-size:11px;table-layout:fixed}
+  .srcMetricsTable th,.srcMetricsTable td{padding:7px 4px;overflow-wrap:anywhere}
+  .srcMetricValue small{display:block;white-space:normal}
+  .srcWorkspace .replayControls{display:grid;grid-template-columns:minmax(0,1fr)}
+}

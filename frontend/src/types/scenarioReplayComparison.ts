@@ -97,3 +97,28 @@ export type ComparisonChartEvidence = {
   scenario: SimulationResult;
   historical: HistoricalReplayResult;
 };
+
+export type ScenarioHistoricalRequest = {
+  scenario: string; frames: number; research_market: ReplayMarket;
+  simulation: {max_frames:number; record_trace:boolean; trace_max_points:number};
+  research?: import('./index').ResearchProposal;
+  historical: import('./replay').HistoricalReplayRequest;
+  segment_index:number; include_traces:boolean; trace_point_limit:number;
+};
+export type ComparisonTrace = {
+  run_fingerprint:string; dataset_fingerprint:string; simulation_result_fingerprint:string;
+  frame_count:number; points:SimulationResult['trace']; omitted_points:number;
+  omission:'NONE'|'NOT_REQUESTED'|'TRACE_UNAVAILABLE'|'POINT_LIMIT'|'INCOMPARABLE';
+  source_times:Array<{sequence:number;book_received_at:string;book_source_timestamp:string|null;
+    book_source_event_time_verified:boolean;context_received_at:string;context_source_timestamp:string|null;
+    context_source_event_time_verified:boolean}>;
+};
+export type ScenarioHistoricalResponse = {
+  version:'phase165c2-v1'; request:ScenarioHistoricalRequest; request_fingerprint:string;
+  receipt:QuantitativeComparisonReceipt; segment_count:number;
+  segments:Array<{segment_index:number;reset_reason:string;frame_count:number;window_start:string;window_end:string;
+    dataset_fingerprint:string;run_fingerprint:string;simulation_result_fingerprint:string}>;
+  selection_policy:'RERUN_SELECTED_SEGMENT'; provenance:import('./replay').ReplayProvenance;
+  declared_gaps:import('./replay').ReplayGap[];issues:import('./replay').ReplayIssue[];omitted_issues:number;
+  scenario_trace:ComparisonTrace;historical_trace:ComparisonTrace;read_only:true;authority:'NONE';
+};

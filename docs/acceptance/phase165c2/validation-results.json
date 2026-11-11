@@ -1,0 +1,82 @@
+{
+  "base_commit": "756954ad6efbc9e8ad5ee75a18ce80f619a3c1af",
+  "baseline": {
+    "focused_backend": {
+      "passed": 114,
+      "failed": 0
+    },
+    "full_backend": {
+      "passed": 2361,
+      "failed": 3,
+      "skipped": 1,
+      "failure_tests": [
+        "test_no_github_actions_or_forbidden_oracle_added",
+        "test_repository_contains_no_forbidden_oracle_provider_token",
+        "test_phase9_does_not_create_github_actions_or_forbidden_oracle"
+      ]
+    },
+    "frontend_initial": "TypeScript TS1005 in scenarioReplayComparison.ts:86; build and test compilation blocked",
+    "frontend_after_c1_syntax_fix": {
+      "typecheck": "PASS",
+      "build": "PASS",
+      "tests_passed": 693
+    }
+  },
+  "final": {
+    "requested_focused_backend": {
+      "passed": 148,
+      "failed": 0
+    },
+    "focused_including_importer_boundary": {
+      "passed": 282,
+      "failed": 0
+    },
+    "new_integration_tests": {
+      "passed": 34,
+      "failed": 0
+    },
+    "full_backend": {
+      "passed": 2395,
+      "failed": 3,
+      "skipped": 1,
+      "failure_tests": [
+        "test_no_github_actions_or_forbidden_oracle_added",
+        "test_repository_contains_no_forbidden_oracle_provider_token",
+        "test_phase9_does_not_create_github_actions_or_forbidden_oracle"
+      ],
+      "same_as_base": true
+    },
+    "frontend": {
+      "npm_ci": "PASS (workspace cache)",
+      "typecheck": "PASS",
+      "build": "PASS",
+      "tests_passed": 698,
+      "tests_failed": 0
+    },
+    "browser": {
+      "status": "PASS",
+      "workflows": 15,
+      "screenshots": 9,
+      "page_errors": 0,
+      "unexpected_console_errors": 0,
+      "widths": [
+        1920,
+        1440,
+        1024,
+        768,
+        390
+      ]
+    }
+  },
+  "optional_skip": "Optional ML dependency unavailable; no source/test suppression or artificial expected failures.",
+  "limits": {
+    "request_bytes": 65536,
+    "response_bytes": 1000000,
+    "trace_points_per_side": 250,
+    "ui_trace_points_per_side": 120,
+    "segments": 32,
+    "returned_issues": 100,
+    "declared_gaps": 1024
+  },
+  "fixture_notice": "All browser data is generated. BTC recorded-native labels exercise user assertions; ETH/SOL use synthetic fixture labels. No authentic recording or licensed-source claim."
+}

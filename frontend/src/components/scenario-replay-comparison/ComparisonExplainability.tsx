@@ -36,6 +36,9 @@ export function ComparisonExplainability({receipt}:{receipt:QuantitativeComparis
           'INCOMPARABLE — financial comparison blocked'}</strong>
         <p className="muted">Scenario: {scenario.market}-PERP · deterministic generated evidence. Historical segment: {history.market}-PERP · {history.source_kind.replace(/_/g,' ').toLowerCase()}.</p>
         <p>Even matching settings do not prove matching market conditions, time coverage, fill behavior or profitability.</p>
+        <p>{f.classification==='CONTEXT_ONLY'
+          ? 'CONTEXT_ONLY permits independent descriptions, without establishing a statistically or economically controlled comparison. These identities do not explain the causes of PnL differences.'
+          : 'INCOMPARABLE means market or engine identity differs. Paired financial metrics and traces are blocked; only identity, provenance and reasons remain available.'}</p>
       </div>
       <div className="srcDimensions">
         <div><h3>Matching configuration identities</h3>
@@ -77,11 +80,21 @@ export function ComparisonExplainability({receipt}:{receipt:QuantitativeComparis
           <Hash label="Scenario run" value={scenario.run_fingerprint}/>
           <Hash label="Scenario dataset" value={scenario.original_dataset_fingerprint}/>
           <Hash label="Scenario config" value={scenario.captured.fingerprint}/>
+          <Hash label="Scenario result archive" value={scenario.simulation_result_fingerprint}/>
           <Hash label="Original historical dataset" value={history.original_dataset_fingerprint}/>
           <Hash label="Selected engine segment dataset" value={history.engine_dataset_fingerprint}/>
           <Hash label="Selected replay run" value={history.run_fingerprint}/>
           <Hash label="Historical replay result" value={history.replay_result_fingerprint}/>
+          <Hash label="Selected result archive" value={history.simulation_result_fingerprint}/>
+          <Hash label="Historical config" value={history.captured.fingerprint}/>
         </dl>
+      </details>
+      <details className="srcDisclosure"><summary>Inspect captured configuration and domain fingerprints</summary>
+        <div className="srcTwoSources">{([['Scenario',scenario],['Historical segment',history]] as const).map(([label,side])=><section key={label}>
+          <h3>{label} — captured values</h3>
+          <dl className="replayDetails">{(['strategy_fingerprint','agents_fingerprint','risk_fingerprint','accounting_fingerprint','execution_fingerprint','market_profile_fingerprint','simulation_controls_fingerprint'] as const).map(key=><Hash key={key} label={key.replace(/_/g,' ')} value={side.captured[key]}/>)}</dl>
+          <pre>{side.captured.canonical_json}</pre>
+        </section>)}</div>
       </details>
     </Panel>
     <Panel title="Evidence limitations" meta="PAPER · UNAUTHENTICATED DATA RIGHTS">

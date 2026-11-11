@@ -1,0 +1,846 @@
+{
+  "version": "phase165c2-v1",
+  "request": {
+    "scenario": "QUIET",
+    "frames": 4,
+    "simulation": {
+      "initial_equity_quote": "100000",
+      "max_frames": 4,
+      "record_trace": true,
+      "trace_max_points": 4,
+      "fill_model": "CROSSING_ONLY",
+      "execution": {
+        "version": "phase163-v1",
+        "mode": "BASELINE",
+        "order_latency_ms": 0,
+        "cancel_latency_ms": 0,
+        "slippage_bps": "0",
+        "depth_sensitive": false,
+        "allow_partial_fills": true,
+        "participation_rate": "1",
+        "max_fill_fraction": "1"
+      },
+      "accounting": {
+        "enabled": true,
+        "paper_initial_equity_quote": "100000",
+        "paper_fee_model_enabled": false,
+        "paper_maker_fee_bps": "1",
+        "paper_taker_fee_bps": "3",
+        "paper_funding_accounting_enabled": false,
+        "paper_funding_interval_seconds": 3600,
+        "accounting_stale_after_seconds": 30,
+        "ledger_max_entries": 10000,
+        "event_max_entries": 250,
+        "max_capital_utilization": "1"
+      }
+    },
+    "research": null,
+    "research_market": "BTC",
+    "historical": {
+      "replay_version": "phase162-v1",
+      "dataset_id": "BTC-complete-fixture",
+      "dataset_fingerprint": "8176130050ce268f86818ddb253df01d721f0179ac52894cb9f28bb19b7fdea2",
+      "market": "BTC",
+      "execution": {
+        "size_decimals": 5,
+        "metadata": "USER_ASSERTED_RESEARCH_PRECISION",
+        "strategy_scaling": "EXISTING_DEMO_MARKET_PROFILE",
+        "fill_model": "PAPER_CROSSING_ONLY",
+        "external_references": "UNAVAILABLE",
+        "accounting": {
+          "initial_equity_quote": "100000",
+          "paper_fee_model_enabled": false,
+          "paper_maker_fee_bps": "1",
+          "paper_taker_fee_bps": "3",
+          "paper_funding_accounting_enabled": false,
+          "paper_funding_interval_seconds": 3600,
+          "max_capital_utilization": "1"
+        }
+      },
+      "policy": {
+        "pairing": "RECEIPT_BATCH_LAST_COMPONENT",
+        "max_component_age_ms": 0,
+        "max_frame_interval_ms": 1000,
+        "missing_economics": "REJECT_FRAME",
+        "discontinuity": "RESET_ALL_SIMULATION_STATE"
+      },
+      "start_at": null,
+      "end_at": null,
+      "max_frames": 4,
+      "record_trace": true,
+      "trace_max_points": 4
+    },
+    "segment_index": 0,
+    "include_traces": true,
+    "trace_point_limit": 4
+  },
+  "request_fingerprint": "51d7820db29b5b9f2d8fbe1a8077dd249f3e5e8d2d5d92d205784be8e1596ba8",
+  "receipt": {
+    "version": "phase165b-v1",
+    "foundation": {
+      "version": "phase165a1-v1",
+      "classification": "CONTEXT_ONLY",
+      "scenario": {
+        "kind": "SCENARIO",
+        "market": "BTC",
+        "source_kind": "DETERMINISTIC_SCENARIO",
+        "original_dataset_fingerprint": "529a80332c834de384759e4d925e9a4222cbbd27eebd62caff9a0ae4d3d5bac2",
+        "engine_dataset_fingerprint": "529a80332c834de384759e4d925e9a4222cbbd27eebd62caff9a0ae4d3d5bac2",
+        "simulation_result_fingerprint": "21a59c0be902b01a15bfe24c1db893867ca6432eb34654ad7b004e7618ef31cc",
+        "run_fingerprint": "74e687da3245701721cda730450486d98230f5a40c43ba1fa2f1257d8606177a",
+        "engine_version": "phase10.1-v3",
+        "frame_count": 4,
+        "captured": {
+          "canonical_json": "{\"agents\":{\"agent_max_spread_multiplier\":\"1.75\",\"agent_min_confidence\":\"0.20\",\"agent_min_size_multiplier\":\"0.35\",\"agents_enabled\":true,\"crowding_basis_threshold_bps\":\"15\",\"crowding_funding_threshold\":\"0.0003\",\"crowding_oi_change_threshold\":\"0.02\",\"crowding_size_strength\":\"0.40\",\"crowding_spread_strength\":\"0.30\",\"execution_quality_agent_enabled\":true,\"execution_quality_max_churn_ratio\":\"0.65\",\"execution_quality_min_fills\":5,\"execution_quality_poor_markout_bps\":\"3\",\"execution_quality_size_strength\":\"0.40\",\"execution_quality_spread_strength\":\"0.40\",\"execution_quality_window\":50,\"liquidity_concentration_threshold\":\"0.85\",\"liquidity_depth_levels\":5,\"liquidity_imbalance_threshold\":\"0.65\",\"liquidity_instability_threshold_bps\":\"20\",\"liquidity_quality_agent_enabled\":true,\"liquidity_reduced_max_levels\":2,\"liquidity_size_strength\":\"0.40\",\"liquidity_spread_strength\":\"0.35\",\"liquidity_thin_depth_base\":\"1\",\"liquidity_wide_spread_threshold_bps\":\"25\",\"perp_crowding_agent_enabled\":true,\"perp_max_observation_span_seconds\":\"900\",\"perp_min_observation_span_seconds\":\"5\",\"perp_observation_window\":30,\"predictive_agent_enabled\":true,\"predictive_agent_mode\":\"SHADOW\",\"predictive_min_confidence\":\"0.20\",\"regime_agent_enabled\":true,\"regime_basis_stress_threshold_bps\":\"30\",\"regime_dislocation_bps\":\"50\",\"regime_funding_stress_threshold\":\"0.0005\",\"regime_min_samples\":8,\"regime_momentum_window_samples\":20,\"regime_size_strength\":\"0.30\",\"regime_spread_strength\":\"0.40\",\"regime_trend_threshold_bps\":\"15\",\"toxic_flow_adverse_markout_bps\":\"3\",\"toxic_flow_agent_enabled\":true,\"toxic_flow_markout_horizon_seconds\":5.0,\"toxic_flow_markout_horizons_seconds\":[1.0,5.0,15.0],\"toxic_flow_min_matured_fills\":5,\"toxic_flow_recency_half_life_seconds\":\"60\",\"toxic_flow_size_strength\":\"0.60\",\"toxic_flow_spread_strength\":\"0.50\",\"toxic_flow_window_fills\":100},\"market_profile\":{\"asset_index\":null,\"dex\":\"\",\"display_name\":\"BTC-PERP\",\"exchange\":\"HYPERLIQUID\",\"limitations\":[\"PAPER research only; metadata grants no trading authority.\",\"Fixed hypothetical reference price is not a current Hyperliquid quote.\",\"Simulated fixture metadata; current listing and live trading eligibility are unverified.\"],\"listed\":null,\"market\":\"BTC\",\"market_type\":\"PERPETUAL\",\"metadata_age_seconds\":null,\"metadata_observed_at\":null,\"metadata_source\":\"PINNED_RESEARCH_FIXTURE\",\"metadata_status\":\"DEMO_PROFILE\",\"profile_fingerprint\":\"af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a\",\"profile_version\":\"phase146-v1\",\"research_price_rules\":\"Noninteger prices: at most 5 significant figures and 6 - szDecimals decimal places; integer prices are exempt from significant-figure limits.\",\"research_supported\":true,\"simulated_reference_price\":\"60000\",\"sz_decimals\":5,\"unavailable_reason\":null},\"risk\":{\"drawdown_halt_pct\":\"0.15\",\"drawdown_reduce_pct\":\"0.10\",\"drawdown_warn_pct\":\"0.05\",\"enabled\":true,\"liquidation_halt_distance_bps\":\"300\",\"liquidation_reduce_distance_bps\":\"800\",\"liquidation_warn_distance_bps\":\"1500\",\"max_gross_quote_notional\":\"1000000\",\"max_projected_long_base\":\"10\",\"max_projected_position_notional\":\"1000000\",\"max_projected_short_base\":\"10\",\"max_session_loss_quote\":\"5000\",\"recovery_ratio\":\"0.75\",\"reduce_inventory_increasing_multiplier\":\"0.20\",\"reduce_max_levels\":4,\"reduce_size_multiplier\":\"0.50\",\"reduce_spread_multiplier\":\"1.60\",\"reference_halt_deviation_bps\":\"80\",\"reference_reduce_deviation_bps\":\"40\",\"reference_warn_deviation_bps\":\"20\",\"risk_recovery_confirmations\":3,\"source_agreement_bps\":\"30\",\"source_outlier_bps\":\"75\",\"widen_size_multiplier\":\"0.90\",\"widen_spread_multiplier\":\"1.25\"},\"simulation\":{\"accounting\":{\"accounting_stale_after_seconds\":30,\"enabled\":true,\"event_max_entries\":250,\"ledger_max_entries\":10000,\"max_capital_utilization\":\"1\",\"paper_fee_model_enabled\":false,\"paper_funding_accounting_enabled\":false,\"paper_funding_interval_seconds\":3600,\"paper_initial_equity_quote\":\"100000\",\"paper_maker_fee_bps\":\"1\",\"paper_taker_fee_bps\":\"3\"},\"execution\":{\"allow_partial_fills\":true,\"cancel_latency_ms\":0,\"depth_sensitive\":false,\"max_fill_fraction\":\"1\",\"mode\":\"BASELINE\",\"order_latency_ms\":0,\"participation_rate\":\"1\",\"slippage_bps\":\"0\",\"version\":\"phase163-v1\"},\"fill_model\":\"CROSSING_ONLY\",\"initial_equity_quote\":\"100000\",\"max_frames\":4,\"record_trace\":true,\"trace_max_points\":4},\"strategy\":{\"amm_model\":\"CONSTANT_PRODUCT\",\"base_order_size\":\"0.00500\",\"book_imbalance_levels\":5,\"concentration_factor\":\"8\",\"concentration_lower_bps\":\"10\",\"concentration_upper_bps\":\"200\",\"execution_mode\":\"PAPER\",\"funding_reference_abs_rate\":\"0.00025\",\"hard_inventory_limit_base\":\"10\",\"imbalance_size_strength\":\"0.25\",\"imbalance_spread_strength\":\"0.25\",\"inventory_size_skew_strength\":\"0.75\",\"inventory_skew_enabled\":true,\"inventory_stale_after_seconds\":10.0,\"levels_per_side\":8,\"market\":\"BTC\",\"market_adaptation_enabled\":true,\"market_data_mode\":\"DEMO\",\"max_distance_bps\":\"100\",\"max_funding_reference_shift_bps\":\"5\",\"max_inventory_price_skew_bps\":\"20\",\"max_inventory_size_multiplier\":\"1.75\",\"max_perp_reference_shift_bps\":\"50\",\"max_spread_multiplier\":\"2.5\",\"min_inventory_size_multiplier\":\"0.25\",\"min_market_size_multiplier\":\"0.35\",\"min_spread_multiplier\":\"1.0\",\"perp_context_enabled\":true,\"perp_context_stale_after_seconds\":10.0,\"perp_mark_weight\":\"0.25\",\"perp_oracle_weight\":\"0.25\",\"quote_refresh_interval_ms\":1000,\"replace_tolerance_bps\":\"0.5\",\"size_precision\":5,\"size_tolerance\":\"0.0001\",\"soft_inventory_limit_base\":\"5\",\"target_inventory_base\":\"0\",\"tick_size\":\"1\",\"total_liquidity\":\"0.20000\",\"virtual_base_reserve\":\"5\",\"virtual_quote_reserve\":\"300000\",\"volatility_high_threshold\":\"0.0020\",\"volatility_low_threshold\":\"0.0002\",\"volatility_min_samples\":10,\"volatility_size_strength\":\"0.50\",\"volatility_spread_strength\":\"1.0\",\"volatility_window_samples\":60}}",
+          "fingerprint": "87984f84622e1a18aa50aefcd30f22327cb9fbc9702b4523d5728430f8a601c0",
+          "strategy_fingerprint": "04e352a6db7e1e5d2c7cdd213d62fd07df5f65174821c1451c343b417ab29b1d",
+          "agents_fingerprint": "3977a3a6b8b1fdf9377de0d9cc00e88bff60d2314cf14ed1e767cce06b49e42e",
+          "risk_fingerprint": "9b12addad654866f4d27aafc61e7ba29570dd48790e9ef82cb5ba9fc00940a4d",
+          "accounting_fingerprint": "92d94e46717786defa77818f740dbb48dd451a9f87b8e4bdbaa5cdd6288b1184",
+          "execution_fingerprint": "6c5e3d2d6f1695b6d35f58db718a91b81b129bf5806be2a86e6a901ad0bc7bd6",
+          "simulation_controls_fingerprint": "60b01b4edef30801b898a5836eaf6b4a741209fed8557baf14e8a5aff8fe747b",
+          "market_profile_fingerprint": "af77baac2a5bd5388dd630e3c249bb6c852a23badf4ed221fbc78faa5890d96a"
+        },
+        "window_start": "2026-01-01T00:00:00Z",
+        "window_end": "2026-01-01T00:00:03Z",
+        "window_status": "TRACE_COMPLETE",
+        "segment_index": null,
+        "replay_result_fingerprint": null,
+        "replay_segment_count": null,
+        "source_authenticated": false,
+        "licensing_independently_verified": false,
+        "simulated": true,
+        "read_only": true,
+        "authority": "NONE"
+      },
+      "historical": {
+        "kind": "HISTORICAL_SEGMENT",
+        "market": "BTC",
+        "source_kind": "RECORDED_NATIVE",
+        "original_dataset_fingerprint": "8176130050ce268f86818ddb253df01d721f0179ac52894cb9f28bb19b7fdea2",
+        "engine_dataset_fingerprint": "7255c9d5100afd7855764309611b4bef5bb4d7bf893f2bfd9dea33265aab1c84",
+        "simulation_result_fingerprint": "dd9420ca0d38f5ab1e272fe97e2aa2fd390b0d26d704e832b9cd0201192099e1",
+        "run_fingerprint": "04aa46d5e7099f605cd566bff956ee1967b9cbbb943a6139b3ad6fd5bf8dfab8",
+        "engine_version": "phase10.1-v3",
+        "frame_count": 4,
+        "captured": {
+          "canonical_json": "{\"agents\":{\"agent_max_spread_multiplier\":\"1.75\",\"agent_min_confidence\":\"0.20\",\"agent_min_size_multiplier\":\"0.35\",\"agents_enabled\":true,\"crowding_basis_threshold_bps\":\"15\",\"crowding_funding_threshold\":\"0.0003\",\"crowding_oi_change_threshold\":\"0.02\",\"crowding_size_strength\":\"0.40\",\"crowding_spread_strength\":\"0.30\",\"execution_quality_agent_enabled\":true,\"execution_quality_max_churn_ratio\":\"0.65\",\"execution_quality_min_fills\":5,\"execution_quality_poor_markout_bps\":\"3\",\"execution_quality_size_strength\":\"0.40\",\"execution_quality_spread_strength\":\"0.40\",\"execution_quality_window\":50,\"liquidity_concentration_threshold\":\"0.85\",\"liquidity_depth_levels\":5,\"liquidity_imbalance_threshold\":\"0.65\",\"liquidity_instability_threshold_bps\":\"20\",\"liquidity_quality_agent_enabled\":true,\"liquidity_reduced_max_levels\":2,\"liquidity_size_strength\":\"0.40\",\"liquidity_spread_strength\":\"0.35\",\"liquidity_thin_depth_base\":\"1\",\"liquidity_wide_spread_threshold_bps\":\"25\",\"perp_crowding_agent_enabled\":true,\"perp_max_observation_span_seconds\":\"900\",\"perp_min_observation_span_seconds\":\"5\",\"perp_observation_window\":30,\"predictive_agent_enabled\":true,\"predictive_agent_mode\":\"SHADOW\",\"predictive_min_confidence\":\"0.20\",\"regime_agent_enabled\":true,\"regime_basis_stress_threshold_bps\":\"30\",\"regime_dislocation_bps\":\"50\",\"regime_funding_stress_threshold\":\"0.0005\",\"regime_min_samples\":8,\"regime_momentum_window_samples\":20,\"regime_size_strength\":\"0.30\",\"regime_spread_strength\":\"0.40\",\"regime_trend_threshold_bps\":\"15\",\"toxic_flow_adverse_markout_bps\":\"3\",\"toxic_flow_agent_enabled\":true,\"toxic_flow_markout_horizon_seconds\":5.0,\"toxic_flow_markout_horizons_seconds\":[1.0,5.0,15.0],\"toxic_flow_min_matured_fills\":5,\"toxic_flow_recency_half_life_seconds\":\"60\",\"toxic_flow_size_strength\":\"0.60\",\"toxic_flow_spread_strength\":\"0.50\",\"toxic_flow_window_fills\":100},\"market_profile\":{\"asset_index\":null,\"dex\":\"\",\"display_name\":\"BTC-PERP\",\"exchange\":\"HYPERLIQUID\",\"limitations\":[\"PAPER research only; metadata grants no trading authority.\",\"Fixed hypothetical reference price is not a current Hyperliquid quote.\",\"Simulated fixture metadata; current listing and live trading eligibility are unverified.\"],\"listed\":null,\"market\":\"BTC\",\"market_type\":\"PERPETUAL\",\"metadata_age_seconds\":null,\"metadata_observed_at\":null,\"metadata_source\":\"USER_ASSERTED_RESEARCH_PRECISION\",\"metadata_status\":\"DEMO_PROFILE\",\"profile_fingerprint\":\"845b569b468964032ac368d76d0783a22ea15d420c3cdc9ec7c6c715d6838f49\",\"profile_version\":\"phase146-v1\",\"research_price_rules\":\"Noninteger prices: at most 5 significant figures and 6 - szDecimals decimal places; integer prices are exempt from significant-figure limits.\",\"research_supported\":true,\"simulated_reference_price\":\"60000\",\"sz_decimals\":5,\"unavailable_reason\":null},\"risk\":{\"drawdown_halt_pct\":\"0.15\",\"drawdown_reduce_pct\":\"0.10\",\"drawdown_warn_pct\":\"0.05\",\"enabled\":true,\"liquidation_halt_distance_bps\":\"300\",\"liquidation_reduce_distance_bps\":\"800\",\"liquidation_warn_distance_bps\":\"1500\",\"max_gross_quote_notional\":\"1000000\",\"max_projected_long_base\":\"10\",\"max_projected_position_notional\":\"1000000\",\"max_projected_short_base\":\"10\",\"max_session_loss_quote\":\"5000\",\"recovery_ratio\":\"0.75\",\"reduce_inventory_increasing_multiplier\":\"0.20\",\"reduce_max_levels\":4,\"reduce_size_multiplier\":\"0.50\",\"reduce_spread_multiplier\":\"1.60\",\"reference_halt_deviation_bps\":\"80\",\"reference_reduce_deviation_bps\":\"40\",\"reference_warn_deviation_bps\":\"20\",\"risk_recovery_confirmations\":3,\"source_agreement_bps\":\"30\",\"source_outlier_bps\":\"75\",\"widen_size_multiplier\":\"0.90\",\"widen_spread_multiplier\":\"1.25\"},\"simulation\":{\"accounting\":{\"accounting_stale_after_seconds\":30,\"enabled\":true,\"event_max_entries\":250,\"ledger_max_entries\":10000,\"max_capital_utilization\":\"1\",\"paper_fee_model_enabled\":false,\"paper_funding_accounting_enabled\":false,\"paper_funding_interval_seconds\":3600,\"paper_initial_equity_quote\":\"100000\",\"paper_maker_fee_bps\":\"1\",\"paper_taker_fee_bps\":\"3\"},\"execution\":{\"allow_partial_fills\":true,\"cancel_latency_ms\":0,\"depth_sensitive\":false,\"max_fill_fraction\":\"1\",\"mode\":\"BASELINE\",\"order_latency_ms\":0,\"participation_rate\":\"1\",\"slippage_bps\":\"0\",\"version\":\"phase163-v1\"},\"fill_model\":\"CROSSING_ONLY\",\"initial_equity_quote\":\"100000\",\"max_frames\":4,\"record_trace\":true,\"trace_max_points\":4},\"strategy\":{\"amm_model\":\"CONSTANT_PRODUCT\",\"base_order_size\":\"0.00500\",\"book_imbalance_levels\":5,\"concentration_factor\":\"8\",\"concentration_lower_bps\":\"10\",\"concentration_upper_bps\":\"200\",\"execution_mode\":\"PAPER\",\"funding_reference_abs_rate\":\"0.00025\",\"hard_inventory_limit_base\":\"10\",\"imbalance_size_strength\":\"0.25\",\"imbalance_spread_strength\":\"0.25\",\"inventory_size_skew_strength\":\"0.75\",\"inventory_skew_enabled\":true,\"inventory_stale_after_seconds\":10.0,\"levels_per_side\":8,\"market\":\"BTC\",\"market_adaptation_enabled\":true,\"market_data_mode\":\"DEMO\",\"max_distance_bps\":\"100\",\"max_funding_reference_shift_bps\":\"5\",\"max_inventory_price_skew_bps\":\"20\",\"max_inventory_size_multiplier\":\"1.75\",\"max_perp_reference_shift_bps\":\"50\",\"max_spread_multiplier\":\"2.5\",\"min_inventory_size_multiplier\":\"0.25\",\"min_market_size_multiplier\":\"0.35\",\"min_spread_multiplier\":\"1.0\",\"perp_context_enabled\":true,\"perp_context_stale_after_seconds\":10.0,\"perp_mark_weight\":\"0.25\",\"perp_oracle_weight\":\"0.25\",\"quote_refresh_interval_ms\":1000,\"replace_tolerance_bps\":\"0.5\",\"size_precision\":5,\"size_tolerance\":\"0.0001\",\"soft_inventory_limit_base\":\"5\",\"target_inventory_base\":\"0\",\"tick_size\":\"1\",\"total_liquidity\":\"0.20000\",\"virtual_base_reserve\":\"5\",\"virtual_quote_reserve\":\"300000\",\"volatility_high_threshold\":\"0.0020\",\"volatility_low_threshold\":\"0.0002\",\"volatility_min_samples\":10,\"volatility_size_strength\":\"0.50\",\"volatility_spread_strength\":\"1.0\",\"volatility_window_samples\":60}}",
+          "fingerprint": "4ac3b9501f7099dc22d6cc4b840d0f57123b51c7f93d6b117d1aa090cf664281",
+          "strategy_fingerprint": "04e352a6db7e1e5d2c7cdd213d62fd07df5f65174821c1451c343b417ab29b1d",
+          "agents_fingerprint": "3977a3a6b8b1fdf9377de0d9cc00e88bff60d2314cf14ed1e767cce06b49e42e",
+          "risk_fingerprint": "9b12addad654866f4d27aafc61e7ba29570dd48790e9ef82cb5ba9fc00940a4d",
+          "accounting_fingerprint": "92d94e46717786defa77818f740dbb48dd451a9f87b8e4bdbaa5cdd6288b1184",
+          "execution_fingerprint": "6c5e3d2d6f1695b6d35f58db718a91b81b129bf5806be2a86e6a901ad0bc7bd6",
+          "simulation_controls_fingerprint": "60b01b4edef30801b898a5836eaf6b4a741209fed8557baf14e8a5aff8fe747b",
+          "market_profile_fingerprint": "845b569b468964032ac368d76d0783a22ea15d420c3cdc9ec7c6c715d6838f49"
+        },
+        "window_start": "2026-10-01T00:00:00Z",
+        "window_end": "2026-10-01T00:00:00.300000Z",
+        "window_status": "SEGMENT_RECEIPTS",
+        "segment_index": 0,
+        "replay_result_fingerprint": "bc1e65fddf827490fb147b49249e9a235cbacf027fffbce39aa143fa5c2b8834",
+        "replay_segment_count": 1,
+        "source_authenticated": false,
+        "licensing_independently_verified": false,
+        "simulated": true,
+        "read_only": true,
+        "authority": "NONE"
+      },
+      "aligned_dimensions": [
+        "MARKET",
+        "ENGINE",
+        "STRATEGY",
+        "AGENTS",
+        "RISK",
+        "ACCOUNTING",
+        "EXECUTION",
+        "SIMULATION_CONTROLS"
+      ],
+      "differing_dimensions": [
+        "MARKET_PROFILE"
+      ],
+      "reasons": [
+        "MARKET_PROFILE_MISMATCH",
+        "SCENARIO_AND_HISTORICAL_EVIDENCE_DIFFER",
+        "SCENARIO_INPUT_CAPTURE_NOT_ENGINE_ATTESTED",
+        "TEMPORAL_ALIGNMENT_UNPROVEN",
+        "HISTORICAL_LICENSING_UNVERIFIED",
+        "RECORDED_NATIVE_SOURCE_UNAUTHENTICATED"
+      ],
+      "direct_metric_deltas_allowed": false,
+      "cross_segment_aggregation_allowed": false,
+      "matched_market_evidence_verified": false,
+      "authority": "NONE",
+      "limitations": [
+        "Configuration matching is not proof of equivalent market conditions, timing or strategy performance.",
+        "Scenario input capture is caller supplied; existing SimulationResult does not authenticate every agent/risk input.",
+        "Historical recorded-native and permitted-use labels are user assertions, not independently verified.",
+        "Historical replay runs independent segments; never aggregate capital, returns, equity or risk across resets.",
+        "No financial deltas, profitability ranking, execution forecast or trading authority are created by this contract."
+      ],
+      "comparison_fingerprint": "f07dbc1738bb4d63b55364faa1fc1d7271f84a0c5136d0ce8c673c0d047d9b76"
+    },
+    "scenario_receipt_fingerprint": "1f5044ae8732f9f1d5b120a4bff86d60e23e56f7ef8a060902320eab288c92bf",
+    "selected_segment_index": 0,
+    "display_policy": "DESCRIPTIVE_ONLY",
+    "rows": [
+      {
+        "name": "frame_count",
+        "unit": "frames",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "4"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "4"
+        }
+      },
+      {
+        "name": "starting_equity",
+        "unit": "quote",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "100000"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "100000"
+        }
+      },
+      {
+        "name": "ending_equity",
+        "unit": "quote",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "100000"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "100000"
+        }
+      },
+      {
+        "name": "session_pnl",
+        "unit": "quote",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "return_pct",
+        "unit": "percent",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "realized_pnl",
+        "unit": "quote",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "unrealized_pnl",
+        "unit": "quote",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "max_drawdown_pct",
+        "unit": "percent",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "fill_count",
+        "unit": "fills",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "buy_fill_count",
+        "unit": "fills",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "sell_fill_count",
+        "unit": "fills",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "quoted_notional",
+        "unit": "quote",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "20966.63180"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "filled_notional",
+        "unit": "quote",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "fill_activity_ratio",
+        "unit": "ratio",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0E+5"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "NOT_REPORTED",
+          "value": null
+        }
+      },
+      {
+        "name": "ending_inventory_base",
+        "unit": "base",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "max_abs_inventory_base",
+        "unit": "base",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "max_inventory_utilization",
+        "unit": "ratio",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "risk_halt_fraction",
+        "unit": "ratio",
+        "scenario": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "SIMULATION_METRICS",
+          "availability": "AVAILABLE",
+          "value": "1"
+        }
+      },
+      {
+        "name": "fees_quote",
+        "unit": "quote",
+        "scenario": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "funding_quote",
+        "unit": "quote",
+        "scenario": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "capital_utilization",
+        "unit": "ratio",
+        "scenario": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0.0524125396"
+        },
+        "historical_segment": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "reserved_capital_quote",
+        "unit": "quote",
+        "scenario": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "5241.25396"
+        },
+        "historical_segment": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      },
+      {
+        "name": "gross_exposure_quote",
+        "unit": "quote",
+        "scenario": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        },
+        "historical_segment": {
+          "origin": "PAPER_VAULT",
+          "availability": "AVAILABLE",
+          "value": "0"
+        }
+      }
+    ],
+    "risk_states": {
+      "scenario": {
+        "NORMAL": 4
+      },
+      "historical_segment": {
+        "HALT": 4
+      }
+    },
+    "differences_available": false,
+    "cross_segment_aggregation_allowed": false,
+    "strategy_ranking_allowed": false,
+    "matched_market_evidence_verified": false,
+    "authority": "NONE",
+    "read_only": true,
+    "limitations": [
+      "Metrics are existing backend PAPER outputs, not a matched experimental performance comparison.",
+      "Displayed scenario and historical segment values must never be subtracted, ranked, annualized or pooled.",
+      "Historical receipt gaps reset capital, risk, orders and inventory; no multi-segment PnL or return is defined.",
+      "Simulation frame count is not wall-clock duration, trading volume or proof of equivalent source coverage.",
+      "Capital utilization is sourced only from the PAPER Vault, not inferred from inventory exposure.",
+      "A missing backend value remains unavailable, never imputed as zero.",
+      "Source labels and scenario service receipts do not prove exchange authenticity, licensed history or real fills."
+    ],
+    "receipt_fingerprint": "619a33063c98211101d125c8e1fdbd7d224bfae8f9804691b20c75a27652e10e"
+  },
+  "segment_count": 1,
+  "segments": [
+    {
+      "segment_index": 0,
+      "reset_reason": "WINDOW_START",
+      "frame_count": 4,
+      "window_start": "2026-10-01T00:00:00Z",
+      "window_end": "2026-10-01T00:00:00.300000Z",
+      "dataset_fingerprint": "7255c9d5100afd7855764309611b4bef5bb4d7bf893f2bfd9dea33265aab1c84",
+      "run_fingerprint": "04aa46d5e7099f605cd566bff956ee1967b9cbbb943a6139b3ad6fd5bf8dfab8",
+      "simulation_result_fingerprint": "dd9420ca0d38f5ab1e272fe97e2aa2fd390b0d26d704e832b9cd0201192099e1"
+    }
+  ],
+  "selection_policy": "RERUN_SELECTED_SEGMENT",
+  "provenance": {
+    "contract_version": "phase16-replay-v1",
+    "dataset_fingerprint": "8176130050ce268f86818ddb253df01d721f0179ac52894cb9f28bb19b7fdea2",
+    "source_fingerprint": "5897bc1a981b7e97ec3c1c72eea68ccd0a286a459f273800bf6a382df6f812ce",
+    "observations_fingerprint": "f5e187797ecaaeb2a8f801a9a7ad1c28df92694cadc33bf87baaad607707f6d7",
+    "gaps_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "source_kind": "RECORDED_NATIVE",
+    "source_authenticated": false,
+    "licensing_independently_verified": false,
+    "read_only": true,
+    "authority": "NONE",
+    "source_event_time_policy": "RECORDED_L2_VERIFIED_CONTEXT_RECEIPT_ONLY",
+    "observation_count": 8,
+    "l2_count": 4,
+    "verified_l2_event_time_count": 4,
+    "perp_context_count": 4,
+    "gap_count": 0,
+    "limitations": [
+      "Recorded-source and permitted-use labels are user assertions, not verified license or exchange authentication.",
+      "Receipt coverage and explicit gaps never establish continuous historical market delivery.",
+      "Order-book snapshots do not prove queue position, intermediate trades or actual passive fills.",
+      "Perpetual-context event time is unknown; no synthetic external provider history is implied.",
+      "Research evidence has no order, capital, reference-consensus or strategy authority."
+    ]
+  },
+  "declared_gaps": [],
+  "issues": [],
+  "omitted_issues": 0,
+  "scenario_trace": {
+    "run_fingerprint": "74e687da3245701721cda730450486d98230f5a40c43ba1fa2f1257d8606177a",
+    "dataset_fingerprint": "529a80332c834de384759e4d925e9a4222cbbd27eebd62caff9a0ae4d3d5bac2",
+    "simulation_result_fingerprint": "21a59c0be902b01a15bfe24c1db893867ca6432eb34654ad7b004e7618ef31cc",
+    "frame_count": 4,
+    "points": [
+      {
+        "sequence": 1,
+        "timestamp": "2026-01-01T00:00:00Z",
+        "mid": "60000",
+        "mark": "59998",
+        "oracle": "59999",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "VERIFIED",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "THIN",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "NORMAL",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 4,
+        "open_order_count": 4,
+        "fill_count": 0
+      },
+      {
+        "sequence": 2,
+        "timestamp": "2026-01-01T00:00:01Z",
+        "mid": "60004",
+        "mark": "60003",
+        "oracle": "60004",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "VERIFIED",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "THIN",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "NORMAL",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 4,
+        "open_order_count": 4,
+        "fill_count": 0
+      },
+      {
+        "sequence": 3,
+        "timestamp": "2026-01-01T00:00:02Z",
+        "mid": "60000",
+        "mark": "60000",
+        "oracle": "60000",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "VERIFIED",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "THIN",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "NORMAL",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 4,
+        "open_order_count": 4,
+        "fill_count": 0
+      },
+      {
+        "sequence": 4,
+        "timestamp": "2026-01-01T00:00:03Z",
+        "mid": "59996",
+        "mark": "59996",
+        "oracle": "59995",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "VERIFIED",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "THIN",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "NORMAL",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 4,
+        "open_order_count": 4,
+        "fill_count": 0
+      }
+    ],
+    "source_times": [],
+    "omitted_points": 0,
+    "omission": "NONE"
+  },
+  "historical_trace": {
+    "run_fingerprint": "04aa46d5e7099f605cd566bff956ee1967b9cbbb943a6139b3ad6fd5bf8dfab8",
+    "dataset_fingerprint": "7255c9d5100afd7855764309611b4bef5bb4d7bf893f2bfd9dea33265aab1c84",
+    "simulation_result_fingerprint": "dd9420ca0d38f5ab1e272fe97e2aa2fd390b0d26d704e832b9cd0201192099e1",
+    "frame_count": 4,
+    "points": [
+      {
+        "sequence": 2,
+        "timestamp": "2026-10-01T00:00:00Z",
+        "mid": "60000.5",
+        "mark": "60000",
+        "oracle": "60000",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "INSUFFICIENT",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "DISLOCATED",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "HALT",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 0,
+        "open_order_count": 0,
+        "fill_count": 0
+      },
+      {
+        "sequence": 4,
+        "timestamp": "2026-10-01T00:00:00.100000Z",
+        "mid": "60000.5",
+        "mark": "60000",
+        "oracle": "60000",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "INSUFFICIENT",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "DISLOCATED",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "HALT",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 0,
+        "open_order_count": 0,
+        "fill_count": 0
+      },
+      {
+        "sequence": 6,
+        "timestamp": "2026-10-01T00:00:00.200000Z",
+        "mid": "60000.5",
+        "mark": "60000",
+        "oracle": "60000",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "INSUFFICIENT",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "DISLOCATED",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "HALT",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 0,
+        "open_order_count": 0,
+        "fill_count": 0
+      },
+      {
+        "sequence": 8,
+        "timestamp": "2026-10-01T00:00:00.300000Z",
+        "mid": "60000.5",
+        "mark": "60000",
+        "oracle": "60000",
+        "inventory_base": "0",
+        "session_pnl": "0",
+        "equity": "100000",
+        "drawdown_pct": "0",
+        "reference_confidence": "INSUFFICIENT",
+        "agent_regime": "WARMING_UP",
+        "toxic_flow_state": "INSUFFICIENT_DATA",
+        "execution_quality_state": "INSUFFICIENT_DATA",
+        "liquidity_quality_state": "DISLOCATED",
+        "perp_crowding_state": "INSUFFICIENT_DATA",
+        "predictive_state": "UNAVAILABLE",
+        "bid_adverse_probability": null,
+        "ask_adverse_probability": null,
+        "risk_state": "HALT",
+        "desired_quote_count": 16,
+        "agent_quote_count": 4,
+        "authorized_quote_count": 0,
+        "open_order_count": 0,
+        "fill_count": 0
+      }
+    ],
+    "source_times": [
+      {
+        "sequence": 2,
+        "book_received_at": "2026-10-01T00:00:00Z",
+        "book_source_timestamp": "2026-09-30T23:59:59.990000Z",
+        "book_source_event_time_verified": true,
+        "context_received_at": "2026-10-01T00:00:00Z",
+        "context_source_timestamp": null,
+        "context_source_event_time_verified": false
+      },
+      {
+        "sequence": 4,
+        "book_received_at": "2026-10-01T00:00:00.100000Z",
+        "book_source_timestamp": "2026-10-01T00:00:00.090000Z",
+        "book_source_event_time_verified": true,
+        "context_received_at": "2026-10-01T00:00:00.100000Z",
+        "context_source_timestamp": null,
+        "context_source_event_time_verified": false
+      },
+      {
+        "sequence": 6,
+        "book_received_at": "2026-10-01T00:00:00.200000Z",
+        "book_source_timestamp": "2026-10-01T00:00:00.190000Z",
+        "book_source_event_time_verified": true,
+        "context_received_at": "2026-10-01T00:00:00.200000Z",
+        "context_source_timestamp": null,
+        "context_source_event_time_verified": false
+      },
+      {
+        "sequence": 8,
+        "book_received_at": "2026-10-01T00:00:00.300000Z",
+        "book_source_timestamp": "2026-10-01T00:00:00.290000Z",
+        "book_source_event_time_verified": true,
+        "context_received_at": "2026-10-01T00:00:00.300000Z",
+        "context_source_timestamp": null,
+        "context_source_event_time_verified": false
+      }
+    ],
+    "omitted_points": 0,
+    "omission": "NONE"
+  },
+  "read_only": true,
+  "authority": "NONE"
+}

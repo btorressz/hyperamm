@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from app.dependencies import runtime
 from app.infrastructure.research import ResearchUnavailableError
-from app.research_replay.contracts import HistoricalReplayRequest, HistoricalReplayResult, ReplayRejected
+from app.research_replay.contracts import HistoricalReplayRequest, HistoricalReplayResult, ReplayRejected, ReplayStorageUnavailable
 from app.research_replay.models import Identifier
 from app.research_replay.provenance import HistoricalDatasetProvenance
 from app.research_replay.summary import HistoricalDatasetSummary
@@ -20,11 +20,17 @@ async def execute(http_request, operation, **inputs):
     try:
         return await http_request.app.state.simulation_executor.execute(operation, storage_root=root, **inputs)
     except ReplayRejected as exc:
-        raise HTTPException(422, exc.rejection.model_dump(mode="json"), headers=NO_STORE) from exc
+        rejection = exc.rejection.model_dump(mode="json")
+        if operation == "compare_scenario_historical":
+            rejection["omitted_issues"] = max(0, len(rejection["issues"]) - 100)
+            rejection["issues"] = rejection["issues"][:100]
+        raise HTTPException(422, rejection, headers=NO_STORE) from exc
     except ResearchBusyError as exc:
         raise HTTPException(429, str(exc), headers=NO_STORE) from exc
     except ResearchUnavailableError:
         raise HTTPException(503, "Research admission unavailable", headers=NO_STORE) from None
+    except ReplayStorageUnavailable:
+        raise HTTPException(503, "Historical replay storage unavailable", headers=NO_STORE) from None
     except ValueError:
         # Never return private filesystem paths, provider wire data or secrets.
         raise HTTPException(422, "Historical evidence or research configuration unavailable", headers=NO_STORE) from None
