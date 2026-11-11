@@ -1,0 +1,171 @@
+{
+  "classification": "PASS",
+  "fixture_notice": "GENERATED FIXTURES / USER-ASSERTED RECORDED LABELS; NO AUTHENTICATED EXCHANGE HISTORY",
+  "workflows": [
+    "Actual BTC comparison, backend metrics, zero fills, unavailable metric, separate original charts, inspectable provenance, operational isolation",
+    "1920/1440/1024/768/390 responsive layouts, chart resizing, wrapped fingerprints and decimal cells",
+    "Actual ETH and SOL comparisons",
+    "Multi-segment gap with explicit reset and validated selected-segment rerun",
+    "Actual modeled PAPER execution with explicit configuration differences",
+    "Cross-market INCOMPARABLE blocks financial metrics and traces",
+    "Pending market/dataset changes retire late real backend responses",
+    "Real 422 missing economics, 503 disabled vault, 429 single-worker busy errors",
+    "Labeled malformed-response fault probe fails closed",
+    "Frame edits hide stale metrics with captured retired identity",
+    "Keyboard form navigation and native disclosures",
+    "Unmount cancels HTTP waiter, worker capacity retained, remount has no stale result",
+    "Backend restart retires receipts; retained admitted evidence reproduces identity",
+    "Existing historical replay, scenario simulation and bounded optimizer still run",
+    "Existing Vault preset validation, captured accounting proposal, exact long Decimal strings and keyboard-readable mobile values"
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "WebSocket connection to 'ws://127.0.0.1:5173/ws/terminal' failed: Connection closed before receiving a handshake response",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/simulation/optimize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    }
+  ],
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "chart_count": 84
+    }
+  ],
+  "screenshots": [
+    "btc-context-and-traces-1440.png",
+    "comparison-1920.png",
+    "comparison-1440.png",
+    "comparison-1024.png",
+    "comparison-768.png",
+    "comparison-390.png",
+    "independent-gap-segment-2.png",
+    "market-incomparable.png",
+    "vault-exact-decimal-390.png"
+  ],
+  "browser_version": "151.0.7922.173",
+  "unexpected_console_errors": [],
+  "duration_seconds": 48.967
+}

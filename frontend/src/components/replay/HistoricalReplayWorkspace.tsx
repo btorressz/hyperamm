@@ -41,12 +41,13 @@ export function HistoricalReplayWorkspace() {
   // Keep query promises shared through StrictMode remounts: aborting the HTTP
   // waiter would leave its admitted worker busy for the immediate replacement.
   const catalog=useQuery({queryKey:['phase164-dataset-summaries'],queryFn:async()=>checkedReplaySummaries(await api.historicalReplaySummaries()),
-    retry:false,refetchOnWindowFocus:false});
+    retry:(count,error)=>count<3&&error.message.includes('busy'),retryDelay:500,refetchOnWindowFocus:false});
   const datasets=catalog.data??[];
   const item=datasets.find(x=>x.dataset_id===selected)??null;
   const provenance=useQuery({queryKey:['phase164-provenance',item?.dataset_id,item?.dataset_fingerprint],
     queryFn:()=>api.historicalReplayProvenance(item!.dataset_id).then(p=>checkedReplayProvenance(p,item!)),
-    enabled:!!item&&!pending,retry:false,staleTime:Infinity,refetchOnWindowFocus:false});
+    enabled:!!item&&!pending&&!catalog.isFetching&&!catalog.isError,
+    retry:(count,error)=>count<3&&error.message.includes('busy'),retryDelay:500,staleTime:Infinity,refetchOnWindowFocus:false});
   const resetResult=useCallback(()=>{
     requestEpoch.current+=1; setResult(null);setSegmentIndex(0);setFrameIndex(0);setPlaying(false);setError('');
   },[]);

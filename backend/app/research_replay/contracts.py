@@ -19,6 +19,10 @@ REPLAY_VERSION = "phase162-v1"
 MAX_SEGMENTS = 32
 
 
+class ReplayStorageUnavailable(RuntimeError):
+    """Public worker failure without exposing storage implementation or paths."""
+
+
 class ReplayPolicy(Evidence):
     """Explicit temporal modeling, independently fingerprinted from evidence."""
 

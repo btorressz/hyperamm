@@ -2,9 +2,13 @@ import type {
   ComparisonChartEvidence, ComparisonDimension, ComparisonMetricName, MetricOrigin,
   MetricUnit, QuantitativeComparisonReceipt, QuantitativeMetricRow,
 } from '../types/scenarioReplayComparison';
+import { exactDecimal } from './orderView';
+import { receiptTime } from './replayEvidence';
 
 const SHA = /^[a-f0-9]{64}$/;
-const DECIMAL = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
+// Pydantic Decimal emits canonical uppercase exponents (including 0E+5).
+// Retain the exact wire string; bounded text expansion is display-only.
+const DECIMAL = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:E[+-]\d{1,3})?$/;
 const MARKETS = ['BTC','ETH','SOL'];
 const DIMENSIONS: ComparisonDimension[] = [
   'MARKET','ENGINE','STRATEGY','AGENTS','RISK','ACCOUNTING',
@@ -80,9 +84,7 @@ function side(v: unknown, kind: 'SCENARIO' | 'HISTORICAL_SEGMENT'): asserts v {
     (text(v.window_start,70) && text(v.window_end,70) &&
       Number.isFinite(Date.parse(String(v.window_start))) &&
       Number.isFinite(Date.parse(String(v.window_end))) &&
-      (Date.parse(String(v.window_end)) > Date.parse(String(v.window_start)) ||
-       (Date.parse(String(v.window_end)) === Date.parse(String(v.window_start)) &&
-        String(v.window_end) > String(v.window_start))))),
+      receiptTime(String(v.window_end)) > receiptTime(String(v.window_start))),
     'incomplete time coverage');
 }
 
@@ -181,9 +183,10 @@ export function parseComparisonReceipt(json: string): QuantitativeComparisonRece
 /** Truncate for display only, never change the authoritative receipt value. */
 export function metricText(value: string|null, maxFraction=6): string {
   if (value===null) return 'Unavailable';
-  const [whole,fraction] = value.split('.');
+  const plain=exactDecimal(value).replace(/^(-?)0+(?=\d)/,'$1');
+  const [whole,fraction] = plain.split('.');
   return fraction && fraction.length > maxFraction
-    ? whole+'.'+fraction.slice(0,maxFraction)+'…' : value;
+    ? whole+'.'+fraction.slice(0,maxFraction)+'…' : plain;
 }
 export function attachedTraceMatches(receipt: QuantitativeComparisonReceipt,
   evidence: ComparisonChartEvidence): boolean {
@@ -199,4 +202,62 @@ export function attachedTraceMatches(receipt: QuantitativeComparisonReceipt,
     segment.run_fingerprint===b.run_fingerprint &&
     segment.dataset_fingerprint===b.engine_dataset_fingerprint &&
     segment.simulation_result_fingerprint===b.simulation_result_fingerprint;
+}
+
+/** Bind display evidence to the captured HTTP request; hashes are checked by the server. */
+export function checkedComparisonResponse(raw:unknown, request:import('../types/scenarioReplayComparison').ScenarioHistoricalRequest):import('../types/scenarioReplayComparison').ScenarioHistoricalResponse {
+  assert(isObject(raw)&&raw.version==='phase165c2-v1'&&raw.authority==='NONE'&&raw.read_only===true&&
+    hash(raw.request_fingerprint)&&raw.selection_policy==='RERUN_SELECTED_SEGMENT','comparison transport');
+  const receipt=checkedQuantitativeReceipt(raw.receipt), f=receipt.foundation;
+  assert(isObject(raw.request),'captured request unavailable');
+  // Server may fill defaults; compare every field supplied by this browser.
+  const contains=(actual:unknown,expected:unknown):boolean=>{
+    if(isObject(expected))return isObject(actual)&&Object.entries(expected).every(([k,v])=>contains(actual[k],v));
+    return actual===expected;
+  };
+  assert(contains(raw.request,request),'stale captured request');
+  assert(f.scenario.market===request.research_market&&f.historical.market===request.historical.market&&
+    f.historical.original_dataset_fingerprint===request.historical.dataset_fingerprint&&
+    receipt.selected_segment_index===request.segment_index,'request/source identity');
+  assert(safeInt(raw.segment_count,1,32)&&Array.isArray(raw.segments)&&raw.segments.length===raw.segment_count&&
+    f.historical.replay_segment_count===raw.segment_count,'segment selection metadata');
+  raw.segments.forEach((s,i)=>assert(isObject(s)&&s.segment_index===i&&safeInt(s.frame_count,2,5000)&&
+    hash(s.dataset_fingerprint)&&hash(s.run_fingerprint)&&hash(s.simulation_result_fingerprint)&&
+    text(s.reset_reason,80)&&text(s.window_start,70)&&text(s.window_end,70),'segment identity'));
+  const selected=raw.segments[request.segment_index] as Record<string,unknown>;
+  assert(selected&&selected.run_fingerprint===f.historical.run_fingerprint&&
+    selected.dataset_fingerprint===f.historical.engine_dataset_fingerprint&&
+    selected.simulation_result_fingerprint===f.historical.simulation_result_fingerprint,'selected archive');
+  assert(isObject(raw.provenance)&&raw.provenance.dataset_fingerprint===request.historical.dataset_fingerprint&&
+    raw.provenance.source_authenticated===false&&raw.provenance.licensing_independently_verified===false&&
+    raw.provenance.source_kind===f.historical.source_kind&&
+    Array.isArray(raw.declared_gaps)&&raw.declared_gaps.length<=1024&&
+    Array.isArray(raw.issues)&&raw.issues.length<=100&&safeInt(raw.omitted_issues,0,5000),'source limitations');
+  for(const [key,side] of [['scenario_trace',f.scenario],['historical_trace',f.historical]] as const){
+    const t=raw[key];
+    assert(isObject(t)&&t.run_fingerprint===side.run_fingerprint&&t.dataset_fingerprint===side.engine_dataset_fingerprint&&
+      t.simulation_result_fingerprint===side.simulation_result_fingerprint&&t.frame_count===side.frame_count&&
+      Array.isArray(t.points)&&t.points.length<=Math.min(250,request.trace_point_limit)&&
+      safeInt(t.omitted_points,0,5000)&&t.points.length+t.omitted_points===t.frame_count&&
+      ['NONE','NOT_REQUESTED','TRACE_UNAVAILABLE','POINT_LIMIT','INCOMPARABLE'].includes(String(t.omission))&&
+      Array.isArray(t.source_times)&&t.source_times.length<=250,'bounded trace evidence');
+    assert((receipt.display_policy!=='BLOCKED'&&request.include_traces)||t.points.length===0,'blocked traces');
+    let previous=-1, previousTime='';
+    for(const p of t.points){
+      assert(isObject(p)&&safeInt(p.sequence,0,Number.MAX_SAFE_INTEGER)&&p.sequence>previous&&text(p.timestamp,70)&&
+        Number.isFinite(Date.parse(p.timestamp))&&(!previousTime||receiptTime(p.timestamp)>receiptTime(previousTime)),'ordered original trace');
+      for(const field of ['equity','session_pnl','inventory_base','drawdown_pct','mid','mark','oracle'])
+        assert(typeof p[field]==='string'&&p[field].length<=120&&DECIMAL.test(p[field]),'exact trace values');
+      for(const field of ['risk_state','agent_regime','toxic_flow_state','execution_quality_state','reference_confidence'])
+        assert(text(p[field],80),'trace state');
+      previous=p.sequence;previousTime=p.timestamp;
+    }
+    assert(key!=='historical_trace'||t.source_times.length===t.points.length,'original source time coverage');
+    t.source_times.forEach((v,i)=>assert(isObject(v)&&v.sequence===(t.points as Record<string,unknown>[])[i].sequence&&
+      text(v.book_received_at,70)&&text(v.context_received_at,70)&&
+      (v.book_source_timestamp===null||text(v.book_source_timestamp,70))&&
+      (v.context_source_timestamp===null||text(v.context_source_timestamp,70))&&
+      typeof v.book_source_event_time_verified==='boolean'&&typeof v.context_source_event_time_verified==='boolean','source times'));
+  }
+  return raw as unknown as import('../types/scenarioReplayComparison').ScenarioHistoricalResponse;
 }

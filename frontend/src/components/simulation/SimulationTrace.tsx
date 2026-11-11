@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { SimulationResult } from "../../types";
 import { HistoryChart, type HistoryLine } from "../HistoryChart";
 import { Panel, Empty } from "../TerminalPrimitives";
@@ -85,8 +86,8 @@ const views: Array<[string, HistoryLine[]]> = [
     ],
   ],
 ];
-export function SimulationTrace({ result, requestedCap=250 }: { result: SimulationResult; requestedCap?: number }) {
-  const points = traceFrames(result.trace);
+export function SimulationTrace({ result, requestedCap=250 }: { result: Pick<SimulationResult,'trace'|'run_fingerprint'> & {metrics:Pick<SimulationResult['metrics'],'frame_count'>}; requestedCap?: number }) {
+  const points = useMemo(()=>traceFrames(result.trace),[result.trace]);
   return (
     <section aria-label="Simulation trace">
       <h2>Explore simulated frames</h2>

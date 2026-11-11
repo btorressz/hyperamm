@@ -23,7 +23,7 @@ const GROUPS: ReadonlyArray<[string,string[]]> = [
 function Cell({value,unit}:{value:string|null;unit:string}) {
   return <td className="srcMetricValue">
     {value===null?<span className="muted">Unavailable</span>:
-      <span title={value} aria-label={value+' '+unit} className="srcExact">
+      <span tabIndex={0} title={value} aria-label={'Exact backend value: '+value+' '+unit} className="srcExact">
         {metricText(value)} <small className="muted">{unit}</small>
       </span>}
   </td>;

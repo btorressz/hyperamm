@@ -16,6 +16,13 @@ The history covers **all 60 merged pull requests (#1–#60)** and the separately
 
 ## Unreleased
 
+### Phase 16.5C.2 — Scenario/Historical Comparison Integration & UI Hardening
+
+- **Added:** Local computational `POST /api/v1/research-comparison/scenario-historical`; bounded typed requests, unchanged `phase165b-v1` receipt, independent segment identities and capped original trace projections. No replay archives or client financial evidence on this route.
+- **Reused/enhanced:** Existing one-slot executor, scenario provenance capture, secure replay service and quantitative engine; React market/dataset/provenance/execution controls, backend receipt validation, stale-result retirement, independent Lightweight Charts and mobile metrics.
+- **Fixed:** C.1 TypeScript syntax, canonical Decimal exponent compatibility and whole-second/microsecond timestamp ordering. No financial deltas, aggregation, strategy ranking or operational trading authority.
+- **Acceptance:** Native tests and actual local Chromium evidence are recorded in [Phase 16.5C.2 acceptance](docs/PHASE165C2_ACCEPTANCE.md). Historical source authenticity and licensing remain unverified.
+
 ### Phase 16.5A.2 — Comparison Provenance Integration & Native Acceptance
 
 - **Enhanced:** Existing scenario service and single research executor atomically capture effective DEMO/PAPER configuration, including Research Vault accounting, and bind it to the actual result with an opt-in immutable provenance receipt on the existing scenario route.

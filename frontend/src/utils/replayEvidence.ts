@@ -10,7 +10,7 @@ const time = (value: unknown) => typeof value === 'string' &&
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
 // Python receipt clocks retain microseconds. Date.parse alone collapses distinct
 // sub-millisecond receipts; chart/navigation identity must preserve their order.
-function receiptTime(value: string): bigint {
+export function receiptTime(value: string): bigint {
   const fraction = /\.(\d{1,6})/.exec(value)?.[1] ?? '';
   return BigInt(Date.parse(value)) * 1000n + BigInt(fraction.padEnd(6,'0').slice(3));
 }
