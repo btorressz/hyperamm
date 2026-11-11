@@ -46,7 +46,24 @@ def build_contract():
         return {'$ref':f'#/$defs/{cls.__name__}'}
     def properties(cls):
         model(cls)
-        return dict(defs[cls.__name__]['properties'])
+        # These composed observation wrappers retain their phase12-v1 string
+        # contract. Pydantic releases differ in whether Decimal serialization
+        # adds an implicit regex (which also excludes valid exponent strings).
+        # Strip only that generated numeric pattern from the detached wrapper;
+        # domain definitions still receive exact decimal formats/bounds below.
+        copied = json.loads(json.dumps(defs[cls.__name__]['properties']))
+        def strip_numeric_pattern(wire, valid):
+            if not isinstance(wire, dict) or not isinstance(valid, dict):
+                return
+            variants = valid.get('anyOf', [valid])
+            if wire.get('type') == 'string' and any(v.get('type') == 'number' for v in variants):
+                wire.pop('pattern', None)
+            for a, b in zip(wire.get('anyOf', []), valid.get('anyOf', [])):
+                strip_numeric_pattern(a, b)
+        valid = validation[cls.__name__]['properties']
+        for name, wire in copied.items():
+            strip_numeric_pattern(wire, valid.get(name, {}))
+        return copied
     inv=properties(InventoryState)
     inv.update({k:nullable(v) for k,v in properties(InventoryDecision).items() if k!='fair_value'})
     perp=properties(PerpMarketContext)

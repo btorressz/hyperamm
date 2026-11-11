@@ -302,6 +302,29 @@ async def main(args):
             assert not await studio.get_by_role('heading',name='Research pairing status',exact=True).count()
             await page.unroute('**'+URL)
             passed('Labeled malformed original source-clock response probe fails closed')
+        if args.phase166a:
+            # A real pending segment rerun may never revive an older chart.
+            await select(kind='gap');await run();await control(delay=.3)
+            chooser=studio.get_by_role('combobox',name='Comparison historical segment',exact=True)
+            before_count=await page.evaluate('window.__comparisonResponses.length')
+            async with page.expect_request(lambda r:r.url.endswith(URL)):
+                await chooser.select_option('1')
+            assert not await studio.locator('canvas').count()
+            assert not await chooser.count()
+            await studio.get_by_text('Segment 2 / 2',exact=False).wait_for()
+            async with page.expect_response(lambda r:r.url.endswith(URL)) as wait:
+                await chooser.select_option('0')
+            assert (await wait.value).status==200
+            await idle()
+            await asyncio.sleep(.4)
+            assert not await studio.get_by_text('Segment 2 / 2',exact=False).count()
+            assert await page.evaluate('window.__comparisonResponses.length')==before_count+2
+            await control(delay=0)
+            await studio.get_by_text('Segment 1 / 2',exact=False).wait_for()
+            passed('Rapid repeated segment selection removes old charts/selector while pending and restores only current selected-segment evidence')
+            from phase166a_chart import chart_acceptance
+            await chart_acceptance(ctx, report, out)
+            passed('Actual HistoryChart hover, replaced points/lines, live updates, axes, zero/signed/null values, reset and unmount/remount; browser lookup and React profiling')
         assert not report['page_errors'],report['page_errors']
         report['unexpected_console_errors']=[e for e in report['console_errors'] if not any(token in e for token in ('WebSocket','status of 404','status of 422','status of 429','status of 503','status of 500','ERR_CONNECTION_REFUSED'))]
         assert not report['unexpected_console_errors'],report['unexpected_console_errors']
@@ -324,4 +347,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--python',default=str(ROOT/'backend/.venv/bin/python'))
     p.add_argument('--chromium',default='/usr/bin/chromium');p.add_argument('--output',default=str(ROOT/'docs/acceptance/phase165c2'))
     p.add_argument('--phase165d',action='store_true',help='Run additional hardening and bounded large-render acceptance')
+    p.add_argument('--phase166a',action='store_true',help='Run native chart lifecycle, rapid segment switching and browser profiling probes')
     asyncio.run(main(p.parse_args()))
