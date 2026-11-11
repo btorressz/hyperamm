@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from typing import Any
@@ -54,7 +55,8 @@ class SimulationExecutor:
                 raise ResearchBusyError("Phase 10 research is already running")
             self._busy = True
             try:
-                future = self._pool.submit(_run, operation, inputs)
+                # Admission owns detached inputs even for direct service callers.
+                future = self._pool.submit(_run, operation, deepcopy(inputs))
             except Exception:
                 self._busy = False
                 raise

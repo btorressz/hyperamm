@@ -5,7 +5,7 @@ from copy import deepcopy
 import logging
 
 from fastapi import APIRouter,Depends,HTTPException,Request
-from pydantic import BaseModel,ConfigDict,Field,model_validator
+from pydantic import BaseModel,ConfigDict,Field,StrictBool,model_validator
 
 from app.dependencies import runtime
 from app.simulation import OptimizationObjectiveConfig,SimulationConfig,SimulationService
@@ -29,6 +29,7 @@ class SimulationRunRequest(BaseModel):
     simulation:SimulationConfig=Field(default_factory=SimulationConfig)
     research:ResearchProposal|None=None
     research_market:ResearchPerpMarketId|None=None
+    include_comparison_provenance:StrictBool=False
 
     @model_validator(mode="after")
     def frame_bound(self):
@@ -86,8 +87,11 @@ async def run_simulation(request:SimulationRunRequest,http_request:Request,rt=De
             agents=rt.agent_config.model_copy(deep=True),risk=rt.risk_config.model_copy(deep=True),
             simulation=isolated_simulation(request),
             **({"market_profile": market_profile} if market_profile is not None else {}),
+            **({"include_comparison_provenance": True,
+                "research": request.research.model_copy(deep=True) if request.research else None}
+               if request.include_comparison_provenance else {}),
         )
-        if request.research:
+        if request.research and not request.include_comparison_provenance:
             result.research_configuration=request.research.provenance()
         return result.model_dump(mode="json")
     except ResearchUnavailableError as exc:
