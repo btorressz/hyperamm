@@ -5,6 +5,7 @@ The isolated page imports the same Vite modules and uses real canvas/mouse event
 """
 import asyncio
 import re
+from pathlib import Path
 
 
 async def chart_acceptance(ctx, report, output=None):
@@ -12,15 +13,21 @@ async def chart_acceptance(ctx, report, output=None):
     await page.route('**/__phase166a_chart', lambda route: route.fulfill(
         content_type='text/html', body='<html><head></head><body><div id="chart" style="width:900px"></div></body></html>'))
     await page.goto('http://127.0.0.1:5173/__phase166a_chart')
-    errors = []
+    errors, console_errors = [], []
     page.on('pageerror', lambda error: errors.append(str(error)))
+    page.on('console', lambda message: console_errors.append(message.text) if message.type == 'error' else None)
+    # Use the actual production CSS without starting Vite's HMR websocket from
+    # this fulfilled-document origin (Chromium applies a separate LAN check).
+    frontend = Path(__file__).resolve().parents[1]
+    styles = sorted((frontend / 'dist/assets').glob('*.css')) or [frontend / 'src/styles.css']
+    for stylesheet in styles:
+        await page.add_style_tag(content=stylesheet.read_text())
     await page.evaluate('''async()=>{
         const reactModule=await import('/node_modules/.vite/deps/react.js');
         const React=reactModule.default??reactModule;
         const clientModule=await import('/node_modules/.vite/deps/react-dom_client.js');
         const {createRoot}=clientModule.default??clientModule;
         const {HistoryChart,chartValue}=await import('/src/components/HistoryChart.tsx');
-        await import('/src/styles.css');
         const history=await import('/src/utils/terminalHistory.ts');
         const root=createRoot(document.getElementById('chart'));
         const points=Array.from({length:12},(_,i)=>({sequence:i+1,
@@ -150,6 +157,8 @@ async def chart_acceptance(ctx, report, output=None):
         disconnected:window.__chartProbe.state.disconnected,canvases:document.querySelectorAll('canvas').length})''')
     assert final['canvases'] == 0 and final['created'] == final['disconnected'], final
     assert not errors, errors
+    assert not console_errors, console_errors
     report['chart_component']['unmount'] = final
     report['chart_component']['page_errors'] = errors
+    report['chart_component']['console_errors'] = console_errors
     await page.close()

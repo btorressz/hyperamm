@@ -1,0 +1,23 @@
+{
+  "chart_point_revision_commits": [
+    {
+      "phase": "update",
+      "actual_ms": 1.5999999998603016,
+      "base_ms": 1.6999999999534339,
+      "second_equity": "1101",
+      "line_label": "Equity",
+      "readout": "Frame 2 \u00b7 11/11/2026, 2:11:12 AM \u00b7 2026-11-11T10:11:12.000002ZEquity: 1001 quote"
+    },
+    {
+      "phase": "update",
+      "actual_ms": 1.4000000001396984,
+      "base_ms": 1.4000000001396984,
+      "second_equity": "1101",
+      "line_label": "Equity",
+      "readout": "Frame 2 \u00b7 11/11/2026, 2:11:12 AM \u00b7 2026-11-11T10:11:12.000002ZEquity: 1101 quote"
+    }
+  ],
+  "chart_point_revision_no_stale_commit": false,
+  "status": "FAIL",
+  "failure": "AssertionError(\"Replaced source points commit the previous formatted hover: [{'phase': 'update', 'actual_ms': 1.5999999998603016, 'base_ms': 1.6999999999534339, 'second_equity': '1101', 'line_label': 'Equity', 'readout': 'Frame 2 \u00b7 11/11/2026, 2:11:12 AM \u00b7 2026-11-11T10:11:12.000002ZEquity: 1001 quote'}]\")"
+}

@@ -1,6 +1,6 @@
 # Phase 16.6A — Research Performance & Resource Efficiency (foundation)
 
-**Status: implementation draft; native regression and profiling pending Codex validation.**
+**Status: native integration, parity and performance acceptance are recorded in [Phase 16.6A.2 acceptance](PHASE166A_ACCEPTANCE.md).** The foundation rationale below is retained as implementation history.
 
 Base: `8b7d144a2f7ab51185ef608030619ad23bc345e6` (merged Phase 16.5D / PR #67). This work reuses the existing single-slot research executor and native replay/scenario/quantitative engines. No new HTTP endpoint, worker, database, trading control, dependency, or chart package.
 
@@ -79,4 +79,4 @@ Compare with a clean checkout of the exact base in identical environment and fix
 - No changes to trading authority, risk authorization, live streams, signer, wallet, order execution, market-data ingestion or concurrency admission.
 - No Docker, CI workflow, Kubernetes, new dependency, second worker, persistent cache, or simulation engine.
 - The frontend chart index is a **presentation-only** optimization; source-time bucketing must not infer authenticated exchange time or connect independent replay segments.
-- **Current implementation was authored through GitHub connector. Native Python/Node and Chromium tests and new performance trials have NOT RUN. Do not merge without validation.**
+- The foundation was authored through the GitHub connector without native execution. The subsequent [Phase 16.6A.2 acceptance](PHASE166A_ACCEPTANCE.md) supersedes that historical execution status with actual native results and remaining gates. Merge remains manual.

@@ -1,0 +1,95 @@
+{
+  "base_commit": "0662dd77345ee55f973a65d232ea8e2cc07ee6b5",
+  "initial": {
+    "focused": {
+      "passed": 145,
+      "failed": 0,
+      "warnings": 1
+    },
+    "backend": {
+      "passed": 2475,
+      "failed": 1,
+      "skipped": 1,
+      "warnings": 1,
+      "seconds": 161.8,
+      "failure": "test_generated_terminal_schema_is_current"
+    },
+    "frontend": {
+      "passed": 704,
+      "failed": 0,
+      "typecheck": "PASS",
+      "build": "PASS",
+      "npm_ci": "PASS after workspace cache retry"
+    },
+    "chromium": {
+      "workflows": 21,
+      "classification": "PASS",
+      "page_errors": 0,
+      "unexpected_console_errors": 0
+    }
+  },
+  "final": {
+    "implementation_commit": "c60690093a60e95dac5fdac2bb98c98e143b59f8",
+    "focused": {
+      "passed": 240,
+      "failed": 0,
+      "warnings": 1,
+      "seconds": 74.61
+    },
+    "backend": {
+      "passed": 2490,
+      "failed": 0,
+      "skipped": 1,
+      "warnings": 1,
+      "seconds": 148.75
+    },
+    "frontend": {
+      "passed": 704,
+      "failed": 0,
+      "npm_ci": "PASS",
+      "typecheck": "PASS",
+      "build": "PASS"
+    },
+    "chromium": {
+      "classification": "PASS",
+      "workflows": 23,
+      "page_errors": 0,
+      "unexpected_console_errors": 0,
+      "unexpected_network_failures": 0,
+      "chart_component_console_errors": 0,
+      "viewport_widths": [
+        1920,
+        1440,
+        1024,
+        768,
+        390
+      ],
+      "duration_seconds": 73.972
+    }
+  },
+  "warnings": [
+    "Starlette/httpx deprecation; unchanged",
+    "Vite production chunk-size advisory; unchanged",
+    "Unavailable Node-test browser storage; unchanged"
+  ],
+  "optional_skip": "tests/test_agent_expansion.py:406 optional scikit-learn training; dependency absent",
+  "gates": {
+    "archive_bytes_and_fingerprints": "PASS",
+    "baseline_and_modeled_equivalence": "PASS",
+    "btc_eth_sol_regression": "PASS",
+    "scenario_determinism": "PASS",
+    "historical_segment_identity": "PASS",
+    "comparison_provenance": "PASS",
+    "financial_integrity": "PASS",
+    "profiling_instrumentation": "PASS",
+    "comparable_benchmarks": "PASS",
+    "frontend_chart_semantics": "PASS",
+    "frontend_typecheck_build_tests": "PASS",
+    "chromium_integration": "PASS",
+    "single_worker_cancellation": "PASS",
+    "operational_isolation": "PASS",
+    "full_backend_regression": "PASS"
+  },
+  "performance_result": "Measured bulk median improvements; maximum-gap median slower; no peak-memory improvement established.",
+  "acceptance": "PASS for bounded local deterministic PAPER research; external source authenticity/licensing/macOS gates remain open."
+}

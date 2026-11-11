@@ -1,0 +1,43 @@
+{
+  "phase": "16.6A",
+  "status": "MEASURED",
+  "fixture_notice": "Synthetic deterministic PAPER evidence; no exchange/source licensing claim",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "linux",
+    "cpus": 3
+  },
+  "frames": 128,
+  "worker_seconds": 2.788469,
+  "stages_seconds": {
+    "archive_serialization": [
+      0.004936
+    ],
+    "replay": [
+      0.856305
+    ],
+    "scenario": [
+      1.523601
+    ],
+    "quantitative_receipt": [
+      0.325348
+    ]
+  },
+  "response_bytes": 208841,
+  "process_peak_rss_kib": 93384,
+  "receipt_fingerprint": "9cd33ff14bc83e9f9824da8505e20b2e247c7372feba017830ee138fc425a439",
+  "segment_run_fingerprint": "b1f925434bab7da9c439ba7694aa280a1dd1449a6841ec8bbc939ac4ee8332f2",
+  "single_worker_released": true,
+  "archive_microbenchmark": {
+    "existing_roundtrip_ms": {
+      "median_ms": 6.284524,
+      "min_ms": 3.366255,
+      "max_ms": 40.180353
+    },
+    "single_payload_ms": {
+      "median_ms": 5.57602,
+      "min_ms": 2.671537,
+      "max_ms": 41.223827
+    }
+  }
+}

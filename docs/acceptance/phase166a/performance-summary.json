@@ -1,0 +1,814 @@
+{
+  "status": "MEASURED",
+  "revisions": {
+    "baseline": "8b7d144a2f7ab51185ef608030619ad23bc345e6",
+    "foundation": "0662dd77345ee55f973a65d232ea8e2cc07ee6b5",
+    "optimized": "c60690093a60e95dac5fdac2bb98c98e143b59f8"
+  },
+  "workloads": [
+    {
+      "workload": "128 historical / 128 scenario; trace 120",
+      "kind": "small",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            1.1271855259999484,
+            1.2398550909999813,
+            1.102929445999962,
+            1.251179535999995,
+            1.0865795859999707
+          ],
+          "median_seconds": 1.1271855259999484,
+          "min_seconds": 1.0865795859999707,
+          "max_seconds": 1.251179535999995,
+          "population_stdev_seconds": 0.0698612772762484,
+          "cold_seconds": [
+            1.1271855259999484
+          ],
+          "warm_seconds": [
+            1.2398550909999813,
+            1.102929445999962,
+            1.251179535999995,
+            1.0865795859999707
+          ],
+          "peak_rss_kib": [
+            93584,
+            95120,
+            97168,
+            97296,
+            97296
+          ],
+          "response_bytes": [
+            208841,
+            208841,
+            208841,
+            208841,
+            208841
+          ]
+        },
+        "foundation": {
+          "samples_seconds": [
+            1.1537978149999617,
+            1.2893579760000193,
+            1.1468203700000004,
+            1.0829354530000046,
+            1.0559560039999951
+          ],
+          "median_seconds": 1.1468203700000004,
+          "min_seconds": 1.0559560039999951,
+          "max_seconds": 1.2893579760000193,
+          "population_stdev_seconds": 0.08086753372608488,
+          "cold_seconds": [
+            1.1537978149999617
+          ],
+          "warm_seconds": [
+            1.2893579760000193,
+            1.1468203700000004,
+            1.0829354530000046,
+            1.0559560039999951
+          ],
+          "peak_rss_kib": [
+            93588,
+            95252,
+            97160,
+            97160,
+            97160
+          ],
+          "response_bytes": [
+            208841,
+            208841,
+            208841,
+            208841,
+            208841
+          ]
+        },
+        "optimized": {
+          "samples_seconds": [
+            1.0262044940000123,
+            1.0504794169999059,
+            1.1229520889999094,
+            1.1064777690000938,
+            1.036961361000067
+          ],
+          "median_seconds": 1.0504794169999059,
+          "min_seconds": 1.0262044940000123,
+          "max_seconds": 1.1229520889999094,
+          "population_stdev_seconds": 0.03877012192191696,
+          "cold_seconds": [
+            1.0262044940000123
+          ],
+          "warm_seconds": [
+            1.0504794169999059,
+            1.1229520889999094,
+            1.1064777690000938,
+            1.036961361000067
+          ],
+          "peak_rss_kib": [
+            94412,
+            96204,
+            97868,
+            97996,
+            97996
+          ],
+          "response_bytes": [
+            208841,
+            208841,
+            208841,
+            208841,
+            208841
+          ]
+        }
+      },
+      "observed_median_reduction_percent": 6.805100600630495,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "250 historical / 250 scenario; trace 120",
+      "kind": "small",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            2.3198498670000163,
+            2.338607977000038,
+            2.3977341239999532,
+            2.446270565999953,
+            2.434597273999998
+          ],
+          "median_seconds": 2.3977341239999532,
+          "min_seconds": 2.3198498670000163,
+          "max_seconds": 2.446270565999953,
+          "population_stdev_seconds": 0.05048524852742046,
+          "cold_seconds": [
+            2.3198498670000163
+          ],
+          "warm_seconds": [
+            2.338607977000038,
+            2.3977341239999532,
+            2.446270565999953,
+            2.434597273999998
+          ],
+          "peak_rss_kib": [
+            98704,
+            99984,
+            103292,
+            103616,
+            103616
+          ],
+          "response_bytes": [
+            209120,
+            209120,
+            209120,
+            209120,
+            209120
+          ]
+        },
+        "foundation": {
+          "samples_seconds": [
+            2.4136493280000195,
+            2.386846344999981,
+            2.3680979920000027,
+            2.3466849950000324,
+            2.3105609379999805
+          ],
+          "median_seconds": 2.3680979920000027,
+          "min_seconds": 2.3105609379999805,
+          "max_seconds": 2.4136493280000195,
+          "population_stdev_seconds": 0.03507856141227639,
+          "cold_seconds": [
+            2.4136493280000195
+          ],
+          "warm_seconds": [
+            2.386846344999981,
+            2.3680979920000027,
+            2.3466849950000324,
+            2.3105609379999805
+          ],
+          "peak_rss_kib": [
+            98584,
+            100632,
+            103296,
+            103648,
+            103648
+          ],
+          "response_bytes": [
+            209120,
+            209120,
+            209120,
+            209120,
+            209120
+          ]
+        },
+        "optimized": {
+          "samples_seconds": [
+            1.9822956789998898,
+            2.0297214290001193,
+            2.213645882000037,
+            2.2920741629998247,
+            2.183079829999997
+          ],
+          "median_seconds": 2.183079829999997,
+          "min_seconds": 1.9822956789998898,
+          "max_seconds": 2.2920741629998247,
+          "population_stdev_seconds": 0.11613614539162766,
+          "cold_seconds": [
+            1.9822956789998898
+          ],
+          "warm_seconds": [
+            2.0297214290001193,
+            2.213645882000037,
+            2.2920741629998247,
+            2.183079829999997
+          ],
+          "peak_rss_kib": [
+            98704,
+            100232,
+            103244,
+            103612,
+            103612
+          ],
+          "response_bytes": [
+            209120,
+            209120,
+            209120,
+            209120,
+            209120
+          ]
+        }
+      },
+      "observed_median_reduction_percent": 8.952380993847026,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "1000 historical / 1000 scenario; trace 120",
+      "kind": "small",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            12.008873261000076,
+            12.536362681000014,
+            12.400228169000002
+          ],
+          "median_seconds": 12.400228169000002,
+          "min_seconds": 12.008873261000076,
+          "max_seconds": 12.536362681000014,
+          "population_stdev_seconds": 0.2235909851057364,
+          "cold_seconds": [
+            12.008873261000076
+          ],
+          "warm_seconds": [
+            12.536362681000014,
+            12.400228169000002
+          ],
+          "peak_rss_kib": [
+            129408,
+            131212,
+            131724
+          ],
+          "response_bytes": [
+            209112,
+            209112,
+            209112
+          ]
+        },
+        "foundation": {
+          "samples_seconds": [
+            12.124754775000042,
+            12.148302332999947,
+            12.119871728000021
+          ],
+          "median_seconds": 12.124754775000042,
+          "min_seconds": 12.119871728000021,
+          "max_seconds": 12.148302332999947,
+          "population_stdev_seconds": 0.012412497897169356,
+          "cold_seconds": [
+            12.124754775000042
+          ],
+          "warm_seconds": [
+            12.148302332999947,
+            12.119871728000021
+          ],
+          "peak_rss_kib": [
+            129892,
+            131168,
+            131552
+          ],
+          "response_bytes": [
+            209112,
+            209112,
+            209112
+          ]
+        },
+        "optimized": {
+          "samples_seconds": [
+            11.259602855999901,
+            11.117891224999994,
+            10.533739789000037
+          ],
+          "median_seconds": 11.117891224999994,
+          "min_seconds": 10.533739789000037,
+          "max_seconds": 11.259602855999901,
+          "population_stdev_seconds": 0.31414651192219106,
+          "cold_seconds": [
+            11.259602855999901
+          ],
+          "warm_seconds": [
+            11.117891224999994,
+            10.533739789000037
+          ],
+          "peak_rss_kib": [
+            129760,
+            131084,
+            131468
+          ],
+          "response_bytes": [
+            209112,
+            209112,
+            209112
+          ]
+        }
+      },
+      "observed_median_reduction_percent": 10.341236681481321,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "1000 historical / 1001 scenario; trace 250",
+      "kind": "boundary",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            14.2612,
+            12.56753,
+            12.054013
+          ],
+          "median_seconds": 12.56753,
+          "min_seconds": 12.054013,
+          "max_seconds": 14.2612,
+          "population_stdev_seconds": 0.9430383656127446,
+          "temperature": "process-cold",
+          "peak_rss_kib": [
+            134100,
+            135112,
+            135116
+          ],
+          "response_bytes": [
+            405414,
+            405414,
+            405414
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "foundation": {
+          "samples_seconds": [
+            12.903874,
+            12.568008,
+            12.22955
+          ],
+          "median_seconds": 12.568008,
+          "min_seconds": 12.22955,
+          "max_seconds": 12.903874,
+          "population_stdev_seconds": 0.27529229813176165,
+          "temperature": "process-cold",
+          "peak_rss_kib": [
+            134992,
+            135116,
+            134900
+          ],
+          "response_bytes": [
+            405414,
+            405414,
+            405414
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "optimized": {
+          "samples_seconds": [
+            10.350057,
+            10.760841,
+            10.723559
+          ],
+          "median_seconds": 10.723559,
+          "min_seconds": 10.350057,
+          "max_seconds": 10.760841,
+          "population_stdev_seconds": 0.18548350815698467,
+          "temperature": "process-cold",
+          "peak_rss_kib": [
+            133960,
+            135056,
+            133992
+          ],
+          "response_bytes": [
+            405414,
+            405414,
+            405414
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        }
+      },
+      "observed_median_reduction_percent": 14.672501279089843,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "4999 historical / 5000 scenario; trace 250",
+      "kind": "boundary",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            77.416997,
+            68.268006,
+            68.602766
+          ],
+          "median_seconds": 68.602766,
+          "min_seconds": 68.268006,
+          "max_seconds": 77.416997,
+          "population_stdev_seconds": 4.236177111723911,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310040,
+            310156,
+            310192
+          ],
+          "response_bytes": [
+            406191,
+            406191,
+            406191
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "foundation": {
+          "samples_seconds": [
+            68.633642,
+            71.549945,
+            69.040597
+          ],
+          "median_seconds": 69.040597,
+          "min_seconds": 68.633642,
+          "max_seconds": 71.549945,
+          "population_stdev_seconds": 1.2895849006964282,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310280,
+            310056,
+            309948
+          ],
+          "response_bytes": [
+            406191,
+            406191,
+            406191
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "optimized": {
+          "samples_seconds": [
+            57.354147,
+            59.372553,
+            60.578739
+          ],
+          "median_seconds": 59.372553,
+          "min_seconds": 57.354147,
+          "max_seconds": 60.578739,
+          "population_stdev_seconds": 1.330281549726975,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310264,
+            310140,
+            310068
+          ],
+          "response_bytes": [
+            406191,
+            406191,
+            406191
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        }
+      },
+      "observed_median_reduction_percent": 13.454578493234512,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "64 historical / 65 scenario; 32 segments",
+      "kind": "boundary",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            0.613826,
+            0.629329,
+            0.60612
+          ],
+          "median_seconds": 0.613826,
+          "min_seconds": 0.60612,
+          "max_seconds": 0.629329,
+          "population_stdev_seconds": 0.009651615443368379,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310040,
+            310156,
+            310192
+          ],
+          "response_bytes": [
+            91002,
+            91002,
+            91002
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "foundation": {
+          "samples_seconds": [
+            0.557363,
+            0.584372,
+            0.542941
+          ],
+          "median_seconds": 0.557363,
+          "min_seconds": 0.542941,
+          "max_seconds": 0.584372,
+          "population_stdev_seconds": 0.0171723548051965,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310280,
+            310056,
+            309948
+          ],
+          "response_bytes": [
+            91002,
+            91002,
+            91002
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "optimized": {
+          "samples_seconds": [
+            0.526705,
+            0.535783,
+            0.577081
+          ],
+          "median_seconds": 0.535783,
+          "min_seconds": 0.526705,
+          "max_seconds": 0.577081,
+          "population_stdev_seconds": 0.021923291176280977,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310264,
+            310140,
+            310068
+          ],
+          "response_bytes": [
+            91002,
+            91002,
+            91002
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        }
+      },
+      "observed_median_reduction_percent": 12.714189363109412,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "4 historical / 5 scenario; 1001 issues",
+      "kind": "boundary",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            0.277701,
+            0.299396,
+            0.300498
+          ],
+          "median_seconds": 0.299396,
+          "min_seconds": 0.277701,
+          "max_seconds": 0.300498,
+          "population_stdev_seconds": 0.01049651073240797,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310040,
+            310156,
+            310192
+          ],
+          "response_bytes": [
+            53299,
+            53299,
+            53299
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "foundation": {
+          "samples_seconds": [
+            0.288381,
+            0.277444,
+            0.271884
+          ],
+          "median_seconds": 0.277444,
+          "min_seconds": 0.271884,
+          "max_seconds": 0.288381,
+          "population_stdev_seconds": 0.0068530818533626735,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310280,
+            310056,
+            309948
+          ],
+          "response_bytes": [
+            53299,
+            53299,
+            53299
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "optimized": {
+          "samples_seconds": [
+            0.265408,
+            0.250941,
+            0.293553
+          ],
+          "median_seconds": 0.265408,
+          "min_seconds": 0.250941,
+          "max_seconds": 0.293553,
+          "population_stdev_seconds": 0.01769248948628265,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310264,
+            310140,
+            310068
+          ],
+          "response_bytes": [
+            53299,
+            53299,
+            53299
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        }
+      },
+      "observed_median_reduction_percent": 11.35218907400233,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "128 historical / 129 scenario; modeled fills",
+      "kind": "boundary",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            5.485427,
+            5.69715,
+            4.811132
+          ],
+          "median_seconds": 5.485427,
+          "min_seconds": 4.811132,
+          "max_seconds": 5.69715,
+          "population_stdev_seconds": 0.3777901051698181,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310040,
+            310156,
+            310192
+          ],
+          "response_bytes": [
+            227095,
+            227095,
+            227095
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "foundation": {
+          "samples_seconds": [
+            4.854071,
+            4.813422,
+            4.602766
+          ],
+          "median_seconds": 4.813422,
+          "min_seconds": 4.602766,
+          "max_seconds": 4.854071,
+          "population_stdev_seconds": 0.11014258161431797,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310280,
+            310056,
+            309948
+          ],
+          "response_bytes": [
+            227095,
+            227095,
+            227095
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "optimized": {
+          "samples_seconds": [
+            4.735838,
+            4.550013,
+            4.603354
+          ],
+          "median_seconds": 4.603354,
+          "min_seconds": 4.550013,
+          "max_seconds": 4.735838,
+          "population_stdev_seconds": 0.07812255554362442,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310264,
+            310140,
+            310068
+          ],
+          "response_bytes": [
+            227095,
+            227095,
+            227095
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        }
+      },
+      "observed_median_reduction_percent": 16.08029785101505,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    },
+    {
+      "workload": "64 historical / 65 scenario; 32 segments, 1024 gaps",
+      "kind": "boundary",
+      "revisions": {
+        "baseline": {
+          "samples_seconds": [
+            0.83792,
+            0.866686,
+            0.909634
+          ],
+          "median_seconds": 0.866686,
+          "min_seconds": 0.83792,
+          "max_seconds": 0.909634,
+          "population_stdev_seconds": 0.029467328906585516,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310040,
+            310156,
+            310192
+          ],
+          "response_bytes": [
+            222080,
+            222080,
+            222080
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "foundation": {
+          "samples_seconds": [
+            1.090029,
+            0.878011,
+            0.77287
+          ],
+          "median_seconds": 0.878011,
+          "min_seconds": 0.77287,
+          "max_seconds": 1.090029,
+          "population_stdev_seconds": 0.1319074142832346,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310280,
+            310056,
+            309948
+          ],
+          "response_bytes": [
+            222080,
+            222080,
+            222080
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        },
+        "optimized": {
+          "samples_seconds": [
+            0.912202,
+            1.049875,
+            0.889725
+          ],
+          "median_seconds": 0.912202,
+          "min_seconds": 0.889725,
+          "max_seconds": 1.049875,
+          "population_stdev_seconds": 0.07079476829226543,
+          "temperature": "process-warm",
+          "peak_rss_kib": [
+            310264,
+            310140,
+            310068
+          ],
+          "response_bytes": [
+            222080,
+            222080,
+            222080
+          ],
+          "worker_released": true,
+          "source_files_unchanged": true
+        }
+      },
+      "observed_median_reduction_percent": -5.251728999891542,
+      "note": "Observed matched-fixture median difference; final runs follow baseline/foundation, host/thermal drift and run variance remain limitations."
+    }
+  ]
+}
