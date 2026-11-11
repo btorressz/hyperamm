@@ -1,0 +1,152 @@
+{
+  "status": "PASS",
+  "fixture_notice": "Generated synthetic PAPER evidence, no exchange authentication",
+  "environment": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "python": "3.12.14",
+    "logical_cpus": 3
+  },
+  "cases": [
+    {
+      "historical_frames": 1000,
+      "scenario_frames": 1001,
+      "source_observations": 1001,
+      "segments": 1,
+      "issues": 1,
+      "omitted_issues": 0,
+      "modeled": false,
+      "worker_seconds": 11.150926,
+      "serialization_seconds": 0.003344,
+      "response_bytes": 405414,
+      "scenario_trace_points": 250,
+      "historical_trace_points": 250,
+      "fills": "0",
+      "process_peak_rss_kib": 133776,
+      "previous_process_peak_rss_kib": 104488,
+      "worker_released": true,
+      "source_files_unchanged": true,
+      "declared_gaps": 0
+    },
+    {
+      "historical_frames": 4999,
+      "scenario_frames": 5000,
+      "source_observations": 5000,
+      "segments": 1,
+      "issues": 1,
+      "omitted_issues": 0,
+      "modeled": false,
+      "worker_seconds": 59.454718,
+      "serialization_seconds": 0.002529,
+      "response_bytes": 406191,
+      "scenario_trace_points": 250,
+      "historical_trace_points": 250,
+      "fills": "0",
+      "process_peak_rss_kib": 295672,
+      "previous_process_peak_rss_kib": 205180,
+      "worker_released": true,
+      "source_files_unchanged": true,
+      "declared_gaps": 0
+    },
+    {
+      "historical_frames": 64,
+      "scenario_frames": 65,
+      "source_observations": 96,
+      "segments": 32,
+      "issues": 32,
+      "omitted_issues": 0,
+      "modeled": false,
+      "worker_seconds": 0.541743,
+      "serialization_seconds": 0.000744,
+      "response_bytes": 91002,
+      "scenario_trace_points": 65,
+      "historical_trace_points": 2,
+      "fills": "0",
+      "process_peak_rss_kib": 295672,
+      "previous_process_peak_rss_kib": 295672,
+      "worker_released": true,
+      "selection_reruns": [
+        {
+          "segment_index": 31,
+          "seconds": 0.493364
+        },
+        {
+          "segment_index": 0,
+          "seconds": 0.514448
+        }
+      ],
+      "source_files_unchanged": true,
+      "declared_gaps": 31
+    },
+    {
+      "historical_frames": 4,
+      "scenario_frames": 5,
+      "source_observations": 1005,
+      "segments": 1,
+      "issues": 1001,
+      "omitted_issues": 901,
+      "modeled": false,
+      "worker_seconds": 0.251314,
+      "serialization_seconds": 0.000503,
+      "response_bytes": 53299,
+      "scenario_trace_points": 5,
+      "historical_trace_points": 4,
+      "fills": "0",
+      "process_peak_rss_kib": 295672,
+      "previous_process_peak_rss_kib": 295672,
+      "worker_released": true,
+      "source_files_unchanged": true,
+      "declared_gaps": 0
+    },
+    {
+      "historical_frames": 128,
+      "scenario_frames": 129,
+      "source_observations": 129,
+      "segments": 1,
+      "issues": 1,
+      "omitted_issues": 0,
+      "modeled": true,
+      "worker_seconds": 4.216564,
+      "serialization_seconds": 0.000939,
+      "response_bytes": 227095,
+      "scenario_trace_points": 129,
+      "historical_trace_points": 128,
+      "fills": "42",
+      "process_peak_rss_kib": 295672,
+      "previous_process_peak_rss_kib": 295672,
+      "worker_released": true,
+      "source_files_unchanged": true,
+      "declared_gaps": 0
+    },
+    {
+      "historical_frames": 64,
+      "scenario_frames": 65,
+      "source_observations": 96,
+      "segments": 32,
+      "declared_gaps": 1024,
+      "issues": 32,
+      "omitted_issues": 0,
+      "modeled": false,
+      "worker_seconds": 0.791473,
+      "serialization_seconds": 0.001692,
+      "response_bytes": 222080,
+      "scenario_trace_points": 65,
+      "historical_trace_points": 2,
+      "fills": "0",
+      "process_peak_rss_kib": 97392,
+      "previous_process_peak_rss_kib": 91364,
+      "worker_released": true,
+      "selection_reruns": [
+        {
+          "segment_index": 31,
+          "seconds": 0.718277
+        },
+        {
+          "segment_index": 0,
+          "seconds": 0.733182
+        }
+      ],
+      "source_files_unchanged": true
+    }
+  ],
+  "measurement_note": "First five cases share one process; maximum-gap case runs separately. RSS is cumulative process high-water, not isolated per-job memory."
+}

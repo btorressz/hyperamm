@@ -1,0 +1,478 @@
+FFFF......FF...FFFFF..............FFFFFFFFF........                      [100%]
+=================================== FAILURES ===================================
+_ test_untrusted_simulation_decimals_rejected_before_admission[1.25-initial_equity_quote] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d31154c0>, <app.runtime.HyperAmmRuntime object at 0x7fb9d3656420>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d30eeb40>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci0')
+field = 'initial_equity_quote', value = 1.25
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d30eedb0>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1.25-paper_initial_equity_quote] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d3115fd0>, <app.runtime.HyperAmmRuntime object at 0x7fb9d3116ed0>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d3117f80>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci1')
+field = 'paper_initial_equity_quote', value = 1.25
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d3117680>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1.25-paper_maker_fee_bps] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d27aa060>, <app.runtime.HyperAmmRuntime object at 0x7fb9d27aa870>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d27a9b50>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci2')
+field = 'paper_maker_fee_bps', value = 1.25
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d27a97f0>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1.25-paper_taker_fee_bps] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d2801c70>, <app.runtime.HyperAmmRuntime object at 0x7fb9d27ab9b0>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d27a9370>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci3')
+field = 'paper_taker_fee_bps', value = 1.25
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d27a8e30>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1E+1000000-initial_equity_quote] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d2801d60>, <app.runtime.HyperAmmRuntime object at 0x7fb9d2840cb0>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d28421e0>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci10')
+field = 'initial_equity_quote', value = '1E+1000000'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d28411c0>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1E+1000000-paper_initial_equity_quote] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d2803950>, <app.runtime.HyperAmmRuntime object at 0x7fb9d2840470>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d2842b40>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci11')
+field = 'paper_initial_equity_quote', value = '1E+1000000'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d2840f80>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-initial_equity_quote] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d27aba40>, <app.runtime.HyperAmmRuntime object at 0x7fb9d3116d80>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d3116b70>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci15')
+field = 'initial_equity_quote', value = '1E-1000000'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d3116990>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-paper_initial_equity_quote] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d1e78380>, <app.runtime.HyperAmmRuntime object at 0x7fb9d2800950>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d27aae40>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci16')
+field = 'paper_initial_equity_quote', value = '1E-1000000'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d27aa8d0>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-paper_maker_fee_bps] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d27ab3e0>, <app.runtime.HyperAmmRuntime object at 0x7fb9d3115f10>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d3117c20>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci17')
+field = 'paper_maker_fee_bps', value = '1E-1000000'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d3117fb0>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-paper_taker_fee_bps] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d27a8860>, <app.runtime.HyperAmmRuntime object at 0x7fb9d27abdd0>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d27aac90>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci18')
+field = 'paper_taker_fee_bps', value = '1E-1000000'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d27aacc0>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-max_capital_utilization] _
+
+comparison_client = (<starlette.testclient.TestClient object at 0x7fb9d28012e0>, <app.runtime.HyperAmmRuntime object at 0x7fb9d27a9a00>)
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d2801430>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_untrusted_simulation_deci19')
+field = 'max_capital_utilization', value = '1E-1000000'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9d2802990>
+
+    @pytest.mark.parametrize('field', ['initial_equity_quote', 'paper_initial_equity_quote',
+        'paper_maker_fee_bps', 'paper_taker_fee_bps', 'max_capital_utilization'])
+    @pytest.mark.parametrize('value', [1.25, True, '1E+1000000', '1E-1000000', 'NaN', 'Infinity'])
+    def test_untrusted_simulation_decimals_rejected_before_admission(comparison_client, vault, tmp_path, field, value, monkeypatch):
+        from app.main import app
+        client, _ = comparison_client
+        request = body(vault, tmp_path)
+        target = request['simulation'] if field == 'initial_equity_quote' else request['simulation'].setdefault('accounting', {})
+        target[field] = value
+        calls = []
+        async def unexpected(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('invalid decimal reached worker')
+        monkeypatch.setattr(app.state.simulation_executor, 'execute', unexpected)
+        response = client.post(URL, json=request)
+>       assert response.status_code == 422, response.text
+E       AssertionError: {"detail":"Historical replay unavailable"}
+E       assert 500 == 422
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+backend/tests/test_phase165d_acceptance.py:34: AssertionError
+_ test_bounded_exact_accounting_spelling_survives_request_roundtrip[12345.123456789123456789] _
+
+vault = <app.research_replay.storage.HistoricalStorage object at 0x7fb9d1e7bad0>
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-3/test_bounded_exact_accounting_4')
+value = '12345.123456789123456789'
+
+    @pytest.mark.parametrize('value', ['0', '-0', '0E+5', '1E-18', '12345.123456789123456789'])
+    def test_bounded_exact_accounting_spelling_survives_request_roundtrip(vault, tmp_path, value):
+        request = body(vault, tmp_path)
+        request['simulation']['accounting'] = {'paper_maker_fee_bps': value}
+        # Negative zero is valid for a nonnegative fee; capital remains positive.
+>       first = ScenarioHistoricalRequest.model_validate(request)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ScenarioHistoricalRequest
+E       simulation.accounting.paper_maker_fee_bps
+E         Input should be less than or equal to 10000 [type=less_than_equal, input_value='12345.123456789123456789', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.14/v/less_than_equal
+
+backend/tests/test_phase165d_acceptance.py:44: ValidationError
+____ test_rehashed_frame_counts_cannot_disagree_with_bound_source[scenario] ____
+
+native_response = ScenarioHistoricalResponse(version='phase165c2-v1', request=ScenarioHistoricalRequest(scenario=<ScenarioName.QUIET: 'Q...None, context_source_event_time_verified=False)), omitted_points=0, omission='NONE'), read_only=True, authority='NONE')
+side = 'scenario'
+
+    @pytest.mark.parametrize('side', ['scenario', 'historical_segment'])
+    def test_rehashed_frame_counts_cannot_disagree_with_bound_source(native_response, side):
+        receipt = native_response.receipt
+        row = receipt.rows[0]
+        row = row.model_copy(update={side: getattr(row, side).model_copy(update={'value': Decimal(5)})})
+        changed = receipt.model_copy(update={'rows': (row, *receipt.rows[1:]),
+            'risk_states': receipt.risk_states.model_copy(update={side: {'HALT': 5}})})
+        changed = changed.model_copy(update={'receipt_fingerprint': stable_fingerprint(changed.model_dump(exclude={'receipt_fingerprint'}))})
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:66: Failed
+_ test_rehashed_frame_counts_cannot_disagree_with_bound_source[historical_segment] _
+
+native_response = ScenarioHistoricalResponse(version='phase165c2-v1', request=ScenarioHistoricalRequest(scenario=<ScenarioName.QUIET: 'Q...None, context_source_event_time_verified=False)), omitted_points=0, omission='NONE'), read_only=True, authority='NONE')
+side = 'historical_segment'
+
+    @pytest.mark.parametrize('side', ['scenario', 'historical_segment'])
+    def test_rehashed_frame_counts_cannot_disagree_with_bound_source(native_response, side):
+        receipt = native_response.receipt
+        row = receipt.rows[0]
+        row = row.model_copy(update={side: getattr(row, side).model_copy(update={'value': Decimal(5)})})
+        changed = receipt.model_copy(update={'rows': (row, *receipt.rows[1:]),
+            'risk_states': receipt.risk_states.model_copy(update={side: {'HALT': 5}})})
+        changed = changed.model_copy(update={'receipt_fingerprint': stable_fingerprint(changed.model_dump(exclude={'receipt_fingerprint'}))})
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:66: Failed
+___ test_metric_receipts_cannot_expand_unbounded_decimal_strings[1E+1000000] ___
+
+value = '1E+1000000'
+
+    @pytest.mark.parametrize('value', ['1E+1000000', '1E-1000000', '9' * 121])
+    def test_metric_receipts_cannot_expand_unbounded_decimal_strings(value):
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:72: Failed
+___ test_metric_receipts_cannot_expand_unbounded_decimal_strings[1E-1000000] ___
+
+value = '1E-1000000'
+
+    @pytest.mark.parametrize('value', ['1E+1000000', '1E-1000000', '9' * 121])
+    def test_metric_receipts_cannot_expand_unbounded_decimal_strings(value):
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:72: Failed
+_ test_metric_receipts_cannot_expand_unbounded_decimal_strings[9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999] _
+
+value = '9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999'
+
+    @pytest.mark.parametrize('value', ['1E+1000000', '1E-1000000', '9' * 121])
+    def test_metric_receipts_cannot_expand_unbounded_decimal_strings(value):
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:72: Failed
+_______ test_selected_segment_metadata_must_match_receipt[frame_count-3] _______
+
+native_response = ScenarioHistoricalResponse(version='phase165c2-v1', request=ScenarioHistoricalRequest(scenario=<ScenarioName.QUIET: 'Q...None, context_source_event_time_verified=False)), omitted_points=0, omission='NONE'), read_only=True, authority='NONE')
+field = 'frame_count', value = 3
+
+    @pytest.mark.parametrize('field,value', [('frame_count', 3), ('window_start', '2025-01-01T00:00:00Z')])
+    def test_selected_segment_metadata_must_match_receipt(native_response, field, value):
+        raw = native_response.model_dump(mode='json')
+        raw['segments'][0][field] = value
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:80: Failed
+_ test_selected_segment_metadata_must_match_receipt[window_start-2025-01-01T00:00:00Z] _
+
+native_response = ScenarioHistoricalResponse(version='phase165c2-v1', request=ScenarioHistoricalRequest(scenario=<ScenarioName.QUIET: 'Q...None, context_source_event_time_verified=False)), omitted_points=0, omission='NONE'), read_only=True, authority='NONE')
+field = 'window_start', value = '2025-01-01T00:00:00Z'
+
+    @pytest.mark.parametrize('field,value', [('frame_count', 3), ('window_start', '2025-01-01T00:00:00Z')])
+    def test_selected_segment_metadata_must_match_receipt(native_response, field, value):
+        raw = native_response.model_dump(mode='json')
+        raw['segments'][0][field] = value
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:80: Failed
+___________ test_original_source_receipt_times_cannot_be_relabelled ____________
+
+native_response = ScenarioHistoricalResponse(version='phase165c2-v1', request=ScenarioHistoricalRequest(scenario=<ScenarioName.QUIET: 'Q...None, context_source_event_time_verified=False)), omitted_points=0, omission='NONE'), read_only=True, authority='NONE')
+
+    def test_original_source_receipt_times_cannot_be_relabelled(native_response):
+        raw = native_response.model_dump(mode='json')
+        raw['historical_trace']['source_times'][0]['book_received_at'] = '2025-01-01T00:00:00Z'
+        raw['historical_trace']['source_times'][0]['context_received_at'] = '2025-01-01T00:00:00Z'
+>       with pytest.raises(ValidationError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'pydantic_core._pydantic_core.ValidationError'>
+
+backend/tests/test_phase165d_acceptance.py:88: Failed
+=============================== warnings summary ===============================
+backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/hyperamm/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1.25-initial_equity_quote]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1.25-paper_initial_equity_quote]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1.25-paper_maker_fee_bps]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1.25-paper_taker_fee_bps]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1E+1000000-initial_equity_quote]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1E+1000000-paper_initial_equity_quote]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-initial_equity_quote]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-paper_initial_equity_quote]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-paper_maker_fee_bps]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-paper_taker_fee_bps]
+FAILED backend/tests/test_phase165d_acceptance.py::test_untrusted_simulation_decimals_rejected_before_admission[1E-1000000-max_capital_utilization]
+FAILED backend/tests/test_phase165d_acceptance.py::test_bounded_exact_accounting_spelling_survives_request_roundtrip[12345.123456789123456789]
+FAILED backend/tests/test_phase165d_acceptance.py::test_rehashed_frame_counts_cannot_disagree_with_bound_source[scenario]
+FAILED backend/tests/test_phase165d_acceptance.py::test_rehashed_frame_counts_cannot_disagree_with_bound_source[historical_segment]
+FAILED backend/tests/test_phase165d_acceptance.py::test_metric_receipts_cannot_expand_unbounded_decimal_strings[1E+1000000]
+FAILED backend/tests/test_phase165d_acceptance.py::test_metric_receipts_cannot_expand_unbounded_decimal_strings[1E-1000000]
+FAILED backend/tests/test_phase165d_acceptance.py::test_metric_receipts_cannot_expand_unbounded_decimal_strings[9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999]
+FAILED backend/tests/test_phase165d_acceptance.py::test_selected_segment_metadata_must_match_receipt[frame_count-3]
+FAILED backend/tests/test_phase165d_acceptance.py::test_selected_segment_metadata_must_match_receipt[window_start-2025-01-01T00:00:00Z]
+FAILED backend/tests/test_phase165d_acceptance.py::test_original_source_receipt_times_cannot_be_relabelled
+20 failed, 31 passed, 1 warning in 2.20s

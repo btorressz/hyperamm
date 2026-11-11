@@ -1,0 +1,83 @@
+PASS Actual BTC comparison, backend metrics, zero fills, unavailable metric, separate original charts, inspectable provenance, operational isolation
+PASS 1920/1440/1024/768/390 responsive layouts, chart resizing, wrapped fingerprints and decimal cells
+PASS Actual ETH and SOL comparisons
+PASS Multi-segment gap with explicit reset and validated selected-segment rerun
+PASS Actual modeled PAPER execution with explicit configuration differences
+PASS Cross-market INCOMPARABLE blocks financial metrics and traces
+PASS Pending market/dataset changes retire late real backend responses
+PASS Real 422 missing economics, 503 disabled vault, 429 single-worker busy errors
+PASS Labeled malformed-response fault probe fails closed
+PASS Frame edits hide stale metrics with captured retired identity
+PASS Keyboard form navigation and native disclosures
+PASS Unmount cancels HTTP waiter, worker capacity retained, remount has no stale result
+PASS Backend restart retires receipts; retained admitted evidence reproduces identity
+PASS Existing historical replay, scenario simulation and bounded optimizer still run
+PASS Existing Vault preset validation, captured accounting proposal, exact long Decimal strings and keyboard-readable mobile values
+{
+  "classification": "PASS",
+  "fixture_notice": "GENERATED FIXTURES / USER-ASSERTED RECORDED LABELS; NO AUTHENTICATED EXCHANGE HISTORY",
+  "workflows": [
+    "Actual BTC comparison, backend metrics, zero fills, unavailable metric, separate original charts, inspectable provenance, operational isolation",
+    "1920/1440/1024/768/390 responsive layouts, chart resizing, wrapped fingerprints and decimal cells",
+    "Actual ETH and SOL comparisons",
+    "Multi-segment gap with explicit reset and validated selected-segment rerun",
+    "Actual modeled PAPER execution with explicit configuration differences",
+    "Cross-market INCOMPARABLE blocks financial metrics and traces",
+    "Pending market/dataset changes retire late real backend responses",
+    "Real 422 missing economics, 503 disabled vault, 429 single-worker busy errors",
+    "Labeled malformed-response fault probe fails closed",
+    "Frame edits hide stale metrics with captured retired identity",
+    "Keyboard form navigation and native disclosures",
+    "Unmount cancels HTTP waiter, worker capacity retained, remount has no stale result",
+    "Backend restart retires receipts; retained admitted evidence reproduces identity",
+    "Existing historical replay, scenario simulation and bounded optimizer still run",
+    "Existing Vault preset validation, captured accounting proposal, exact long Decimal strings and keyboard-readable mobile values"
+  ],
+  "page_errors": [],
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "chart_count": 84
+    }
+  ],
+  "screenshots": [
+    "btc-context-and-traces-1440.png",
+    "comparison-1920.png",
+    "comparison-1440.png",
+    "comparison-1024.png",
+    "comparison-768.png",
+    "comparison-390.png",
+    "independent-gap-segment-2.png",
+    "market-incomparable.png",
+    "vault-exact-decimal-390.png"
+  ],
+  "browser_version": "151.0.7922.173",
+  "unexpected_console_errors": [],
+  "duration_seconds": 29.542
+}

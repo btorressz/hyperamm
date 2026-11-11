@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "market": "BTC",
+      "segment": 0,
+      "projected_metrics": 23,
+      "missing_vault_fields_remain_unavailable": 5,
+      "status": "PASS"
+    },
+    {
+      "market": "BTC",
+      "segment": 1,
+      "projected_metrics": 23,
+      "missing_vault_fields_remain_unavailable": 5,
+      "status": "PASS"
+    },
+    {
+      "market": "ETH",
+      "segment": 0,
+      "projected_metrics": 23,
+      "missing_vault_fields_remain_unavailable": 5,
+      "status": "PASS"
+    },
+    {
+      "market": "SOL",
+      "segment": 0,
+      "projected_metrics": 23,
+      "missing_vault_fields_remain_unavailable": 5,
+      "status": "PASS"
+    },
+    {
+      "market": "SOL",
+      "segment": 1,
+      "projected_metrics": 23,
+      "missing_vault_fields_remain_unavailable": 5,
+      "status": "PASS"
+    }
+  ]
+}

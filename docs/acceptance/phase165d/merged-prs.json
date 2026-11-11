@@ -1,0 +1,42 @@
+[
+  {
+    "number": 62,
+    "title": "Phase 16.5A.1 — Comparison Contracts & Provenance Foundation",
+    "merged": true,
+    "merge_commit_sha": "9d60af3b33663357dea0992dc3b1a4df3c93fd52",
+    "merged_at": "2026-11-07T10:33:06Z",
+    "url": "https://github.com/btorressz/hyperamm/pull/62"
+  },
+  {
+    "number": 63,
+    "title": "Phase 16.5A.2 — Comparison Provenance Integration & Native Acceptance",
+    "merged": true,
+    "merge_commit_sha": "e39a56815c1990cfd9423c6810456e15591b5478",
+    "merged_at": "2026-11-11T09:35:19Z",
+    "url": "https://github.com/btorressz/hyperamm/pull/63"
+  },
+  {
+    "number": 64,
+    "title": "Phase 16.5B — Provenance-Gated Quantitative Comparison Engine",
+    "merged": true,
+    "merge_commit_sha": "f918a4d4aae4794ab7a5bf71b366f5f86832f836",
+    "merged_at": "2026-11-11T09:51:31Z",
+    "url": "https://github.com/btorressz/hyperamm/pull/64"
+  },
+  {
+    "number": 65,
+    "title": "Phase 16.5C.1 — Explainability & React Comparison Studio",
+    "merged": true,
+    "merge_commit_sha": "756954ad6efbc9e8ad5ee75a18ce80f619a3c1af",
+    "merged_at": "2026-11-11T10:04:20Z",
+    "url": "https://github.com/btorressz/hyperamm/pull/65"
+  },
+  {
+    "number": 66,
+    "title": "Phase 16.5C.2 — Scenario/Historical Comparison Integration & UI Hardening",
+    "merged": true,
+    "merge_commit_sha": "ff71a8610dbbd2850f830f8595160ef74203d7d0",
+    "merged_at": "2026-11-11T10:38:13Z",
+    "url": "https://github.com/btorressz/hyperamm/pull/66"
+  }
+]
