@@ -174,12 +174,19 @@ export function HistoryChart({
     chart = useRef<IChartApi | null>(null),
     series = useRef(new Map<string, SeriesEntry>()),
     fitted = useRef<string | null>(null);
-  const evidence = useRef({ points, lines }),
+  const revision = useMemo(
+    () => ({ points, lines, axis, fitKey }), [points, lines, axis, fitKey],
+  );
+  const evidence = useRef(revision),
     [tooltip, setTooltip] = useState<{
+      revision: typeof revision;
       time: string;
       values: Array<[string, string]>;
     } | null>(null);
-  evidence.current = { points, lines };
+  evidence.current = revision;
+  // A data/configuration revision retires the previous hover synchronously,
+  // including live updates that retain the same run/fit key.
+  const currentTooltip = tooltip?.revision === revision ? tooltip : null;
   // Rebuild indexes and chart coordinates only when source data or axes change.
   // Tooltip state changes never require a fresh projection of all frames.
   const observationIndex = useMemo(
@@ -243,6 +250,7 @@ export function HistoryChart({
         return;
       }
       setTooltip({
+        revision: evidence.current,
         time:
           axis === "frame"
             ? `Frame ${p.sequence} · ${evidenceTime(p.timestamp)}`
@@ -267,6 +275,7 @@ export function HistoryChart({
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
+    setTooltip(null);
     reconcileSeries(c, series.current, lines);
     for (const { line, data } of plotted) {
       const entry = series.current.get(line.key);
@@ -275,7 +284,6 @@ export function HistoryChart({
     if (needsFit(fitted.current, fitKey, hasPlottedValues)) {
       c.timeScale().fitContent();
       fitted.current = fitKey;
-      setTooltip(null);
     }
   }, [plotted, lines, fitKey, height, axis, hasPlottedValues]);
   return (
@@ -309,10 +317,10 @@ export function HistoryChart({
         }
       />
       <div className="chartReadout" aria-live="off">
-        {tooltip ? (
+        {currentTooltip ? (
           <>
-            <time>{tooltip.time}</time>
-            {tooltip.values.map(([label, value]) => (
+            <time>{currentTooltip.time}</time>
+            {currentTooltip.values.map(([label, value]) => (
               <span key={label}>
                 {label}: <b>{value}</b>
               </span>

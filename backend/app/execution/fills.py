@@ -38,6 +38,10 @@ class OrderHistory(dict):
 
     def prune(self):
         # Only closed, unpinned rows count toward the retention allowance.
+        # The eligible subset cannot exceed the entire closed set. Below this
+        # bound no row can be evicted, regardless of pin/active status.
+        if len(self._closed) <= self.limit:
+            return
         eligible = [cid for cid, order in self._closed.items()
                     if order.status not in ACTIVE_STATUSES and not self.pinned(cid)]
         for cid in eligible[:-self.limit]:

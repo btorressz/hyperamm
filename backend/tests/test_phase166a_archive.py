@@ -16,10 +16,11 @@ from test_phase165a2_integration import pair, vault
 
 @pytest.mark.parametrize("market", ["BTC", "ETH", "SOL"])
 @pytest.mark.parametrize("modeled", [False, True])
+@pytest.mark.parametrize("kind", ["complete", "gap"])
 async def test_archive_bytes_and_fingerprints_preserve_legacy_behavior(
-    vault, tmp_path, market, modeled,
+    vault, tmp_path, market, modeled, kind,
 ):
-    scenario, historical = await pair(vault, tmp_path, market=market, modeled=modeled)
+    scenario, historical = await pair(vault, tmp_path, market=market, modeled=modeled, kind=kind)
     original = historical.model_dump_json()
     assert historical.segments
     for segment in historical.segments:

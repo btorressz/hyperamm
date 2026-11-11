@@ -1,0 +1,30 @@
+{
+  "base_commit": "0662dd77345ee55f973a65d232ea8e2cc07ee6b5",
+  "warnings": ["Starlette/httpx deprecation; unchanged", "Vite production chunk-size advisory; unchanged", "Unavailable Node-test browser storage; unchanged"],
+  "optional_skip": "tests/test_agent_expansion.py:406 optional scikit-learn training; dependency absent",
+  "performance_result": "Measured bulk median improvements; maximum-gap median slower; no peak-memory improvement established.",
+  "acceptance": "PASS for bounded local deterministic PAPER research; external source authenticity/licensing/macOS gates remain open.",
+  "source_snapshot_commit": "05d1218894a59d88dab841a91bf9d2dc6f916851",
+  "cleanup_verification": {"status": "PASS", "executed_at": "2026-11-11T08:43:33.227438-08:00", "source_before_cleanup": "05d1218894a59d88dab841a91bf9d2dc6f916851", "implementation_and_tests_unchanged": true, "focused_backend": {"passed": 243, "failed": 0, "warnings": 1, "seconds": 80.83, "includes": "Original 240-test selection plus test_audit_terminal_contract.py (3 tests)"}, "frontend": {"typecheck": "PASS", "build": "PASS", "tests_passed": 704, "tests_failed": 0}, "fresh_parity": {"cases_per_revision": 16, "complete_baseline_equals_final": true, "all_case_digests_match_retained_manifest": true}, "evidence_checks": ["6 JSON files parse", "all benchmark times/RSS/bytes match original projection", "all min/median/max recomputed", "Markdown and browser screenshot links resolve", "4 original PNG byte hashes match", "git diff --check"], "not_rerun": {"full_backend": "NOT RUN", "chromium": "NOT RUN", "long_benchmarks": "NOT RUN", "complete_cprofile": "NOT RUN", "npm_ci": "NOT RUN; existing unchanged-lockfile dependencies used"}, "scope": "Documentation/evidence only; original accepted results are historical, not these cleanup reruns."},
+  "original_runs": [
+    {"stage": "initial", "focused": {"passed": 145, "failed": 0, "warnings": 1}, "backend": {"passed": 2475, "failed": 1, "skipped": 1, "warnings": 1, "seconds": 161.8, "failure": "test_generated_terminal_schema_is_current"}, "frontend": {"passed": 704, "failed": 0, "typecheck": "PASS", "build": "PASS", "npm_ci": "PASS after workspace cache retry"}, "chromium": {"workflows": 21, "classification": "PASS", "page_errors": 0, "unexpected_console_errors": 0}},
+    {"stage": "accepted", "implementation_commit": "c60690093a60e95dac5fdac2bb98c98e143b59f8", "focused": {"passed": 240, "failed": 0, "warnings": 1, "seconds": 74.61}, "backend": {"passed": 2490, "failed": 0, "skipped": 1, "warnings": 1, "seconds": 148.75}, "frontend": {"passed": 704, "failed": 0, "npm_ci": "PASS", "typecheck": "PASS", "build": "PASS"}, "chromium": {"classification": "PASS", "workflows": 23, "page_errors": 0, "unexpected_console_errors": 0, "unexpected_network_failures": 0, "chart_component_console_errors": 0, "viewport_widths": [1920, 1440, 1024, 768, 390], "duration_seconds": 73.972}}
+  ],
+  "original_gates": [
+    {"gate": "archive_bytes_and_fingerprints", "status": "PASS"},
+    {"gate": "baseline_and_modeled_equivalence", "status": "PASS"},
+    {"gate": "btc_eth_sol_regression", "status": "PASS"},
+    {"gate": "scenario_determinism", "status": "PASS"},
+    {"gate": "historical_segment_identity", "status": "PASS"},
+    {"gate": "comparison_provenance", "status": "PASS"},
+    {"gate": "financial_integrity", "status": "PASS"},
+    {"gate": "profiling_instrumentation", "status": "PASS"},
+    {"gate": "comparable_benchmarks", "status": "PASS"},
+    {"gate": "frontend_chart_semantics", "status": "PASS"},
+    {"gate": "frontend_typecheck_build_tests", "status": "PASS"},
+    {"gate": "chromium_integration", "status": "PASS"},
+    {"gate": "single_worker_cancellation", "status": "PASS"},
+    {"gate": "operational_isolation", "status": "PASS"},
+    {"gate": "full_backend_regression", "status": "PASS"}
+  ]
+}
