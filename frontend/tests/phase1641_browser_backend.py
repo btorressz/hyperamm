@@ -37,6 +37,10 @@ async def lifespan(application):
     for m in MARKETS:
         for kind in ('complete','gap','generation','missing','crossing'):
             if f'{m}-{kind}-fixture' not in vault.list_ids():admit(vault,WORK/'incoming',dataset(kind,m))
+    if os.environ.get('PHASE165D_LARGE_FIXTURES') == '1':
+        from phase165d_fixtures import bounded_dataset
+        generated = bounded_dataset(1000)
+        if generated.dataset_id not in vault.list_ids():admit(vault,WORK/'incoming',generated)
     async with original(application):
         application.state.historical_replay_root=str(WORK/'vault')
         yield

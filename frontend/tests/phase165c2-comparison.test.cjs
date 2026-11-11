@@ -31,6 +31,21 @@ test('streaming response budget rejects declared and chunked oversized bodies',a
  await assert.rejects(()=>client.readHistoricalJson(new Response(stream),1000000));
  await assert.rejects(()=>client.readHistoricalJson(new Response('{'),1000000));
 });
+test('receipt windows and original source clocks reject malformed or substituted metadata',()=>{
+ for(const mutate of [
+ r=>r.segments[0].frame_count=3,
+ r=>r.segments[0].window_start='2025-01-01T00:00:00Z',
+ r=>r.segments[0].window_end='invalid',
+ r=>r.segments[0].reset_reason='CONTINUOUS_PROFIT',
+ r=>r.historical_trace.source_times[0].book_received_at='not-a-time',
+ r=>r.historical_trace.source_times[0].context_received_at='not-a-time',
+ r=>r.historical_trace.source_times[0].book_source_timestamp='not-a-time',
+ r=>r.historical_trace.source_times[0].context_source_timestamp='not-a-time',
+ r=>{r.historical_trace.source_times[0].book_received_at='2025-01-01T00:00:00Z';
+     r.historical_trace.source_times[0].context_received_at='2025-01-01T00:00:00Z'},
+ r=>r.scenario_trace.source_times=structuredClone(r.historical_trace.source_times),
+ ]){const r=clone();mutate(r);assert.throws(()=>check.checkedComparisonResponse(r,fixture.request));}
+});
 test('typed API sends captured request, no-store and AbortSignal; strict receipt parsing',async()=>{
  const old=global.fetch,controller=new AbortController();
  global.fetch=async(url,init)=>{

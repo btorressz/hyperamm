@@ -48,6 +48,8 @@ const hash = (v: unknown): v is string => typeof v === 'string' && SHA.test(v);
 const safeInt = (v: unknown, min: number, max: number): v is number =>
   typeof v === 'number' && Number.isSafeInteger(v) && v >= min && v <= max;
 const text = (v: unknown, max = 500): v is string => typeof v === 'string' && v.length <= max;
+const timestamp = (v: unknown): v is string => text(v,70) &&
+  /(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v));
 const textArray = (v: unknown, max = 100): v is string[] =>
   Array.isArray(v) && v.length <= max && v.every(x => text(x, 500));
 const assert: (p: unknown, message: string) => asserts p = (p, message) => {
@@ -217,17 +219,22 @@ export function checkedComparisonResponse(raw:unknown, request:import('../types/
   };
   assert(contains(raw.request,request),'stale captured request');
   assert(f.scenario.market===request.research_market&&f.historical.market===request.historical.market&&
+    f.scenario.frame_count===request.frames&&
     f.historical.original_dataset_fingerprint===request.historical.dataset_fingerprint&&
     receipt.selected_segment_index===request.segment_index,'request/source identity');
   assert(safeInt(raw.segment_count,1,32)&&Array.isArray(raw.segments)&&raw.segments.length===raw.segment_count&&
     f.historical.replay_segment_count===raw.segment_count,'segment selection metadata');
   raw.segments.forEach((s,i)=>assert(isObject(s)&&s.segment_index===i&&safeInt(s.frame_count,2,5000)&&
     hash(s.dataset_fingerprint)&&hash(s.run_fingerprint)&&hash(s.simulation_result_fingerprint)&&
-    text(s.reset_reason,80)&&text(s.window_start,70)&&text(s.window_end,70),'segment identity'));
+    ['WINDOW_START','DECLARED_GAP','OBSERVER_CHANGE','RECEIPT_INTERVAL','UNAVAILABLE_FRAME'].includes(String(s.reset_reason))&&
+    timestamp(s.window_start)&&timestamp(s.window_end)&&receiptTime(s.window_end)>receiptTime(s.window_start),'segment identity'));
   const selected=raw.segments[request.segment_index] as Record<string,unknown>;
   assert(selected&&selected.run_fingerprint===f.historical.run_fingerprint&&
     selected.dataset_fingerprint===f.historical.engine_dataset_fingerprint&&
-    selected.simulation_result_fingerprint===f.historical.simulation_result_fingerprint,'selected archive');
+    selected.simulation_result_fingerprint===f.historical.simulation_result_fingerprint&&
+    selected.frame_count===f.historical.frame_count&&
+    receiptTime(String(selected.window_start))===receiptTime(f.historical.window_start!)&&
+    receiptTime(String(selected.window_end))===receiptTime(f.historical.window_end!),'selected archive');
   assert(isObject(raw.provenance)&&raw.provenance.dataset_fingerprint===request.historical.dataset_fingerprint&&
     raw.provenance.source_authenticated===false&&raw.provenance.licensing_independently_verified===false&&
     raw.provenance.source_kind===f.historical.source_kind&&
@@ -252,11 +259,14 @@ export function checkedComparisonResponse(raw:unknown, request:import('../types/
         assert(text(p[field],80),'trace state');
       previous=p.sequence;previousTime=p.timestamp;
     }
-    assert(key!=='historical_trace'||t.source_times.length===t.points.length,'original source time coverage');
+    assert(t.source_times.length===(key==='historical_trace'?t.points.length:0),'original source time coverage');
     t.source_times.forEach((v,i)=>assert(isObject(v)&&v.sequence===(t.points as Record<string,unknown>[])[i].sequence&&
-      text(v.book_received_at,70)&&text(v.context_received_at,70)&&
-      (v.book_source_timestamp===null||text(v.book_source_timestamp,70))&&
-      (v.context_source_timestamp===null||text(v.context_source_timestamp,70))&&
+      timestamp(v.book_received_at)&&timestamp(v.context_received_at)&&
+      (v.book_source_timestamp===null||timestamp(v.book_source_timestamp))&&
+      (v.context_source_timestamp===null||timestamp(v.context_source_timestamp))&&
+      (receiptTime(v.book_received_at)>receiptTime(v.context_received_at)
+        ?receiptTime(v.book_received_at):receiptTime(v.context_received_at))===
+        receiptTime(String((t.points as Record<string,unknown>[])[i].timestamp))&&
       typeof v.book_source_event_time_verified==='boolean'&&typeof v.context_source_event_time_verified==='boolean','source times'));
   }
   return raw as unknown as import('../types/scenarioReplayComparison').ScenarioHistoricalResponse;

@@ -14,10 +14,11 @@ async def main(args):
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     work=ROOT/'work/browser165c2';work.mkdir(parents=True,exist_ok=True)
     report={'classification':'FAIL','fixture_notice':'GENERATED FIXTURES / USER-ASSERTED RECORDED LABELS; NO AUTHENTICATED EXCHANGE HISTORY',
-        'workflows':[],'page_errors':[],'console_errors':[],'requests':[],'viewports':[],'screenshots':[]}
+        'workflows':[],'page_errors':[],'console_errors':[],'requests':[],'viewports':[],'screenshots':[], 'comparison_measurements':[]}
     env={**os.environ,'MARKET_DATA_MODE':'DEMO','EXECUTION_MODE':'PAPER','ENABLE_HYPERLIQUID_TESTNET_ORDERS':'false',
         'LIVE_OBSERVATIONS_ENABLED':'false','LIVE_STREAMS_ENABLED':'false','REDIS_ENABLED':'false',
         'PHASE1641_FIXTURE_ROOT':tempfile.mkdtemp(prefix='vaults-',dir=work)}
+    if args.phase165d:env['PHASE165D_LARGE_FIXTURES']='1'
     logs=[(work/'backend.log').open('w'),(work/'vite.log').open('w')];processes=[];started=time.monotonic()
     def backend():
         proc=subprocess.Popen([args.python,'-m','uvicorn','phase1641_browser_backend:app','--app-dir',str(ROOT/'frontend/tests'),
@@ -80,6 +81,7 @@ async def main(args):
             await enabled()
         async def run(expected=200):
             await enabled()
+            started_request=time.perf_counter()
             count=await page.evaluate('window.__comparisonResponses.length')
             async with page.expect_response(lambda r:r.url.endswith(URL) and r.request.method=='POST') as wait:
                 await studio.get_by_role('button',name='Run Scenario / Historical Comparison',exact=True).click()
@@ -88,6 +90,8 @@ async def main(args):
                 while await page.evaluate('window.__comparisonResponses.length')<=count:await asyncio.sleep(.02)
             value=await page.evaluate('window.__comparisonResponses.at(-1).value')
             if expected==200:await studio.get_by_role('heading',name='Research pairing status',exact=True).wait_for()
+            report['comparison_measurements'].append(dict(status=expected,seconds=round(time.perf_counter()-started_request,6),
+                response_bytes=int(response.headers.get('content-length','0'))))
             return value
         async def shot(name):
             await studio.scroll_into_view_if_needed();await page.screenshot(path=str(out/name),full_page=True);report['screenshots'].append(name)
@@ -113,6 +117,11 @@ async def main(args):
             widths=await studio.locator('.researchChart canvas').evaluate_all('(nodes)=>nodes.map(n=>n.getBoundingClientRect().width)')
             assert all(0<w<=width for w in widths),widths
             await shot(f'comparison-{width}.png');report['viewports'].append({'width':width,'height':height,'overflow':False,'chart_count':len(widths)})
+            if args.phase165d:
+                for name,region in [('metrics','PAPER metrics — two separate evidence paths'),('equity','Simulated equity')]:
+                    filename=f'{name}-{width}.png'
+                    await studio.get_by_role('region',name=region,exact=True).first.screenshot(path=str(out/filename))
+                    report['screenshots'].append(filename)
         await page.set_viewport_size({'width':1440,'height':900})
         passed('1920/1440/1024/768/390 responsive layouts, chart resizing, wrapped fingerprints and decimal cells')
         for market in ('ETH','SOL'):
@@ -218,6 +227,74 @@ async def main(args):
         assert await page.evaluate('document.documentElement.scrollWidth<=document.documentElement.clientWidth+1')
         await shot('vault-exact-decimal-390.png')
         passed('Existing Vault preset validation, captured accounting proposal, exact long Decimal strings and keyboard-readable mobile values')
+        if args.phase165d:
+            await page.set_viewport_size({'width':1440,'height':900})
+            # Labeled same-session connection-state fault probe: the actual
+            # completed receipt must stay retired after returning to its old key.
+            await page.evaluate("async()=>{const m=await import('/src/stores/terminal.ts');m.useTerminalStore.getState().setWsState('disconnected')}")
+            await studio.get_by_text('Retired result:',exact=False).wait_for()
+            await page.evaluate("async()=>{const m=await import('/src/stores/terminal.ts');m.useTerminalStore.getState().setWsState('connected')}")
+            await asyncio.sleep(.15)
+            assert not await studio.get_by_role('heading',name='Research pairing status',exact=True).count()
+            passed('Labeled same-process connection transition probe permanently retires completed evidence')
+            await select()
+            # Rapid repeated DOM clicks exercise the synchronous admission ref.
+            await control(delay=.2)
+            before_count=await page.evaluate('window.__comparisonResponses.length')
+            await studio.get_by_role('button',name='Run Scenario / Historical Comparison',exact=True).evaluate('(b)=>{b.click();b.click();b.click()}')
+            await studio.get_by_role('heading',name='Research pairing status',exact=True).wait_for()
+            assert await page.evaluate('window.__comparisonResponses.length')==before_count+1
+            await control(delay=0)
+            passed('Three synchronous submit clicks admit exactly one comparison request')
+            # Input round-trips may not revive an old completed result.
+            for label,value in [('Scenario frames','5'),('Scenario frames','4'),('Order latency','1'),('Order latency','0')]:
+                if label=='Order latency':
+                    await studio.get_by_role('combobox',name='Execution model',exact=True).select_option('MODELED_CROSSING')
+                await studio.get_by_role('spinbutton',name=label,exact=True).fill(value)
+                assert not await studio.get_by_role('heading',name='Research pairing status',exact=True).count()
+            await studio.get_by_role('combobox',name='Execution model',exact=True).select_option('BASELINE')
+            await select('ETH');await select('BTC')
+            assert not await studio.get_by_role('heading',name='Research pairing status',exact=True).count()
+            passed('Frame, execution, dataset and market round-trips cannot resurrect retired evidence')
+            await select(kind='crossing');await control(fixture_reference_firewall=False)
+            await studio.get_by_role('combobox',name='Execution model',exact=True).select_option('MODELED_CROSSING')
+            await studio.get_by_role('spinbutton',name='Order latency',exact=True).fill('1')
+            authority_before=(await status())['authority'];r=await run()
+            assert authority_before==(await status())['authority']
+            assert int(next(x for x in r['receipt']['rows'] if x['name']=='fill_count')['historical_segment']['value'])>0
+            assert not __import__('json').loads(r['receipt']['foundation']['historical']['captured']['canonical_json'])['risk']['enabled']
+            await control(fixture_reference_firewall=True)
+            passed('Actual modeled historical fills bind explicitly preconfigured research risk and preserve authority')
+            await studio.get_by_role('combobox',name='Execution model',exact=True).select_option('BASELINE')
+            await select()
+            await studio.get_by_role('combobox',name='Historical dataset',exact=True).select_option('phase165d-1000-1-0-0')
+            await studio.get_by_role('spinbutton',name='Scenario frames',exact=True).fill('1000')
+            await studio.get_by_role('spinbutton',name='Maximum frames',exact=True).fill('1000')
+            await studio.get_by_role('spinbutton',name='Component age allowance',exact=True).fill('1000')
+            large=await run()
+            assert len(large['historical_trace']['points'])==120 and large['historical_trace']['omitted_points']==880
+            browser_metrics=await page.evaluate('''async()=>{
+                const gaps=[];let previous=performance.now();
+                for(let i=0;i<30;i++){await new Promise(requestAnimationFrame);const now=performance.now();gaps.push(now-previous);previous=now}
+                return {max_animation_frame_ms:Math.max(...gaps),heap_used_bytes:performance.memory?.usedJSHeapSize??null,
+                    heap_limit_bytes:performance.memory?.jsHeapSizeLimit??null,chart_count:document.querySelectorAll('.srcWorkspace canvas').length};
+            }''')
+            report['large_browser_measurement']=browser_metrics
+            assert browser_metrics['chart_count']>=12
+            await studio.get_by_role('region',name='PAPER metrics — two separate evidence paths',exact=True).screenshot(path=str(out/'large-metrics-1440.png'))
+            report['screenshots'].append('large-metrics-1440.png')
+            await shot('large-comparison-1000.png')
+            passed('Actual 1000-frame comparison renders bounded 120-point charts with measured heap and animation frames')
+            async def malformed_clock(route):
+                response=await route.fetch();value=await response.json()
+                value['historical_trace']['source_times'][0]['book_received_at']='not-a-time'
+                await route.fulfill(response=response,json=value)
+            await page.route('**'+URL,malformed_clock)
+            await enabled();await studio.get_by_role('button',name='Run Scenario / Historical Comparison',exact=True).click()
+            await studio.get_by_role('alert').filter(has_text='rejected').wait_for()
+            assert not await studio.get_by_role('heading',name='Research pairing status',exact=True).count()
+            await page.unroute('**'+URL)
+            passed('Labeled malformed original source-clock response probe fails closed')
         assert not report['page_errors'],report['page_errors']
         report['unexpected_console_errors']=[e for e in report['console_errors'] if not any(token in e for token in ('WebSocket','status of 404','status of 422','status of 429','status of 503','status of 500','ERR_CONNECTION_REFUSED'))]
         assert not report['unexpected_console_errors'],report['unexpected_console_errors']
@@ -235,4 +312,5 @@ async def main(args):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--python',default=str(ROOT/'backend/.venv/bin/python'))
     p.add_argument('--chromium',default='/usr/bin/chromium');p.add_argument('--output',default=str(ROOT/'docs/acceptance/phase165c2'))
+    p.add_argument('--phase165d',action='store_true',help='Run additional hardening and bounded large-render acceptance')
     asyncio.run(main(p.parse_args()))
