@@ -19,37 +19,93 @@
   "packages_sha256": "f4b1570dcc32a79a7ac51524ee9bbf5c06d6cb34ec0ac1fb013a33ce89719e01",
   "lockfile_sha256": "ae2b8c07d27435e1e38da651e23b1445de3d1573d68f268885599d1c07126f61",
   "measurement_policy": "Serial benchmark processes; no simultaneous tests/browser/other benchmark workload. Filesystem and CPU caches not flushed. First worker job process/thread cold; subsequent independent jobs warm. Cumulative RSS includes imports/setup/earlier jobs. No allocator peak claim.",
-  "checkout_sources": {
-    "baseline": {
-      "backend/tests/phase165d_performance.py": "edb51c872be1259b10723dc3627b6e4367477a71b1f9e741e3403b200407f4d1",
-      "backend/tests/phase165d_fixtures.py": "e918de815a85fb910109edade3c14428fc2fc3cc66c5668422b1f604dc83876c",
-      "backend/app/simulation/engine.py": "49bbfd96dd75330c44f9603e3ebc5ddc6f35a0648c4f63d924513f717c19854b",
-      "backend/app/accounting/service.py": "71ec06fe9f33d5b05a780cbf6ec3aaeb18665c5c65d680637f74c9451d0ff3ed",
-      "backend/app/execution/paper.py": "2f98a5bd4133f4906f0282e9d87b7bb60644addc2572cda3cfbf9e81d909f8c3",
-      "backend/app/execution/fills.py": "af34920aadb63679af78970f3daa5c1b7d196a48b2f034881941d62270cfebe5"
-    },
-    "optimized": {
-      "backend/tests/phase165d_performance.py": "edb51c872be1259b10723dc3627b6e4367477a71b1f9e741e3403b200407f4d1",
-      "backend/tests/phase165d_fixtures.py": "e918de815a85fb910109edade3c14428fc2fc3cc66c5668422b1f604dc83876c",
-      "backend/app/simulation/engine.py": "49bbfd96dd75330c44f9603e3ebc5ddc6f35a0648c4f63d924513f717c19854b",
-      "backend/app/accounting/service.py": "71ec06fe9f33d5b05a780cbf6ec3aaeb18665c5c65d680637f74c9451d0ff3ed",
-      "backend/app/execution/paper.py": "2f98a5bd4133f4906f0282e9d87b7bb60644addc2572cda3cfbf9e81d909f8c3",
-      "backend/app/execution/fills.py": "4cdf4af7d45c6e1218975370a550bae7bf819c874b806c646dc8bc3360dc32ea"
-    },
-    "foundation": {
-      "backend/tests/phase165d_performance.py": "edb51c872be1259b10723dc3627b6e4367477a71b1f9e741e3403b200407f4d1",
-      "backend/tests/phase165d_fixtures.py": "e918de815a85fb910109edade3c14428fc2fc3cc66c5668422b1f604dc83876c",
-      "backend/app/simulation/engine.py": "49bbfd96dd75330c44f9603e3ebc5ddc6f35a0648c4f63d924513f717c19854b",
-      "backend/app/accounting/service.py": "71ec06fe9f33d5b05a780cbf6ec3aaeb18665c5c65d680637f74c9451d0ff3ed",
-      "backend/app/execution/paper.py": "2f98a5bd4133f4906f0282e9d87b7bb60644addc2572cda3cfbf9e81d909f8c3",
-      "backend/app/execution/fills.py": "af34920aadb63679af78970f3daa5c1b7d196a48b2f034881941d62270cfebe5"
-    }
-  },
   "foundation_commit": "0662dd77345ee55f973a65d232ea8e2cc07ee6b5",
   "optimized_commit": "c60690093a60e95dac5fdac2bb98c98e143b59f8",
   "common_harness_sha256": {
     "backend/tests/phase166a_profile.py": "4af8f7b007a058d5c8b2d42742a4640896e9ecec6593a97ceec7dc1dcb3b8919",
     "backend/tests/phase166a_near_limit.py": "bb6ec7ee0acbb2a252b9b14342efbdd9e26b4e335c03bde4515df9a127bb4f98"
   },
-  "terminal_schema_sha256": "50412e182282e9431f6992a6009d0e001278f702b196561b5b7a8ed603d9f351"
+  "terminal_schema_sha256": "50412e182282e9431f6992a6009d0e001278f702b196561b5b7a8ed603d9f351",
+  "python_freeze": [
+    "annotated-doc==0.0.5",
+    "annotated-types==0.8.0",
+    "anyio==4.15.1",
+    "bitarray==3.11.0",
+    "certifi==2026.7.22",
+    "charset-normalizer==3.5.2",
+    "ckzg==2.1.8",
+    "click==8.5.0",
+    "cytoolz==1.1.0",
+    "eth-account==0.13.7",
+    "eth-hash==0.8.0",
+    "eth-keyfile==0.8.1",
+    "eth-keys==0.8.0",
+    "eth-rlp==3.0.0",
+    "eth-typing==6.0.0",
+    "eth-utils==5.3.1",
+    "eth_abi==6.0.0",
+    "fakeredis==2.40.0",
+    "fastapi==0.142.2",
+    "greenlet==3.5.6",
+    "h11==0.16.0",
+    "hexbytes==2.0.0",
+    "httpcore==1.0.9",
+    "httptools==0.8.0",
+    "httpx==0.28.1",
+    "-e git+https://github.com/btorressz/hyperamm.git@0662dd77345ee55f973a65d232ea8e2cc07ee6b5#egg=hyperamm&subdirectory=backend",
+    "hyperliquid-python-sdk==0.24.0",
+    "idna==3.20",
+    "iniconfig==2.3.0",
+    "lupa==2.8",
+    "msgpack==1.2.3",
+    "numpy==2.5.3",
+    "opentelemetry-api==1.45.0",
+    "packaging==26.3",
+    "parsimonious==0.10.0",
+    "playwright==1.65.0",
+    "pluggy==1.6.0",
+    "pycryptodome==3.23.0",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "pydantic_core==2.46.5",
+    "Pygments==2.21.0",
+    "pytest==8.4.2",
+    "pytest-asyncio==0.26.0",
+    "python-dotenv==1.2.4",
+    "PyYAML==6.0.3",
+    "redis==8.1.0",
+    "regex==2026.9.29",
+    "requests==2.34.2",
+    "rlp==5.0.0",
+    "sortedcontainers==2.4.0",
+    "starlette==1.7.0",
+    "toolz==1.1.0",
+    "typing-inspection==0.4.4",
+    "typing_extensions==4.16.0",
+    "urllib3==2.8.0",
+    "uvicorn==0.54.0",
+    "uvloop==0.23.0",
+    "watchfiles==1.3.0",
+    "websocket-client==1.9.2",
+    "websockets==15.0.1"
+  ],
+  "source_snapshot_commit": "05d1218894a59d88dab841a91bf9d2dc6f916851",
+  "common_checkout_sources": {
+    "backend/tests/phase165d_performance.py": "edb51c872be1259b10723dc3627b6e4367477a71b1f9e741e3403b200407f4d1",
+    "backend/tests/phase165d_fixtures.py": "e918de815a85fb910109edade3c14428fc2fc3cc66c5668422b1f604dc83876c",
+    "backend/app/simulation/engine.py": "49bbfd96dd75330c44f9603e3ebc5ddc6f35a0648c4f63d924513f717c19854b",
+    "backend/app/accounting/service.py": "71ec06fe9f33d5b05a780cbf6ec3aaeb18665c5c65d680637f74c9451d0ff3ed",
+    "backend/app/execution/paper.py": "2f98a5bd4133f4906f0282e9d87b7bb60644addc2572cda3cfbf9e81d909f8c3"
+  },
+  "revision_specific_sources": {
+    "baseline": {
+      "backend/app/execution/fills.py": "af34920aadb63679af78970f3daa5c1b7d196a48b2f034881941d62270cfebe5"
+    },
+    "optimized": {
+      "backend/app/execution/fills.py": "4cdf4af7d45c6e1218975370a550bae7bf819c874b806c646dc8bc3360dc32ea"
+    },
+    "foundation": {
+      "backend/app/execution/fills.py": "af34920aadb63679af78970f3daa5c1b7d196a48b2f034881941d62270cfebe5"
+    }
+  }
 }

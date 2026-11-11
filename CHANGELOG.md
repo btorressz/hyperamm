@@ -24,6 +24,7 @@ The history covers **all 60 merged pull requests (#1–#60)** and the separately
 - **Observed medians:** Matched 1,000-frame jobs fell from 12.400s to 11.118s (10.3%); 4,999 historical / 5,000 scenario jobs fell from 68.603s to 59.373s (13.5%). The maximum-gap stress case was 5.3% slower by median; distributions, chronological run limitations and that tradeoff are explicit. No peak-memory saving is established.
 - **Executed acceptance:** 240 focused / 2,490 full backend tests passed (one optional ML skip); frontend typecheck/build and 704 tests passed; 23 Chromium workflow groups passed at five widths.
 - **Evidence:** Hardened call-site instrumentation, real worker-thread cProfile, repeated clean-checkout measurements, stage/response/RSS evidence and native regression/Chromium results are recorded in [Phase 16.6A acceptance](docs/PHASE166A_ACCEPTANCE.md). Final measured distributions distinguish the original foundation from the additional retention optimization; no universal latency or memory guarantee is claimed.
+- **Review footprint:** The acceptance report is authoritative; six compact manifests retain all benchmark wall-time samples, 16-case exact digest parity, stage/top-bottleneck observations, environment and validation/browser summaries. Four original screenshots remain. Full generated logs/function listings/result dumps are locally regenerable; the maximum-gap slowdown remains explicit. Implementation and test scripts are unchanged by this cleanup.
 
 ### Phase 16.5D — Final Acceptance, Security Hardening & Regression
 
