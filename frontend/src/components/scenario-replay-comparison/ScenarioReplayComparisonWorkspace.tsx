@@ -45,6 +45,9 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
     vault.draftVersion,vault.evidenceEpoch,vault.useForResearch,vault.lastValidatedFingerprint]);
   const latest=useRef({inputKey,session});latest.current={inputKey,session};
   const invalidate=()=>{epoch.current++;setError('');setLocalReceipt(null);setSegmentIndex(0)};
+  // A connection/input transition permanently retires evidence, including a
+  // reconnect to the same process. Returning to the old key cannot revive it.
+  useEffect(()=>{epoch.current++;setLocalReceipt(null);setSegmentIndex(0)},[inputKey,session]);
   useEffect(()=>()=>{epoch.current++;controller.current?.abort()},[]);
   const current=!!response&&response.epoch===epoch.current&&response.key===inputKey&&response.session===session&&response.data.receipt.selected_segment_index===segmentIndex;
   const selectionCurrent=!!response&&response.epoch===epoch.current&&response.key===inputKey&&response.session===session;

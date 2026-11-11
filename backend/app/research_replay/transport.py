@@ -102,6 +102,9 @@ class ComparisonTrace(Evidence):
             raise ValueError("trace points must be independent ordered original frames")
         if self.source_times and tuple(p.sequence for p in self.points) != tuple(p.sequence for p in self.source_times):
             raise ValueError("trace source time identity mismatch")
+        if any(point.timestamp != max(source.book_received_at, source.context_received_at)
+               for point, source in zip(self.points, self.source_times)):
+            raise ValueError("trace evaluation must use original receipt clock")
         return self
 
 
@@ -138,11 +141,21 @@ class ScenarioHistoricalResponse(Evidence):
                 f.historical.market != self.request.historical.market or
                 f.historical.replay_segment_count != self.segment_count):
             raise ValueError("comparison selected inputs mismatch")
+        if self.request.segment_index >= len(self.segments):
+            raise ValueError("comparison selected segment unavailable")
         selected = self.segments[self.request.segment_index]
         if any(getattr(selected, key) != getattr(f.historical, other) for key, other in (
             ("dataset_fingerprint", "engine_dataset_fingerprint"), ("run_fingerprint", "run_fingerprint"),
             ("simulation_result_fingerprint", "simulation_result_fingerprint"))):
             raise ValueError("selected archive identity mismatch")
+        if (selected.frame_count != f.historical.frame_count or
+                selected.window_start != f.historical.window_start or
+                selected.window_end != f.historical.window_end or
+                self.provenance.source_kind != f.historical.source_kind or
+                sum(s.frame_count for s in self.segments) > self.request.historical.max_frames or
+                len(self.historical_trace.source_times) != len(self.historical_trace.points) or
+                self.scenario_trace.source_times):
+            raise ValueError("selected segment coverage mismatch")
         for trace, side in ((self.scenario_trace, f.scenario), (self.historical_trace, f.historical)):
             if (trace.run_fingerprint != side.run_fingerprint or trace.dataset_fingerprint != side.engine_dataset_fingerprint or
                     trace.simulation_result_fingerprint != side.simulation_result_fingerprint or trace.frame_count != side.frame_count or

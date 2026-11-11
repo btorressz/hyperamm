@@ -4,9 +4,9 @@
 
 ---
 
-## Current project status — November 5, 2026
+## Current project status — November 11, 2026
 
-**HyperAMM now includes merged implementations through Phase 16.4 ([PR #60](https://github.com/btorressz/hyperamm/pull/60))**, not just the original Phases 1–12. It remains a local, single-operator, research-focused Hyperliquid virtual AMM / CLOB market-making system with default DEMO/PAPER, separately guarded TESTNET, and no production mainnet, custody or money movement.
+**HyperAMM includes merged implementations through Phase 16.5C.2 ([PR #66](https://github.com/btorressz/hyperamm/pull/66))**. Phase 16.5D's independent acceptance is recorded in [the final report](docs/PHASE165D_ACCEPTANCE.md). It remains a local, single-operator research system with default DEMO/PAPER, separately guarded TESTNET, and no production mainnet, custody or money movement.
 
 | Scope | Merged implementation | Acceptance boundary |
 | --- | --- | --- |
@@ -16,12 +16,13 @@
 | Phases 16.1A–16.1B | Strict historical provenance and source/gap contracts, bounded JSON import, private owner-only POSIX vault | Native-recording and permission claims are user assertions, not verified licenses |
 | Phase 16.2 | Deterministic receipt-ordered historical replay, segment resets, explicit missing-economics rejection | No inferred complete market history |
 | Phase 16.3 | Opt-in hypothetical crossing latency, slippage, retained-depth/participation and partial fills | No proof of actual exchange fills, queue priority or network latency |
-| Phase 16.4 | Historical Replay Studio within Simulation & Optimization: dataset selection, playback, charts/order book, provenance, independent PAPER performance and baseline comparison | **Merged, but native Python/Node, TypeScript/build, full regression and Chromium acceptance were not reported** |
-| Phases 16.5–16.6 and 17 | Scenario comparison, final hardening, shared-capital multi-market research | Planned; not merged |
+| Phases 16.4–16.4.1 | Historical Replay Studio with bounded provenance, independent segments and acceptance hardening | Native/frontend/Chromium evidence recorded after the original feature merge |
+| Phases 16.5A–16.5C.2 | Same-job scenario capture, descriptive quantitative receipts, bounded comparison API and React Studio | Merged; independent final hardening and gate statuses in the Phase 16.5D report |
+| Phases 16.6 and 17 | Further adversarial acceptance and shared-capital multi-market research | Planned; not merged |
 
 **Architecture separation:** Operational market feeds → AMM/strategy → agents → RiskFirewall → FinalQuoteAuthorization → PAPER/guarded TESTNET is authoritative. Phase 15 independent native observations are **read-only**. Phase 16 uses only explicitly admitted **local research evidence** and the existing one-slot `SimulationExecutor` for hypothetical PAPER analysis; it never submits exchange orders, grants signing authority or changes operational strategy. Operational terminal history remains bounded and in-memory, while Phase 16's *separate* historical vault holds selected validated local datasets.
 
-**Source and test truth:** Native-recorded labels, source timestamps, rights and SHA-256 identifiers do not establish authenticated exchange history, license rights, continuous market coverage or real execution. Phase 15.5B recorded 1,916 backend + 652 frontend passes and 47 controlled Chromium workflows, but genuine external access was proxy-blocked. Phase 16.3 recorded 376 focused passes and 2,244 backend passes with **3 reproduced baseline-only static failures and 1 optional skip**; this was not a green full suite. Phase 16.4 has new tests but no recorded native/build/browser acceptance.
+**Source and test truth:** Native-recorded labels, timestamps, rights and SHA-256 identifiers do not establish authenticated exchange history, licensed use, continuous coverage or real execution. Historical Phase 15/16 test counts and external limitations remain in their original reports. Current independently executed counts, static-failure disposition and remaining gates are recorded in [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md).
 
 See [README.md](README.md), [CODEBASE.md](CODEBASE.md), [CHANGELOG.md](CHANGELOG.md), [15.5B acceptance](docs/PHASE155B_ACCEPTANCE.md), and [16.4 acceptance](docs/PHASE164_ACCEPTANCE.md). The original detailed Phase 1–12 discussion below is retained as a historical engineering narrative, not the current feature cutoff.
 

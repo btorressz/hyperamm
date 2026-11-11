@@ -1,0 +1,75 @@
+{
+  "starting_main_commit": "ff71a8610dbbd2850f830f8595160ef74203d7d0",
+  "core_implementation_commit": "26d6b6d7338731c98f9d7c95665cb23423211b81",
+  "final_implementation_commit": "07c131615c55fbd28a2f5f19cbd7a9f52367dba2",
+  "disposition": "PHASE 16.5 LOCAL RESEARCH ACCEPTANCE: PASS",
+  "fixture_notice": "Generated deterministic PAPER fixtures; no independently authenticated exchange history, source rights or live execution.",
+  "baseline": {
+    "focused_backend": {
+      "passed": 148
+    },
+    "full_backend": {
+      "passed": 2395,
+      "failed": 3,
+      "skipped": 1
+    },
+    "frontend": {
+      "passed": 698
+    },
+    "chromium_groups": 15
+  },
+  "final": {
+    "focused_backend": {
+      "passed": 148,
+      "failed": 0
+    },
+    "hardening_backend": {
+      "passed": 71,
+      "failed": 0
+    },
+    "full_backend": {
+      "passed": 2469,
+      "failed": 0,
+      "skipped": 1
+    },
+    "frontend": {
+      "passed": 699,
+      "failed": 0
+    },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "chromium_groups": 21,
+    "screenshots": 21
+  },
+  "gates": {
+    "comparison_contracts": "PASS",
+    "same_job_capture": "PASS",
+    "historical_provenance": "PASS",
+    "quantitative_metrics": "PASS",
+    "comparability_restrictions": "PASS",
+    "http_boundary": "PASS",
+    "single_worker": "PASS",
+    "cancellation_shutdown": "PASS",
+    "operational_isolation": "PASS",
+    "dataset_segment_isolation": "PASS",
+    "frontend": "PASS",
+    "chromium": "PASS",
+    "responsive_ui": "PASS",
+    "full_backend": "PASS",
+    "bounded_performance": "PASS"
+  },
+  "external_gates": {
+    "exchange_authenticity": "BLOCKED",
+    "source_licensing": "BLOCKED",
+    "macos_native_external": "BLOCKED",
+    "real_redis_server": "NOT RUN",
+    "live_trading_signing": "NOT RUN"
+  },
+  "optional_skip": "Optional sklearn ML training dependency not installed.",
+  "baseline_static_failures": {
+    "resolved": true,
+    "change": "One excluded-scope documentation wording correction; all three security checks unchanged."
+  },
+  "performance_cases": 6,
+  "evidence_notice": "Failed setup/development/invocation attempts are retained separately from final passing outputs."
+}

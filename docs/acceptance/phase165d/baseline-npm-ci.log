@@ -1,0 +1,109 @@
+npm warn tarball tarball data for typescript@https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz (sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for fdir@https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz (sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for react@https://registry.npmjs.org/react/-/react-19.3.0.tgz (sha512-E8LUcbtBWt20bbl2YoHfx4ZDBdxVTfOKtCZn9cDSJ4l6/nuoApcpIBcj47t2wZoVX8g2ZHuMHbiShgCR1T5Sog==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for vite@https://registry.npmjs.org/vite/-/vite-7.3.6.tgz (sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for scheduler@https://registry.npmjs.org/scheduler/-/scheduler-0.28.0.tgz (sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for tinyglobby@https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.17.tgz (sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for nanoid@https://registry.npmjs.org/nanoid/-/nanoid-3.3.19.tgz (sha512-Y2tUNy4ouw6tq5oDSKeQYGOyhkUBhNOcGV/02KC+6kd9eDGqdZd++mjMiIDilrBYvjEnCYvVtsuHCuP+okSfug==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for zustand@https://registry.npmjs.org/zustand/-/zustand-5.0.15.tgz (sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for react-dom@https://registry.npmjs.org/react-dom/-/react-dom-19.3.0.tgz (sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for lightweight-charts@https://registry.npmjs.org/lightweight-charts/-/lightweight-charts-5.2.1.tgz (sha512-IVwoK1RLFiLPubaKIjNbtjWLnpPMqiABSrTay6whmNa8L1+19292VtHJ+BWyPUuLCwF0tcQlhEWd1CLB2a1nsQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for picomatch@https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz (sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for source-map-js@https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz (sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for postcss@https://registry.npmjs.org/postcss/-/postcss-8.5.28.tgz (sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for picocolors@https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz (sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for rollup@https://registry.npmjs.org/rollup/-/rollup-4.64.0.tgz (sha512-gjA/kFeDfffII8COoPsvLPvE16hWDTEc1+0QKQNKUkuV8iJjqsC4xXs8/FzuL0v9EV39kuxTbAgcFoTRyy2TGQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for esbuild@https://registry.npmjs.org/esbuild/-/esbuild-0.28.2.tgz (sha512-HKVLS8dvII+xoKW9kmqxbRKrnWEXfJJr/FZhhJmiqIB0e053QNYFqOBouTMO/k5sID4MvCiUCvv8b9M4h32wIA==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for fancy-canvas@https://registry.npmjs.org/fancy-canvas/-/fancy-canvas-2.1.0.tgz (sha512-nifxXJ95JNLFR2NgRV4/MxVP45G9909wJTEKz5fg/TZS20JJZA6hfgRVh/bC9bwl2zBtBNcYPjiBE4njQHVBwQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @esbuild/linux-x64@https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.28.2.tgz (sha512-4xTZr1FUmSoQW4XIWmit3tzQrUTZM+N3P0XV8xROKYF50XfI7xeO90+1bZvNwxIufQ9hDQVRJH5YhgPVF8A/HQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @rollup/rollup-linux-x64-gnu@https://registry.npmjs.org/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.64.0.tgz (sha512-2dEF8GAcDKwshUfydD+GhosppNyBzhVUHkdFF3CXd3FpOkzj/RZzF5aoEtzklujklT5qFVRU2GK/cFeLaTNKVg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for vite@https://registry.npmjs.org/vite/-/vite-7.3.6.tgz (sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @types/estree@https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz (sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for csstype@https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz (sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @types/react@https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz (sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @types/react-dom@https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz (sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @tanstack/query-core@https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.104.1.tgz (sha512-TiRghcrGkUTE+M4JBxvpPSpBhxvIzQairw+cksrHYGr+2uwC77yW1SY9nYxnYRYOppvucf8rEg6b5byoz4rTpw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @tanstack/react-query@https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.104.1.tgz (sha512-Zz70EgjahNI7aCz8BZxM3vUGU44ycxEAzMuCUjLeA7SVhhOkg3ZgPjPJPvHjs6Rmky/dtmnu1WzjGHNHmhCoZQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for typescript@https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz (sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @napi-rs/lzma-linux-x64-gnu@https://registry.npmjs.org/@napi-rs/lzma-linux-x64-gnu/-/lzma-linux-x64-gnu-1.5.1.tgz (sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for fdir@https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz (sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for scheduler@https://registry.npmjs.org/scheduler/-/scheduler-0.28.0.tgz (sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for react@https://registry.npmjs.org/react/-/react-19.3.0.tgz (sha512-E8LUcbtBWt20bbl2YoHfx4ZDBdxVTfOKtCZn9cDSJ4l6/nuoApcpIBcj47t2wZoVX8g2ZHuMHbiShgCR1T5Sog==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for zustand@https://registry.npmjs.org/zustand/-/zustand-5.0.15.tgz (sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for picomatch@https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz (sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @rollup/rollup-linux-x64-musl@https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.64.0.tgz (sha512-3XHTvoo2hKkh0MiOfS7SkhHjMaaWF7P4F3drocZZaho/Z8w7h/jpnuBHm91BOQLfvrKHs1yR+zir4E8RI3XzTQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for react-dom@https://registry.npmjs.org/react-dom/-/react-dom-19.3.0.tgz (sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for source-map-js@https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz (sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for fancy-canvas@https://registry.npmjs.org/fancy-canvas/-/fancy-canvas-2.1.0.tgz (sha512-nifxXJ95JNLFR2NgRV4/MxVP45G9909wJTEKz5fg/TZS20JJZA6hfgRVh/bC9bwl2zBtBNcYPjiBE4njQHVBwQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for nanoid@https://registry.npmjs.org/nanoid/-/nanoid-3.3.19.tgz (sha512-Y2tUNy4ouw6tq5oDSKeQYGOyhkUBhNOcGV/02KC+6kd9eDGqdZd++mjMiIDilrBYvjEnCYvVtsuHCuP+okSfug==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for tinyglobby@https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.17.tgz (sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for picocolors@https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz (sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for postcss@https://registry.npmjs.org/postcss/-/postcss-8.5.28.tgz (sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @types/estree@https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz (sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for rollup@https://registry.npmjs.org/rollup/-/rollup-4.64.0.tgz (sha512-gjA/kFeDfffII8COoPsvLPvE16hWDTEc1+0QKQNKUkuV8iJjqsC4xXs8/FzuL0v9EV39kuxTbAgcFoTRyy2TGQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @esbuild/linux-x64@https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.28.2.tgz (sha512-4xTZr1FUmSoQW4XIWmit3tzQrUTZM+N3P0XV8xROKYF50XfI7xeO90+1bZvNwxIufQ9hDQVRJH5YhgPVF8A/HQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for lightweight-charts@https://registry.npmjs.org/lightweight-charts/-/lightweight-charts-5.2.1.tgz (sha512-IVwoK1RLFiLPubaKIjNbtjWLnpPMqiABSrTay6whmNa8L1+19292VtHJ+BWyPUuLCwF0tcQlhEWd1CLB2a1nsQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for esbuild@https://registry.npmjs.org/esbuild/-/esbuild-0.28.2.tgz (sha512-HKVLS8dvII+xoKW9kmqxbRKrnWEXfJJr/FZhhJmiqIB0e053QNYFqOBouTMO/k5sID4MvCiUCvv8b9M4h32wIA==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @types/react@https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz (sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @rollup/rollup-linux-x64-gnu@https://registry.npmjs.org/@rollup/rollup-linux-x64-gnu/-/rollup-linux-x64-gnu-4.64.0.tgz (sha512-2dEF8GAcDKwshUfydD+GhosppNyBzhVUHkdFF3CXd3FpOkzj/RZzF5aoEtzklujklT5qFVRU2GK/cFeLaTNKVg==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for csstype@https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz (sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @types/react-dom@https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz (sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @tanstack/query-core@https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.104.1.tgz (sha512-TiRghcrGkUTE+M4JBxvpPSpBhxvIzQairw+cksrHYGr+2uwC77yW1SY9nYxnYRYOppvucf8rEg6b5byoz4rTpw==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @napi-rs/lzma-linux-x64-gnu@https://registry.npmjs.org/@napi-rs/lzma-linux-x64-gnu/-/lzma-linux-x64-gnu-1.5.1.tgz (sha512-oTXEIha4SsuXdTA4Iyskj0kpdx2yVXdhd75c2v3xGrHFfVMsbhTPZU/nMPL4sWKo4pBHm3aucLaqGlF696dTyQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @tanstack/react-query@https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.104.1.tgz (sha512-Zz70EgjahNI7aCz8BZxM3vUGU44ycxEAzMuCUjLeA7SVhhOkg3ZgPjPJPvHjs6Rmky/dtmnu1WzjGHNHmhCoZQ==) seems to be corrupted. Trying again.
+npm warn tarball tarball data for @rollup/rollup-linux-x64-musl@https://registry.npmjs.org/@rollup/rollup-linux-x64-musl/-/rollup-linux-x64-musl-4.64.0.tgz (sha512-3XHTvoo2hKkh0MiOfS7SkhHjMaaWF7P4F3drocZZaho/Z8w7h/jpnuBHm91BOQLfvrKHs1yR+zir4E8RI3XzTQ==) seems to be corrupted. Trying again.
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/lightweight-charts/dist'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, open '/workspace/hyperamm/frontend/node_modules/typescript/lib/_typingsInstaller.js'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/typescript/lib'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/typescript/lib'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/react-dom/cjs'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/typescript/lib'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/typescript/lib'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, open '/workspace/hyperamm/frontend/node_modules/@tanstack/react-query/build/legacy/infiniteQueryOptions.d.ts'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/typescript/lib'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/typescript/lib'
+npm warn cleanup Failed to remove some directories [
+npm warn cleanup   [
+npm warn cleanup     '/workspace/hyperamm/frontend/node_modules/@tanstack/react-query',
+npm warn cleanup     [Error: ENOTEMPTY: directory not empty, rmdir '/workspace/hyperamm/frontend/node_modules/@tanstack/react-query/build/legacy'] {
+npm warn cleanup       errno: -39,
+npm warn cleanup       code: 'ENOTEMPTY',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: '/workspace/hyperamm/frontend/node_modules/@tanstack/react-query/build/legacy'
+npm warn cleanup     }
+npm warn cleanup   ],
+npm warn cleanup   [
+npm warn cleanup     '/workspace/hyperamm/frontend/node_modules/@tanstack',
+npm warn cleanup     [Error: ENOTEMPTY: directory not empty, rmdir '/workspace/hyperamm/frontend/node_modules/@tanstack/query-core/build/legacy'] {
+npm warn cleanup       errno: -39,
+npm warn cleanup       code: 'ENOTEMPTY',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: '/workspace/hyperamm/frontend/node_modules/@tanstack/query-core/build/legacy'
+npm warn cleanup     }
+npm warn cleanup   ],
+npm warn cleanup   [
+npm warn cleanup     '/workspace/hyperamm/frontend/node_modules',
+npm warn cleanup     [Error: ENOTEMPTY: directory not empty, rmdir '/workspace/hyperamm/frontend/node_modules/@tanstack/query-core/build/legacy'] {
+npm warn cleanup       errno: -39,
+npm warn cleanup       code: 'ENOTEMPTY',
+npm warn cleanup       syscall: 'rmdir',
+npm warn cleanup       path: '/workspace/hyperamm/frontend/node_modules/@tanstack/query-core/build/legacy'
+npm warn cleanup     }
+npm warn cleanup   ]
+npm warn cleanup ]
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, lstat '/workspace/hyperamm/frontend/node_modules/typescript/lib'
+npm warn tar TAR_ENTRY_ERROR ENOENT: no such file or directory, open '/workspace/hyperamm/frontend/node_modules/@tanstack/react-query/build/codemods/utils/transformers/query-client-transformer.cjs'
+npm error code ENOENT
+npm error syscall mkdir
+npm error path /home/agent/.npm/_cacache
+npm error errno -2
+npm error enoent ENOENT: no such file or directory, mkdir '/home/agent/.npm/_cacache'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+npm error Log files were not written due to an error writing to the directory: /home/agent/.npm/_logs
+npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal

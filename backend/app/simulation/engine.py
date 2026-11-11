@@ -126,6 +126,11 @@ class SimulationEngine:
         async def simulation_authority():
             accounting.observe_execution_fills(paper.fills.all(), retired_count=paper.fills.retired_count,
                                                duplicate_fills=paper.fills.duplicate_pending(accounting))
+            if paper.fills.version != expected["fills"]:
+                # A fill during reconciliation retires the remaining quotes.
+                # The next existing frame regenerates risk and authorization;
+                # do not relabel stale quotes with the updated inventory.
+                return False
             if current_authorization is None or not current_authorization.authorized:
                 raise PermissionError("simulation FinalQuoteAuthorization is not authorized")
             if current_agent is None or current_risk is None or current_refs is None:
@@ -248,6 +253,7 @@ class SimulationEngine:
             current_refs=refs
             current_quotes=authorized
             expected={
+                "fills":paper.fills.version,
                 "market":history.version,"inventory":inventory.version,"perp":frame.perp_context.version,
                 "reference":refs.version,"agent":agent_decision.version,"risk":risk_decision.version,
                 "agent_fingerprint":agent_decision.fingerprint,

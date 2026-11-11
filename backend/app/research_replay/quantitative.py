@@ -85,6 +85,8 @@ class MetricObservation(Evidence):
     def no_float_or_nonfinite(cls, value):
         if isinstance(value, (float, bool)):
             raise ValueError("floating-point or boolean financial evidence is forbidden")
+        if isinstance(value, str) and len(value) > 120:
+            raise ValueError("metric decimal exceeds wire bound")
         return value
 
     @model_validator(mode="after")
@@ -93,6 +95,9 @@ class MetricObservation(Evidence):
             raise ValueError("metric availability and value disagree")
         if self.value is not None and not self.value.is_finite():
             raise ValueError("non-finite metric value")
+        if self.value is not None and (len(str(self.value)) > 120 or
+                not -999 <= self.value.as_tuple().exponent <= 999):
+            raise ValueError("metric decimal exceeds wire bound")
         return self
 
 
@@ -162,7 +167,8 @@ class QuantitativeComparison(Evidence):
             ):
                 count = next(row for row in self.rows if row.name == "frame_count")
                 value = getattr(count, name).value
-                if value is None or sum(counts.values()) != int(value):
+                side = self.foundation.scenario if name == "scenario" else self.foundation.historical
+                if value != side.frame_count or sum(counts.values()) != int(value):
                     raise ValueError("risk-state counts do not cover the engine frames")
         elif (self.display_policy != "BLOCKED" or self.rows or self.risk_states is not None):
             raise ValueError("incomparable sources must not emit paired financial metrics")

@@ -8,13 +8,22 @@ The history covers **all 60 merged pull requests (#1–#60)** and the separately
 
 - The repository began this recorded PR history at **Phase 4.1**; earlier Phase 1–4 foundation is not reconstructed from PR titles.
 - **Phases 15.1–15.5B are merged**, with substantial offline/fixture acceptance. **Final combined Phase 15 acceptance remains open**, particularly permitted genuine Hyperliquid delivery and independent macOS validation.
-- **Phases 16.1A–16.4 are merged**: historical evidence contracts, bounded import/storage, deterministic segmented replay, opt-in PAPER execution sensitivity, and the Historical Replay Studio. **The merged Phase 16.4 frontend/backend changes have not yet received reported native regression, build, or Chromium acceptance.** Phases 16.5–16.6 and Phase 17 remain future work.
+- **Phases 16.1A–16.5C.2 are merged** through PR #66: historical contracts/import/storage, segmented replay, hypothetical execution sensitivity, the Replay Studio, and provenance-bound scenario/historical comparison. Phase 16.4.1 and 16.5C.2 recorded native/frontend/Chromium runs. Phase 16.5D's independent final acceptance is documented below; Phase 16.6 and Phase 17 remain future work.
 - Phase 16 historical source, permission and timing labels are user assertions, not independently authenticated data rights or a complete historical market record. Replay and its hypothetical fills do not confer live trading authority.
 - HyperAMM defaults to **DEMO/PAPER**, with live public observation opt-in. Phase 15 market intelligence and research comparisons do not authorize execution.
 - Local fixture and Chromium acceptance **do not establish real Hyperliquid connectivity, U.S. access permission, market-data licensing, commercial deployment readiness, or real-trading performance**. Historical audit findings and environment-dependent gates are detailed in the phase acceptance and audit documents.
 - The current supported research/observation universe is **BTC-PERP, ETH-PERP, SOL-PERP**; existing operational strategy authority remains separate.
 
 ## Unreleased
+
+### Phase 16.5D — Final Acceptance, Security Hardening & Regression
+
+- **Security:** Bound exact accounting/simulation Decimal inputs before canonical expansion; reject binary financial floats and exponent bombs. Bind metric frame counts, selected segment coverage and original receipt clocks to their existing evidence.
+- **Correctness:** A synchronous PAPER fill retires the remaining frame's order submissions until fresh authorization on the next frame. Deferred CREATE actions are not reported as executed. Existing authority exceptions still fail closed.
+- **Frontend:** Validate source timestamps and segment windows; permanently retire results after connection transitions. Preserve separate metrics/traces and all comparability restrictions.
+- **Regression:** Resolve the three historical static failures by clarifying excluded-scope documentation; preserve historical counts and unchanged security checks. Record native, frontend, Chromium, responsive screenshots and measured bounded-dataset runs in [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md).
+- **Executed results:** Full backend **2,469 passed, 0 failed, 1 optional ML skip**; focused Phase 16.5 **148 passed** plus **71 new hardening cases**; frontend typecheck/build and **699 tests**; **21 Chromium workflow groups** at five widths. Local research acceptance passes; external gates below remain separate.
+- **Limits:** Local deterministic PAPER acceptance grants no trading authority; genuine exchange authenticity, source licensing and independent macOS acceptance remain separate gates.
 
 ### Phase 16.5C.2 — Scenario/Historical Comparison Integration & UI Hardening
 

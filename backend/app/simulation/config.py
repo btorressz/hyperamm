@@ -3,8 +3,8 @@ from __future__ import annotations
 from decimal import Decimal
 from enum import StrEnum
 
-from pydantic import BaseModel,ConfigDict,Field,model_validator
-from app.accounting.config import AccountingConfig
+from pydantic import BaseModel,ConfigDict,Field,field_validator,model_validator
+from app.accounting.config import AccountingConfig, bounded_exact_decimal
 from app.execution.research import PaperExecutionAssumptions
 
 
@@ -21,6 +21,11 @@ class SimulationConfig(BaseModel):
     fill_model:FillModel=FillModel.CROSSING_ONLY
     execution:PaperExecutionAssumptions=Field(default_factory=PaperExecutionAssumptions)
     accounting:AccountingConfig=Field(default_factory=AccountingConfig)
+
+    @field_validator('initial_equity_quote', mode='before')
+    @classmethod
+    def exact_capital(cls, value):
+        return bounded_exact_decimal(value)
 
     @model_validator(mode="after")
     def validate_values(self):

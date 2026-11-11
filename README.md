@@ -5,7 +5,7 @@
 
 > **Open source · active development · local/single-operator architecture.** This repository is an engineering and research project, **not** a production-ready trading service, investment product, custody system or verified profitable strategy. PAPER/DEMO is the default; TESTNET signing is separately guarded. No mainnet trading, withdrawal, transfer or bridging path is implemented.
 
-## Current project status — November 5, 2026
+## Current project status — November 11, 2026
 
 | Workstream | Merged implementation | Acceptance / boundary |
 | --- | --- | --- |
@@ -14,8 +14,9 @@
 | Read-only native market intelligence (Phases 15.1–15.5B, PRs #50–#55) | Official SDK REST/WS observation, L2/perp contexts, stream freshness, bounded history, provider health, observer lifecycle hardening | **Combined Phase 15 not closed:** genuine permitted venue connectivity, long soak and independent macOS acceptance outstanding |
 | Historical research contracts and importer (Phases 16.1A/B, PRs #56–#57) | Immutable provenance, bounded secure local JSON admission, owner-only POSIX evidence vault | Source/permission labels are user assertions; no authenticated historical-feed or license proof |
 | Deterministic replay and modeled PAPER execution (Phases 16.2–16.3, PRs #58–#59) | Receipt-ordered replay, explicit segment resets, missing-economics rejection, optional latency/slippage/depth/partial-fill sensitivity | No verified real fills, queue priority, market completeness or production forecast |
-| Historical Replay Studio (Phase 16.4, PR #60) | React dataset selector, frame navigation, historical book/chart views, per-segment metrics, baseline-versus-modeled comparisons | **Merged but native frontend/backend regression and Chromium acceptance not yet reported** |
-| Next (Phases 16.5–16.6, then 17) | Scenario/replay comparison, adversarial acceptance, then multi-market portfolio research | Planned; not implemented or accepted here |
+| Historical Replay Studio (Phases 16.4–16.4.1) | React dataset/frame navigation, original traces and independent segment accounting | Native/frontend/Chromium evidence recorded in the later acceptance phase |
+| Scenario/historical comparison (Phases 16.5A–C.2, PRs #62–#66) | Same-job capture, descriptive metrics, bounded API and React Comparison Studio | Independent final security/regression findings and local gates: [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md) |
+| Next (Phases 16.6, then 17) | Further adversarial acceptance, then multi-market portfolio research | Planned; not implemented or accepted here |
 
 The current **research and independent live-observation universe** is **BTC-PERP, ETH-PERP and SOL-PERP**. That does not expand the operational strategy market or permit switching live execution through the research UI. Operational market data, independent read-only observation and the historical PAPER replay vault are **three separate evidence paths**.
 
@@ -161,7 +162,7 @@ All HTTP paths below use the `/api/v1` prefix and assume a trusted **local** ope
 | Vault & terminal | `GET /vault`, `GET /accounting/pnl`, `GET /accounting/ledger`, `GET /terminal/history`, `GET /terminal/events` |
 | Simulation & research | `GET /simulation/scenarios`, `POST /simulation/run`, `POST /simulation/optimize`, `GET /research-markets`, `GET /research-vault/presets`, `POST /research-vault/compare`, `POST /research-market-comparison/compare` |
 | Native market observations | `GET /live-markets/overview`, `GET /live-markets/{market}/snapshot`, `GET /live-markets/{market}/stream-status`, `GET /live-markets/{market}/history`, `GET /live-markets/{market}/references` |
-| Historical replay | `GET /historical-replay/datasets`, `GET /historical-replay/dataset-summaries`, `GET /historical-replay/provenance?dataset_id=...`, `POST /historical-replay/run` |
+| Historical replay / comparison | `GET /historical-replay/datasets`, `GET /historical-replay/dataset-summaries`, `GET /historical-replay/provenance?dataset_id=...`, `POST /historical-replay/run`, `POST /research-comparison/scenario-historical` |
 
 Operational terminal WebSocket: `/ws/terminal`. The historical replay APIs execute isolated PAPER research; they are **not** exchange order or browser dataset-upload endpoints. See local `/docs` for the authoritative route schemas.
 
@@ -186,9 +187,9 @@ Normal backend tests exercise AMM/invariant math, inventory, quote validity, pro
 | Phase 16.3 · [PR #59](https://github.com/btorressz/hyperamm/pull/59) | 376 focused; full backend 2,244 passed / 3 failed / 1 skipped | Same baseline failures; hypothetical execution only |
 | Phase 16.4 · [PR #60](https://github.com/btorressz/hyperamm/pull/60) | New focused tests and acceptance plan committed | **No native Python/Node, TypeScript/build, full regression or Chromium run reported for this merged PR** |
 
-The three Phase 16.1B–16.3 baseline failures were static scans involving unchanged `docs/PHASE155B_ACCEPTANCE.md`; the one skip is optional ML training without scikit-learn. **Do not claim the full backend suite is green.** These are per-PR historical reports, not fresh tests for the current README update.
+The three Phase 16.1B–16.3 baseline failures were static scans involving historical wording in `docs/PHASE155B_ACCEPTANCE.md`; the skip is optional ML training without scikit-learn. These are per-PR historical reports. Phase 16.5D clarifies that wording without weakening the checks or rewriting historical results; current full-suite results are in [the independent acceptance report](docs/PHASE165D_ACCEPTANCE.md).
 
-Before releasing or treating Phase 16.4 as accepted, run native Python/Node suites, `npm run typecheck`, `npm run build`, `npm test`, actual Chromium replay/retirement/error-path acceptance, and independent operational isolation checks. Details: [16.4 acceptance plan](docs/PHASE164_ACCEPTANCE.md).
+Phase 16.4.1 and 16.5C.2 subsequently recorded native Python/Node, TypeScript/build, Chromium and operational isolation runs. Independent final security/regression review, current gate statuses and measured dataset bounds are in [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md).
 
 ## Safety and authority boundaries
 
@@ -206,7 +207,7 @@ Research-mode software is **not** production authorization. Phase 15's independe
 
 Live operating/reference data and TESTNET signing remain governed by the existing runtime and final risk authority; neither the historical Replay Studio nor the market-comparison UI can deploy a candidate. Optional Redis does not enable distributed execution, and accounting is a non-custodial in-memory operational/PAPER session ledger. The local historical evidence vault is **separate owner-only file storage**, not durable operational accounting.
 
-Phase 16.4 is **merged but acceptance-incomplete**. The next planned work is **16.5 scenario-vs-replay comparison, 16.6 adversarial acceptance**, and later **Phase 17 multi-market shared-capital portfolio research**. Do not equate a merged feature or historical test count with a fully validated deployment.
+Phase 16.5A–C.2 is merged through [PR #66](https://github.com/btorressz/hyperamm/pull/66): same-job scenario provenance, descriptive quantitative receipts, bounded comparison HTTP transport and the React Comparison Studio. See [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md) for independent local validation. Phase 16.6 and Phase 17 remain future work; local acceptance is separate from external venue, macOS and trading authorization.
 
 ### Audit informational boundaries (A1-024–A1-027)
 
@@ -232,11 +233,11 @@ Phase 16.4 is **merged but acceptance-incomplete**. The next planned work is **1
 
 ## Development milestones
 
-**Implemented/merged:** Phases 1–12 (core trading/research/terminal), 13–14.6 (institutional UX and customizable PAPER research), 15.1–15.5B (read-only native market intelligence and hardening), 16.1A–16.4 (historical research and Replay Studio).
+**Implemented/merged:** Phases 1–12 (core trading/research/terminal), 13–14.6 (institutional UX and customizable PAPER research), 15.1–15.5B (read-only native market intelligence and hardening), 16.1A–16.5C.2 (historical replay and scenario comparison).
 
-**Acceptance still required:** combined Phase 15 permitted live/macOS checks and Phase 16.4 native+browser integration checks.
+**Acceptance still required:** combined Phase 15 permitted live/macOS checks and independent exchange-source authenticity/licensing. Local Phase 16.5 gates are recorded in the D-phase report.
 
-**Planned:** Phase 16.5 comparative scenario-vs-history research, 16.6 final regression/security acceptance, then Phase 17 shared-capital BTC/ETH/SOL portfolio research. See [CHANGELOG.md](CHANGELOG.md) for merged work and [Phase 16 acceptance](docs/PHASE164_ACCEPTANCE.md) for outstanding gates.
+**Planned:** Phase 16.6 further adversarial acceptance, then Phase 17 shared-capital BTC/ETH/SOL portfolio research. See [CHANGELOG.md](CHANGELOG.md) and [final local acceptance](docs/PHASE165D_ACCEPTANCE.md).
 
 The detailed historical Phase 4–12 descriptions below document how the existing operational engine was built; they are preserved for technical context.
 

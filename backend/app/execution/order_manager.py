@@ -5,7 +5,7 @@ import hashlib
 import inspect
 from app.amm.models import QuoteLevel
 from .models import OrderRequest
-from .quote_reconciler import reconcile_quotes, ReconcileActionType
+from .quote_reconciler import reconcile_quotes, ReconcileAction, ReconcileActionType
 
 
 class OrderManager:
@@ -33,7 +33,7 @@ class OrderManager:
         actions = reconcile_quotes(desired, existing, price_tolerance_bps, size_tolerance)
         uncertain = any(o.status == "UNKNOWN" for o in existing)
         cancelled_ids = set()
-        for action in actions:
+        for index, action in enumerate(actions):
             if action.action in {ReconcileActionType.CANCEL, ReconcileActionType.REPLACE}:
                 await self.execution.cancel_orders([action.existing.client_order_id])
                 cancelled_ids.add(action.existing.client_order_id)
@@ -59,7 +59,16 @@ class OrderManager:
                 else:
                     check = self.authority(request.model_copy(deep=True))
                 if inspect.isawaitable(check):
-                    await check
+                    check = await check
+                if check is False:
+                    # Explicit conservative deferral: a synchronous PAPER fill
+                    # may retire this frame's authority. Never submit remaining
+                    # quotes under the old inventory/accounting snapshot.
+                    completed = actions[:index]
+                    if action.action == ReconcileActionType.REPLACE:
+                        completed = [*completed, ReconcileAction(action=ReconcileActionType.CANCEL,
+                                                               existing=action.existing)]
+                    return completed
                 await self.execution.submit_orders([request])
         return actions
 

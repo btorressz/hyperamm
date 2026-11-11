@@ -1,0 +1,97 @@
+{
+  "status": "FAIL",
+  "fixture_notice": "Generated synthetic PAPER evidence, no exchange authentication",
+  "environment": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "python": "3.12.14",
+    "logical_cpus": 3
+  },
+  "cases": [
+    {
+      "historical_frames": 1000,
+      "scenario_frames": 1001,
+      "source_observations": 1001,
+      "segments": 1,
+      "issues": 1,
+      "omitted_issues": 0,
+      "modeled": false,
+      "worker_seconds": 10.913733,
+      "serialization_seconds": 0.001751,
+      "response_bytes": 405414,
+      "scenario_trace_points": 250,
+      "historical_trace_points": 250,
+      "fills": "0",
+      "process_peak_rss_kib": 134432,
+      "previous_process_peak_rss_kib": 105304,
+      "worker_released": true,
+      "source_files_unchanged": true
+    },
+    {
+      "historical_frames": 4999,
+      "scenario_frames": 5000,
+      "source_observations": 5000,
+      "segments": 1,
+      "issues": 1,
+      "omitted_issues": 0,
+      "modeled": false,
+      "worker_seconds": 58.501773,
+      "serialization_seconds": 0.001721,
+      "response_bytes": 406191,
+      "scenario_trace_points": 250,
+      "historical_trace_points": 250,
+      "fills": "0",
+      "process_peak_rss_kib": 288572,
+      "previous_process_peak_rss_kib": 204128,
+      "worker_released": true,
+      "source_files_unchanged": true
+    },
+    {
+      "historical_frames": 64,
+      "scenario_frames": 65,
+      "source_observations": 96,
+      "segments": 32,
+      "issues": 32,
+      "omitted_issues": 0,
+      "modeled": false,
+      "worker_seconds": 0.505068,
+      "serialization_seconds": 0.000382,
+      "response_bytes": 91002,
+      "scenario_trace_points": 65,
+      "historical_trace_points": 2,
+      "fills": "0",
+      "process_peak_rss_kib": 288572,
+      "previous_process_peak_rss_kib": 288572,
+      "worker_released": true,
+      "selection_reruns": [
+        {
+          "segment_index": 31,
+          "seconds": 0.490664
+        },
+        {
+          "segment_index": 0,
+          "seconds": 0.489817
+        }
+      ],
+      "source_files_unchanged": true
+    },
+    {
+      "historical_frames": 4,
+      "scenario_frames": 5,
+      "source_observations": 1005,
+      "segments": 1,
+      "issues": 1001,
+      "omitted_issues": 901,
+      "modeled": false,
+      "worker_seconds": 0.293411,
+      "serialization_seconds": 0.000272,
+      "response_bytes": 53299,
+      "scenario_trace_points": 5,
+      "historical_trace_points": 4,
+      "fills": "0",
+      "process_peak_rss_kib": 288572,
+      "previous_process_peak_rss_kib": 288572,
+      "worker_released": true,
+      "source_files_unchanged": true
+    }
+  ]
+}

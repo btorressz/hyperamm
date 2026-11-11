@@ -192,7 +192,7 @@ PAPER seeded isolation and original full regressions preserve strategy economics
 reference consensus, risk/firewall, FinalQuoteAuthorization, order submission/
 cancellation authority, active operational market, inventory, capital reservations,
 accounting, manual kill and validated research configuration. No new markets,
-AMM curves, Pyth, mainnet, autonomous authority, Docker, PostgreSQL, Actions,
+AMM curves, additional oracle providers, mainnet, autonomous authority, Docker, PostgreSQL, Actions,
 historical replay engine, Phase 16 or Phase 17 work is introduced.
 
 **Ready for the combined Phase 15.5 review with offline evidence.** Before any

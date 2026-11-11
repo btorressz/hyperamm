@@ -1,0 +1,14 @@
+{
+  "classification": "FAIL",
+  "fixture_notice": "GENERATED FIXTURES / USER-ASSERTED RECORDED LABELS; NO AUTHENTICATED EXCHANGE HISTORY",
+  "workflows": [],
+  "page_errors": [],
+  "console_errors": [],
+  "requests": [],
+  "viewports": [],
+  "screenshots": [],
+  "comparison_measurements": [],
+  "browser_version": "151.0.7922.173",
+  "failure": "Error('Page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:5173/#/simulation\\nCall log:\\n  - navigating to \"http://127.0.0.1:5173/#/simulation\", waiting until \"load\"\\n')",
+  "duration_seconds": 5.801
+}

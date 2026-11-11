@@ -1,0 +1,105 @@
+/workspace/hyperamm/backend/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+{"historical_frames": 1000, "scenario_frames": 1001, "source_observations": 1001, "segments": 1, "issues": 1, "omitted_issues": 0, "modeled": false, "worker_seconds": 10.913733, "serialization_seconds": 0.001751, "response_bytes": 405414, "scenario_trace_points": 250, "historical_trace_points": 250, "fills": "0", "process_peak_rss_kib": 134432, "previous_process_peak_rss_kib": 105304, "worker_released": true, "source_files_unchanged": true}
+{"historical_frames": 4999, "scenario_frames": 5000, "source_observations": 5000, "segments": 1, "issues": 1, "omitted_issues": 0, "modeled": false, "worker_seconds": 58.501773, "serialization_seconds": 0.001721, "response_bytes": 406191, "scenario_trace_points": 250, "historical_trace_points": 250, "fills": "0", "process_peak_rss_kib": 288572, "previous_process_peak_rss_kib": 204128, "worker_released": true, "source_files_unchanged": true}
+{"historical_frames": 64, "scenario_frames": 65, "source_observations": 96, "segments": 32, "issues": 32, "omitted_issues": 0, "modeled": false, "worker_seconds": 0.505068, "serialization_seconds": 0.000382, "response_bytes": 91002, "scenario_trace_points": 65, "historical_trace_points": 2, "fills": "0", "process_peak_rss_kib": 288572, "previous_process_peak_rss_kib": 288572, "worker_released": true, "selection_reruns": [{"segment_index": 31, "seconds": 0.490664}, {"segment_index": 0, "seconds": 0.489817}], "source_files_unchanged": true}
+{"historical_frames": 4, "scenario_frames": 5, "source_observations": 1005, "segments": 1, "issues": 1001, "omitted_issues": 901, "modeled": false, "worker_seconds": 0.293411, "serialization_seconds": 0.000272, "response_bytes": 53299, "scenario_trace_points": 5, "historical_trace_points": 4, "fills": "0", "process_peak_rss_kib": 288572, "previous_process_peak_rss_kib": 288572, "worker_released": true, "source_files_unchanged": true}
+2026-11-11 10:56:21,862 ERROR app.simulation.executor Phase 10 research worker failed: compare_scenario_historical
+Traceback (most recent call last):
+  File "/workspace/hyperamm/backend/app/simulation/executor.py", line 30, in _run
+    return asyncio.run(workload())
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/executor.py", line 27, in workload
+    return await getattr(service, operation)(**inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/service.py", line 61, in compare_scenario_historical
+    historical = await comparison_history(self, storage_root=storage_root, request=request.historical,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/research_replay/transport.py", line 218, in comparison_history
+    return await service.replay_history(**inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/service.py", line 47, in replay_history
+    return await replay(self, **inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/research_replay/runner.py", line 63, in replay
+    baseline = await service.engine.run(**engine_inputs,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/engine.py", line 256, in run
+    actions=await orders.reconcile(
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/execution/order_manager.py", line 26, in reconcile
+    return await self.reconcile_locked(market, desired, price_tolerance_bps, size_tolerance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/execution/order_manager.py", line 62, in reconcile_locked
+    await check
+  File "/workspace/hyperamm/backend/app/simulation/engine.py", line 144, in simulation_authority
+    raise RuntimeError(f"simulation {name} authority changed before transmission")
+RuntimeError: simulation inventory authority changed before transmission
+Traceback (most recent call last):
+  File "/workspace/hyperamm/backend/tests/phase165d_performance.py", line 92, in <module>
+    asyncio.run(main(parser.parse_args().output))
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/tests/phase165d_performance.py", line 53, in main
+    result=await worker.execute('compare_scenario_historical',**inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/executor.py", line 69, in execute
+    return await asyncio.shield(wrapped)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/executor.py", line 30, in _run
+    return asyncio.run(workload())
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/executor.py", line 27, in workload
+    return await getattr(service, operation)(**inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/service.py", line 61, in compare_scenario_historical
+    historical = await comparison_history(self, storage_root=storage_root, request=request.historical,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/research_replay/transport.py", line 218, in comparison_history
+    return await service.replay_history(**inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/service.py", line 47, in replay_history
+    return await replay(self, **inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/research_replay/runner.py", line 63, in replay
+    baseline = await service.engine.run(**engine_inputs,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/simulation/engine.py", line 256, in run
+    actions=await orders.reconcile(
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/execution/order_manager.py", line 26, in reconcile
+    return await self.reconcile_locked(market, desired, price_tolerance_bps, size_tolerance)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/hyperamm/backend/app/execution/order_manager.py", line 62, in reconcile_locked
+    await check
+  File "/workspace/hyperamm/backend/app/simulation/engine.py", line 144, in simulation_authority
+    raise RuntimeError(f"simulation {name} authority changed before transmission")
+RuntimeError: simulation inventory authority changed before transmission

@@ -1,0 +1,264 @@
+{
+  "classification": "FAIL",
+  "fixture_notice": "GENERATED FIXTURES / USER-ASSERTED RECORDED LABELS; NO AUTHENTICATED EXCHANGE HISTORY",
+  "workflows": [
+    "Actual BTC comparison, backend metrics, zero fills, unavailable metric, separate original charts, inspectable provenance, operational isolation",
+    "1920/1440/1024/768/390 responsive layouts, chart resizing, wrapped fingerprints and decimal cells",
+    "Actual ETH and SOL comparisons",
+    "Multi-segment gap with explicit reset and validated selected-segment rerun",
+    "Actual modeled PAPER execution with explicit configuration differences",
+    "Cross-market INCOMPARABLE blocks financial metrics and traces",
+    "Pending market/dataset changes retire late real backend responses",
+    "Real 422 missing economics, 503 disabled vault, 429 single-worker busy errors",
+    "Labeled malformed-response fault probe fails closed",
+    "Frame edits hide stale metrics with captured retired identity",
+    "Keyboard form navigation and native disclosures",
+    "Unmount cancels HTTP waiter, worker capacity retained, remount has no stale result",
+    "Backend restart retires receipts; retained admitted evidence reproduces identity",
+    "Existing historical replay, scenario simulation and bounded optimizer still run",
+    "Existing Vault preset validation, captured accounting proposal, exact long Decimal strings and keyboard-readable mobile values",
+    "Labeled same-process connection transition probe permanently retires completed evidence",
+    "Three synchronous submit clicks admit exactly one comparison request",
+    "Frame, execution, dataset and market round-trips cannot resurrect retired evidence",
+    "Actual modeled historical fills bind explicitly preconfigured research risk and preserve authority"
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "WebSocket connection to 'ws://127.0.0.1:5173/ws/terminal' failed: Connection closed before receiving a handshake response",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/historical-replay/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/simulation/run"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/simulation/optimize"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-vault/preview"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/research-comparison/scenario-historical"
+    }
+  ],
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false,
+      "chart_count": 84
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "chart_count": 84
+    }
+  ],
+  "screenshots": [
+    "btc-context-and-traces-1440.png",
+    "comparison-1920.png",
+    "comparison-1440.png",
+    "comparison-1024.png",
+    "comparison-768.png",
+    "comparison-390.png",
+    "independent-gap-segment-2.png",
+    "market-incomparable.png",
+    "vault-exact-decimal-390.png"
+  ],
+  "comparison_measurements": [
+    {
+      "status": 200,
+      "seconds": 0.660479,
+      "response_bytes": 34138
+    },
+    {
+      "status": 200,
+      "seconds": 0.478144,
+      "response_bytes": 34176
+    },
+    {
+      "status": 200,
+      "seconds": 0.387133,
+      "response_bytes": 34119
+    },
+    {
+      "status": 200,
+      "seconds": 0.373148,
+      "response_bytes": 32861
+    },
+    {
+      "status": 200,
+      "seconds": 0.484427,
+      "response_bytes": 34175
+    },
+    {
+      "status": 200,
+      "seconds": 0.153935,
+      "response_bytes": 22972
+    },
+    {
+      "status": 422,
+      "seconds": 0.074369,
+      "response_bytes": 1007
+    },
+    {
+      "status": 503,
+      "seconds": 0.063086,
+      "response_bytes": 56
+    },
+    {
+      "status": 429,
+      "seconds": 0.074358,
+      "response_bytes": 49
+    },
+    {
+      "status": 200,
+      "seconds": 0.602596,
+      "response_bytes": 34138
+    },
+    {
+      "status": 200,
+      "seconds": 0.449054,
+      "response_bytes": 34138
+    },
+    {
+      "status": 200,
+      "seconds": 0.401306,
+      "response_bytes": 34138
+    },
+    {
+      "status": 200,
+      "seconds": 0.524114,
+      "response_bytes": 34179
+    },
+    {
+      "status": 200,
+      "seconds": 0.340302,
+      "response_bytes": 34483
+    }
+  ],
+  "browser_version": "151.0.7922.173",
+  "failure": "AssertionError('{\"detail\":{\"status\":\"REJECTED\",\"request_fingerprint\":\"f8f60f287f60dab3a5ff50bfd22545b97af6d8360002dfd6a8077babee41a488\",\"dataset_fingerprint\":\"6747a2bcd9681c4f334cfe4799addd09039407e8c7c82f35074f8d8f1733c29d\",\"issues\":[{\"code\":\"INCOMPLETE_FRAME\",\"sequence\":1,\"received_at\":\"2026-10-01T00:00:00Z\",\"missing_fields\":[\"order_book\"],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":2,\"received_at\":\"2026-10-01T00:00:00.001000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":3,\"received_at\":\"2026-10-01T00:00:00.002000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":4,\"received_at\":\"2026-10-01T00:00:00.003000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":5,\"received_at\":\"2026-10-01T00:00:00.004000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":6,\"received_at\":\"2026-10-01T00:00:00.005000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":7,\"received_at\":\"2026-10-01T00:00:00.006000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":8,\"received_at\":\"2026-10-01T00:00:00.007000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":9,\"received_at\":\"2026-10-01T00:00:00.008000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":10,\"received_at\":\"2026-10-01T00:00:00.009000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":11,\"received_at\":\"2026-10-01T00:00:00.010000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":12,\"received_at\":\"2026-10-01T00:00:00.011000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":13,\"received_at\":\"2026-10-01T00:00:00.012000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":14,\"received_at\":\"2026-10-01T00:00:00.013000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":15,\"received_at\":\"2026-10-01T00:00:00.014000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":16,\"received_at\":\"2026-10-01T00:00:00.015000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":17,\"received_at\":\"2026-10-01T00:00:00.016000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":18,\"received_at\":\"2026-10-01T00:00:00.017000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":19,\"received_at\":\"2026-10-01T00:00:00.018000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":20,\"received_at\":\"2026-10-01T00:00:00.019000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":21,\"received_at\":\"2026-10-01T00:00:00.020000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":22,\"received_at\":\"2026-10-01T00:00:00.021000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":23,\"received_at\":\"2026-10-01T00:00:00.022000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":24,\"received_at\":\"2026-10-01T00:00:00.023000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":25,\"received_at\":\"2026-10-01T00:00:00.024000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":26,\"received_at\":\"2026-10-01T00:00:00.025000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":27,\"received_at\":\"2026-10-01T00:00:00.026000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":28,\"received_at\":\"2026-10-01T00:00:00.027000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":29,\"received_at\":\"2026-10-01T00:00:00.028000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":30,\"received_at\":\"2026-10-01T00:00:00.029000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":31,\"received_at\":\"2026-10-01T00:00:00.030000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":32,\"received_at\":\"2026-10-01T00:00:00.031000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":33,\"received_at\":\"2026-10-01T00:00:00.032000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":34,\"received_at\":\"2026-10-01T00:00:00.033000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":35,\"received_at\":\"2026-10-01T00:00:00.034000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":36,\"received_at\":\"2026-10-01T00:00:00.035000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":37,\"received_at\":\"2026-10-01T00:00:00.036000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":38,\"received_at\":\"2026-10-01T00:00:00.037000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":39,\"received_at\":\"2026-10-01T00:00:00.038000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":40,\"received_at\":\"2026-10-01T00:00:00.039000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":41,\"received_at\":\"2026-10-01T00:00:00.040000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":42,\"received_at\":\"2026-10-01T00:00:00.041000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":43,\"received_at\":\"2026-10-01T00:00:00.042000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":44,\"received_at\":\"2026-10-01T00:00:00.043000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":45,\"received_at\":\"2026-10-01T00:00:00.044000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":46,\"received_at\":\"2026-10-01T00:00:00.045000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":47,\"received_at\":\"2026-10-01T00:00:00.046000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":48,\"received_at\":\"2026-10-01T00:00:00.047000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":49,\"received_at\":\"2026-10-01T00:00:00.048000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":50,\"received_at\":\"2026-10-01T00:00:00.049000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":51,\"received_at\":\"2026-10-01T00:00:00.050000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":52,\"received_at\":\"2026-10-01T00:00:00.051000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":53,\"received_at\":\"2026-10-01T00:00:00.052000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":54,\"received_at\":\"2026-10-01T00:00:00.053000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":55,\"received_at\":\"2026-10-01T00:00:00.054000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":56,\"received_at\":\"2026-10-01T00:00:00.055000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":57,\"received_at\":\"2026-10-01T00:00:00.056000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":58,\"received_at\":\"2026-10-01T00:00:00.057000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":59,\"received_at\":\"2026-10-01T00:00:00.058000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":60,\"received_at\":\"2026-10-01T00:00:00.059000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":61,\"received_at\":\"2026-10-01T00:00:00.060000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":62,\"received_at\":\"2026-10-01T00:00:00.061000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":63,\"received_at\":\"2026-10-01T00:00:00.062000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":64,\"received_at\":\"2026-10-01T00:00:00.063000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":65,\"received_at\":\"2026-10-01T00:00:00.064000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":66,\"received_at\":\"2026-10-01T00:00:00.065000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":67,\"received_at\":\"2026-10-01T00:00:00.066000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":68,\"received_at\":\"2026-10-01T00:00:00.067000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":69,\"received_at\":\"2026-10-01T00:00:00.068000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":70,\"received_at\":\"2026-10-01T00:00:00.069000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":71,\"received_at\":\"2026-10-01T00:00:00.070000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":72,\"received_at\":\"2026-10-01T00:00:00.071000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":73,\"received_at\":\"2026-10-01T00:00:00.072000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":74,\"received_at\":\"2026-10-01T00:00:00.073000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":75,\"received_at\":\"2026-10-01T00:00:00.074000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":76,\"received_at\":\"2026-10-01T00:00:00.075000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":77,\"received_at\":\"2026-10-01T00:00:00.076000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":78,\"received_at\":\"2026-10-01T00:00:00.077000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":79,\"received_at\":\"2026-10-01T00:00:00.078000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":80,\"received_at\":\"2026-10-01T00:00:00.079000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":81,\"received_at\":\"2026-10-01T00:00:00.080000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":82,\"received_at\":\"2026-10-01T00:00:00.081000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":83,\"received_at\":\"2026-10-01T00:00:00.082000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":84,\"received_at\":\"2026-10-01T00:00:00.083000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":85,\"received_at\":\"2026-10-01T00:00:00.084000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":86,\"received_at\":\"2026-10-01T00:00:00.085000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":87,\"received_at\":\"2026-10-01T00:00:00.086000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":88,\"received_at\":\"2026-10-01T00:00:00.087000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":89,\"received_at\":\"2026-10-01T00:00:00.088000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":90,\"received_at\":\"2026-10-01T00:00:00.089000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":91,\"received_at\":\"2026-10-01T00:00:00.090000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":92,\"received_at\":\"2026-10-01T00:00:00.091000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":93,\"received_at\":\"2026-10-01T00:00:00.092000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":94,\"received_at\":\"2026-10-01T00:00:00.093000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":95,\"received_at\":\"2026-10-01T00:00:00.094000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":96,\"received_at\":\"2026-10-01T00:00:00.095000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":97,\"received_at\":\"2026-10-01T00:00:00.096000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":98,\"received_at\":\"2026-10-01T00:00:00.097000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":99,\"received_at\":\"2026-10-01T00:00:00.098000Z\",\"missing_fields\":[],\"frame_count\":null},{\"code\":\"COMPONENT_TOO_OLD\",\"sequence\":100,\"received_at\":\"2026-10-01T00:00:00.099000Z\",\"missing_fields\":[],\"frame_count\":null}],\"omitted_issues\":902}}')",
+  "duration_seconds": 37.986
+}
