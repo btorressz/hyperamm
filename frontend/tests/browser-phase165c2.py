@@ -14,7 +14,8 @@ async def main(args):
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     work=ROOT/'work/browser165c2';work.mkdir(parents=True,exist_ok=True)
     report={'classification':'FAIL','fixture_notice':'GENERATED FIXTURES / USER-ASSERTED RECORDED LABELS; NO AUTHENTICATED EXCHANGE HISTORY',
-        'workflows':[],'page_errors':[],'console_errors':[],'requests':[],'viewports':[],'screenshots':[], 'comparison_measurements':[]}
+        'workflows':[],'page_errors':[],'console_errors':[],'requests':[],'network_failures':[],
+        'viewports':[],'screenshots':[], 'comparison_measurements':[]}
     env={**os.environ,'MARKET_DATA_MODE':'DEMO','EXECUTION_MODE':'PAPER','ENABLE_HYPERLIQUID_TESTNET_ORDERS':'false',
         'LIVE_OBSERVATIONS_ENABLED':'false','LIVE_STREAMS_ENABLED':'false','REDIS_ENABLED':'false',
         'PHASE1641_FIXTURE_ROOT':tempfile.mkdtemp(prefix='vaults-',dir=work)}
@@ -49,6 +50,8 @@ async def main(args):
         page.on('pageerror',lambda e:report['page_errors'].append(str(e)))
         page.on('console',lambda m:report['console_errors'].append(m.text) if m.type=='error' else None)
         page.on('request',lambda r:report['requests'].append({'method':r.method,'path':r.url.split('5173')[-1]}) if r.method in ('POST','PUT','PATCH','DELETE') else None)
+        page.on('requestfailed',lambda r:report['network_failures'].append(dict(
+            method=r.method,path=r.url.split('5173')[-1],failure=r.failure)))
         async def ready():
             async with asyncio.timeout(30):
                 while True:
@@ -302,6 +305,10 @@ async def main(args):
         assert not report['page_errors'],report['page_errors']
         report['unexpected_console_errors']=[e for e in report['console_errors'] if not any(token in e for token in ('WebSocket','status of 404','status of 422','status of 429','status of 503','status of 500','ERR_CONNECTION_REFUSED'))]
         assert not report['unexpected_console_errors'],report['unexpected_console_errors']
+        # Keep cancellations and deliberate backend-restart failures visible.
+        report['unexpected_network_failures']=[r for r in report['network_failures']
+            if r['failure'] not in ('net::ERR_ABORTED','net::ERR_CONNECTION_REFUSED')]
+        assert not report['unexpected_network_failures'],report['unexpected_network_failures']
         report['classification']='PASS';await ctx.close();await browser.close()
     except Exception as exc:
         report['failure']=repr(exc)
