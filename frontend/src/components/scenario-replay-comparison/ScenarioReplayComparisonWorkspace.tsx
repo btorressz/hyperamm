@@ -13,11 +13,15 @@ import { ReplayExecutionAssumptions } from '../replay/ReplayExecutionAssumptions
 import { ReplayProvenance } from '../replay/ReplayProvenance';
 import { Empty, Panel, StatusBanner } from '../TerminalPrimitives';
 import { Badge } from '../Badge';
+import { ResearchRunStatus } from '../research/ResearchRunStatus';
+import { ResearchDiagnostics } from '../research/ResearchDiagnostics';
+import { ResearchWorkloadPreview } from '../research/ResearchWorkloadPreview';
 import { ComparisonMetrics } from './ComparisonMetrics';
 import { ComparisonExplainability } from './ComparisonExplainability';
 import { ComparisonTraceCharts } from './ComparisonTraceCharts';
 import '../../phase164.css';
 import '../../phase165c.css';
+import '../../phase166c.css';
 
 type Props={receipt?:QuantitativeComparisonReceipt|null; evidence?:ComparisonChartEvidence};
 const integer=(s:string,min:number,max:number)=>/^\d+$/.test(s)&&Number.isSafeInteger(Number(s))&&Number(s)>=min&&Number(s)<=max;
@@ -100,15 +104,18 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
         {scenarios.isError&&<p role="alert">Scenario catalog unavailable.</p>}
       </Panel>
       {catalog.isError&&<StatusBanner tone="bad">Historical dataset catalog unavailable. Configure the private backend vault and retry.</StatusBanner>}
+      {catalog.isError&&<ResearchDiagnostics error={catalog.error ?? 'Historical storage unavailable (503)'}/>} 
       <ReplayDatasetSelector datasets={datasets} selected={selected} onSelect={update(setSelected)} refreshing={catalog.isFetching}
         refresh={()=>{invalidate();setResponse(null);void catalog.refetch()}}/>
-      {provenance.isError&&<p role="alert">Dataset provenance unavailable. Refresh the catalog before running.</p>}
+      {provenance.isError&&<ResearchDiagnostics error={provenance.error ?? 'Historical provenance mismatch'}/>} 
       <ReplayExecutionAssumptions paper={paper} change={p=>{invalidate();setPaper(p)}} sizeDecimals={size} setSizeDecimals={update(setSize)}
         maxFrames={maxFrames} setMaxFrames={update(setMaxFrames)} maxAge={age} setMaxAge={update(setAge)} maxInterval={interval} setMaxInterval={update(setInterval)}/>
       <ReplayProvenance summary={item} provenance={provenance.data??null} result={null} frame={null}/>
+      <ResearchWorkloadPreview dataset={item} replayFrames={maxFrames} scenarioFrames={frames} executionMode={paper.mode}/>
       <div className="actions"><button type="button" className="primary" disabled={!ready} onClick={()=>void run()}>{pending?'Comparison worker running…':'Run Scenario / Historical Comparison'}</button></div>
       {validation&&<p role="alert" className="inlineError">{validation}</p>}
-      {pending&&<p role="status">Shared research worker occupied. Changing inputs retires the response; browser cancellation does not stop backend computation.</p>}
+      <ResearchRunStatus operation="Scenario comparison"
+        state={pending?'running':error?'error':response&&!current?'retired':current?'complete':'idle'}/>
       {response&&!current&&<StatusBanner>Retired result: captured {response.data.request.research_market} scenario / {response.data.request.historical.dataset_id}, segment {response.data.request.segment_index+1}. Run again for the current inputs or backend session. Financial displays are hidden.</StatusBanner>}
       {selectionCurrent&&<Panel title="Independent historical segments" meta="SELECTION RERUNS VALIDATED EVIDENCE">
         <label>Selected historical segment<select aria-label="Comparison historical segment" value={segmentIndex} disabled={pending}
@@ -132,7 +139,7 @@ export function ScenarioReplayComparisonWorkspace({receipt:serverReceipt,evidenc
         {localReceipt&&<p role="status">Local receipt shape accepted for display only; hashes and origin unverified.</p>}
       </details>
     </>}
-    {(error||validationError)&&<p className="inlineError" role="alert">{error||validationError}</p>}
+    <ResearchDiagnostics error={error||validationError}/>
     {!checked?<Empty>No current comparison receipt loaded.</Empty>:<>
       <Panel title="Research pairing status" meta="SCENARIO / SELECTED HISTORICAL SEGMENT">
         <div className="srcPairing">

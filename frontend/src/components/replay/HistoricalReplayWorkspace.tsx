@@ -7,6 +7,9 @@ import { checkedReplayProvenance, checkedReplayResult, checkedReplaySummaries,
 import { useTerminalStore } from '../../stores/terminal';
 import { Panel, Empty, StatusBanner } from '../TerminalPrimitives';
 import { Badge } from '../Badge';
+import { ResearchRunStatus } from '../research/ResearchRunStatus';
+import { ResearchDiagnostics } from '../research/ResearchDiagnostics';
+import { ResearchWorkloadPreview } from '../research/ResearchWorkloadPreview';
 import { ReplayDatasetSelector } from './ReplayDatasetSelector';
 import { ReplayExecutionAssumptions } from './ReplayExecutionAssumptions';
 import { ReplayControls } from './ReplayControls';
@@ -16,6 +19,7 @@ import { ReplayPerformance } from './ReplayPerformance';
 import { ReplayComparison } from './ReplayComparison';
 import { ReplayProvenance } from './ReplayProvenance';
 import '../../phase164.css';
+import '../../phase166c.css';
 
 function boundedInteger(value:string,min:number,max:number): number|null {
   if (!/^\d+$/.test(value))return null;
@@ -99,21 +103,25 @@ export function HistoricalReplayWorkspace() {
       <p className="muted">Inspect admitted market observations and isolated PAPER execution sensitivities. No live orders.</p>
     </div><Badge tone="blue">PHASE 16.4 · RESEARCH</Badge></div>
     {catalog.isError&&<StatusBanner tone="bad">Historical dataset catalog unavailable. Configure the private HISTORICAL_REPLAY_ROOT on the backend, or retry. No live market history is substituted.</StatusBanner>}
+    {catalog.isError&&<ResearchDiagnostics error={catalog.error ?? 'Historical storage unavailable (503)'}/>} 
     <ReplayDatasetSelector datasets={datasets} selected={item?.dataset_id??''} onSelect={updateSelected}
       refreshing={catalog.isFetching} refresh={()=>{resetResult();void catalog.refetch()}}/>
     {item&&provenance.isError&&<StatusBanner tone="bad">Selected dataset provenance is unavailable or has changed. Reload the catalog before running. <button type="button" disabled={pending||provenance.isFetching} onClick={()=>void provenance.refetch()}>Retry provenance</button></StatusBanner>}
+    {item&&provenance.isError&&<ResearchDiagnostics error={provenance.error ?? 'Provenance mismatch'}/>} 
     <ReplayExecutionAssumptions paper={paper} change={updateModel}
       sizeDecimals={sizeDecimals} setSizeDecimals={changeNumber(setSizeDecimals)}
       maxFrames={maxFrames} setMaxFrames={changeNumber(setMaxFrames)}
       maxAge={maxAge} setMaxAge={changeNumber(setMaxAge)}
       maxInterval={maxInterval} setMaxInterval={changeNumber(setMaxInterval)}/>
+    <ResearchWorkloadPreview dataset={item} replayFrames={maxFrames} executionMode={paper.mode}/>
     <div className="actions"><button className="primary" type="button"
       disabled={pending||!item||!provenance.data||provenance.isError||provenance.isFetching||catalog.isError||!!validation||catalog.isFetching}
       onClick={()=>void run()}>{pending?'Research worker running…':'Run Historical PAPER Replay'}</button>
       {validation&&<span role="alert" className="inlineError">{validation}</span>}
     </div>
-    {pending&&<p role="status">One shared research worker is occupied; a cancelled browser request does not stop its backend computation.</p>}
-    {error&&<p className="inlineError" role="alert">{error}</p>}
+    <ResearchRunStatus operation="Historical replay"
+      state={pending?'running':error?'error':isRetired?'retired':result?'complete':'idle'}/>
+    <ResearchDiagnostics error={error}/>
     {isRetired&&<StatusBanner>Retained research from a previous backend session. Captured dataset/results remain historical; run again for current configuration.</StatusBanner>}
     {result&&<div className="stack">
       <Panel title="Replay receipt" meta="COMPLETED PARTIAL · ISOLATED PAPER">
