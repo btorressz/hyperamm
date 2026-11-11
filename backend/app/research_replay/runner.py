@@ -19,6 +19,16 @@ def canonical_json(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False)
 
 
+def archive_wire_and_fingerprint(result):
+    """Encode one engine result for its stored JSON and existing fingerprint.
+
+    Pydantic replay archive contracts still independently decode and validate
+    these bytes, including modeled baseline identity. No validation is removed.
+    """
+    payload = result.model_dump(mode="json")
+    return canonical_json(payload), stable_fingerprint(payload)
+
+
 def catalog(storage_root):
     return HistoricalStorage(storage_root).list_ids()
 
@@ -62,22 +72,22 @@ async def replay(service, *, storage_root, request, strategy, agents, risk):
             # call builds the existing engine's isolated risk/accounting state.
             baseline = await service.engine.run(**engine_inputs,
                 simulation_config=simulation.model_copy(update={"execution": PaperExecutionAssumptions()}))
-            baseline_archive = canonical_json(baseline)
+            baseline_archive, baseline_fingerprint = archive_wire_and_fingerprint(baseline)
             comparison = dict(baseline_result_json=baseline_archive,
-                baseline_result_fingerprint=stable_fingerprint(json.loads(baseline_archive)))
+                baseline_result_fingerprint=baseline_fingerprint)
         result = await service.engine.run(**engine_inputs, simulation_config=simulation,
             **({"execution_evidence_keys": {frame.sequence: (stable_fingerprint(frame.book_observation), frame.book_observation.received_at)
                 for frame in segment.evidence}} if execution.paper.modeled else {}))
         if execution.paper.modeled:
             comparison.update(session_pnl_delta=result.metrics.session_pnl - baseline.metrics.session_pnl,
                 fill_count_delta=result.metrics.fill_count - baseline.metrics.fill_count)
-        archive = canonical_json(result)
+        archive, archive_fingerprint = archive_wire_and_fingerprint(result)
         results.append(ReplaySegmentResult(**comparison, segment_index=index, reset_reason=segment.reset_reason,
             dataset_fingerprint=result.dataset_fingerprint, run_fingerprint=result.run_fingerprint,
             frames=segment.evidence, frame_count=result.metrics.frame_count,
             starting_equity=result.metrics.starting_equity, ending_equity=result.metrics.ending_equity,
             session_pnl=result.metrics.session_pnl, fill_count=result.metrics.fill_count,
-            simulation_result_json=archive, simulation_result_fingerprint=stable_fingerprint(json.loads(archive))))
+            simulation_result_json=archive, simulation_result_fingerprint=archive_fingerprint))
     values = dict(execution_assumptions_fingerprint=execution.paper.fingerprint, request=request, request_fingerprint=stable_fingerprint(request),
         modeling_fingerprint=stable_fingerprint((request.policy, request.execution)),
         provenance=describe_provenance(dataset), declared_gaps=dataset.gaps,
