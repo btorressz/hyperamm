@@ -1,6 +1,6 @@
 # Phase 16.6C.1 — Research UX, Diagnostics & Local Release Documentation
 
-**Scope:** read-only React UX and truthful local operator documentation on top of the merged Phase 16.6A.2 implementation. **Status:** implementation committed; native TypeScript, Node, browser and backend acceptance must be run in Phase 16.6C.2.
+**Scope:** read-only React UX and truthful local operator documentation on top of the merged Phase 16.6A.2 implementation. **Status:** native/local integration and Chromium acceptance are recorded in [Phase 16.6C.2 acceptance](PHASE166C2_ACCEPTANCE.md); physical Redis and external platform/source/trading gates remain separate.
 
 ## Reuse and changes
 
@@ -66,7 +66,11 @@ Visit the existing Simulation & Optimization page and switch between **Historica
 | Retired input/session | Revalidate and submit a new request | Old results remain historical; no stale financial rendering |
 | Internal / 500 | Inspect sanitized **local** backend diagnostics | Do not expose stack traces, paths, credentials or provider payloads in UI |
 
-Use the existing `GET /health` if needed for general backend market/Redis status. It is **not** a per-job research progress endpoint and does not certify historical storage or job completion. When a user refreshes a catalog while another research job runs, existing metadata-only retry rules may apply; computation POSTs are not automatically retried.
+Use the existing `GET /api/v1/health` if needed for general backend market/Redis status. It is **not** a per-job research progress endpoint and does not certify historical storage or job completion. When a user refreshes a catalog while another research job runs, existing metadata-only retry rules may apply; computation POSTs are not automatically retried.
+
+After a backend restart or connection/input change, both Studios retire financial evidence. Refresh metadata, revalidate the selection and submit explicitly; expensive research POSTs are never automatically resubmitted. When Vite cannot reach the backend it can return HTTP 500, so internal-failure guidance includes checking backend startup. A truncated HTTP response is connection loss, not proof that a frame limit was exceeded.
+
+With Redis disabled, the existing single-process worker operates locally. Optional unavailable Redis reports DEGRADED; research stays local only when Redis research coordination is disabled. With coordination enabled, admission returns 503 during outage. Required unavailable Redis prevents startup. Install the existing backend `[redis]` extra only when using Redis; health never establishes per-job progress. See [Redis configuration](REDIS.md).
 
 ### Limits and provenance
 

@@ -14,7 +14,9 @@ Public live Hyperliquid market data can be enabled with `MARKET_DATA_MODE=LIVE`.
 
 ### Phase 16.6C.1 local research troubleshooting
 
-For optional historical replay, configure the existing trusted private `HISTORICAL_REPLAY_ROOT` and admit data using the existing secure operator-side importer. The browser cannot upload arbitrary history. The backend's `/health` endpoint reports general market/Redis health, **not** per-job research progress or archive authenticity. The frontend preflight/status panels use existing validated dataset metadata and HTTP errors, without guessing ETA, progress or worker cancellation. See [the research UX and local release runbook](../docs/PHASE166C1_RELEASE_UX.md).
+For optional historical replay, configure the existing trusted private `HISTORICAL_REPLAY_ROOT` and admit data using the existing secure operator-side importer. The browser cannot upload arbitrary history. The backend's `/api/v1/health` endpoint reports general market/Redis health, **not** per-job research progress or archive authenticity. The frontend preflight/status panels use existing validated dataset metadata and HTTP errors, without guessing ETA, progress or worker cancellation. See [the research UX and local release runbook](../docs/PHASE166C1_RELEASE_UX.md).
+
+Local startup, SIGTERM shutdown, storage admission/failure and Redis outage behavior are tested in [Phase 16.6C.2 acceptance](../docs/PHASE166C2_ACCEPTANCE.md). Redis disabled uses the existing local worker; optional outage reports DEGRADED; enabled research coordination returns 503 during outage; required unavailable Redis prevents startup. Refresh source metadata and submit manually after reconnecting. Browser disconnection does not release admitted worker capacity. Physical Redis integration was blocked in that environment.
 
 ### Audit 1.0: dependency hygiene (A1-017)
 
