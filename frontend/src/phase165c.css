@@ -1,0 +1,35 @@
+/* Phase 16.5C.1 — read-only, evidence-gated comparison studio. */
+.srcWorkspace{min-width:0;padding-top:10px}
+.researchViewTabs{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0;margin:0 0 12px;border-bottom:1px solid #263a50}
+.researchViewTabs button{border:1px solid #354b63;border-radius:8px;padding:10px 14px;background:#111f2d;color:#becfe1;cursor:pointer}
+.researchViewTabs button[aria-pressed="true"]{background:#203b56;border-color:#5b9bca;color:#fff;font-weight:650}
+.researchViewTabs button:focus-visible,.srcWorkspace button:focus-visible,.srcWorkspace summary:focus-visible{outline:2px solid #74c3ff;outline-offset:3px}
+.srcInputForm{display:grid;gap:8px;padding:14px}
+.srcInputForm textarea{display:block;width:100%;min-height:100px;max-height:360px;background:#0c1826;color:#dbe7f5;border:1px solid #334d67;border-radius:6px;font:12px ui-monospace,monospace;padding:10px;resize:vertical}
+.srcPairing{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,.55fr) minmax(0,1fr);gap:12px;padding:16px}
+.srcPairing>div{min-width:0;border:1px solid #2b4358;background:#101c2b;border-radius:8px;padding:14px;display:grid;gap:6px}
+.srcPairing strong{font-size:15px;overflow-wrap:anywhere}
+.srcPairing small{color:#a5bfd5;font-size:11px;letter-spacing:.03em}
+.srcPairing span{font-size:12px;color:#abbfd3;overflow-wrap:anywhere}
+.srcSummary{padding:14px 16px}
+.srcSummary strong{display:block;margin-bottom:8px}
+.srcDimensions,.srcTwoSources,.srcTraceColumns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:12px 16px}
+.srcDimensions>div,.srcTwoSources>section{min-width:0;border:1px solid #23394d;border-radius:6px;padding:10px}
+.srcDimensions ul,.srcReasons{padding:5px 20px 10px 30px;margin:0;overflow-wrap:anywhere;font-size:12px}
+.srcDimensions h3,.srcTwoSources h3{font-size:13px;margin:4px 6px 8px}
+.srcMetricGroup{padding:10px 16px;border-top:1px solid #23384b}
+.srcMetricGroup summary,.srcTraceColumns summary,.srcDisclosure summary{cursor:pointer;font-weight:600}
+.srcMetricsTable{overflow-x:auto;max-height:390px;overflow-y:auto;margin-top:10px}
+.srcMetricsTable table{min-width:540px;width:100%}
+.srcMetricsTable th,.srcMetricsTable td{padding:9px;text-align:left;vertical-align:top}
+.srcMetricOrigin{display:block;margin-top:3px;font-weight:400}
+.srcMetricValue{font-variant-numeric:tabular-nums;max-width:220px;overflow-wrap:anywhere}
+.srcMetricValue small{white-space:nowrap}
+.srcExact{font-size:12px}
+.srcHash{font-size:11px;overflow-wrap:anywhere;user-select:all}
+.srcDisclosure{padding:10px 16px}
+.srcTraceColumns{align-items:start}
+.srcTraceColumns>details{min-width:0;border:1px solid #2c435a;border-radius:7px;padding:12px}
+.srcTraceColumns .researchChart{min-width:0}
+@media (max-width:850px){.srcPairing{grid-template-columns:1fr}.srcDimensions,.srcTwoSources,.srcTraceColumns{grid-template-columns:1fr}.researchViewTabs button{flex:1 1 180px}}
+@media (max-width:480px){.researchViewTabs button{flex-basis:100%;text-align:left}.srcMetricGroup{padding:10px 8px}.srcDimensions,.srcTwoSources,.srcTraceColumns{padding:9px}.srcPairing{padding:9px}}

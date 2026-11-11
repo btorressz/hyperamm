@@ -28,7 +28,9 @@ import "../phase1331.css";
 import "../phase1332.css";
 import "../phase14.css";
 import { HistoricalReplayWorkspace } from "../components/replay/HistoricalReplayWorkspace";
+import { ScenarioReplayComparisonWorkspace } from "../components/scenario-replay-comparison/ScenarioReplayComparisonWorkspace";
 export function Simulation() {
+  const [researchView, setResearchView] = useState<"scenario" | "replay" | "comparison">("scenario");
   const researchState = useResearchVaultStore();
   const marketState = useResearchMarketStore();
   const marketReady = marketState.catalog?.markets.find(p => p.market === marketState.selectedResearchMarket)?.research_supported;
@@ -167,7 +169,20 @@ export function Simulation() {
         </div>
         <Badge tone="blue">SIMULATED · PAPER · OFFLINE</Badge>
       </div>
-      <HistoricalReplayWorkspace />
+      <nav className="researchViewTabs" aria-label="Simulation research workspaces">
+        <button type="button" aria-pressed={researchView==="scenario"} onClick={()=>setResearchView("scenario")}>
+          Scenario & optimization
+        </button>
+        <button type="button" aria-pressed={researchView==="replay"} onClick={()=>setResearchView("replay")}>
+          Historical replay
+        </button>
+        <button type="button" aria-pressed={researchView==="comparison"} onClick={()=>setResearchView("comparison")}>
+          Scenario vs historical
+        </button>
+      </nav>
+      {researchView==="replay" && <HistoricalReplayWorkspace />}
+      {researchView==="comparison" && <ScenarioReplayComparisonWorkspace />}
+      {researchView==="scenario" && <>
       <Panel
         title="Configure isolated research"
         meta="DETERMINISTIC CROSSING FILLS"
@@ -412,6 +427,7 @@ export function Simulation() {
         evaluation-only. Fingerprints identify research; results are not a
         durable saved research vault.
       </StatusBanner>
+      </>}
     </div>
   );
 }
