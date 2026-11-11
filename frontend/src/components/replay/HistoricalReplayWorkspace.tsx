@@ -35,32 +35,37 @@ export function HistoricalReplayWorkspace() {
   const [maxInterval,setMaxInterval]=useState('1000');
   const [pending,setPending]=useState(false);
   const [error,setError]=useState('');
+  const [retired,setRetired]=useState(false);
   const [result,setResult]=useState<HistoricalReplayResult|null>(null);
   const [segmentIndex,setSegmentIndex]=useState(0);
   const [frameIndex,setFrameIndex]=useState(0);
   const [playing,setPlaying]=useState(false);
   const requestEpoch=useRef(0);
   const busy=useRef(false);
-  const terminalIdentity=useTerminalStore(s=>(s.terminal?.process_id ?? '')+':'+(s.terminal?.session_id ?? ''));
+  const submitted=useRef(false);
+  const terminalIdentity=useTerminalStore(s=>(s.terminal?.process_id ?? '')+':'+(s.terminal?.session_id ?? '')+':'+s.wsState);
+  const latestIdentity=useRef(terminalIdentity);latestIdentity.current=terminalIdentity;
   // Keep query promises shared through StrictMode remounts: aborting the HTTP
   // waiter would leave its admitted worker busy for the immediate replacement.
-  const catalog=useQuery({queryKey:['phase164-dataset-summaries'],queryFn:async()=>checkedReplaySummaries(await api.historicalReplaySummaries()),
+  const catalog=useQuery({queryKey:['phase164-dataset-summaries',terminalIdentity],queryFn:async()=>checkedReplaySummaries(await api.historicalReplaySummaries()),
     retry:(count,error)=>count<3&&error.message.includes('busy'),retryDelay:500,refetchOnWindowFocus:false});
   const datasets=catalog.data??[];
   const item=datasets.find(x=>x.dataset_id===selected)??null;
-  const provenance=useQuery({queryKey:['phase164-provenance',item?.dataset_id,item?.dataset_fingerprint],
+  const provenance=useQuery({queryKey:['phase164-provenance',terminalIdentity,item?.dataset_id,item?.dataset_fingerprint],
     queryFn:()=>api.historicalReplayProvenance(item!.dataset_id).then(p=>checkedReplayProvenance(p,item!)),
     enabled:!!item&&!pending&&!catalog.isFetching&&!catalog.isError,
     retry:(count,error)=>count<3&&error.message.includes('busy'),retryDelay:500,staleTime:Infinity,refetchOnWindowFocus:false});
   const resetResult=useCallback(()=>{
-    requestEpoch.current+=1; setResult(null);setSegmentIndex(0);setFrameIndex(0);setPlaying(false);setError('');
+    requestEpoch.current+=1; setRetired(submitted.current);setResult(null);setSegmentIndex(0);setFrameIndex(0);setPlaying(false);setError('');
   },[]);
   useEffect(()=>()=>{requestEpoch.current+=1},[]);
   // Refetch/removal may change identity without a selector event.
-  useEffect(()=>{resetResult()},[item?.dataset_id,item?.dataset_fingerprint,resetResult]);
-  // Mark retained results historical when process/session changes; never associate them with new operational state.
+  useEffect(()=>{resetResult()},[item?.dataset_id,item?.dataset_fingerprint,terminalIdentity,resetResult]);
+  // Gate rendering synchronously; effects also permanently clear retired evidence.
   const [resultIdentity,setResultIdentity]=useState('');
-  const isRetired=!!result && !!resultIdentity && resultIdentity!==terminalIdentity;
+  const isRetired=retired || (!!result && (resultIdentity!==terminalIdentity ||
+    result.request.dataset_id!==item?.dataset_id || result.request.dataset_fingerprint!==item?.dataset_fingerprint));
+  const currentResult=!isRetired?result:null;
   const updateSelected=(id:string)=>{resetResult();setSelected(id)};
   const updateModel=(value:typeof paper)=>{resetResult();setPaper(value)};
   const validSize=boundedInteger(sizeDecimals,0,6);
@@ -75,19 +80,19 @@ export function HistoricalReplayWorkspace() {
   const run=async()=>{
     if(busy.current||!item||!provenance.data||provenance.isError||provenance.isFetching||catalog.isError||catalog.isFetching||validation||validSize===null||validFrames===null||validAge===null||validInterval===null)return;
     const epoch=++requestEpoch.current;
-    busy.current=true;setPending(true);setError('');setResult(null);setPlaying(false);
+    submitted.current=true;busy.current=true;setRetired(false);setPending(true);setError('');setResult(null);setPlaying(false);
     const captured={dataset_id:item.dataset_id,dataset_fingerprint:item.dataset_fingerprint,market:item.market,
       execution:{size_decimals:validSize,paper:{...paper}},
       policy:{max_component_age_ms:validAge,max_frame_interval_ms:validInterval},
       max_frames:validFrames,record_trace:true as const,trace_max_points:Math.min(500,validFrames)};
     try{
       const response=checkedReplayResult(await api.historicalReplayRun(captured),captured);
-      if(requestEpoch.current!==epoch)return;
+      if(requestEpoch.current!==epoch||latestIdentity.current!==terminalIdentity)return;
       setResult(response);setSegmentIndex(0);setFrameIndex(0);setResultIdentity(terminalIdentity);
-    }catch(e){if(requestEpoch.current===epoch)setError(e instanceof TypeError?'Historical backend connection unavailable. Retry when it returns; a lost browser request does not stop an admitted research job.':e instanceof Error?e.message:'Historical replay request failed.');}
+    }catch(e){if(requestEpoch.current===epoch&&latestIdentity.current===terminalIdentity)setError(e instanceof TypeError?'Historical backend connection unavailable. Retry when it returns; a lost browser request does not stop an admitted research job.':e instanceof Error?e.message:'Historical replay request failed.');}
     finally{busy.current=false;setPending(false);}
   };
-  const segment=result?.segments[segmentIndex]??null;
+  const segment=currentResult?.segments[segmentIndex]??null;
   const frame=segment?.frames[frameIndex]??null;
   const archive=useMemo(()=>{
     if(!segment)return null;
@@ -116,19 +121,19 @@ export function HistoricalReplayWorkspace() {
     <ResearchWorkloadPreview dataset={item} replayFrames={maxFrames} executionMode={paper.mode}/>
     <div className="actions"><button className="primary" type="button"
       disabled={pending||!item||!provenance.data||provenance.isError||provenance.isFetching||catalog.isError||!!validation||catalog.isFetching}
-      onClick={()=>void run()}>{pending?'Research worker running…':'Run Historical PAPER Replay'}</button>
+      onClick={()=>void run()}>{pending?'Awaiting replay response…':'Run Historical PAPER Replay'}</button>
       {validation&&<span role="alert" className="inlineError">{validation}</span>}
     </div>
     <ResearchRunStatus operation="Historical replay"
-      state={pending?'running':error?'error':isRetired?'retired':result?'complete':'idle'}/>
+      state={isRetired?'retired':pending?'running':error?'error':result?'complete':'idle'}/>
     <ResearchDiagnostics error={error}/>
-    {isRetired&&<StatusBanner>Retained research from a previous backend session. Captured dataset/results remain historical; run again for current configuration.</StatusBanner>}
-    {result&&<div className="stack">
+    {isRetired&&<StatusBanner>Previous research inputs or backend connection changed. Financial displays are hidden; revalidate metadata and submit again.</StatusBanner>}
+    {currentResult&&<div className="stack">
       <Panel title="Replay receipt" meta="COMPLETED PARTIAL · ISOLATED PAPER">
-        <p>{result.request.market}-PERP · {result.frame_count} viable frames · {result.segments.length} independent segments · {result.examined_observation_count} observations examined.</p>
+        <p>{currentResult.request.market}-PERP · {currentResult.frame_count} viable frames · {currentResult.segments.length} independent segments · {currentResult.examined_observation_count} observations examined.</p>
         <p className="muted panelNote">Results are partial even without declared gaps. Every segment resets capital, risk, orders and inventory. No aggregate return is displayed.</p>
       </Panel>
-      {segment&&<ReplayControls segments={result.segments} segmentIndex={segmentIndex}
+      {segment&&<ReplayControls segments={currentResult.segments} segmentIndex={segmentIndex}
         chooseSegment={chooseSegment} frameIndex={frameIndex} chooseFrame={chooseFrame}
         playing={playing} setPlaying={setPlaying}/>}
       {segment&&<div className="replayColumns">
@@ -142,7 +147,7 @@ export function HistoricalReplayWorkspace() {
       </>}
     </div>}
     {!result&&!pending&&<Empty>No replay has been run in this view. Stored datasets cannot be uploaded, deleted or modified here.</Empty>}
-    <ReplayProvenance summary={item} provenance={provenance.data??null} result={result} frame={frame}/>
+    <ReplayProvenance summary={item} provenance={provenance.data??null} result={currentResult} frame={frame}/>
     <StatusBanner>Historical prices and execution outcomes are bounded PAPER research, not calibrated fills or independently verified complete native market history. Source licenses remain unverified. Changing browser controls never deploys strategy changes.</StatusBanner>
   </section>;
 }
