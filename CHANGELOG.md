@@ -16,6 +16,12 @@ The history covers **all 60 merged pull requests (#1–#60)** and the separately
 
 ## Unreleased
 
+### Phase 16.5A.2 — Comparison Provenance Integration & Native Acceptance
+
+- **Enhanced:** Existing scenario service and single research executor atomically capture effective DEMO/PAPER configuration, including Research Vault accounting, and bind it to the actual result with an opt-in immutable provenance receipt on the existing scenario route.
+- **Fixed:** Strict canonical capture/profile validation, serialized classification integrity, historical request/configuration checks and retained-evidence segment dataset identity. Existing comparison contracts, Decimal fingerprints, engine and secure historical admission are reused.
+- **Tests/limits:** Native BTC/ETH/SOL scenario/replay, configuration differences, archive corruption, worker cancellation and operational isolation coverage. No direct financial deltas, cross-segment aggregation, new worker or frontend. Independent engine attestation remains unavailable. Actual regression counts and baseline failures are recorded in [acceptance](docs/PHASE165A2_ACCEPTANCE.md).
+
 ### Phase 16.4.1 — Historical Replay Studio Acceptance & Hardening
 
 - **Fixed:** Segment/archive identity and trace validation, exact microsecond receipt ordering, captured request/provenance lifecycle, bounded response parsing and chart/trace rendering.

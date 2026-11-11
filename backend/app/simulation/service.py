@@ -75,15 +75,42 @@ class SimulationService:
     async def run_scenario(
         self,*,scenario:str,frames:int,strategy:StrategyConfig,agents:AgentConfig,
         risk:RiskFirewallConfig,simulation:SimulationConfig,market_profile=None,
+        include_comparison_provenance:bool=False,research:ResearchProposal|None=None,
     ):
-        strategy_copy=self.research_strategy(strategy.model_copy(deep=True), market_profile)
-        dataset=generate_scenario(scenario,frames=frames,market=strategy_copy.market,market_profile=market_profile)
-        return await self.engine.run(
-            dataset=dataset,strategy_config=strategy_copy,agent_config=agents.model_copy(deep=True),
-            risk_config=risk.model_copy(deep=True),simulation_config=simulation.model_copy(deep=True),
-            scenario=scenario,
-            market_profile=market_profile,
+        from app.research_replay.comparison import (
+            CapturedScenarioResult, ComparisonConfigSnapshot, ScenarioInputCapture, ScenarioProvenanceReceipt,
         )
+        if research is not None:
+            research = ResearchProposal.model_validate_json(research.model_dump_json())
+            simulation = research.config.to_simulation(simulation)
+        simulation = SimulationConfig.model_validate_json(simulation.model_dump_json(), strict=True)
+        # The engine always overrides accounting's starting capital with this
+        # value. Capture that effective configuration, including without Vault.
+        simulation = simulation.model_copy(update={"accounting": simulation.accounting.model_copy(
+            update={"paper_initial_equity_quote": simulation.initial_equity_quote})})
+        # Validate copies before adaptation, then freeze the exact effective
+        # inputs. No await or operational runtime lookup occurs during capture.
+        strategy_copy=self.research_strategy(
+            StrategyConfig.model_validate_json(strategy.model_dump_json(), strict=True), market_profile)
+        capture=ScenarioInputCapture(strategy=strategy_copy,agents=agents,risk=risk,
+            simulation=simulation,market_profile=market_profile)
+        snapshot=ComparisonConfigSnapshot.from_payload(capture.model_dump(mode="json"))
+        # Reconstruct engine arguments from the immutable canonical snapshot.
+        captured=snapshot.inputs()
+        dataset=generate_scenario(scenario,frames=frames,market=captured.strategy.market,
+            market_profile=captured.market_profile)
+        result=await self.engine.run(
+            dataset=dataset,strategy_config=captured.strategy,agent_config=captured.agents,
+            risk_config=captured.risk,simulation_config=captured.simulation,
+            scenario=scenario,
+            market_profile=captured.market_profile,
+        )
+        if research is not None:
+            result.research_configuration=research.provenance()
+        if not include_comparison_provenance:
+            return result
+        receipt=ScenarioProvenanceReceipt.bind(result=result,captured=snapshot,scenario=scenario,frames=frames)
+        return CapturedScenarioResult(result=result,provenance=receipt)
 
     async def optimize(
         self,*,strategy:StrategyConfig,agents:AgentConfig,risk:RiskFirewallConfig,
