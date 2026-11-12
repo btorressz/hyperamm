@@ -1,0 +1,80 @@
+{
+  "phase":"16.6D",
+  "starting_main":"9170720f98984d032f9ef0de844e5cae14a8c553",
+  "verified_implementation":"87742744fca18f1a408e84f20ad46b9b29a2a712",
+  "screenshot_commit":"1fda7647025d418d89f532d69c5cd0fa35d74eee",
+  "economic_baseline":"8b7d144a2f7ab51185ef608030619ad23bc345e6",
+  "environment":{"date_pacific":"2026-11-11","os":"Linux x86_64","python":"3.12.14","node":"24.19.0","chromium":"151.0.7922.173","cpu_quota":2,"memory_gib":8},
+  "baseline":{"backend_passed":2499,"backend_failed":0,"backend_skipped":1,"frontend_passed":713,"chromium_groups_passed":27},
+  "final":{"backend_passed":2520,"backend_failed":0,"backend_skipped":1,"backend_seconds":158.64,"focused_passed":556,"uvicorn_cases_in_focused":9,"new_backend_cases":21,"frontend_passed":717,"frontend_failed":0,"frontend_skipped":0,"frontend_seconds":14.714,"typecheck":"PASS","build":"PASS","chromium_groups_passed":29,"chromium_seconds":97.551,"page_errors":0,"unexpected_console_errors":0,"unexpected_network_failures":0,"minimum_text_contrast":8.51},
+  "parity":{"cases":16,"complete_cases_equal":true,"cases_sha256":"107be54370ec06548c6adac9e96f3541c2994f8ef3ed7dc63cbc5ca0b03c63a6","previous_accepted_manifest_matched":true},
+  "custom_accounting_cross_revision_equal":[
+    {"market":"BTC","kind":"gap","sha256":"b493a3f5bd8ac4ba277e20d31e1b21a1c81a90264ed6843e552353ef1dc1925e"},
+    {"market":"BTC","kind":"crossing","sha256":"a99941aebc3788a7ec68f6db8f9bd9fa5f46f65a5509f5c1dbed85ee70d20a6b"},
+    {"market":"ETH","kind":"gap","sha256":"00c461bfa6c07f9f3473e537ed8b9c429b17429d9718e965b264330f8c07d585"},
+    {"market":"ETH","kind":"crossing","sha256":"34e2b9aaf2e4d4237a90d48c5c94860e668580b3eae3d12221415e53f2b78de8"},
+    {"market":"SOL","kind":"gap","sha256":"cb7ca142d7cc9a90ab455099113744b7c5f4988cc825030c543e62f8e60acb27"},
+    {"market":"SOL","kind":"crossing","sha256":"45f9f220de0a2c40e244b6b297fa692fdb298afcc6581413bd141f1fb0e8effe"}
+  ],
+  "serial_benchmarks":[
+    {"workload":"2/2;trace120","phase165d":{"samples_seconds":[0.059073,0.088319,0.051096],"median_seconds":0.059073,"response_bytes":30937,"peak_rss_kib":86856},"final":{"samples_seconds":[0.050977,0.086672,0.049585],"median_seconds":0.050977,"response_bytes":30937,"peak_rss_kib":88324},"change_percent":-13.705},
+    {"workload":"128/128;trace120","final":{"samples_seconds":[0.919868,0.908313,0.885285],"median_seconds":0.908313,"response_bytes":208841,"peak_rss_kib":101376},"phase165d":{"samples_seconds":[0.969512,0.991546,0.988202],"median_seconds":0.988202,"response_bytes":208841,"peak_rss_kib":101668},"change_percent":-8.084},
+    {"workload":"250/250;trace120","phase165d":{"samples_seconds":[2.17568,2.165631,2.262592],"median_seconds":2.17568,"response_bytes":209120,"peak_rss_kib":107088},"final":{"samples_seconds":[1.933997,1.900957,1.956644],"median_seconds":1.933997,"response_bytes":209120,"peak_rss_kib":107908},"change_percent":-11.108},
+    {"workload":"1000/1000;trace120","final":{"samples_seconds":[9.429999,9.469334,9.492236],"median_seconds":9.469334,"response_bytes":209112,"peak_rss_kib":135120},"phase165d":{"samples_seconds":[10.576166,10.808236,10.952033],"median_seconds":10.808236,"response_bytes":209112,"peak_rss_kib":133868},"change_percent":-12.388},
+    {"workload":"1000/1001;segments=1;gaps=0;modeled=False","phase165d":{"samples_seconds":[11.137492,10.838024,10.934264],"median_seconds":10.934264,"serialization_ms":[1.733,1.924,1.719],"response_bytes":405414,"peak_rss_kib":137744},"final":{"samples_seconds":[9.703132,9.732166,9.723303],"median_seconds":9.723303,"serialization_ms":[1.866,1.751,4.442],"response_bytes":405414,"peak_rss_kib":136844},"change_percent":-11.075},
+    {"workload":"4999/5000;segments=1;gaps=0;modeled=False","phase165d":{"samples_seconds":[60.363659,59.787161,58.787601],"median_seconds":59.787161,"serialization_ms":[1.786,1.702,2.043],"response_bytes":406191,"peak_rss_kib":311412},"final":{"samples_seconds":[52.537864,53.345412,52.80609],"median_seconds":52.80609,"serialization_ms":[2.163,1.698,1.706],"response_bytes":406191,"peak_rss_kib":310272},"change_percent":-11.677},
+    {"workload":"64/65;segments=32;gaps=31;modeled=False","phase165d":{"samples_seconds":[0.517045,0.518241,0.493419],"median_seconds":0.517045,"serialization_ms":[0.39,0.375,0.423],"response_bytes":91002,"peak_rss_kib":311412},"final":{"samples_seconds":[0.479083,0.503475,0.493289],"median_seconds":0.493289,"serialization_ms":[0.621,0.439,0.378],"response_bytes":91002,"peak_rss_kib":310272},"change_percent":-4.595},
+    {"workload":"4/5;segments=1;gaps=0;modeled=False","phase165d":{"samples_seconds":[0.266179,0.241722,0.259072],"median_seconds":0.259072,"serialization_ms":[0.24,0.312,0.27],"response_bytes":53299,"peak_rss_kib":311412},"final":{"samples_seconds":[0.269748,0.27797,0.266553],"median_seconds":0.269748,"serialization_ms":[0.51,0.238,0.483],"response_bytes":53299,"peak_rss_kib":310272},"change_percent":4.121},
+    {"workload":"128/129;segments=1;gaps=0;modeled=True","phase165d":{"samples_seconds":[4.267418,4.227103,4.321138],"median_seconds":4.267418,"serialization_ms":[0.838,0.99,0.931],"response_bytes":227095,"peak_rss_kib":311412},"final":{"samples_seconds":[4.218018,4.123129,4.184731],"median_seconds":4.184731,"serialization_ms":[0.904,0.955,1.326],"response_bytes":227095,"peak_rss_kib":310272},"change_percent":-1.938},
+    {"workload":"64/65;segments=32;gaps=1024;modeled=False","phase165d":{"samples_seconds":[0.783864,0.834242,0.766362],"median_seconds":0.783864,"serialization_ms":[1.238,1.343,1.248],"response_bytes":222080,"peak_rss_kib":311412},"final":{"samples_seconds":[0.797934,0.786444,0.785847],"median_seconds":0.786444,"serialization_ms":[1.335,1.931,1.479],"response_bytes":222080,"peak_rss_kib":310272},"change_percent":0.329}
+  ],
+  "instrumented_stages_seconds_inclusive":[
+    {"workload":"128","worker":0.9204755339999338,"dataset_read":0.034056,"prepare_replay":0.018448,"segment_dataset":0.010589,"engine":0.7063,"archive_serialization":0.002627,"replay":0.345744,"scenario":0.482261,"comparison_foundation":0.049716,"quantitative_receipt":0.080282,"trace_projection":0.007619,"comparison_response":0.918766},
+    {"workload":"1000","worker":9.749494318000188,"dataset_read":0.141291,"prepare_replay":0.023873,"segment_dataset":0.155023,"engine":8.67415,"archive_serialization":0.002687,"replay":2.551628,"scenario":6.772485,"comparison_foundation":0.209873,"quantitative_receipt":0.408359,"trace_projection":0.012455,"comparison_response":9.748024},
+    {"workload":"modeled128","worker":4.215952674000164,"dataset_read":0.017982,"prepare_replay":0.002951,"segment_dataset":0.009864,"engine":3.828906,"archive_serialization":0.025608,"replay":3.502639,"scenario":0.491852,"comparison_foundation":0.141106,"quantitative_receipt":0.204609,"trace_projection":0.011284,"comparison_response":4.214521},
+    {"workload":"segments32","worker":0.4826571140001761,"dataset_read":0.017807,"prepare_replay":0.003044,"segment_dataset":0.004609,"engine":0.331048,"archive_serialization":0.006567,"replay":0.184396,"scenario":0.228062,"comparison_foundation":0.039178,"quantitative_receipt":0.064231,"trace_projection":0.002934,"comparison_response":0.481458}
+  ],
+  "gates":{
+    "full_backend":"PASS",
+    "frontend_typescript":"PASS",
+    "frontend_build":"PASS",
+    "frontend_regression":"PASS",
+    "archive_identity":"PASS",
+    "paper_integrity":"PASS",
+    "order_retention_reconciliation":"PASS",
+    "performance_characterization":"PASS",
+    "single_worker_concurrency":"PASS",
+    "cancellation_shutdown":"PASS",
+    "operational_isolation":"PASS",
+    "storage_security":"PASS",
+    "supported_redis_configurations":"PASS",
+    "research_ux_stale_results":"PASS",
+    "chromium_workflows":"PASS",
+    "responsive_screenshot_inspection":"PASS",
+    "compact_evidence":"PASS",
+    "phase166b":"DEFERRED",
+    "physical_redis":"BLOCKED",
+    "macos":"NOT RUN",
+    "authenticated_history_licensing":"EXTERNAL / NOT RUN",
+    "signed_exchange_execution":"EXTERNAL / NOT RUN"
+  },
+  "screenshots":[
+    {"file":"comparison-complete-1440.png","bytes":94059,"sha256":"774f78361896b90d3f372c63ce274f1c47f4231b5edd98f67eb72ceb0d44901e","inspected":true},
+    {"file":"historical-preflight-1440.png","bytes":160229,"sha256":"0b5b0130102b9e80d1379b08db6bb8a5e4318fa34603574ce30863e8494e25c4","inspected":true},
+    {"file":"large-workload-warning.png","bytes":31189,"sha256":"73bf80cba952bde521aefe20d4d17e744ffad2bc13cdd916e79fb7c390f4b5eb","inspected":true},
+    {"file":"mobile-preflight-390.png","bytes":34373,"sha256":"c019f38f26947472295bb98e643a6f21ec6dc8e7be88d19b07b7802c02560620","inspected":true},
+    {"file":"research-complete.png","bytes":383169,"sha256":"e8b7f6bcc5b37929da518069ea938066e56372c8dbffae6cbd49457a1bbe1e2d","inspected":true},
+    {"file":"research-diagnostic-390.png","bytes":13502,"sha256":"382c2c6dade42b75690fd136c27a7e1208ce0aa62162210775ccfc33f8bb5217","inspected":true}
+  ],
+  "limitations":[
+    "No durable job tracking, restart/crash recovery, authoritative frame progress or engine cancellation protocol; 16.6B deferred.",
+    "No physical Redis executable/listener; fakeredis/Lua is fixture acceptance only.",
+    "One optional ML test skipped because scikit-learn is absent.",
+    "Generated fixtures and asserted source labels; authentication/licensing, macOS and signed trading not accepted.",
+    "Inclusive stage timers overlap; serial timings remain host-sensitive; RSS is cumulative process high-water.",
+    "First supplemental browser attempt interrupted waiting for DevTools body; second required explicit Vault revalidation after retirement; final 29 groups passed."
+  ],
+  "local_acceptance":"PHASE 16.6A/C LOCAL RESEARCH ACCEPTANCE: PASS",
+  "overall_completion":"CONDITIONAL - 16.6B DEFERRED",
+  "publication":"LOCAL READY; source upload blocked by automatic approval review pending explicit trusted-chat authorization; draft PR not created"
+}
