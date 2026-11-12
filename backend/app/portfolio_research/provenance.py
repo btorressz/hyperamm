@@ -5,13 +5,12 @@ from typing import Literal
 
 from pydantic import model_validator
 
-from app.market_data.live_models import Evidence
 from app.research_replay.models import Fingerprint
 from app.simulation.models import stable_fingerprint
-from .models import PortfolioResearchConfig, CONTRACT_VERSION
+from .models import PortfolioEvidence, PortfolioResearchConfig, CONTRACT_VERSION
 
 
-class PortfolioResearchProvenance(Evidence):
+class PortfolioResearchProvenance(PortfolioEvidence):
     contract_version: Literal["phase17-portfolio-research-v1"] = CONTRACT_VERSION
     config: PortfolioResearchConfig
     config_fingerprint: Fingerprint
@@ -48,11 +47,12 @@ class PortfolioResearchProvenance(Evidence):
         return self
 
     def verify_config(self, config: PortfolioResearchConfig) -> None:
+        self = type(self).model_validate(self)
         if self.config_fingerprint != config.fingerprint():
             raise ValueError("portfolio provenance does not bind the supplied configuration")
 
 
 def capture_portfolio_provenance(config: PortfolioResearchConfig) -> PortfolioResearchProvenance:
-    config = PortfolioResearchConfig.model_validate_json(config.model_dump_json())
+    config = PortfolioResearchConfig.model_validate(config)
     return PortfolioResearchProvenance(config=config,
                                        **PortfolioResearchProvenance.expected(config))

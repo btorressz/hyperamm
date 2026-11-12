@@ -4,12 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
-## Unreleased — Phase 17.1A (contracts foundation; draft acceptance pending)
+## Unreleased — Phase 17.1A (contracts foundation and native acceptance)
 
 - Add immutable `phase17-portfolio-research-v1` BTC/ETH/SOL configuration, USDC PAPER budget, exact per-market allocations, reserve reconciliation and static portfolio risk-ceiling types.
 - Reuse Phase 16.5 canonical strategy/agent/risk/simulation/accounting/market-profile snapshots and deterministic SHA-256 fingerprints for per-market capture and portfolio provenance.
 - Add strict input validation and focused contract/allocation/provenance/isolation tests; result and exposure contracts explicitly do **not** claim synchronized portfolio PnL or authorize execution.
-- [Contract design and 17.1A.5 native acceptance handoff](docs/PHASE171A_CONTRACTS.md). Tests written but native execution not yet performed; no backend route, worker or UI is added.
+- Harden portfolio-only nested model validation and receipt verification; normalize equivalent captured Decimal values using existing accounting/comparison contracts; validate direct reconciliation inputs.
+- Execute the original 48 native portfolio tests and add 67 adversarial/integration cases. See [contract design](docs/PHASE171A_CONTRACTS.md) and [17.1A.5 acceptance](docs/PHASE171A_ACCEPTANCE.md) for full backend/frontend results and independent economic parity. No backend route, worker or UI is added.
 
 ## Unreleased — Phase 16.6D
 

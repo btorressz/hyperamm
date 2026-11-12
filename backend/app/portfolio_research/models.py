@@ -8,8 +8,9 @@ from __future__ import annotations
 from decimal import Decimal, localcontext
 from typing import Literal
 
-from pydantic import AwareDatetime, Field, StrictInt, field_validator, model_validator
+from pydantic import AwareDatetime, ConfigDict, Field, StrictInt, field_validator, model_validator
 
+from app.accounting.models import canonical
 from app.market_data.live_models import Evidence
 from app.research_replay.comparison import ComparisonConfigSnapshot
 from app.research_replay.models import Fingerprint
@@ -22,18 +23,24 @@ from .config import ExactPortfolioDecimal, MAX_PORTFOLIO_CAPITAL
 CONTRACT_VERSION = "phase17-portfolio-research-v1"
 
 
-class PortfolioCapitalBudget(Evidence):
+class PortfolioEvidence(Evidence):
+    # Frozen models can still be forged with model_copy/model_construct. Validate
+    # every portfolio object again when it crosses a containing model boundary.
+    model_config = ConfigDict(revalidate_instances="always")
+
+
+class PortfolioCapitalBudget(PortfolioEvidence):
     quote_currency: Literal["USDC"] = "USDC"
     total_equity_quote: ExactPortfolioDecimal = Field(gt=0, le=MAX_PORTFOLIO_CAPITAL)
     minimum_reserve_quote: ExactPortfolioDecimal = Field(default=Decimal("0"), ge=0)
 
 
-class MarketResearchAllocation(Evidence):
+class MarketResearchAllocation(PortfolioEvidence):
     market: ResearchPerpMarketId
     allocated_equity_quote: ExactPortfolioDecimal = Field(gt=0)
 
 
-class PortfolioRiskLimits(Evidence):
+class PortfolioRiskLimits(PortfolioEvidence):
     """Configuration ceilings, NOT an operational firewall or calculated exposure."""
 
     max_gross_exposure_quote: ExactPortfolioDecimal = Field(gt=0)
@@ -51,7 +58,7 @@ class PortfolioRiskLimits(Evidence):
         return self
 
 
-class PortfolioResearchScenario(Evidence):
+class PortfolioResearchScenario(PortfolioEvidence):
     """Captured single-market DEMO/PAPER settings; no historical time matching."""
 
     market: ResearchPerpMarketId
@@ -83,10 +90,21 @@ class PortfolioResearchScenario(Evidence):
             raise ValueError("portfolio research requires a validated captured market profile")
         if self.captured.market_profile_fingerprint != effective.market_profile.profile_fingerprint:
             raise ValueError("portfolio market profile identity mismatch")
+        # Reuse accounting's exact numeric normalization and comparison's capture
+        # algorithm. Equivalent Decimal spellings must also agree inside captures;
+        # existing single-market snapshot/fingerprint conventions stay untouched.
+        normalized_payload = {
+            name: type(value).model_validate(canonical(value)).model_dump(mode="json")
+            if value is not None else None
+            for name in type(effective).model_fields
+            for value in (getattr(effective, name),)
+        }
+        normalized = ComparisonConfigSnapshot.from_payload(normalized_payload)
+        object.__setattr__(self, "captured", normalized)
         return self
 
 
-class PortfolioResearchConfig(Evidence):
+class PortfolioResearchConfig(PortfolioEvidence):
     contract_version: Literal["phase17-portfolio-research-v1"] = CONTRACT_VERSION
     budget: PortfolioCapitalBudget
     allocations: tuple[MarketResearchAllocation, ...] = Field(min_length=1, max_length=3)
@@ -139,6 +157,7 @@ class PortfolioResearchConfig(Evidence):
 
     def canonical_payload(self) -> dict:
         """Canonical market order independent of request serialization order."""
+        self = type(self).model_validate(self)
         return {
             "version": self.contract_version,
             "budget": self.budget.model_dump(mode="json"),
@@ -157,7 +176,7 @@ class PortfolioResearchConfig(Evidence):
         return stable_fingerprint(self.canonical_payload())
 
 
-class PortfolioExposureSnapshot(Evidence):
+class PortfolioExposureSnapshot(PortfolioEvidence):
     """Future per-market observation. Not sufficient to aggregate a portfolio."""
 
     market: ResearchPerpMarketId
@@ -172,7 +191,7 @@ class PortfolioExposureSnapshot(Evidence):
     authority: Literal["NONE"] = "NONE"
 
 
-class PortfolioResearchResult(Evidence):
+class PortfolioResearchResult(PortfolioEvidence):
     """17.1A placeholder only: never assert results before 17.2 processing."""
 
     contract_version: Literal["phase17-portfolio-research-v1"] = CONTRACT_VERSION
