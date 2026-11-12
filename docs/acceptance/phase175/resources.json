@@ -1,0 +1,62 @@
+[
+  {
+    "markets": 3,
+    "frames_per_market_per_leg": 250,
+    "request_bytes": 23332,
+    "original_stress_bytes": 176036,
+    "terminal_bytes": 69998,
+    "workload": {
+      "executed_frames": 1500,
+      "quote_level_frames": 12000,
+      "native_observations": 1500,
+      "ledger_entries": 30000,
+      "event_entries": 750
+    },
+    "classification": "MODELED_ALIGNED",
+    "risk_outcome": "ASSESSED",
+    "risk_decision": "HALT",
+    "baseline_points": 120,
+    "stressed_points": 120,
+    "sampled": true
+  },
+  {
+    "markets": 3,
+    "frames_per_market_per_leg": 300,
+    "request_bytes": 23332,
+    "original_stress_bytes": 174897,
+    "terminal_bytes": 26971,
+    "workload": {
+      "executed_frames": 1800,
+      "quote_level_frames": 14400,
+      "native_observations": 1500,
+      "ledger_entries": 30000,
+      "event_entries": 750
+    },
+    "classification": "FINAL_ONLY",
+    "risk_outcome": "BLOCKED",
+    "risk_decision": "HALT",
+    "baseline_points": 0,
+    "stressed_points": 0,
+    "sampled": false
+  },
+  {
+    "markets": 3,
+    "frames_per_market_per_leg": 500,
+    "request_bytes": 23332,
+    "original_stress_bytes": 174763,
+    "terminal_bytes": 26931,
+    "workload": {
+      "executed_frames": 3000,
+      "quote_level_frames": 24000,
+      "native_observations": 1500,
+      "ledger_entries": 30000,
+      "event_entries": 750
+    },
+    "classification": "FINAL_ONLY",
+    "risk_outcome": "BLOCKED",
+    "risk_decision": "HALT",
+    "baseline_points": 0,
+    "stressed_points": 0,
+    "sampled": false
+  }
+]

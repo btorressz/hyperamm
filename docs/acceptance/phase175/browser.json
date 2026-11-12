@@ -1,0 +1,160 @@
+{
+  "classification": "PASS",
+  "workflows": [
+    "Dedicated page and local controls available without terminal WebSocket; no automatic simulation",
+    "Three-market PAPER run, accounting, risk and eligible equity/PnL/drawdown charts",
+    "One- and two-market native accounting and exposure",
+    "Native baseline/stress: CORRELATED_SELLOFF",
+    "Native baseline/stress: BTC_LED_VOLATILITY",
+    "Native baseline/stress: LIQUIDITY_SHOCK",
+    "Native baseline/stress: FUNDING_STRESS",
+    "Native baseline/stress: ORACLE_DEGRADATION",
+    "Native baseline/stress: CONCENTRATION_STRESS",
+    "Provenance: canonical configuration, datasets, accounting, original results and chart fingerprints",
+    "Desktop/tablet/mobile responsive sections, keyboard drawer and actionable exact allocation validation",
+    "Browser abort does not release worker; actual 429 busy state; retired result never returns",
+    "Sanitized HTTP 500 failure with no private diagnostics",
+    "Reconnect retires previous preview; explicit revalidation recovers; operational authority unchanged"
+  ],
+  "page_errors": [],
+  "console_errors": [],
+  "expected_fault_console": [
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "measurements": [
+    {
+      "kind": "preview",
+      "bytes": 23153
+    },
+    {
+      "kind": "RUN",
+      "bytes": 16183,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 15877
+    },
+    {
+      "kind": "ANALYZE",
+      "bytes": 13946,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 8598
+    },
+    {
+      "kind": "ANALYZE",
+      "bytes": 11389,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 23912
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 31462,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 23784
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 31462,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 23783
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 31452,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 23894
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 31463,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 23796
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 31453,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 23788
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 31462,
+      "points": 12
+    },
+    {
+      "kind": "preview",
+      "bytes": 23922
+    },
+    {
+      "kind": "preview",
+      "bytes": 23912
+    },
+    {
+      "kind": "preview",
+      "bytes": 23912
+    },
+    {
+      "kind": "preview",
+      "bytes": 23912
+    },
+    {
+      "kind": "preview",
+      "bytes": 23912
+    },
+    {
+      "kind": "preview",
+      "bytes": 23912
+    },
+    {
+      "kind": "RUN",
+      "bytes": 15866,
+      "points": 12
+    }
+  ],
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false
+    }
+  ],
+  "browser_version": "151.0.7922.173"
+}

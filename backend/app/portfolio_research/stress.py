@@ -67,16 +67,16 @@ def market_bindings(baseline, stressed):
         for b, s in zip(baseline.execution.markets, stressed.execution.markets, strict=True))
 
 
-async def execute_stress(service, *, request):
+async def execute_stress(service, *, request, _presentation=None):
     # The worker uses the native 28-digit convention. Keep direct service calls
     # and dataset regeneration independent of an ambient caller context too.
     with localcontext() as ctx:
         ctx.prec = 28
         ctx.rounding = "ROUND_HALF_EVEN"
-        return await _execute_stress(service, request=request)
+        return await _execute_stress(service, request=request, _presentation=_presentation)
 
 
-async def _execute_stress(service, *, request):
+async def _execute_stress(service, *, request, _presentation=None):
     request = PortfolioStressRequest.model_validate(request)
     config = request.config
     # Native baseline generation/execution remains exactly the existing path.
@@ -95,7 +95,8 @@ async def _execute_stress(service, *, request):
                     tuple(p for p in s.observations if p.sequence <= selection.sequence)):
                 raise ValueError("concentration replay prefix differs from baseline")
     from .aggregation import assemble_stress
-    return assemble_stress(request, baseline, stressed, selection)
+    result = assemble_stress(request, baseline, stressed, selection)
+    return _presentation(result, observations, stressed_observations) if _presentation else result
 
 
 def verify_stress_result(result):

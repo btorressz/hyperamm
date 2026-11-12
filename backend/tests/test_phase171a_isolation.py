@@ -27,7 +27,8 @@ def test_portfolio_contract_package_does_not_own_runtime_or_api():
         "__init__.py","models.py","config.py","allocation.py","provenance.py",
         "orchestration.py", "service.py", "aggregation.py",
         "accounting.py", "exposure.py", "risk.py", "temporal.py",
-        "scenarios.py", "stress.py", "metrics.py"}
+        "scenarios.py", "stress.py", "metrics.py",
+        "preview.py", "terminal.py", "terminal_models.py", "charts.py"}
     combined="\n".join(p.read_text() for p in py)
     for forbidden in (
         "place_order(", "sign_transaction(", "send_order(", "app.state",

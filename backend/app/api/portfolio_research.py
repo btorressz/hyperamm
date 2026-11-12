@@ -8,9 +8,31 @@ from app.portfolio_research.aggregation import bounded_json
 from app.portfolio_research.config import PortfolioResponseTooLarge
 from app.portfolio_research.models import (PortfolioResearchRunRequest, PortfolioExecutedResult,
     PortfolioAnalysisRequest, PortfolioAnalysisResult, PortfolioStressRequest, PortfolioStressResult)
+from app.portfolio_research.preview import PortfolioDraft, PreviewResult, prepare
+from app.portfolio_research.terminal_models import TerminalRequest, TerminalResult
 from app.simulation.executor import ResearchBusyError
 
 router = APIRouter(prefix="/portfolio-research", tags=["portfolio-research"])
+
+
+@router.post("/preview", response_model=PreviewResult)
+async def preview(body: PortfolioDraft, request: Request):
+    try:
+        profiles = {a.market: await request.app.state.research_market_catalog.resolve(a.market)
+                    for a in body.allocations}
+        result = prepare(body, profiles)
+        return Response(bounded_json(result), media_type="application/json", headers=NO_STORE)
+    except PortfolioResponseTooLarge:
+        raise HTTPException(413, "Portfolio preview exceeds transport budget", headers=NO_STORE) from None
+    except ValueError:
+        raise HTTPException(422, "Review allocations, reserve, strategy and combined stress workload", headers=NO_STORE) from None
+    except Exception:
+        raise HTTPException(500, "Portfolio configuration preparation unavailable", headers=NO_STORE) from None
+
+
+@router.post("/terminal", response_model=TerminalResult)
+async def terminal(body: TerminalRequest, request: Request):
+    return await _compute(body, request, "terminal_portfolio_research", TerminalResult)
 
 
 @router.post("/run", response_model=PortfolioExecutedResult)

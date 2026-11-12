@@ -5,11 +5,11 @@
 
 > **Open source · active development · local/single-operator architecture.** This repository is an engineering and research project, **not** a production-ready trading service, investment product, custody system or verified profitable strategy. PAPER/DEMO is the default; TESTNET signing is separately guarded. No mainnet trading, withdrawal, transfer or bridging path is implemented.
 
-## Current project status — November 11, 2026
+## Current project status — November 12, 2026
 
 | Workstream | Merged implementation | Acceptance / boundary |
 | --- | --- | --- |
-| Core AMM, inventory, perp context, reference risk, supervisory agents and Vault (Phases 1–12) | Operational pipeline, deterministic PAPER simulation, guarded optional TESTNET, 12-page terminal | Historical local/fixture acceptance; external, platform and production gates remain |
+| Core AMM, inventory, perp context, reference risk, supervisory agents and Vault (Phases 1–12) | Operational pipeline, deterministic PAPER simulation, guarded optional TESTNET, terminal workspaces | Historical local/fixture acceptance; external, platform and production gates remain |
 | Institutional UX and research (Phases 13–14.6) | Analytics, Execution/Markets UX, Research Vault presets/comparisons, BTC/ETH/SOL isolated PAPER market selection | Local/browser acceptance does not establish venue performance |
 | Read-only native market intelligence (Phases 15.1–15.5B, PRs #50–#55) | Official SDK REST/WS observation, L2/perp contexts, stream freshness, bounded history, provider health, observer lifecycle hardening | **Combined Phase 15 not closed:** genuine permitted venue connectivity, long soak and independent macOS acceptance outstanding |
 | Historical research contracts and importer (Phases 16.1A/B, PRs #56–#57) | Immutable provenance, bounded secure local JSON admission, owner-only POSIX evidence vault | Source/permission labels are user assertions; no authenticated historical-feed or license proof |
@@ -17,8 +17,8 @@
 | Historical Replay Studio (Phases 16.4–16.4.1) | React dataset/frame navigation, original traces and independent segment accounting | Native/frontend/Chromium evidence recorded in the later acceptance phase |
 | Scenario/historical comparison (Phases 16.5A–C.2, PRs #62–#66) | Same-job capture, descriptive metrics, bounded API and React Comparison Studio | Independent final security/regression findings and local gates: [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md) |
 | Local research acceptance (Phases 16.6A/C/D) | Native, browser, security and resource acceptance | Durable lifecycle/recovery (16.6B) remains deferred |
-| Portfolio research (Phases 17.1A–17.4) | Exact configuration, PAPER execution, shared-capital accounting, research risk and joint stress | [Phase 17.4 stress acceptance](docs/PHASE174_ACCEPTANCE.md); modeled evidence only, no trading authority |
-| Next (Phases 17.4–17.6) | Explicitly modeled correlated stress, portfolio terminal and browser acceptance | Deferred |
+| Portfolio research (Phases 17.1A–17.5) | Exact configuration, PAPER execution/accounting/risk, six modeled stress scenarios and integrated responsive Portfolio Research terminal | [Phase 17.5 acceptance](docs/PHASE175_ACCEPTANCE.md); bounded native charts and provenance, no trading authority |
+| Next (Phase 17.6) | Independent final security, regression and end-to-end acceptance | Deferred |
 
 The current **research and independent live-observation universe** is **BTC-PERP, ETH-PERP and SOL-PERP**. That does not expand the operational strategy market or permit switching live execution through the research UI. Operational market data, independent read-only observation and the historical PAPER replay vault are **three separate evidence paths**.
 
@@ -35,6 +35,8 @@ Phase 17.3 adds `POST /api/v1/portfolio-research/analyze`, accepting the same co
 Phase 17.3H hardens native observation identity, clock completeness and cross-report risk bindings without raising the 1,500-observation portfolio retention cap. BTC/ETH/SOL ×500 complete frames support `MODELED_ALIGNED` drawdown; larger jobs retaining only suffixes remain `FINAL_ONLY`, with unavailable drawdown and `BLOCKED` risk. Risk decisions are **post-execution hypothetical research assessments**: REDUCE/HALT cannot modify operational orders, kill switches, authorizations, balances or TESTNET signing, and never claim that previously simulated PAPER orders were prevented. Cross-market correlation is explicitly unavailable; matching synthetic timestamps establish neither empirical correlation nor authenticated historical synchronization. Phase 17.4 must explicitly declare synthetic shock/correlation assumptions unless validated overlapping historical datasets are supplied. See [hardening findings, exact validation results and remaining limits](docs/PHASE173H_ACCEPTANCE.md).
 
 Phase 17.4 adds `POST /api/v1/portfolio-research/stress` with immutable `phase174-stress-v1` assumptions for correlated selloff, BTC-led transmission, liquidity shock, funding stress, oracle degradation and concentration stress. One existing worker admission executes the unchanged baseline and then transformed market datasets through the native PAPER engine. Both legs share the **existing total** workload/retention budgets, captured capital, execution settings and research risk policy. Eligible comparisons report native equity/PnL, exposure, concentration, utilization, leverage, signed funding PnL, complete-history drawdown and post-execution risk transitions. Concentration targets the largest validated pre-onset gross exposure, preserves its replayed inventory and rejects insufficient evidence. Modeled relationships grant no empirical correlation, historical synchronization, forecast or trading authority. See [scenario contracts, native tests, limits and Phase 17.5 handoff](docs/PHASE174_ACCEPTANCE.md).
+
+Phase 17.5 adds the dedicated **Portfolio Research** workspace at `#/portfolio-research`: exact BTC/ETH/SOL capital allocations, native strategy/AMM/PAPER controls, risk settings, all six modeled stress forms, accounting/exposure/risk diagnostics, baseline/stressed comparisons and eligible bounded equity/PnL/drawdown charts. Server-only `/preview` preparation produces canonical configuration fingerprints; `/terminal` returns compact same-job evidence through the existing worker. Edits and session transitions retire evidence, unavailable histories remain explicit, and disconnected terminal transport does not prevent local REST research. See [Phase 17.5 architecture, resource measurements and acceptance](docs/PHASE175_ACCEPTANCE.md). Phase 17.6 remains final independent security/regression/end-to-end acceptance.
 
 ## Why a virtual AMM?
 

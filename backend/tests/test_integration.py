@@ -150,17 +150,21 @@ async def test_failed_cancel_latches_halt_and_exposes_uncertainty(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_stale_watchdog_with_long_quote_interval():
-    rt=HyperAmmRuntime(Settings(market_stale_after_seconds=.1))
+    # Establish resting orders before deliberately expiring the source. A
+    # 100ms initial freshness window races CPU contention in full regression.
+    rt=HyperAmmRuntime(Settings(market_stale_after_seconds=30))
     rt.config.quote_refresh_interval_ms=60000
     await rt.market._accept(MockMarketDataAdapter().snapshot_for(1))
     await rt.start_strategy()
     try:
         async def resting():
             while not await rt.paper.get_open_orders(): await asyncio.sleep(.001)
-        await asyncio.wait_for(resting(),.5)
+        await asyncio.wait_for(resting(),5)
+        async with rt.market._lock:
+            rt.market._snapshot.latest_valid_update=utcnow()-timedelta(seconds=31)
         async def cancelled():
             while rt.strategy.quote_health!='DEGRADED': await asyncio.sleep(.01)
-        await asyncio.wait_for(cancelled(),2)
+        await asyncio.wait_for(cancelled(),5)
         assert not await rt.paper.get_open_orders()
         assert rt.strategy.running
     finally:
