@@ -81,7 +81,11 @@ test('preview API sends decimal strings only to read-only research route',async(
 });
 for(const status of [422,429,503,500]) test(`research API reports actionable ${status}`,async()=>{
  const old=global.fetch;global.fetch=async()=>({ok:false,status,json:async()=>({detail:[{loc:['body','config','initial_equity_quote'],msg:'invalid capital'}]})});
- try{await assert.rejects(api.researchPreview(proposal()),status===429?/capacity is busy/:/invalid capital/);}finally{global.fetch=old;}
+ try{await assert.rejects(api.researchPreview(proposal()),error=>{
+  assert.match(error.message,status===429?/capacity is busy/:status===422?/Review the scenario/:status===503?/coordination is restored/:/backend diagnostics/);
+  assert.doesNotMatch(error.message,/invalid capital/);
+  return true;
+ });}finally{global.fetch=old;}
 });
 test('percentage input preserves partial typing while mapping backend fraction exactly once',()=>{
  reset();store.getState().editUtilizationPercent('75.');assert.equal(store.getState().utilizationPercentDraft,'75.');

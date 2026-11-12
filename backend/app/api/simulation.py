@@ -98,8 +98,9 @@ async def run_simulation(request:SimulationRunRequest,http_request:Request,rt=De
         raise HTTPException(status_code=503,detail=str(exc)) from exc
     except ResearchBusyError as exc:
         raise HTTPException(status_code=429,detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=422,detail=str(exc)) from exc
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Research configuration or evidence rejected",
+                            headers={"Cache-Control": "no-store"}) from None
     except Exception as exc:
         logger.exception("Phase 10 simulation failed")
         raise HTTPException(status_code=500,detail="Phase 10 simulation failed") from exc
@@ -125,8 +126,9 @@ async def optimize(request:OptimizationRequest,http_request:Request,rt=Depends(r
         raise HTTPException(status_code=503,detail=str(exc)) from exc
     except ResearchBusyError as exc:
         raise HTTPException(status_code=429,detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=422,detail=str(exc)) from exc
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Research configuration or evidence rejected",
+                            headers={"Cache-Control": "no-store"}) from None
     except Exception as exc:
         logger.exception("Phase 10 optimization failed")
         raise HTTPException(status_code=500,detail="Phase 10 optimization failed") from exc

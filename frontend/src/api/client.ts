@@ -30,21 +30,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       "Research capacity is busy. Try again after the current simulation or optimization finishes.",
     );
   if (!r.ok) {
-    const body = await r.json().catch(() => null);
-    const detail = body?.detail;
     if (path.startsWith('/simulation/') || path.startsWith('/research-vault/')) {
-      const message = Array.isArray(detail)
-        ? detail.map((e: {loc: unknown[]; msg: string}) => `${e.loc.slice(1).join('.')}: ${e.msg}`).join('; ')
-        : typeof detail === 'string' ? detail : `HTTP ${r.status}`;
-      const advice = r.status === 422
-        ? 'Review the scenario, frame bounds and parameter grid.'
+      // Error bodies may come from a proxy or contain private worker details.
+      // Classify by HTTP status without parsing or displaying untrusted text.
+      const advice = r.status === 413
+        ? 'Research payload exceeds its size limit. Reduce the request.'
+        : r.status === 422
+        ? 'Review the scenario, frame bounds and parameter grid; check Research Vault capital and accounting settings.'
         : r.status === 503
-          ? 'Research service unavailable. Retry when capacity coordination is restored.'
+          ? 'Research service unavailable. Retry when coordination is restored.'
           : r.status >= 500
             ? 'Research failed on the server. Retry or inspect backend diagnostics.'
             : 'Retry the research request.';
-      throw new Error(`${message} ${advice}`);
+      throw new Error(`Research request failed (HTTP ${r.status}). ${advice}`);
     }
+    const body = await r.json().catch(() => null);
+    const detail = body?.detail;
     throw new Error(
       Array.isArray(detail)
         ? detail
