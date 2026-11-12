@@ -38,6 +38,10 @@ class SimulationService:
         from app.portfolio_research.service import run_portfolio_research
         return await run_portfolio_research(self, request=request)
 
+    async def analyze_portfolio_research(self, *, request):
+        from app.portfolio_research.service import analyze_portfolio_research
+        return await analyze_portfolio_research(self, request=request)
+
     async def historical_summaries(self, *, storage_root):
         from app.research_replay.runner import summaries
         return summaries(storage_root)

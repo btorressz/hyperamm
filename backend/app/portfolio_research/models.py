@@ -11,7 +11,7 @@ from typing import Literal
 from pydantic import AwareDatetime, ConfigDict, Field, StrictInt, field_validator, model_validator
 
 from app.accounting.models import canonical
-from app.market_data.live_models import Evidence
+from app.market_data.live_models import Evidence, FinancialDecimal, NonnegativeDecimal, PositiveDecimal
 from app.research_replay.comparison import ComparisonConfigSnapshot
 from app.research_replay.models import Fingerprint
 from app.simulation.market_profiles import MARKETS, ResearchPerpMarketId
@@ -395,4 +395,219 @@ class PortfolioExecutedResult(PortfolioEvidence):
                 raise ValueError("portfolio bundle substituted market evidence")
         if self.bundle_fingerprint != stable_fingerprint(self.model_dump(exclude={"bundle_fingerprint"}, mode="json")):
             raise ValueError("portfolio bundle fingerprint mismatch")
+        return self
+
+
+# Phase 17.3 types deliberately leave the configuration and 17.2 wire identity
+# untouched. Internal observations never become client accounting authority.
+def sealed(model, **values):
+    payload = model.model_construct(**values).model_dump(exclude={"evidence_fingerprint"}, mode="json")
+    return model(**values, evidence_fingerprint=stable_fingerprint(payload))
+
+
+class AnalysisEvidence(PortfolioEvidence):
+    evidence_fingerprint: Fingerprint
+
+    @model_validator(mode="after")
+    def verify_identity(self):
+        if self.evidence_fingerprint != stable_fingerprint(
+                self.model_dump(exclude={"evidence_fingerprint"}, mode="json")):
+            raise ValueError("portfolio analysis evidence fingerprint mismatch")
+        return self
+
+
+class PortfolioRiskPolicy(PortfolioEvidence):
+    warning_ratio: ExactPortfolioDecimal = Field(default=Decimal("0.8"), gt=0, lt=1)
+    reduction_ratio: ExactPortfolioDecimal = Field(default=Decimal("0.95"), gt=0, lt=1)
+    missing_critical_evidence: Literal["BLOCKED"] = "BLOCKED"
+
+    @model_validator(mode="after")
+    def ordered(self):
+        if self.warning_ratio >= self.reduction_ratio:
+            raise ValueError("warning must precede reduction and hard limit")
+        return self
+
+
+class PortfolioAnalysisRequest(PortfolioResearchRunRequest):
+    risk_policy: PortfolioRiskPolicy = Field(default_factory=PortfolioRiskPolicy)
+
+
+class NativeAccountingObservation(PortfolioEvidence):
+    sequence: StrictInt = Field(ge=1, le=3000)
+    timestamp: AwareDatetime
+    equity_quote: FinancialDecimal
+    session_pnl_quote: FinancialDecimal
+    position_base: FinancialDecimal
+    mark_price_quote: PositiveDecimal
+
+
+class MarketAccountingEvidence(AnalysisEvidence):
+    """Bounded, internal projection made from the accepted full native result."""
+    market: ResearchPerpMarketId
+    market_receipt_fingerprint: Fingerprint
+    observations: tuple[NativeAccountingObservation, ...] = Field(max_length=1500)
+
+
+class MarketObservationClock(AnalysisEvidence):
+    market: ResearchPerpMarketId
+    market_receipt_fingerprint: Fingerprint
+    native_evidence_fingerprint: Fingerprint
+    scenario: ScenarioName
+    engine_version: str = Field(min_length=1, max_length=96)
+    frames: StrictInt = Field(ge=2, le=3000)
+    expected_retained: StrictInt = Field(ge=0, le=1500)
+    retained: StrictInt = Field(ge=0, le=1500)
+    start_at: AwareDatetime
+    final_at: AwareDatetime
+    complete: bool
+    valid: bool
+    clock: Literal["DETERMINISTIC_SCENARIO_UTC_1S_V1"] = "DETERMINISTIC_SCENARIO_UTC_1S_V1"
+
+
+class PortfolioTemporalReport(AnalysisEvidence):
+    contract_version: Literal["phase173-temporal-v1"] = "phase173-temporal-v1"
+    classification: Literal["MODELED_ALIGNED", "FINAL_ONLY", "INCOMPARABLE", "UNAVAILABLE"]
+    clocks: tuple[MarketObservationClock, ...] = Field(min_length=1, max_length=3)
+    reasons: tuple[str, ...] = Field(min_length=1, max_length=10)
+    historical_market_synchronization_verified: Literal[False] = False
+    methodology: Literal["INDEPENDENT_PAPER_COMMON_SCENARIO_CLOCK"] = "INDEPENDENT_PAPER_COMMON_SCENARIO_CLOCK"
+
+
+class PortfolioDrawdownEvidence(AnalysisEvidence):
+    observation_count: StrictInt = Field(ge=2, le=1500)
+    equity_series_fingerprint: Fingerprint
+    native_evidence_fingerprints: tuple[Fingerprint, ...] = Field(min_length=1, max_length=3)
+    peak_equity_quote: PositiveDecimal
+    ending_drawdown_fraction: NonnegativeDecimal
+    max_drawdown_fraction: NonnegativeDecimal
+
+    @model_validator(mode="after")
+    def valid_drawdown(self):
+        if self.max_drawdown_fraction < self.ending_drawdown_fraction:
+            raise ValueError("maximum drawdown below ending drawdown")
+        return self
+
+
+class MarketEconomicContribution(PortfolioEvidence):
+    market: ResearchPerpMarketId
+    market_receipt_fingerprint: Fingerprint
+    equity_quote: FinancialDecimal
+    net_pnl_quote: FinancialDecimal
+    realized_pnl_quote: FinancialDecimal
+    unrealized_pnl_quote: FinancialDecimal
+    fees_quote: NonnegativeDecimal
+    funding_quote: FinancialDecimal
+
+
+class PortfolioAccountingReport(AnalysisEvidence):
+    contract_version: Literal["phase173-accounting-v1"] = "phase173-accounting-v1"
+    methodology: Literal["INDEPENDENT_CAPITAL_PAPER_NATIVE_EQUITY_V1"] = "INDEPENDENT_CAPITAL_PAPER_NATIVE_EQUITY_V1"
+    quote_currency: Literal["USDC"] = "USDC"
+    config_fingerprint: Fingerprint
+    temporal_fingerprint: Fingerprint
+    initial_capital_quote: PositiveDecimal
+    allocated_capital_quote: PositiveDecimal
+    reserve_quote: NonnegativeDecimal
+    capital_allocation_utilization: NonnegativeDecimal
+    contributions: tuple[MarketEconomicContribution, ...] = Field(min_length=1, max_length=3)
+    equity_quote: FinancialDecimal | None
+    pnl_quote: FinancialDecimal | None
+    session_loss_quote: NonnegativeDecimal | None
+    native_rounding_residual_quote: FinancialDecimal | None
+    drawdown: PortfolioDrawdownEvidence | None
+    status: Literal["SUPPORTED", "UNAVAILABLE"]
+
+
+class MarketExposure(PortfolioEvidence):
+    market: ResearchPerpMarketId
+    market_receipt_fingerprint: Fingerprint
+    source_run_fingerprint: Fingerprint
+    market_profile_fingerprint: Fingerprint
+    valuation_at: AwareDatetime
+    base_currency: ResearchPerpMarketId
+    quote_currency: Literal["USDC"] = "USDC"
+    position_base: FinancialDecimal
+    mark_price_quote: PositiveDecimal
+    signed_exposure_quote: FinancialDecimal
+    gross_concentration: NonnegativeDecimal | None
+
+
+class PortfolioExposureReport(AnalysisEvidence):
+    contract_version: Literal["phase173-exposure-v1"] = "phase173-exposure-v1"
+    temporal_fingerprint: Fingerprint
+    accounting_fingerprint: Fingerprint
+    positions: tuple[MarketExposure, ...] = Field(min_length=1, max_length=3)
+    gross_exposure_quote: NonnegativeDecimal | None
+    net_exposure_quote: FinancialDecimal | None
+    max_inventory_concentration: NonnegativeDecimal | None
+    gross_notional_utilization: NonnegativeDecimal | None
+    modeled_leverage: NonnegativeDecimal | None
+    reserved_capital_quote: NonnegativeDecimal | None
+    reserved_capital_utilization: NonnegativeDecimal | None
+    pending_order_exposure_quote: None = None
+    methodology: Literal["FILLED_BASE_TIMES_NATIVE_MARK_USDC_V1"] = "FILLED_BASE_TIMES_NATIVE_MARK_USDC_V1"
+
+
+class PortfolioRiskCheck(PortfolioEvidence):
+    limit: Literal["max_gross_exposure_quote", "max_abs_net_exposure_quote", "max_inventory_concentration",
+                   "max_capital_utilization", "modeled_leverage_ceiling", "max_session_loss_quote", "max_drawdown_fraction"]
+    observed: NonnegativeDecimal | None
+    ceiling: NonnegativeDecimal
+    state: Literal["NORMAL", "WARN", "REDUCE", "HALT", "UNAVAILABLE"]
+
+
+class PortfolioRiskReport(AnalysisEvidence):
+    contract_version: Literal["phase173-risk-v1"] = "phase173-risk-v1"
+    config_fingerprint: Fingerprint
+    risk_configuration_fingerprint: Fingerprint
+    accounting_fingerprint: Fingerprint
+    exposure_fingerprint: Fingerprint
+    temporal_fingerprint: Fingerprint
+    policy: PortfolioRiskPolicy
+    outcome: Literal["ASSESSED", "BLOCKED"]
+    decision: Literal["NORMAL", "WARN", "REDUCE", "HALT"] | None
+    checks: tuple[PortfolioRiskCheck, ...] = Field(min_length=7, max_length=7)
+    reasons: tuple[str, ...] = Field(min_length=1, max_length=10)
+    risk_compliant: bool
+    evaluation_scope: Literal["TERMINAL_LIMITS_AND_COMPLETE_HISTORY_MAX_DRAWDOWN"] = "TERMINAL_LIMITS_AND_COMPLETE_HISTORY_MAX_DRAWDOWN"
+    operational_authority: Literal["NONE"] = "NONE"
+    historical_orders_prevented: Literal[False] = False
+
+
+ANALYSIS_LIMITATIONS = (
+    "Independent-capital hypothetical PAPER model, including unexecuted USDC reserve; no cross-margin account or borrowing.",
+    "A common modeled scenario clock is not authenticated historical exchange synchronization.",
+    "FINAL_ONLY compares independent endpoints on the same scenario/window; no synchronized equity history or drawdown is claimed.",
+    "Risk evaluates terminal limits and, only with complete aligned traces, full-history maximum portfolio drawdown; it does not prevent already executed PAPER orders.",
+    "Native Decimal accounting uses 28-digit arithmetic; exact aggregate reconciliation discloses its rounding residual without changing fees/funding.",
+    "Fingerprints bind same-job evidence, not signatures; omitted native histories cannot be independently reconstructed from this receipt.",
+    "Reservations are native simulated full-notional reservations, not venue margin; pending-order exposure is unavailable.",
+)
+
+
+class PortfolioAnalysisResult(AnalysisEvidence):
+    contract_version: Literal["phase173-analysis-v1"] = "phase173-analysis-v1"
+    execution: PortfolioExecutedResult
+    temporal: PortfolioTemporalReport
+    accounting: PortfolioAccountingReport
+    exposure: PortfolioExposureReport
+    risk: PortfolioRiskReport
+    limitations: tuple[str, ...] = ANALYSIS_LIMITATIONS
+    simulated: Literal[True] = True
+    read_only: Literal[True] = True
+    authority: Literal["NONE"] = "NONE"
+    historical_market_synchronization_verified: Literal[False] = False
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def native_validation_context(cls, value, handler):
+        with localcontext() as ctx:
+            ctx.prec = 28
+            ctx.rounding = "ROUND_HALF_EVEN"
+            return handler(value)
+
+    @model_validator(mode="after")
+    def verify_analysis(self):
+        from .aggregation import verify_analysis
+        verify_analysis(self)
         return self

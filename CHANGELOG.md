@@ -4,6 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 17.3 (shared capital and portfolio research risk)
+
+- Add versioned, read-only accounting, exposure, temporal and risk receipts through `/api/v1/portfolio-research/analyze`; preserve 17.1A configuration and 17.2 `/run` identities.
+- Capture at most the existing 1,500 native retained observations inside one shared admission, with one sequential execution per market. Reconcile hypothetical USDC capital/reserve and native equity/PnL without duplicating fees/funding or the accounting engine.
+- Define the common synthetic observation clock, complete-history portfolio drawdown, terminal-only accounting, incomparable/unavailable evidence, explicit utilization/leverage denominators and deterministic NORMAL/WARN/REDUCE/HALT thresholds. Missing critical evidence blocks compliance.
+- Preserve original native hashes and local security/resource controls. Research decisions cannot mutate operational risk, cancel orders or authorize trading. Add focused/adversarial tests, resource harness and [native acceptance](docs/PHASE173_ACCEPTANCE.md).
+
 ## Unreleased — Phase 17.2 (isolated multi-market PAPER simulation)
 
 - Compose the existing deterministic engine and scenario service for one to three captured BTC/ETH/SOL simulations in canonical order under one shared-worker admission.
