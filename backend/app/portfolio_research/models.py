@@ -622,3 +622,219 @@ class PortfolioAnalysisResult(AnalysisEvidence):
         from .aggregation import verify_analysis
         verify_analysis(self)
         return self
+
+
+# Phase 17.4 adds contracts without changing earlier identities or defaults.
+STRESS_VERSION = "phase174-stress-v1"
+StressType = Literal["CORRELATED_SELLOFF", "BTC_LED_VOLATILITY", "LIQUIDITY_SHOCK",
+                     "FUNDING_STRESS", "ORACLE_DEGRADATION", "CONCENTRATION_STRESS"]
+
+
+class MarketPriceShock(PortfolioEvidence):
+    market: ResearchPerpMarketId
+    decline_fraction: ExactPortfolioDecimal = Field(gt=0, le=Decimal("0.8"))
+
+
+class MarketFundingShock(PortfolioEvidence):
+    market: ResearchPerpMarketId
+    adjustment: ExactPortfolioDecimal = Field(ge=Decimal("-0.01"), le=Decimal("0.01"))
+
+    @model_validator(mode="after")
+    def nonzero(self):
+        if not self.adjustment:
+            raise ValueError("funding adjustment must be explicitly nonzero")
+        return self
+
+
+class PortfolioShockAssumptions(PortfolioEvidence):
+    price_shocks: tuple[MarketPriceShock, ...] = Field(default=(), max_length=3)
+    funding_shocks: tuple[MarketFundingShock, ...] = Field(default=(), max_length=3)
+    btc_decline_fraction: ExactPortfolioDecimal | None = Field(default=None, gt=0, le=Decimal("0.8"))
+    eth_transmission: ExactPortfolioDecimal | None = Field(default=None, gt=0, le=5)
+    sol_transmission: ExactPortfolioDecimal | None = Field(default=None, gt=0, le=5)
+    propagation_lag_frames: StrictInt | None = Field(default=None, ge=0, le=300)
+    bid_depth_multiplier: ExactPortfolioDecimal | None = Field(default=None, gt=0, le=1)
+    ask_depth_multiplier: ExactPortfolioDecimal | None = Field(default=None, gt=0, le=1)
+    spread_multiplier: ExactPortfolioDecimal | None = Field(default=None, ge=1, le=20)
+    reference_mode: Literal["MISSING", "DIVERGENT"] | None = None
+    reference_source: Literal["redstone", "kraken", "coingecko"] | None = None
+    reference_divergence_fraction: ExactPortfolioDecimal | None = Field(default=None, gt=0, le=Decimal("0.5"))
+    concentration_decline_fraction: ExactPortfolioDecimal | None = Field(default=None, gt=0, le=Decimal("0.8"))
+    relationship_source: Literal["EXPLICIT_HYPOTHETICAL_ASSUMPTIONS"] = "EXPLICIT_HYPOTHETICAL_ASSUMPTIONS"
+    source_authenticated: Literal[False] = False
+
+    @model_validator(mode="after")
+    def canonical_markets(self):
+        for name in ("price_shocks", "funding_shocks"):
+            values = getattr(self, name)
+            if len({v.market for v in values}) != len(values):
+                raise ValueError("duplicate market shock")
+            object.__setattr__(self, name, tuple(sorted(values, key=lambda v: MARKETS.index(v.market))))
+        return self
+
+
+class PortfolioStressScenario(PortfolioEvidence):
+    contract_version: Literal["phase174-stress-v1"] = STRESS_VERSION
+    scenario_type: StressType
+    selected_markets: tuple[ResearchPerpMarketId, ...] = Field(min_length=1, max_length=3)
+    onset_frame: StrictInt = Field(ge=0, le=1499)
+    duration_frames: StrictInt = Field(ge=1, le=1500)
+    recovery_profile: Literal["STEP_WINDOW", "LINEAR_TO_BASELINE"] = "STEP_WINDOW"
+    assumptions: PortfolioShockAssumptions
+
+    @model_validator(mode="after")
+    def supported_assumptions(self):
+        if len(set(self.selected_markets)) != len(self.selected_markets):
+            raise ValueError("duplicate stress market")
+        object.__setattr__(self, "selected_markets", tuple(m for m in MARKETS if m in self.selected_markets))
+        a = self.assumptions
+        used = {n for n in type(a).model_fields if n not in {"relationship_source", "source_authenticated"}
+                and getattr(a, n) is not None and getattr(a, n) != ()}
+        required = {
+            "CORRELATED_SELLOFF": {"price_shocks"},
+            "BTC_LED_VOLATILITY": {"btc_decline_fraction"},
+            "LIQUIDITY_SHOCK": {"bid_depth_multiplier", "ask_depth_multiplier", "spread_multiplier"},
+            "FUNDING_STRESS": {"funding_shocks"},
+            "ORACLE_DEGRADATION": {"reference_mode", "reference_source"},
+            "CONCENTRATION_STRESS": {"concentration_decline_fraction"},
+        }[self.scenario_type]
+        allowed = required.copy()
+        if self.scenario_type == "BTC_LED_VOLATILITY":
+            required |= {f"{m.lower()}_transmission" for m in self.selected_markets if m != "BTC"}
+            allowed = required | {"propagation_lag_frames"}
+            for m in self.selected_markets:
+                multiplier = Decimal(1) if m == "BTC" else getattr(a, f"{m.lower()}_transmission")
+                if multiplier is not None and a.btc_decline_fraction is not None:
+                    with localcontext() as ctx:
+                        ctx.prec = 80
+                        if a.btc_decline_fraction * multiplier > Decimal("0.8"):
+                            raise ValueError("transmitted decline exceeds the bounded price shock")
+        if self.scenario_type == "ORACLE_DEGRADATION" and a.reference_mode == "DIVERGENT":
+            required |= {"reference_divergence_fraction"}
+            allowed = required
+        if not required <= used or not used <= allowed:
+            raise ValueError("missing or incompatible scenario assumptions")
+        if self.scenario_type in {"CORRELATED_SELLOFF", "FUNDING_STRESS"}:
+            shocks = a.price_shocks if self.scenario_type == "CORRELATED_SELLOFF" else a.funding_shocks
+            if tuple(s.market for s in shocks) != self.selected_markets:
+                raise ValueError("explicit shocks must match selected markets")
+        if self.scenario_type == "CONCENTRATION_STRESS" and self.onset_frame == 0:
+            raise ValueError("concentration requires a pre-onset position observation")
+        if self.recovery_profile == "LINEAR_TO_BASELINE" and (self.duration_frames < 2 or self.scenario_type == "ORACLE_DEGRADATION"):
+            raise ValueError("linear recovery requires a numeric shock and at least two frames")
+        return self
+
+    def fingerprint(self):
+        return stable_fingerprint(type(self).model_validate(self))
+
+
+class PortfolioStressRequest(PortfolioAnalysisRequest):
+    scenario: PortfolioStressScenario
+
+    @model_validator(mode="after")
+    def combined_workload(self):
+        # Existing ceilings bound the SUM of both legs, including configured
+        # retention capacities even when a run happens to emit fewer rows.
+        from .scenarios import workload, validate_joint_config
+        raw = self.config.model_dump()
+        for name in ("allocations", "scenarios"):
+            raw[name] = tuple(sorted(raw[name], key=lambda item: MARKETS.index(item["market"])))
+        object.__setattr__(self, "config", PortfolioResearchConfig.model_validate(raw))
+        validate_joint_config(self.config, self.scenario)
+        limits = (MAX_TOTAL_FRAMES, MAX_QUOTE_LEVEL_FRAMES, MAX_TOTAL_TRACE_POINTS,
+                  MAX_TOTAL_LEDGER_ENTRIES, MAX_TOTAL_EVENT_ENTRIES)
+        if any(2 * cost > limit for cost, limit in zip(workload(self.config), limits)):
+            raise ValueError("baseline plus stress exceeds the shared research budget")
+        return self
+
+
+class ConcentrationSelection(PortfolioEvidence):
+    rule: Literal["MAX_PRE_ONSET_GROSS_EXPOSURE_BTC_ETH_SOL_TIEBREAK"] = "MAX_PRE_ONSET_GROSS_EXPOSURE_BTC_ETH_SOL_TIEBREAK"
+    market: ResearchPerpMarketId
+    sequence: StrictInt = Field(ge=1, le=1500)
+    candidates: tuple[NativeAccountingObservation, ...] = Field(min_length=1, max_length=3)
+    candidate_markets: tuple[ResearchPerpMarketId, ...] = Field(min_length=1, max_length=3)
+    native_evidence_fingerprints: tuple[Fingerprint, ...] = Field(min_length=1, max_length=3)
+
+
+class MarketStressEvidence(PortfolioEvidence):
+    market: ResearchPerpMarketId
+    market_profile_fingerprint: Fingerprint
+    baseline_dataset_fingerprint: Fingerprint
+    stressed_dataset_fingerprint: Fingerprint
+    baseline_result_fingerprint: Fingerprint
+    stressed_result_fingerprint: Fingerprint
+    baseline_run_fingerprint: Fingerprint
+    stressed_run_fingerprint: Fingerprint
+
+
+class StressMetricComparison(PortfolioEvidence):
+    metric: Literal["equity_quote", "pnl_quote", "gross_exposure_quote", "net_exposure_quote",
+                    "max_inventory_concentration", "reserved_capital_utilization", "modeled_leverage",
+                    "funding_quote", "max_drawdown_fraction", "capital_allocation_utilization",
+                    "gross_notional_utilization"]
+    baseline: FinancialDecimal | None
+    stressed: FinancialDecimal | None
+    difference: FinancialDecimal | None
+    status: Literal["COMPARABLE", "UNAVAILABLE"]
+
+
+class PortfolioStressMetrics(PortfolioEvidence):
+    temporal_classification: Literal["MODELED_ALIGNED", "FINAL_ONLY", "INCOMPARABLE", "UNAVAILABLE"]
+    comparisons: tuple[StressMetricComparison, ...] = Field(min_length=11, max_length=11)
+
+
+class PortfolioStressRiskTransition(PortfolioEvidence):
+    baseline_outcome: Literal["ASSESSED", "BLOCKED"]
+    stressed_outcome: Literal["ASSESSED", "BLOCKED"]
+    baseline_decision: Literal["NORMAL", "WARN", "REDUCE", "HALT"] | None
+    stressed_decision: Literal["NORMAL", "WARN", "REDUCE", "HALT"] | None
+    status: Literal["ASSESSED", "BLOCKED"]
+    transition: str | None = Field(max_length=32)
+    operational_authority: Literal["NONE"] = "NONE"
+    historical_orders_prevented: Literal[False] = False
+
+
+STRESS_LIMITATIONS = (
+    "Explicit hypothetical joint shocks, not empirical correlations, probabilities, forecasts or authenticated observations.",
+    "Both legs replay fresh native PAPER state with unchanged captured capital and execution settings; shocks transform inputs before execution.",
+    "Concentration uses validated pre-onset positions and an identical replay prefix; subsequent native fills may change inventory.",
+    "Missing/divergent reference sources use native fallback; stale source timestamps are unsupported by the simulation reference contract.",
+    "Risk transitions are post-execution research assessments with no operational authority or prevention of prior PAPER orders.",
+    "Fingerprints bind deterministic datasets and same-job receipts, not authenticated exchange provenance or omitted native histories.",
+)
+
+
+class PortfolioStressResult(AnalysisEvidence):
+    contract_version: Literal["phase174-stress-v1"] = STRESS_VERSION
+    request: PortfolioStressRequest
+    request_fingerprint: Fingerprint
+    scenario_fingerprint: Fingerprint
+    baseline: PortfolioAnalysisResult
+    stressed: PortfolioAnalysisResult
+    markets: tuple[MarketStressEvidence, ...] = Field(min_length=1, max_length=3)
+    concentration_selection: ConcentrationSelection | None = None
+    metrics: PortfolioStressMetrics
+    risk_transition: PortfolioStressRiskTransition
+    limitations: tuple[str, ...] = STRESS_LIMITATIONS
+    cross_market_correlation: None = None
+    empirical_correlation_verified: Literal[False] = False
+    historical_market_synchronization_verified: Literal[False] = False
+    source_authenticated: Literal[False] = False
+    simulated: Literal[True] = True
+    read_only: Literal[True] = True
+    authority: Literal["NONE"] = "NONE"
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def native_validation_context(cls, value, handler):
+        with localcontext() as ctx:
+            ctx.prec = 28
+            ctx.rounding = "ROUND_HALF_EVEN"
+            return handler(value)
+
+    @model_validator(mode="after")
+    def verify_stress(self):
+        from .stress import verify_stress_result
+        verify_stress_result(self)
+        return self

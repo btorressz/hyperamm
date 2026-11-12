@@ -42,6 +42,21 @@ class SimulationService:
         from app.portfolio_research.service import analyze_portfolio_research
         return await analyze_portfolio_research(self, request=request)
 
+    async def stress_portfolio_research(self, *, request):
+        from app.portfolio_research.service import stress_portfolio_research
+        return await stress_portfolio_research(self, request=request)
+
+    async def _run_portfolio_dataset(self, *, scenario, dataset):
+        from app.portfolio_research.models import PortfolioResearchScenario
+        from app.portfolio_research.scenarios import validate_dataset
+        scenario = PortfolioResearchScenario.model_validate(scenario)
+        dataset = validate_dataset(dataset, scenario)
+        i = scenario.captured.inputs()
+        return await self._run_scenario(scenario=scenario.scenario.value, frames=scenario.frames,
+            strategy=i.strategy, agents=i.agents, risk=i.risk, simulation=i.simulation,
+            market_profile=i.market_profile, preserve_captured_strategy=True,
+            include_comparison_provenance=True, _trusted_dataset=dataset)
+
     async def historical_summaries(self, *, storage_root):
         from app.research_replay.runner import summaries
         return summaries(storage_root)
@@ -122,6 +137,16 @@ class SimulationService:
         include_comparison_provenance:bool=False,research:ResearchProposal|None=None,
         preserve_captured_strategy:bool=False,
     ):
+        return await self._run_scenario(scenario=scenario, frames=frames, strategy=strategy,
+            agents=agents, risk=risk, simulation=simulation, market_profile=market_profile,
+            include_comparison_provenance=include_comparison_provenance, research=research,
+            preserve_captured_strategy=preserve_captured_strategy)
+
+    async def _run_scenario(
+        self, *, scenario, frames, strategy, agents, risk, simulation, market_profile=None,
+        include_comparison_provenance=False, research=None, preserve_captured_strategy=False,
+        _trusted_dataset=None,
+    ):
         from app.research_replay.comparison import (
             CapturedScenarioResult, ComparisonConfigSnapshot, ScenarioInputCapture, ScenarioProvenanceReceipt,
         )
@@ -145,8 +170,10 @@ class SimulationService:
         snapshot=ComparisonConfigSnapshot.from_payload(capture.model_dump(mode="json"))
         # Reconstruct engine arguments from the immutable canonical snapshot.
         captured=snapshot.inputs()
-        dataset=generate_scenario(scenario,frames=frames,market=captured.strategy.market,
-            market_profile=captured.market_profile)
+        dataset = _trusted_dataset
+        if dataset is None:
+            dataset=generate_scenario(scenario,frames=frames,market=captured.strategy.market,
+                market_profile=captured.market_profile)
         result=await self.engine.run(
             dataset=dataset,strategy_config=captured.strategy,agent_config=captured.agents,
             risk_config=captured.risk,simulation_config=captured.simulation,

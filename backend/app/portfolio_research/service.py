@@ -29,3 +29,8 @@ async def analyze_portfolio_research(service, *, request):
     capture_portfolio_provenance(config).verify_config(request.config)
     markets, evidence = await execute_markets(service, config, collect_accounting=True)
     return assemble_analysis(config, markets, evidence, request.risk_policy)
+
+
+async def stress_portfolio_research(service, *, request):
+    from .stress import execute_stress
+    return await execute_stress(service, request=request)
