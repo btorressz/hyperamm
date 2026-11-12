@@ -46,11 +46,25 @@ async def measure(case):
         worker_costs = costs.copy()
         wire = result.model_dump_json()
         PortfolioAnalysisResult.model_validate_json(wire)
+        assert len(wire.encode()) <= 200000
+        assert sum(c.retained for c in result.temporal.clocks) == 1500
+        assert result.temporal.historical_market_synchronization_verified is False
+        assert result.temporal.cross_market_correlation is None
+        if case == "aligned":
+            assert result.temporal.classification == "MODELED_ALIGNED"
+            assert result.accounting.drawdown.observation_count == 500
+            assert result.risk.outcome == "ASSESSED"
+        else:
+            assert result.temporal.classification == "FINAL_ONLY"
+            assert result.accounting.drawdown is None
+            assert result.risk.outcome == "BLOCKED" and not result.risk.risk_compliant
+            assert result.risk.decision in {None, "HALT"}
         assert not worker._busy
     finally:
         await worker.shutdown()
         for module, name, original in originals: setattr(module, name, original)
     return dict(case=case, total_frames=sum(m.metrics.frame_count for m in result.execution.markets),
+        quote_level_frames=sum(s.frames * s.captured.inputs().strategy.levels_per_side for s in p.scenarios),
         native_accounting_observations=sum(c.retained for c in result.temporal.clocks),
         portfolio_equity_observations=result.accounting.drawdown.observation_count if result.accounting.drawdown else 0,
         temporal=result.temporal.classification, risk_outcome=result.risk.outcome,

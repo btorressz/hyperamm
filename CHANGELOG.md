@@ -4,7 +4,14 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
-## Unreleased — Phase 17.3 (shared capital and portfolio research risk)
+## Unreleased — Phase 17.3H (portfolio risk and temporal evidence hardening)
+
+- Revalidate native observation financial/endpoint identity and clock retention/completeness; retain the existing 1,500-observation cap and all workload/HTTP bounds.
+- Bind research risk inputs across configuration, accounting, exposure and temporal reports; block missing critical equity/PnL and preserve known HALT breaches. Use exact absolute net exposure independently of ambient Decimal precision.
+- Expose cross-market correlation as unavailable and reject empirical correlation/source-authentication/synchronization claims. Document post-execution hypothetical assessments and the explicit synthetic assumptions required before Phase 17.4.
+- Add focused boundary/adversarial and HALT/REDUCE operational-isolation tests, strengthen the existing resource harness, and record [native hardening acceptance](docs/PHASE173H_ACCEPTANCE.md). No engine, worker, operational firewall, signing or frontend changes.
+
+## Phase 17.3 (shared capital and portfolio research risk)
 
 - Add versioned, read-only accounting, exposure, temporal and risk receipts through `/api/v1/portfolio-research/analyze`; preserve 17.1A configuration and 17.2 `/run` identities.
 - Capture at most the existing 1,500 native retained observations inside one shared admission, with one sequential execution per market. Reconcile hypothetical USDC capital/reserve and native equity/PnL without duplicating fees/funding or the accounting engine.

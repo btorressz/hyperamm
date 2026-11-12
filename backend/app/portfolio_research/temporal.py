@@ -1,22 +1,38 @@
 """Defined hypothetical clocks, never inferred real exchange synchronization."""
 from datetime import timedelta
+from decimal import localcontext
 
 from app.simulation.scenarios import DEFAULT_START
-from .models import MarketObservationClock, PortfolioTemporalReport, sealed
+from .models import (MarketAccountingEvidence, MarketObservationClock,
+    PortfolioMarketReceipt, PortfolioTemporalReport, sealed)
 
 
 def observation_clocks(receipts, evidence):
+    receipts = tuple(PortfolioMarketReceipt.model_validate(r) for r in receipts)
+    evidence = tuple(MarketAccountingEvidence.model_validate(e) for e in evidence)
     if tuple(e.market for e in evidence) != tuple(r.market for r in receipts):
         raise ValueError("native timeline market set or order mismatch")
     clocks = []
     for r, e in zip(receipts, evidence):
-        e = type(e).model_validate(e)
         if e.market_receipt_fingerprint != r.receipt_fingerprint:
             raise ValueError("native timeline substituted receipt")
         n = r.metrics.frame_count
         simulation = r.provenance.captured.inputs().simulation
         expected = min(n, simulation.trace_max_points) if simulation.record_trace else 0
         points = e.observations
+        # Recheck financial projection identity at consumption, too. Matching
+        # synthetic clocks cannot make another market's observations eligible.
+        with localcontext() as ctx:
+            ctx.prec = 28  # The native accounting convention, not interpolation.
+            ctx.rounding = "ROUND_HALF_EVEN"
+            if any(p.equity_quote != r.vault.initial_equity_quote + p.session_pnl_quote
+                   for p in points):
+                raise ValueError("native timeline accounting substitution")
+        if points and (points[-1].equity_quote != r.vault.equity_quote or
+                points[-1].session_pnl_quote != r.vault.net_pnl_quote or
+                points[-1].position_base != r.vault.position_base or
+                points[-1].mark_price_quote != r.vault.mark_price):
+            raise ValueError("native timeline endpoint substitution")
         # The existing scenario generator uses sequences 1..n, DEFAULT_START,
         # one-second intervals, no resets. Validate that exact contract, including
         # retained suffixes. Equal terminal timestamps alone are insufficient.

@@ -45,6 +45,7 @@ def test_every_limit_has_a_deterministic_hard_breach(native173, limit, field, va
     if field == "session_loss_quote": a = reseal(a, **{field: Decimal(value)})
     elif field == "max_drawdown_fraction": a = reseal(a, drawdown=reseal(a.drawdown, **{field: Decimal(value)}))
     else: x = reseal(x, **{field: Decimal(value)})
+    x = reseal(x, accounting_fingerprint=a.evidence_fingerprint)
     r = evaluate_risk(p, a, x, t, PortfolioRiskPolicy())
     assert r.decision == "HALT"
     assert f"{limit}:HALT" in r.reasons
@@ -56,6 +57,7 @@ def test_multiple_breaches_have_stable_priority_and_order(native173):
     p, a, x, t = inputs(native173)
     x = reseal(x, gross_exposure_quote=Decimal("100001"), net_exposure_quote=Decimal("-100001"), modeled_leverage=Decimal("4"))
     a = reseal(a, session_loss_quote=Decimal("10001"))
+    x = reseal(x, accounting_fingerprint=a.evidence_fingerprint)
     r = evaluate_risk(p, a, x, t, PortfolioRiskPolicy())
     assert r.reasons == ("max_gross_exposure_quote:HALT", "max_abs_net_exposure_quote:HALT",
                          "modeled_leverage_ceiling:HALT", "max_session_loss_quote:HALT")
@@ -73,6 +75,7 @@ def test_missing_metric_never_maps_to_normal(native173, field):
 def test_missing_drawdown_never_overrides_known_halt_or_produces_normal(native173):
     p, a, x, t = inputs(native173)
     a = reseal(a, drawdown=None)
+    x = reseal(x, accounting_fingerprint=a.evidence_fingerprint)
     assert evaluate_risk(p, a, x, t, PortfolioRiskPolicy()).decision is None
     x = reseal(x, gross_exposure_quote=Decimal("100001"))
     r = evaluate_risk(p, a, x, t, PortfolioRiskPolicy())
@@ -101,6 +104,9 @@ def test_zero_drawdown_ceiling_treats_only_positive_loss_as_breach(native173):
     raw = p.model_dump()
     raw["risk_limits"]["max_drawdown_fraction"] = "0"
     p = PortfolioResearchConfig.model_validate(raw)
+    a = reseal(a, config_fingerprint=p.fingerprint())
+    x = reseal(x, accounting_fingerprint=a.evidence_fingerprint)
     assert evaluate_risk(p, a, x, t, PortfolioRiskPolicy()).decision == "NORMAL"
     a = reseal(a, drawdown=reseal(a.drawdown, max_drawdown_fraction=Decimal(".000001")))
+    x = reseal(x, accounting_fingerprint=a.evidence_fingerprint)
     assert evaluate_risk(p, a, x, t, PortfolioRiskPolicy()).decision == "HALT"
