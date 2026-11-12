@@ -1,0 +1,238 @@
+.portfolioWorkspace {
+  max-width: 1700px;
+  margin: auto;
+}
+.portfolioTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+.portfolioTitle h1 {
+  font-size: 26px;
+  letter-spacing: -0.7px;
+  margin: 8px 0;
+}
+.portfolioTitle p {
+  color: var(--muted, #8da3b8);
+}
+.portfolioAuthority {
+  color: #4cd4a1;
+  border: 1px solid #29594f;
+  padding: 10px 14px;
+  font: 11px monospace;
+  white-space: nowrap;
+}
+.portfolioSections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.portfolioSections button[aria-pressed="true"] {
+  color: #4cd4a1;
+  border-color: #4cd4a1;
+  background: #4cd4a110;
+}
+.portfolioActions {
+  padding: 16px;
+}
+.portfolioActions .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.portfolioWorkspace .formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.portfolioWorkspace label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #a8bbcc;
+  font-size: 12px;
+}
+.portfolioWorkspace input,
+.portfolioWorkspace select {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+.portfolioWorkspace .portfolioToggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.portfolioToggle input {
+  width: 16px;
+  min-height: 16px;
+}
+.portfolioAllocation {
+  display: grid;
+  grid-template-columns: 140px minmax(160px, 1fr) minmax(120px, 1fr);
+  gap: 20px;
+  align-items: center;
+  border-top: 1px solid #223246;
+  padding: 16px 0;
+}
+.portfolioAllocation > span {
+  color: #819bbc;
+  font: 11px monospace;
+}
+.portfolioComparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.portfolioWorkspace .panel {
+  min-width: 0;
+}
+.portfolioWorkspace .terminalMetrics {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.portfolioRisk {
+  font: 700 22px monospace;
+  color: #4cd4a1;
+}
+.riskWARN,
+.riskREDUCE,
+.riskBLOCKED {
+  color: #f0b76b;
+}
+.riskHALT {
+  color: #f0788a;
+}
+.portfolioWorkspace summary {
+  cursor: pointer;
+  padding: 12px 0;
+  color: #b6c9dc;
+}
+.portfolioWorkspace pre {
+  max-height: 360px;
+  overflow: auto;
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.portfolioIdentifier {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0;
+  font-size: 11px;
+}
+.portfolioIdentifier code {
+  overflow-wrap: anywhere;
+  color: #a8bbcc;
+  flex: 1 1 300px;
+}
+.portfolioWorkspace fieldset {
+  border: 1px solid #223246;
+  margin-top: 20px;
+  padding: 16px;
+  min-width: 0;
+}
+.portfolioWorkspace table {
+  font-size: 11px;
+}
+.portfolioWorkspace p,
+.portfolioWorkspace li {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.portfolioWorkspace caption {
+  text-align: left;
+  margin: 18px 0 12px;
+  color: #a8bbcc;
+}
+@media (max-width: 1150px) {
+  .portfolioComparison {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .portfolioTitle {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .portfolioAllocation {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .portfolioAuthority {
+    white-space: normal;
+  }
+  .portfolioActions .actions button {
+    flex: 1 1 160px;
+  }
+  .portfolioSections button {
+    flex: 1 1 40%;
+  }
+  .portfolioWorkspace fieldset {
+    padding: 10px;
+  }
+}
+.portfolioWorkspace input,
+.portfolioWorkspace select {
+  background: #0d1925;
+  color: #d5e1ee;
+  border: 1px solid #2a4055;
+  border-radius: 5px;
+  padding: 9px 10px;
+  min-width: 0;
+}
+.portfolioWorkspace input:focus-visible,
+.portfolioWorkspace select:focus-visible {
+  outline: 2px solid #77aaff;
+  outline-offset: 2px;
+}
+.portfolioWorkspace .panelHead {
+  min-height: 44px;
+  height: auto;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+}
+.portfolioWorkspace .panelHead h2 {
+  font-size: 13px;
+  margin: 0;
+}
+.portfolioWorkspace .panel > p,
+.portfolioWorkspace .panel > details,
+.portfolioWorkspace .panel > .formGrid,
+.portfolioWorkspace .panel > .portfolioAllocations,
+.portfolioWorkspace .panel > .portfolioToggle,
+.portfolioWorkspace .panel > fieldset {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+.portfolioWorkspace .panel > ul {
+  padding-left: 34px;
+  padding-right: 16px;
+}
+.portfolioWorkspace .panel > .formGrid {
+  margin-bottom: 20px;
+}
+.portfolioWorkspace p.portfolioRisk {
+  font-size: 22px;
+}
+.portfolioWorkspace .panel .alert {
+  margin-bottom: 16px;
+}
+.portfolioWorkspace .terminalMetrics strong {
+  overflow-wrap: anywhere;
+}
+.portfolioTitle {
+  flex-wrap: wrap;
+}
+.portfolioComparison > * {
+  min-width: 0;
+}
+@media (max-width: 1150px) {
+  .portfolioComparison {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

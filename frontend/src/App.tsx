@@ -40,6 +40,7 @@ import { Agents } from "./pages/Agents";
 import { Vault } from "./pages/Vault";
 import { Analytics } from "./pages/Analytics";
 import { Simulation } from "./pages/Simulation";
+import { PortfolioResearch } from "./pages/PortfolioResearch";
 import { Logs } from "./pages/Logs";
 import { Settings } from "./pages/Settings";
 export default function App() {
@@ -78,7 +79,7 @@ export default function App() {
   }, [mobile, closeNavigation]);
   let content: ReactNode;
   if (!t)
-    content = page === 'Markets' ? <Markets t={null} /> : page === 'Settings' ? <Settings t={null} historical /> : page === 'Simulation & Optimization' ? <Simulation /> : (
+    content = page === 'Portfolio Research' ? <PortfolioResearch /> : page === 'Markets' ? <Markets t={null} /> : page === 'Settings' ? <Settings t={null} historical /> : page === 'Simulation & Optimization' ? <Simulation /> : (
       <Loading title="Connecting to HyperAMM…">
         Waiting for a valid backend terminal snapshot.
       </Loading>
@@ -98,6 +99,7 @@ export default function App() {
       Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Analytics: <Analytics key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       "Simulation & Optimization": <Simulation />,
+      "Portfolio Research": <PortfolioResearch />,
       Logs: <Logs key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Settings: <Settings t={t} historical={historical} />,
     };

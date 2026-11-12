@@ -4,6 +4,15 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 17.5 (Portfolio Research Terminal & Frontend Integration)
+
+- Reuse the existing React terminal, responsive navigation, Query/Zustand lifecycle, native research profiles/Vault constructors, accounting/risk/stress services, shared worker and Lightweight Charts.
+- Add `#/portfolio-research` with exact BTC/ETH/SOL USDC allocation/reserve controls, native strategy/AMM/PAPER assumptions, risk limits, six scenario-specific stress forms, native analytics/exposure/risk, eligible comparisons and expandable provenance.
+- Add server-authoritative `/portfolio-research/preview` and compact versioned `/terminal` RUN/ANALYZE/STRESS projections. Keep existing `/run`, `/analyze`, `/stress` contracts and fingerprints unchanged.
+- Project bounded equity/PnL/drawdown charts from complete validated native observations in the same admission. Preserve original source/result/accounting fingerprints, sequence/timestamps, extrema and shock/risk context; expose FINAL_ONLY/BLOCKED and unavailable evidence honestly.
+- Preserve 64 KiB request / 200 KB response limits and combined baseline/stress workload ceilings. Retire stale browser evidence on edits/session transitions; aborting fetch never claims worker cancellation. No live execution authority, persistent job store, chart dependency, worker pool or GitHub Actions is added.
+- Add focused native/frontend and actual Chromium/HTTP acceptance, resource measurements and [Phase 17.5 acceptance documentation](docs/PHASE175_ACCEPTANCE.md).
+
 ## Unreleased — Phase 17.4 (portfolio stress and scenario intelligence)
 
 - Add strict `phase174-stress-v1` contracts and `/api/v1/portfolio-research/stress` for six explicit hypothetical joint scenarios: selloff, BTC-led transmission, liquidity, signed funding, reference degradation and concentration.

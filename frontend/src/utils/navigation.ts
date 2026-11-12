@@ -10,6 +10,7 @@ export const terminalPages = [
   { name: "Vault", slug: "vault", icon: "vault" },
   { name: "Analytics", slug: "analytics", icon: "analytics" },
   { name: "Simulation & Optimization", slug: "simulation", icon: "research" },
+  { name: "Portfolio Research", slug: "portfolio-research", icon: "research" },
   { name: "Logs", slug: "logs", icon: "logs" },
   { name: "Settings", slug: "settings", icon: "controls" },
 ] as const;

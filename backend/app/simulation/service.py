@@ -46,6 +46,10 @@ class SimulationService:
         from app.portfolio_research.service import stress_portfolio_research
         return await stress_portfolio_research(self, request=request)
 
+    async def terminal_portfolio_research(self, *, request):
+        from app.portfolio_research.terminal import terminal_portfolio_research
+        return await terminal_portfolio_research(self, request=request)
+
     async def _run_portfolio_dataset(self, *, scenario, dataset):
         from app.portfolio_research.models import PortfolioResearchScenario
         from app.portfolio_research.scenarios import validate_dataset

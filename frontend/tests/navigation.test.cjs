@@ -13,9 +13,9 @@ const valid=require('./fixtures/terminal-valid.json');
 const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props));
 const sidebar=(props={})=>render(Sidebar,{page:'Risk',t:valid,ws:'connected',mobile:false,open:false,onClose:()=>{},...props});
 
-test('all twelve pages round-trip through distinct bookmarkable URLs',()=>{
- assert.equal(terminalPages.length,12);
- assert.equal(new Set(terminalPages.map(p=>p.slug)).size,12);
+test('all thirteen pages round-trip through distinct bookmarkable URLs',()=>{
+ assert.equal(terminalPages.length,13);
+ assert.equal(new Set(terminalPages.map(p=>p.slug)).size,13);
  for(const {name} of terminalPages) assert.equal(pageFromHash(pageHref(name)),name);
 });
 test('unknown, malformed and empty routes fall back safely',()=>{
@@ -33,8 +33,8 @@ test('route subscriptions track hash/history changes and clean up ownership',()=
  try {const off=subscribeNavigation(()=>count++);target.dispatchEvent(new Event('hashchange'));assert.equal(count,1);off();target.dispatchEvent(new Event('hashchange'));assert.equal(count,1);}
  finally {global.window=original;}
 });
-test('sidebar has twelve native links and exactly one active accessible page',()=>{
- const html=sidebar();assert.equal((html.match(/href="#\//g)||[]).length,12);
+test('sidebar has thirteen native links and exactly one active accessible page',()=>{
+ const html=sidebar();assert.equal((html.match(/href="#\//g)||[]).length,13);
  assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
  assert.match(html,/href="#\/risk"[^>]*aria-label="Risk"[^>]*aria-current="page"/);
  assert.match(html,/aria-label="Terminal pages"/);assert.match(html,/aria-label="Collapse navigation"/);

@@ -1,3 +1,4 @@
+import type {PortfolioDraft,Preview,TerminalRequest,TerminalResult} from '../types/portfolioResearch';
 import type {
   MarketResearchComparisonRequest, MarketResearchComparisonResult,
   StrategyState,
@@ -111,7 +112,20 @@ function livePath(market: LiveMarketId, resource: string) {
   if (!['BTC','ETH','SOL'].includes(market)) throw new Error('Unsupported live market');
   return `/live-markets/${market}/${resource}`;
 }
+async function portfolioRequest<T>(path:string,body:unknown,signal?:AbortSignal):Promise<T>{
+  const response=await fetch(API+'/portfolio-research/'+path,{method:'POST',body:JSON.stringify(body),signal,cache:'no-store',headers:{'Content-Type':'application/json'}});
+  if(!response.ok){
+    const guidance:Record<number,string>={429:'Shared research worker busy. Retry after its current job completes.',
+      413:'Request or response exceeds the portfolio size limit. Reduce frames or selected markets.',
+      422:'Configuration rejected. Check positive allocations, minimum reserve, risk limits, strategy feasibility and combined stress window/workload. Funding needs an observed accrual boundary; concentration needs complete pre-onset positions.',
+      503:'Research admission unavailable. Check the local backend and coordination service.',500:'Portfolio research failed. Inspect local backend diagnostics and retry.'};
+    throw new Error(`Portfolio request failed (HTTP ${response.status}). ${guidance[response.status]??'Local research API unavailable.'} Browser cancellation does not stop an admitted worker.`);
+  }
+  return await readHistoricalJson(response,200000) as T;
+}
 export const api = {
+  portfolioPreview:(body:PortfolioDraft,signal?:AbortSignal)=>portfolioRequest<Preview>('preview',body,signal),
+  portfolioTerminal:(body:TerminalRequest,signal?:AbortSignal)=>portfolioRequest<TerminalResult>('terminal',body,signal),
   scenarioHistoricalComparison: async(body:ScenarioHistoricalRequest,signal?:AbortSignal):Promise<ScenarioHistoricalResponse> =>
     checkedComparisonResponse(await historicalRequest('/research-comparison/scenario-historical',
       {method:'POST',body:JSON.stringify(body),signal},1_000_000),body),
