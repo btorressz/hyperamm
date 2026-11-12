@@ -27,7 +27,9 @@ app=main.app;original=app.router.lifespan_context;run_engine=SimulationEngine.ru
 async def delayed_engine(self,**kwargs):
     mode['runs']+=1
     await asyncio.sleep(mode['delay'])
-    if mode['failure']:raise RuntimeError('/private/fixture/path API_KEY=fixture-secret Traceback')
+    if mode['failure']:
+        failure = ValueError if mode['failure'] == 'value' else RuntimeError
+        raise failure('/private/fixture/path API_KEY=fixture-secret Traceback')
     return await run_engine(self,**kwargs)
 SimulationEngine.run=delayed_engine
 

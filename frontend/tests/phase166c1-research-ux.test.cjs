@@ -3,6 +3,33 @@ const assert=require('node:assert/strict');
 const path=require('node:path');
 const u=require(path.join(process.env.TERMINAL_TEST_BUILD,'utils/researchStatus.js'));
 
+for(const method of ['runSimulation','optimizeSimulation','researchPreview','compareResearch']){
+ test('Scenario and Vault '+method+' error bodies cannot expose private diagnostics',async()=>{
+  const http=require('node:http'),{once}=require('node:events');
+  const {api}=require(path.join(process.env.TERMINAL_TEST_BUILD,'api/client.js'));
+  let status=422;
+  const server=http.createServer((req,res)=>{
+   req.resume();res.writeHead(status,{'Content-Type':'application/json'});
+   res.end(JSON.stringify({detail:status===422?
+    [{loc:['body','/private/acceptance-path'],msg:'Traceback API_KEY=synthetic-secret'}]:
+    'Traceback /private/acceptance-path API_KEY=synthetic-secret'}));
+  });
+  server.listen(0,'127.0.0.1');await once(server,'listening');
+  const original=global.fetch;
+  global.fetch=(url,init)=>original(new URL(url,'http://127.0.0.1:'+server.address().port),init);
+  try{
+   for(const [code,kind] of [[413,'size'],[422,'validation'],[429,'busy'],[500,'server'],[503,'storage']]){
+    status=code;
+    await assert.rejects(()=>api[method]({}),error=>{
+     assert.doesNotMatch(error.message,/Traceback|\/private\/|API_KEY|synthetic-secret/);
+     assert.equal(u.diagnoseResearchError(error).kind,kind);
+     return true;
+    });
+   }
+  }finally{global.fetch=original;await new Promise(resolve=>server.close(resolve))}
+ });
+}
+
 const dataset={
   contract_version:'phase16-replay-v1',dataset_id:'fixture',dataset_fingerprint:'a'.repeat(64),
   market:'BTC',source_kind:'SYNTHETIC_FIXTURE',coverage_start:'2026-11-01T00:00:00Z',

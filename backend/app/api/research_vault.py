@@ -54,8 +54,9 @@ async def compare_configs(proposal: ResearchComparisonRequest, request: Request,
         return result.model_dump(mode="json")
     except (ResearchBusyError, ResearchUnavailableError) as exc:
         raise HTTPException(status_code=429 if isinstance(exc, ResearchBusyError) else 503, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Research configuration or evidence rejected",
+                            headers={"Cache-Control": "no-store"}) from None
     except Exception as exc:
         logger.exception("Research configuration comparison failed")
         raise HTTPException(status_code=500, detail="Research configuration comparison failed") from exc

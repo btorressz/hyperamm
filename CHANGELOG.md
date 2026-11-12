@@ -4,6 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 16.6D
+
+- Keep Scenario/optimizer/Research Vault worker validation failures private; show bounded HTTP-status guidance instead of untrusted error bodies, and classify unavailable coordination correctly.
+- Reuse the accepted engines, archive validation, PAPER accounting, retention and single worker for independent parity, resource, lifecycle, storage, Redis-configuration and operational-isolation acceptance.
+- Add 21 focused backend and four frontend regressions, two Chromium workflow groups, six inspected screenshots and [compact final acceptance evidence](docs/PHASE166D_ACCEPTANCE.md).
+- Final native regression: 2,520 backend passed with one optional ML skip; 717 frontend passed; 29 Chromium groups passed. Implemented 16.6A/C local research is accepted; overall Phase 16.6 remains conditional on deferred 16.6B. Physical Redis and external gates remain separate.
+
 ## Unreleased — Phase 16.6C.2
 
 - Correct Historical Replay connection/session retirement and hide stale financial evidence; preserve retired status for invalidated pending research in both Studios.

@@ -371,6 +371,9 @@ async def main(args):
             from phase166a_chart import chart_acceptance
             await chart_acceptance(ctx, report, out)
             passed('Actual HistoryChart hover, replaced points/lines, live updates, axes, zero/signed/null values, reset and unmount/remount; browser lookup and React profiling')
+        if args.phase166d:
+            from phase166d_acceptance import final_diagnostics_acceptance
+            await final_diagnostics_acceptance(page, control, status, passed)
         assert not report['page_errors'],report['page_errors']
         report['unexpected_console_errors']=[e for e in report['console_errors'] if not any(token in e for token in ('WebSocket','status of 404','status of 413','status of 422','status of 429','status of 503','status of 500','ERR_CONNECTION_REFUSED'))]
         assert not report['unexpected_console_errors'],report['unexpected_console_errors']
@@ -395,4 +398,5 @@ if __name__=='__main__':
     p.add_argument('--phase166c',action='store_true',help='Run shared status, diagnostics, workload and local recovery acceptance; retain six representative screenshots')
     p.add_argument('--phase165d',action='store_true',help='Run additional hardening and bounded large-render acceptance')
     p.add_argument('--phase166a',action='store_true',help='Run native chart lifecycle, rapid segment switching and browser profiling probes')
+    p.add_argument('--phase166d',action='store_true',help='Check Scenario/Vault private worker errors and untrusted error-body handling')
     asyncio.run(main(p.parse_args()))
