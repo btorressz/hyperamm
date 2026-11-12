@@ -22,6 +22,10 @@ The current **research and independent live-observation universe** is **BTC-PERP
 
 Details and actual milestone tests: [CHANGELOG.md](CHANGELOG.md), [CODEBASE.md](CODEBASE.md), [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), and the [Phase 15.5B](docs/PHASE155B_ACCEPTANCE.md) / [Phase 16.4](docs/PHASE164_ACCEPTANCE.md) acceptance documents.
 
+### Phase 17 portfolio research foundation (draft)
+
+Phase 17.1A introduces a backend-only, read-only `phase17-portfolio-research-v1` contract package for strictly bounded BTC/ETH/SOL hypothetical USDC capital allocations, per-market captured DEMO/PAPER assumptions, risk-limit configurations and canonical provenance. No portfolio simulation, aggregate equity/PnL, HTTP route, new worker or trading authority is introduced. [Phase 17.1A contracts](docs/PHASE171A_CONTRACTS.md) describe implementation and pending native acceptance. Phase 16.6A/C/D have merged local acceptance; Phase 16.6B lifecycle/recovery is deferred. See [Phase 16.6D final acceptance](docs/PHASE166D_ACCEPTANCE.md).
+
 ## Why a virtual AMM?
 
 CLOB market making and AMM liquidity have different execution mechanics but can share a useful mathematical representation. HyperAMM treats `x*y=k` as a **quote-generation model** instead of a settlement venue:
