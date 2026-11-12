@@ -463,6 +463,14 @@ class MarketObservationClock(AnalysisEvidence):
     valid: bool
     clock: Literal["DETERMINISTIC_SCENARIO_UTC_1S_V1"] = "DETERMINISTIC_SCENARIO_UTC_1S_V1"
 
+    @model_validator(mode="after")
+    def verify_completeness(self):
+        if (self.expected_retained > self.frames or
+                self.complete != (self.valid and self.retained == self.frames) or
+                (self.valid and self.retained != self.expected_retained)):
+            raise ValueError("native clock retention/completeness mismatch")
+        return self
+
 
 class PortfolioTemporalReport(AnalysisEvidence):
     contract_version: Literal["phase173-temporal-v1"] = "phase173-temporal-v1"
@@ -470,6 +478,8 @@ class PortfolioTemporalReport(AnalysisEvidence):
     clocks: tuple[MarketObservationClock, ...] = Field(min_length=1, max_length=3)
     reasons: tuple[str, ...] = Field(min_length=1, max_length=10)
     historical_market_synchronization_verified: Literal[False] = False
+    cross_market_correlation: None = None
+    empirical_correlation_verified: Literal[False] = False
     methodology: Literal["INDEPENDENT_PAPER_COMMON_SCENARIO_CLOCK"] = "INDEPENDENT_PAPER_COMMON_SCENARIO_CLOCK"
 
 
@@ -577,8 +587,9 @@ class PortfolioRiskReport(AnalysisEvidence):
 ANALYSIS_LIMITATIONS = (
     "Independent-capital hypothetical PAPER model, including unexecuted USDC reserve; no cross-margin account or borrowing.",
     "A common modeled scenario clock is not authenticated historical exchange synchronization.",
+    "Cross-market correlation is unavailable; matching synthetic timestamps establish no empirical correlation. Phase 17.4 must declare synthetic shock/correlation assumptions unless validated overlapping historical datasets are supplied.",
     "FINAL_ONLY compares independent endpoints on the same scenario/window; no synchronized equity history or drawdown is claimed.",
-    "Risk evaluates terminal limits and, only with complete aligned traces, full-history maximum portfolio drawdown; it does not prevent already executed PAPER orders.",
+    "Risk is a post-execution hypothetical research assessment of terminal limits and complete-history maximum portfolio drawdown; REDUCE/HALT cannot modify operational orders, kill switches, authorizations, balances or TESTNET signing, and do not prevent previously simulated PAPER orders.",
     "Native Decimal accounting uses 28-digit arithmetic; exact aggregate reconciliation discloses its rounding residual without changing fees/funding.",
     "Fingerprints bind same-job evidence, not signatures; omitted native histories cannot be independently reconstructed from this receipt.",
     "Reservations are native simulated full-notional reservations, not venue margin; pending-order exposure is unavailable.",

@@ -14,10 +14,15 @@ def evaluate_risk(config, accounting, exposure, temporal, policy):
     exposure = PortfolioExposureReport.model_validate(exposure)
     temporal = PortfolioTemporalReport.model_validate(temporal)
     policy = PortfolioRiskPolicy.model_validate(policy)
+    if (accounting.config_fingerprint != config.fingerprint() or
+            accounting.temporal_fingerprint != temporal.evidence_fingerprint or
+            exposure.accounting_fingerprint != accounting.evidence_fingerprint or
+            exposure.temporal_fingerprint != temporal.evidence_fingerprint):
+        raise ValueError("risk accounting/exposure/temporal source identity mismatch")
     limits = config.risk_limits
     observations = (
         ("max_gross_exposure_quote", exposure.gross_exposure_quote),
-        ("max_abs_net_exposure_quote", abs(exposure.net_exposure_quote) if exposure.net_exposure_quote is not None else None),
+        ("max_abs_net_exposure_quote", exposure.net_exposure_quote.copy_abs() if exposure.net_exposure_quote is not None else None),
         ("max_inventory_concentration", exposure.max_inventory_concentration),
         ("max_capital_utilization", exposure.reserved_capital_utilization),
         ("modeled_leverage_ceiling", exposure.modeled_leverage),
@@ -45,7 +50,8 @@ def evaluate_risk(config, accounting, exposure, temporal, policy):
             if observed is not None and ceiling > 0 and observed >= ceiling:
                 state = "HALT"
             checks.append(PortfolioRiskCheck(limit=name, observed=observed, ceiling=ceiling, state=state))
-    blocked = (accounting.status != "SUPPORTED" or temporal.classification != "MODELED_ALIGNED" or
+    blocked = (accounting.status != "SUPPORTED" or accounting.equity_quote is None or
+               accounting.pnl_quote is None or temporal.classification != "MODELED_ALIGNED" or
                any(c.state == "UNAVAILABLE" for c in checks))
     known = max((c.state for c in checks if c.state != "UNAVAILABLE"), key=STATES.index, default="NORMAL")
     # A known hard breach remains visible even when another critical metric is
