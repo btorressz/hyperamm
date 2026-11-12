@@ -1,0 +1,39 @@
+{
+  "base_commit": "d376287d5d292a458f666063196c2385bfdf7199",
+  "implementation_commit": "9322ab2ee5265b67202aacb4969722b709923485",
+  "pull_request": "https://github.com/btorressz/hyperamm/pull/79",
+  "classification": "PASS",
+  "backend": {
+    "command": "cd backend && python -m pytest -q",
+    "passed": 3202,
+    "skipped": 1,
+    "warnings": [
+      "Starlette TestClient/httpx deprecation",
+      "Existing adversarial concentration-selection serializer warning"
+    ],
+    "failed": 0,
+    "elapsed_seconds": 1469.64,
+    "optional_skip": "test_offline_training_optional_import_and_real_coefficient_export",
+    "focused_phase175_passed": 56
+  },
+  "frontend": {
+    "test_command": "cd frontend && npm test",
+    "passed": 779,
+    "failed": 0,
+    "typecheck": "PASS",
+    "production_build": "PASS"
+  },
+  "chromium": {
+    "classification": "PASS",
+    "version": "151.0.7922.173",
+    "workflows": 14,
+    "page_errors": 0,
+    "normal_console_errors": 0,
+    "expected_fault_console_entries": 2
+  },
+  "resource_measurements": "resources.json",
+  "browser_report": "browser.json",
+  "execution_mode": "PAPER",
+  "authority": "NONE",
+  "merged": false
+}

@@ -1,7 +1,7 @@
 # Phase 17.5 — Portfolio Research Terminal & Frontend Integration
 
 Base: `d376287` (latest main / merged PR #78). Local acceptance: 2026-11-12.
-Status: validation in progress; final measured gates below are updated before delivery.
+Status: **PASS — Phase 17.5 local implementation and acceptance gates**. Draft [PR #79](https://github.com/btorressz/hyperamm/pull/79); not merged. Phase 17.6 remains independent final security/regression/end-to-end acceptance.
 
 ## Architecture and reuse
 
@@ -92,10 +92,12 @@ TanStack Query reads the scenario catalog and performs explicit mutations with e
 Final actual results and commands are recorded here before delivery:
 
 - Focused backend: **56 passed** (`tests/test_phase175_terminal.py`).
-- Full backend: **PENDING**.
+- Full backend: **3,202 passed, 1 optional ML skip, zero failures**, 2 non-fatal warnings, in **1,469.64 seconds (24m29.64s)** (`cd backend && python -m pytest -q`). The warnings are Starlette TestClient/httpx deprecation and the existing adversarial concentration-selection serializer fixture.
 - Frontend tests: **779 passed**, zero failures (`cd frontend && npm test`).
 - Frontend typecheck and build: **PASS** (`npm run typecheck`, `npm run build`); existing bundle-size/React Query directive warnings remain non-fatal.
 - Local HTTP integration: preview → native terminal plus existing local boundary/transport regression.
+
+[Machine-readable regression evidence](acceptance/phase175/regression.json) records actual counts and commands. The final backend run completed without concurrent browser/resource acceptance workloads.
 
 Backend coverage includes preparation/exact fingerprints, six stress modes, original-contract fingerprint compatibility, source binding, sparse/incompatible histories, deterministic bounded extrema/context sampling, one worker admission, no duplicate engine runs, response/request cap enforcement, sanitized busy/error states, local HTTP and operational state isolation. Frontend coverage includes navigation, exact allocation, six typed scenarios, authority/fingerprint guards, all risk and temporal states, unavailable charts/deltas, provenance, request identity, session transitions and sanitized errors.
 
@@ -141,6 +143,6 @@ Phase 17.6 can focus on independent security review, broader adversarial/soak re
 | Response cap, shared admission, no duplicate engine runs | PASS focused native tests |
 | Existing 17.2–17.4 compatibility; operational isolation | PASS focused native tests |
 | Temporal semantics, source labels, lifecycle and sanitized errors | PASS |
-| Full backend / frontend test/typecheck/build | PENDING |
+| Full backend / frontend test/typecheck/build | PASS |
 | Local HTTP integration | PASS focused native tests |
 | Chromium and concise documentation | PASS |
