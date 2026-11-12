@@ -61,6 +61,10 @@ Each per-market scenario carries an existing `ComparisonConfigSnapshot` that sep
 
 Separate Phase 16.6B lifecycle/recovery remains deferred; this contract does not imply durable jobs or progress telemetry.
 
+## Phase 17.2 execution extension
+
+The historical foundation above remains unchanged. [Phase 17.2](PHASE172_ACCEPTANCE.md) adds a distinct `phase172-executed-v1` result bundle and `PortfolioResearchRunRequest`; the original `PortfolioResearchResult` still accepts only `NOT_EXECUTED`. Existing configuration/scenario bounds are preserved for compatibility. The new execution request additionally enforces a portfolio-wide workload budget and requires the canonical 17.1A configuration fingerprint. Same-job native scenario receipts bind each independently validated market result before bounded projection. This extension establishes no synchronized historical windows or portfolio-wide economics.
+
 ## Native integration and acceptance — 17.1A.5
 
 The original four suites passed natively (48 tests) before corrections. The expanded portfolio acceptance suite passes 115 tests, including copied-model bypasses, exact residuals, all market permutations, changed capital/AMM/agent/risk/fee/funding/utilization inputs, forged receipts and operational isolation. The [acceptance report](PHASE171A_ACCEPTANCE.md) records full backend/frontend counts, exact commands, independent main-versus-branch economic parity, existing-module enhancement decisions and deferred gates.

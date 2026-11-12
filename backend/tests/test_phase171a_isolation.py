@@ -1,4 +1,4 @@
-"""17.1A contract-only isolation: no endpoints, workers or operational mutation."""
+"""17.1A foundation remains pure when 17.2 orchestration is added."""
 from pathlib import Path
 
 from app.agents.config import AgentConfig
@@ -24,7 +24,8 @@ def test_portfolio_contract_package_does_not_own_runtime_or_api():
     root=Path(__file__).resolve().parents[1]/"app"/"portfolio_research"
     py=list(root.glob("*.py"))
     assert {p.name for p in py}=={
-        "__init__.py","models.py","config.py","allocation.py","provenance.py"}
+        "__init__.py","models.py","config.py","allocation.py","provenance.py",
+        "orchestration.py", "service.py", "aggregation.py"}
     combined="\n".join(p.read_text() for p in py)
     for forbidden in (
         "place_order(", "sign_transaction(", "send_order(", "app.state",

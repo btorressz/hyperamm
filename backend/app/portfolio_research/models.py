@@ -1,7 +1,7 @@
-"""Phase 17.1A immutable contract boundary for shared-capital PAPER research.
+"""Immutable portfolio configuration and independent PAPER execution receipts.
 
-This package defines inputs and future evidence shapes only. No result here
-establishes synchronized market windows, aggregated equity or executed orders.
+The 17.1A configuration and NOT_EXECUTED contracts remain compatible. The 17.2
+bundle establishes no synchronized windows, portfolio economics or trading authority.
 """
 from __future__ import annotations
 
@@ -17,8 +17,16 @@ from app.research_replay.models import Fingerprint
 from app.simulation.market_profiles import MARKETS, ResearchPerpMarketId
 from app.simulation.models import stable_fingerprint
 from app.simulation.scenarios import ScenarioName
+from app.accounting.models import VaultSnapshot, canonical as accounting_canonical
+from app.execution.research import PaperExecutionAssumptions
+from app.research_replay.comparison import CapturedScenarioResult, ScenarioProvenanceReceipt
+from app.simulation.models import SimulationMetrics, ResearchMarketAssumptions
 from .allocation import allocation_totals
-from .config import ExactPortfolioDecimal, MAX_PORTFOLIO_CAPITAL
+from .config import (
+    ExactPortfolioDecimal, MAX_PORTFOLIO_CAPITAL, MAX_TOTAL_FRAMES,
+    MAX_QUOTE_LEVEL_FRAMES, MAX_TOTAL_TRACE_POINTS, MAX_TOTAL_LEDGER_ENTRIES,
+    MAX_TOTAL_EVENT_ENTRIES,
+)
 
 CONTRACT_VERSION = "phase17-portfolio-research-v1"
 
@@ -202,3 +210,189 @@ class PortfolioResearchResult(PortfolioEvidence):
     synchronized_window_verified: Literal[False] = False
     execution_authority: Literal["NONE"] = "NONE"
     simulated: Literal[True] = True
+
+
+class PortfolioResearchRunRequest(PortfolioEvidence):
+    """Only configuration is accepted; client results are never evidence."""
+
+    config: PortfolioResearchConfig
+    config_fingerprint: Fingerprint
+
+    @model_validator(mode="after")
+    def execution_boundary(self):
+        if self.config_fingerprint != self.config.fingerprint():
+            raise ValueError("portfolio configuration fingerprint mismatch")
+        inputs = [s.captured.inputs() for s in self.config.scenarios]
+        if (sum(s.frames for s in self.config.scenarios) > MAX_TOTAL_FRAMES or
+                sum(s.frames * i.strategy.levels_per_side for s, i in zip(self.config.scenarios, inputs))
+                > MAX_QUOTE_LEVEL_FRAMES or
+                sum(min(s.frames, i.simulation.trace_max_points) if i.simulation.record_trace else 0
+                    for s, i in zip(self.config.scenarios, inputs)) > MAX_TOTAL_TRACE_POINTS or
+                sum(i.simulation.accounting.ledger_max_entries for i in inputs) > MAX_TOTAL_LEDGER_ENTRIES or
+                sum(i.simulation.accounting.event_max_entries for i in inputs) > MAX_TOTAL_EVENT_ENTRIES):
+            raise ValueError("portfolio workload exceeds the shared research budget")
+        return self
+
+
+class PortfolioMarketExecution(PortfolioEvidence):
+    """Internal full native evidence, validated before bounded projection."""
+
+    config_fingerprint: Fingerprint
+    scenario: PortfolioResearchScenario
+    captured_result: CapturedScenarioResult
+
+    @field_validator("captured_result", mode="before")
+    @classmethod
+    def revalidate_native(cls, value):
+        if isinstance(value, CapturedScenarioResult):
+            return CapturedScenarioResult.model_validate_json(value.model_dump_json())
+        return value
+
+    @model_validator(mode="after")
+    def bind_market(self):
+        receipt, result = self.captured_result.provenance, self.captured_result.result
+        if (receipt.captured != self.scenario.captured or
+                receipt.requested_scenario != self.scenario.scenario or
+                receipt.requested_frames != self.scenario.frames or
+                result.research_market != self.scenario.market):
+            raise ValueError("portfolio native result capture or market mismatch")
+        vault = result.vault
+        amount = self.scenario.captured.inputs().simulation.initial_equity_quote
+        if (vault is None or vault.market != self.scenario.market or vault.mode != "PAPER" or
+                vault.simulated is not True or vault.accounting_complete != "COMPLETE" or
+                vault.initial_equity_quote != amount or
+                vault.accounting_fingerprint != result.accounting_fingerprint):
+            raise ValueError("portfolio native accounting evidence unavailable")
+        # Existing ledger entries are newest-first and may be a bounded suffix.
+        # Verify retained hashes/links; never manufacture an entire ledger archive.
+        from app.accounting.models import fingerprint as accounting_fingerprint
+        ledger = result.accounting_ledger
+        if bool(ledger) != bool(vault.ledger_version):
+            raise ValueError("portfolio retained ledger missing")
+        if ledger and (ledger[0].ledger_fingerprint != vault.ledger_fingerprint or
+                       ledger[0].sequence != vault.ledger_version):
+            raise ValueError("portfolio ledger head mismatch")
+        for index, entry in enumerate(ledger):
+            if (entry.market != self.scenario.market or entry.simulated is not True or
+                    entry.ledger_fingerprint != accounting_fingerprint(
+                        entry.model_dump(exclude={"ledger_fingerprint"}))):
+                raise ValueError("portfolio ledger evidence mismatch")
+            if index and (ledger[index - 1].previous_ledger_fingerprint != entry.ledger_fingerprint or
+                          ledger[index - 1].sequence != entry.sequence + 1):
+                raise ValueError("portfolio ledger chain mismatch")
+        if any(item.get("market") != self.scenario.market or not (
+                   item.get("source") in {"SIMULATED PAPER FILL", "HYPOTHETICAL MODELED PAPER FILL"} or
+                   str(item.get("source", "")).startswith("HYPOTHETICAL MODELED PAPER FILL:"))
+               for item in result.fills):
+            raise ValueError("portfolio fill market mismatch")
+        if any(item.get("market") != self.scenario.market for item in result.orders):
+            raise ValueError("portfolio order market mismatch")
+        accounting_canonical(result)  # Reject nonfinite native financial evidence.
+        return self
+
+
+EXECUTION_LIMITATIONS = (
+    "Independent deterministic DEMO/PAPER scenarios; no authenticated or synchronized historical market windows.",
+    "Per-market metrics are original engine outputs; no portfolio equity, PnL, return, drawdown or ranking is calculated.",
+    "Capital allocations constrain configuration; reserve is unexecuted. Shared-capital risk enforcement is deferred to Phase 17.3.",
+    "Receipts are same-job service bindings, not signatures or independent engine attestations. Full results are validated before projection.",
+    "Orders, fills, traces and ledger rows are omitted from transport; original full-result hashes are preserved, not hashes of a replacement result.",
+    "Local in-process research only; no durable recovery, authoritative cancellation or per-frame progress.",
+)
+
+
+def fingerprinted(model, **values):
+    """Include typed defaults using the existing canonical fingerprint function."""
+    field = "receipt_fingerprint" if model is PortfolioMarketReceipt else "bundle_fingerprint"
+    payload = model.model_construct(**values).model_dump(exclude={field}, mode="json")
+    return model(**values, **{field: stable_fingerprint(payload)})
+
+
+class PortfolioMarketReceipt(PortfolioEvidence):
+    config_fingerprint: Fingerprint
+    market: ResearchPerpMarketId
+    status: Literal["COMPLETED"] = "COMPLETED"
+    provenance: ScenarioProvenanceReceipt
+    metrics: SimulationMetrics
+    vault: VaultSnapshot
+    market_assumptions: ResearchMarketAssumptions
+    execution_assumptions: PaperExecutionAssumptions
+    accounting_fingerprint: Fingerprint
+    retained_ledger_fingerprint: Fingerprint
+    retained_ledger_entries: StrictInt = Field(ge=0, le=500)
+    original_trace_points: StrictInt = Field(ge=0, le=1500)
+    receipt_fingerprint: Fingerprint
+    execution_mode: Literal["PAPER"] = "PAPER"
+    simulated: Literal[True] = True
+    read_only: Literal[True] = True
+    authority: Literal["NONE"] = "NONE"
+
+    @field_validator("provenance", "metrics", "vault", "market_assumptions", "execution_assumptions", mode="before")
+    @classmethod
+    def detached_native(cls, value, info):
+        model = cls.model_fields[info.field_name].annotation
+        if isinstance(value, model):
+            return model.model_validate_json(value.model_dump_json())
+        return value
+
+    @model_validator(mode="after")
+    def validate_projection(self):
+        inputs = self.provenance.captured.inputs()
+        if (self.market != inputs.strategy.market or self.market != self.vault.market or
+                self.market != self.market_assumptions.market or
+                self.provenance.requested_frames != self.metrics.frame_count or
+                self.market_assumptions.frame_count != self.metrics.frame_count or
+                self.market_assumptions.scenario != self.provenance.requested_scenario.value or
+                self.market_assumptions.dataset_fingerprint != self.provenance.dataset_fingerprint or
+                self.market_assumptions.market_profile_fingerprint != self.provenance.captured.market_profile_fingerprint or
+                self.execution_assumptions.fingerprint != self.provenance.captured.execution_fingerprint or
+                self.metrics.starting_equity != inputs.simulation.initial_equity_quote or
+                self.vault.initial_equity_quote != self.metrics.starting_equity or
+                self.vault.accounting_fingerprint != self.accounting_fingerprint or
+                self.vault.mode != "PAPER" or self.vault.simulated is not True or
+                self.vault.accounting_complete != "COMPLETE"):
+            raise ValueError("portfolio market receipt evidence mismatch")
+        accounting_canonical(self.metrics)
+        if self.receipt_fingerprint != stable_fingerprint(self.model_dump(exclude={"receipt_fingerprint"}, mode="json")):
+            raise ValueError("portfolio market receipt fingerprint mismatch")
+        return self
+
+
+class PortfolioExecutedResult(PortfolioEvidence):
+    """17.2 complete result bundle; 17.1A NOT_EXECUTED remains unchanged."""
+
+    contract_version: Literal["phase172-executed-v1"] = "phase172-executed-v1"
+    config: PortfolioResearchConfig
+    config_fingerprint: Fingerprint
+    selected_markets: tuple[ResearchPerpMarketId, ...] = Field(min_length=1, max_length=3)
+    markets: tuple[PortfolioMarketReceipt, ...] = Field(min_length=1, max_length=3)
+    unallocated_reserve_quote: ExactPortfolioDecimal = Field(ge=0)
+    status: Literal["COMPLETED"] = "COMPLETED"
+    validation_status: Literal["VALIDATED"] = "VALIDATED"
+    execution_mode: Literal["PAPER"] = "PAPER"
+    simulated: Literal[True] = True
+    read_only: Literal[True] = True
+    authority: Literal["NONE"] = "NONE"
+    synchronized_market_windows_verified: Literal[False] = False
+    portfolio_economics_verified: Literal[False] = False
+    limitations: tuple[str, ...] = EXECUTION_LIMITATIONS
+    bundle_fingerprint: Fingerprint
+
+    @model_validator(mode="after")
+    def validate_bundle(self):
+        PortfolioResearchRunRequest(config=self.config, config_fingerprint=self.config_fingerprint)
+        scenarios = sorted(self.config.scenarios, key=lambda s: MARKETS.index(s.market))
+        if (self.selected_markets != tuple(s.market for s in scenarios) or
+                tuple(r.market for r in self.markets) != self.selected_markets or
+                self.unallocated_reserve_quote != self.config.unallocated_reserve_quote or
+                self.limitations != EXECUTION_LIMITATIONS):
+            raise ValueError("portfolio bundle incomplete or market/reserve mismatch")
+        for s, r in zip(scenarios, self.markets):
+            if (r.config_fingerprint != self.config_fingerprint or
+                    r.provenance.captured != s.captured or
+                    r.provenance.requested_scenario != s.scenario or
+                    r.provenance.requested_frames != s.frames):
+                raise ValueError("portfolio bundle substituted market evidence")
+        if self.bundle_fingerprint != stable_fingerprint(self.model_dump(exclude={"bundle_fingerprint"}, mode="json")):
+            raise ValueError("portfolio bundle fingerprint mismatch")
+        return self

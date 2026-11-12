@@ -34,6 +34,10 @@ class SimulationService:
         from app.research_replay.runner import catalog
         return catalog(storage_root)
 
+    async def run_portfolio_research(self, *, request):
+        from app.portfolio_research.service import run_portfolio_research
+        return await run_portfolio_research(self, request=request)
+
     async def historical_summaries(self, *, storage_root):
         from app.research_replay.runner import summaries
         return summaries(storage_root)
@@ -112,6 +116,7 @@ class SimulationService:
         self,*,scenario:str,frames:int,strategy:StrategyConfig,agents:AgentConfig,
         risk:RiskFirewallConfig,simulation:SimulationConfig,market_profile=None,
         include_comparison_provenance:bool=False,research:ResearchProposal|None=None,
+        preserve_captured_strategy:bool=False,
     ):
         from app.research_replay.comparison import (
             CapturedScenarioResult, ComparisonConfigSnapshot, ScenarioInputCapture, ScenarioProvenanceReceipt,
@@ -126,8 +131,11 @@ class SimulationService:
             update={"paper_initial_equity_quote": simulation.initial_equity_quote})})
         # Validate copies before adaptation, then freeze the exact effective
         # inputs. No await or operational runtime lookup occurs during capture.
-        strategy_copy=self.research_strategy(
-            StrategyConfig.model_validate_json(strategy.model_dump_json(), strict=True), market_profile)
+        strategy_copy=StrategyConfig.model_validate_json(strategy.model_dump_json(), strict=True)
+        # Portfolio captures already contain effective market-specific AMM inputs.
+        # Re-adapting would replace a deliberately captured pool reference price.
+        if not preserve_captured_strategy:
+            strategy_copy=self.research_strategy(strategy_copy, market_profile)
         capture=ScenarioInputCapture(strategy=strategy_copy,agents=agents,risk=risk,
             simulation=simulation,market_profile=market_profile)
         snapshot=ComparisonConfigSnapshot.from_payload(capture.model_dump(mode="json"))
@@ -141,6 +149,8 @@ class SimulationService:
             scenario=scenario,
             market_profile=captured.market_profile,
         )
+        if preserve_captured_strategy and result.dataset_fingerprint != dataset.fingerprint:
+            raise ValueError("captured scenario result differs from the generated dataset")
         if research is not None:
             result.research_configuration=research.provenance()
         if not include_comparison_provenance:
