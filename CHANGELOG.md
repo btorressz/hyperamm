@@ -4,6 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 17.1A (contracts foundation; draft acceptance pending)
+
+- Add immutable `phase17-portfolio-research-v1` BTC/ETH/SOL configuration, USDC PAPER budget, exact per-market allocations, reserve reconciliation and static portfolio risk-ceiling types.
+- Reuse Phase 16.5 canonical strategy/agent/risk/simulation/accounting/market-profile snapshots and deterministic SHA-256 fingerprints for per-market capture and portfolio provenance.
+- Add strict input validation and focused contract/allocation/provenance/isolation tests; result and exposure contracts explicitly do **not** claim synchronized portfolio PnL or authorize execution.
+- [Contract design and 17.1A.5 native acceptance handoff](docs/PHASE171A_CONTRACTS.md). Tests written but native execution not yet performed; no backend route, worker or UI is added.
+
 ## Unreleased — Phase 16.6D
 
 - Keep Scenario/optimizer/Research Vault worker validation failures private; show bounded HTTP-status guidance instead of untrusted error bodies, and classify unavailable coordination correctly.
