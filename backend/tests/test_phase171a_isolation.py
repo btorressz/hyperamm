@@ -25,7 +25,8 @@ def test_portfolio_contract_package_does_not_own_runtime_or_api():
     py=list(root.glob("*.py"))
     assert {p.name for p in py}=={
         "__init__.py","models.py","config.py","allocation.py","provenance.py",
-        "orchestration.py", "service.py", "aggregation.py"}
+        "orchestration.py", "service.py", "aggregation.py",
+        "accounting.py", "exposure.py", "risk.py", "temporal.py"}
     combined="\n".join(p.read_text() for p in py)
     for forbidden in (
         "place_order(", "sign_transaction(", "send_order(", "app.state",

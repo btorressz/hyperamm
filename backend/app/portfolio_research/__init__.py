@@ -4,6 +4,7 @@ from .models import (
     PortfolioRiskLimits, PortfolioResearchConfig, PortfolioExposureSnapshot,
     PortfolioResearchResult,
     PortfolioResearchRunRequest, PortfolioExecutedResult, PortfolioMarketReceipt,
+    PortfolioAnalysisRequest, PortfolioAnalysisResult, PortfolioRiskPolicy,
 )
 from .provenance import PortfolioResearchProvenance, capture_portfolio_provenance
 
@@ -12,4 +13,5 @@ __all__ = [
     "PortfolioRiskLimits", "PortfolioResearchConfig", "PortfolioExposureSnapshot",
     "PortfolioResearchResult", "PortfolioResearchProvenance", "capture_portfolio_provenance",
     "PortfolioResearchRunRequest", "PortfolioExecutedResult", "PortfolioMarketReceipt",
+    "PortfolioAnalysisRequest", "PortfolioAnalysisResult", "PortfolioRiskPolicy",
 ]

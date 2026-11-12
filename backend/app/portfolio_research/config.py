@@ -42,3 +42,12 @@ ExactPortfolioDecimal = Annotated[
     BeforeValidator(exact_portfolio_decimal),
     PlainSerializer(lambda n: format(n, "f"), return_type=str, when_used="json"),
 ]
+
+
+def portfolio_ratio(numerator: Decimal, denominator: Decimal) -> Decimal:
+    """Bounded repeating ratios; sums/products retain their exact precision."""
+    with localcontext() as ctx:
+        ctx.prec = 50
+        ctx.rounding = "ROUND_HALF_EVEN"
+        value = numerator / denominator
+        return value.quantize(Decimal("1e-60")) if value.as_tuple().exponent < -60 else value
