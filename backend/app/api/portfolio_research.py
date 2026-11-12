@@ -7,7 +7,7 @@ from app.infrastructure.research import ResearchUnavailableError
 from app.portfolio_research.aggregation import bounded_json
 from app.portfolio_research.config import PortfolioResponseTooLarge
 from app.portfolio_research.models import (PortfolioResearchRunRequest, PortfolioExecutedResult,
-    PortfolioAnalysisRequest, PortfolioAnalysisResult)
+    PortfolioAnalysisRequest, PortfolioAnalysisResult, PortfolioStressRequest, PortfolioStressResult)
 from app.simulation.executor import ResearchBusyError
 
 router = APIRouter(prefix="/portfolio-research", tags=["portfolio-research"])
@@ -21,6 +21,11 @@ async def run(body: PortfolioResearchRunRequest, request: Request):
 @router.post("/analyze", response_model=PortfolioAnalysisResult)
 async def analyze(body: PortfolioAnalysisRequest, request: Request):
     return await _compute(body, request, "analyze_portfolio_research", PortfolioAnalysisResult)
+
+
+@router.post("/stress", response_model=PortfolioStressResult)
+async def stress(body: PortfolioStressRequest, request: Request):
+    return await _compute(body, request, "stress_portfolio_research", PortfolioStressResult)
 
 
 async def _compute(body, request, operation, result_type):

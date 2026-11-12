@@ -4,6 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 17.4 (portfolio stress and scenario intelligence)
+
+- Add strict `phase174-stress-v1` contracts and `/api/v1/portfolio-research/stress` for six explicit hypothetical joint scenarios: selloff, BTC-led transmission, liquidity, signed funding, reference degradation and concentration.
+- Transform validated deterministic datasets before the existing PAPER engine; replay baseline then stress under one existing admission. Bind actual datasets, native results, unchanged capital/settings, eligibility and post-execution research risk transitions.
+- Apply existing frame, quote work, retained-observation, ledger/event and transport caps across **both** legs. Preserve `/run`, `/analyze`, native accounting, operational firewall and frontend behavior.
+- Add native scenario/economics/provenance/temporal/security/isolation tests and fresh-process resource measurements. Document [acceptance and Phase 17.5 handoff](docs/PHASE174_ACCEPTANCE.md); empirical correlations, stale reference timestamps, live execution and a new dashboard remain deferred.
+
 ## Unreleased — Phase 17.3H (portfolio risk and temporal evidence hardening)
 
 - Revalidate native observation financial/endpoint identity and clock retention/completeness; retain the existing 1,500-observation cap and all workload/HTTP bounds.

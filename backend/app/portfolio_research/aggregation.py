@@ -110,3 +110,16 @@ def verify_analysis(result):
                 raise ValueError("portfolio drawdown ending state mismatch")
     if calculate_exposure(e.markets, a, t) != x or evaluate_risk(e.config, a, x, t, r.policy) != r:
         raise ValueError("portfolio exposure or risk projection mismatch")
+
+
+def assemble_stress(request, baseline, stressed, selection):
+    from .models import PortfolioStressResult, sealed
+    from .stress import market_bindings
+    from .metrics import compare_metrics, compare_risk
+    result = sealed(PortfolioStressResult, request=request,
+        request_fingerprint=stable_fingerprint(request), scenario_fingerprint=request.scenario.fingerprint(),
+        baseline=baseline, stressed=stressed, markets=market_bindings(baseline, stressed),
+        concentration_selection=selection, metrics=compare_metrics(baseline, stressed),
+        risk_transition=compare_risk(baseline, stressed))
+    bounded_json(result)
+    return result

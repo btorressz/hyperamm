@@ -1,4 +1,4 @@
-"""17.1A foundation remains pure when 17.2 orchestration is added."""
+"""17.1A foundation remains isolated as portfolio research grows."""
 from pathlib import Path
 
 from app.agents.config import AgentConfig
@@ -26,7 +26,8 @@ def test_portfolio_contract_package_does_not_own_runtime_or_api():
     assert {p.name for p in py}=={
         "__init__.py","models.py","config.py","allocation.py","provenance.py",
         "orchestration.py", "service.py", "aggregation.py",
-        "accounting.py", "exposure.py", "risk.py", "temporal.py"}
+        "accounting.py", "exposure.py", "risk.py", "temporal.py",
+        "scenarios.py", "stress.py", "metrics.py"}
     combined="\n".join(p.read_text() for p in py)
     for forbidden in (
         "place_order(", "sign_transaction(", "send_order(", "app.state",
