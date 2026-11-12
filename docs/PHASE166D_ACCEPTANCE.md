@@ -222,4 +222,4 @@ The optional skip is `test_agent_expansion.py:406`, missing scikit-learn. Existi
 
 The accepted A/C architecture is suitable for subsequent local research design and Phase 17 planning. Overall Phase 16.6 remains conditional until required 16.6B lifecycle/recovery work is implemented and accepted. These tests do not authorize venue execution or deployment.
 
-Publication status: a concrete local branch and draft-PR description are prepared. Automatic approval review rejected source upload to the public repository because it requires an explicit trusted chat authorization for that export, despite the attached request's draft-PR instruction. No upload workaround or merge was attempted. Publishing the branch/draft PR remains a delivery blocker pending that approval, separate from local research acceptance.
+Delivery: the user explicitly authorized publishing the verified branch, source fixes, tests, report and six screenshots to the public `btorressz/hyperamm` repository and opening the requested draft PR. The earlier publication-approval blocker is resolved. Review and merge remain manual; no automatic merge is authorized.

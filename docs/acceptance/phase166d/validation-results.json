@@ -76,5 +76,5 @@
   ],
   "local_acceptance":"PHASE 16.6A/C LOCAL RESEARCH ACCEPTANCE: PASS",
   "overall_completion":"CONDITIONAL - 16.6B DEFERRED",
-  "publication":"LOCAL READY; source upload blocked by automatic approval review pending explicit trusted-chat authorization; draft PR not created"
+  "publication":"User explicitly authorized publishing the verified branch and opening the draft PR; manual review and merge required"
 }
