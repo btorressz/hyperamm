@@ -16,15 +16,19 @@
 | Deterministic replay and modeled PAPER execution (Phases 16.2–16.3, PRs #58–#59) | Receipt-ordered replay, explicit segment resets, missing-economics rejection, optional latency/slippage/depth/partial-fill sensitivity | No verified real fills, queue priority, market completeness or production forecast |
 | Historical Replay Studio (Phases 16.4–16.4.1) | React dataset/frame navigation, original traces and independent segment accounting | Native/frontend/Chromium evidence recorded in the later acceptance phase |
 | Scenario/historical comparison (Phases 16.5A–C.2, PRs #62–#66) | Same-job capture, descriptive metrics, bounded API and React Comparison Studio | Independent final security/regression findings and local gates: [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md) |
-| Next (Phases 16.6, then 17) | Further adversarial acceptance, then multi-market portfolio research | Planned; not implemented or accepted here |
+| Local research acceptance (Phases 16.6A/C/D) | Native, browser, security and resource acceptance | Durable lifecycle/recovery (16.6B) remains deferred |
+| Portfolio research (Phases 17.1A–17.2) | Exact configuration/provenance and isolated sequential multi-market PAPER backend | Phase 17.2 review evidence: [acceptance](docs/PHASE172_ACCEPTANCE.md); no portfolio-wide economics |
+| Next (Phases 17.3–17.6) | Shared-capital accounting/risk, correlated stress, portfolio terminal and browser acceptance | Deferred |
 
 The current **research and independent live-observation universe** is **BTC-PERP, ETH-PERP and SOL-PERP**. That does not expand the operational strategy market or permit switching live execution through the research UI. Operational market data, independent read-only observation and the historical PAPER replay vault are **three separate evidence paths**.
 
 Details and actual milestone tests: [CHANGELOG.md](CHANGELOG.md), [CODEBASE.md](CODEBASE.md), [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), and the [Phase 15.5B](docs/PHASE155B_ACCEPTANCE.md) / [Phase 16.4](docs/PHASE164_ACCEPTANCE.md) acceptance documents.
 
-### Phase 17 portfolio research foundation
+### Phase 17 portfolio research
 
 Phase 17.1A introduces a backend-only, read-only `phase17-portfolio-research-v1` contract package for strictly bounded BTC/ETH/SOL hypothetical USDC capital allocations, per-market captured DEMO/PAPER assumptions, risk-limit configurations and canonical provenance. No portfolio simulation, aggregate equity/PnL, HTTP route, new worker or trading authority is introduced. [Phase 17.1A contracts](docs/PHASE171A_CONTRACTS.md) and [native acceptance](docs/PHASE171A_ACCEPTANCE.md) document validated contracts, nested-model hardening, exact financial identity and regression evidence. Phase 16.6A/C/D have merged local acceptance; Phase 16.6B lifecycle/recovery is deferred. See [Phase 16.6D final acceptance](docs/PHASE166D_ACCEPTANCE.md).
+
+Phase 17.2 adds `POST /api/v1/portfolio-research/run`: one to three captured market scenarios execute sequentially in BTC → ETH → SOL order under one existing research-worker admission. Each run owns independent PAPER state and exact assigned capital. A validated, bounded receipt bundle preserves original per-market metrics and fingerprints; no combined portfolio equity/PnL, shared-capital risk enforcement or frontend terminal is added. See [Phase 17.2 acceptance](docs/PHASE172_ACCEPTANCE.md) for contracts, limits, native evidence and deferred gates.
 
 ## Why a virtual AMM?
 

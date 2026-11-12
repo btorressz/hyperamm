@@ -18,6 +18,7 @@ from app.api.live_market_streams import router as live_market_streams_router
 from app.api.live_markets import router as live_markets_router
 from app.api.historical_replay import router as historical_replay_router
 from app.api.research_scenario_replay_comparison import router as scenario_comparison_router
+from app.api.portfolio_research import router as portfolio_research_router
 from app.market_data.models import MarketDataMode
 from app.strategy.models import ExecutionMode
 from app.api.research_market_comparison import router as research_market_comparison_router
@@ -116,6 +117,7 @@ async def research_validation_errors(request, exc):
 for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, historical_replay_router, research_vault_router, research_markets_router, research_market_comparison_router, live_markets_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(scenario_comparison_router, prefix=settings.api_prefix)
+app.include_router(portfolio_research_router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 app.include_router(live_market_streams_router)
 

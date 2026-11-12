@@ -4,6 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 17.2 (isolated multi-market PAPER simulation)
+
+- Compose the existing deterministic engine and scenario service for one to three captured BTC/ETH/SOL simulations in canonical order under one shared-worker admission.
+- Preserve exact independent capital, AMM/agent/risk/accounting settings, source identities and original full-result fingerprints; validate native evidence before producing bounded receipts.
+- Add a local read-only portfolio research route, workload/transport limits, fail-closed handling, lifecycle/security/isolation tests and [native acceptance evidence](docs/PHASE172_ACCEPTANCE.md).
+- Keep the 17.1A `NOT_EXECUTED` placeholder unchanged. Portfolio economics/shared-capital risk, correlated stress and the React terminal remain deferred.
+
 ## Unreleased — Phase 17.1A (contracts foundation and native acceptance)
 
 - Add immutable `phase17-portfolio-research-v1` BTC/ETH/SOL configuration, USDC PAPER budget, exact per-market allocations, reserve reconciliation and static portfolio risk-ceiling types.

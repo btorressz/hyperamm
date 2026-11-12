@@ -9,6 +9,19 @@ from app.accounting.config import bounded_exact_decimal
 
 MAX_PORTFOLIO_CAPITAL = Decimal("1000000000000")
 
+# One sequential job, bounded across all selected markets. Quote work also
+# bounds expensive 50-level configurations; captures are rejected, never edited.
+MAX_TOTAL_FRAMES = 3000
+MAX_QUOTE_LEVEL_FRAMES = 24000
+MAX_TOTAL_TRACE_POINTS = 1500
+MAX_TOTAL_LEDGER_ENTRIES = 30000
+MAX_TOTAL_EVENT_ENTRIES = 750
+MAX_RESPONSE_BYTES = 200000
+
+
+class PortfolioResponseTooLarge(ValueError):
+    pass
+
 
 def exact_portfolio_decimal(value: object) -> Decimal:
     number = bounded_exact_decimal(value)

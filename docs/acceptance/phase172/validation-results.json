@@ -1,0 +1,183 @@
+{
+  "base_commit": "d7105ccea9675bc0725458260d520e9e637394a8",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "fastapi": "0.162.5",
+    "pydantic": "2.14.3",
+    "pytest": "8.4.2",
+    "httpx": "0.28.1",
+    "fakeredis": "2.40.0",
+    "numpy": "2.5.4"
+  },
+  "validation": {
+    "phase171a_main": {
+      "passed": 115,
+      "seconds": 12.64
+    },
+    "phase171a_final": {
+      "passed": 115,
+      "seconds": 9.83
+    },
+    "phase172_focused": {
+      "passed": 90,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 51.52
+    },
+    "backend_full": {
+      "passed": 2725,
+      "failed": 0,
+      "skipped": 1,
+      "seconds": 211.23,
+      "skip": "optional sklearn absent"
+    },
+    "frontend": {
+      "npm_ci": "PASS",
+      "typecheck": "PASS",
+      "build": "PASS",
+      "tests_passed": 717,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 15.140485303
+    }
+  },
+  "commands": [
+    "cd backend; ../work/venv/bin/python -m pytest tests/test_phase171a_{contracts,allocation,provenance,isolation,hardening}.py -q -rs",
+    "cd backend; ../work/venv/bin/python -m pytest tests/test_phase172_{orchestration,market_isolation,provenance,worker,api}.py -q -rs",
+    "cd backend; ../work/venv/bin/python -m pytest tests -q -rs",
+    "cd frontend; npm ci --cache ../work/npm-cache; npm run typecheck; npm run build; npm test",
+    "for case in three single wide modeled; do PYTHONPATH=backend:backend/tests work/venv/bin/python backend/tests/phase172_near_limit.py --case \"$case\"; done"
+  ],
+  "bounds": {
+    "total_frames": 3000,
+    "frame_times_levels": 24000,
+    "retained_traces": 1500,
+    "ledger_capacities": 30000,
+    "event_capacities": 750,
+    "request_bytes": 65536,
+    "response_bytes": 200000
+  },
+  "resource_observations": [
+    {
+      "case": "three",
+      "total_frames": 3000,
+      "quote_level_frames": 24000,
+      "elapsed_seconds": 32.7948,
+      "response_bytes": 63115,
+      "peak_rss_mib": 69.05,
+      "config_fingerprint": "bf4c35b5eecce33ea51c018b40f4fbafecc0e7611c6853c7cf3eb5a87ee7ddc4",
+      "bundle_fingerprint": "57ee8c4a7a1ffa71deb7d2d8a172d6803331022ddb4830161c2032c7a822ef27",
+      "result_fingerprints": [
+        "9d99c9a4090ba7345f16d01b085d5bc60a26ea9b03b84367c4ff73510ef67a46",
+        "afbc9ac782b48a9db49f33decfbce06dc5c594ddb6673c2194f8a6e8e1a941a7",
+        "00159f884aac8e3361e86e7ff4adf144d145975f02be2e1661421151bba84c9f"
+      ],
+      "ledger_versions": [
+        4,
+        16,
+        0
+      ],
+      "fills": [
+        2,
+        8,
+        0
+      ],
+      "worker_released": true
+    },
+    {
+      "case": "single",
+      "total_frames": 3000,
+      "quote_level_frames": 24000,
+      "elapsed_seconds": 23.6374,
+      "response_bytes": 22384,
+      "peak_rss_mib": 104.29,
+      "config_fingerprint": "fae8d2b16df1ee6588993d618ceaf9ba804d0db604cbffd6d78c6fe864fbd635",
+      "bundle_fingerprint": "ce95aff63c2b4214102531b93b53e3121b49a9c3ce15e91a941e224067783087",
+      "result_fingerprints": [
+        "7b8e8820f2f8c6fcaa3b09f358cd0a007a977cdab40825e1c466437f4d085a20"
+      ],
+      "ledger_versions": [
+        4
+      ],
+      "fills": [
+        2
+      ],
+      "worker_released": true
+    },
+    {
+      "case": "wide",
+      "total_frames": 480,
+      "quote_level_frames": 24000,
+      "elapsed_seconds": 4.76,
+      "response_bytes": 63587,
+      "peak_rss_mib": 56.34,
+      "config_fingerprint": "43dd6592f2c270ff70404c70057e1d75edb4643ff4fdc73afb981c718996f0d5",
+      "bundle_fingerprint": "656029f9b732eda0bf129c44f7bba848b8e91c477284d42efd080446be31f53b",
+      "result_fingerprints": [
+        "ca86c7033b73fefc132f457667891b693970c108a7904c2124538c32076fb2f9",
+        "ca147e1de7a32a2120de83ae4cabe861e37b66a09f700ef810458b794456c9ef",
+        "2fde802186e23726e7d7610b4d143513ee73b8309af88da79787ce2359ca7e0c"
+      ],
+      "ledger_versions": [
+        162,
+        14,
+        2
+      ],
+      "fills": [
+        81,
+        7,
+        1
+      ],
+      "worker_released": true
+    },
+    {
+      "case": "modeled",
+      "total_frames": 3000,
+      "quote_level_frames": 24000,
+      "elapsed_seconds": 20.5351,
+      "response_bytes": 63203,
+      "peak_rss_mib": 69.07,
+      "config_fingerprint": "0feb86db594999ee85d883d17eed7eda31b19bd718d88842d8574c2d6a829fff",
+      "bundle_fingerprint": "abfa79b5fd6e90093d55197228f44d273ad6bba01c47aae29cb69e7d8d1a7fb0",
+      "result_fingerprints": [
+        "738289947108bf6b43c0015acdb9de082c50bcb3c98d9ad972065d3c1263b07f",
+        "d60b3dc0a932c901334056419031176b05c8e719623ae54719f23c97e1a2e07f",
+        "35fb993fe391661a5f2c8bafd35545e418a48a73390bf0503c2fb755f4691406"
+      ],
+      "ledger_versions": [
+        4,
+        30,
+        0
+      ],
+      "fills": [
+        2,
+        15,
+        0
+      ],
+      "worker_released": true
+    }
+  ],
+  "evidence": {
+    "all_market_combinations": 7,
+    "three_market_request_permutations": 6,
+    "actual_distinct_engine_components": 9,
+    "standalone_full_output_equality": "PASS",
+    "nonzero_fills_and_funding": "PASS",
+    "single_submission_and_redis_lease": "PASS",
+    "cancellation_shutdown_failure_release": "PASS",
+    "operational_before_after": "PASS",
+    "http_statuses": "200/413/422/429/503/500",
+    "response_exact_byte_boundary": "PASS",
+    "physical_redis": "BLOCKED: no redis-server executable; external gate",
+    "frontend_source_changed": false
+  },
+  "limitations": [
+    "One cold resource sample per case; no SLA or speedup claim.",
+    "No portfolio economics/shared-capital risk (17.3), correlated stress (17.4), or React terminal (17.5).",
+    "No authenticated synchronized historical windows, durable recovery, authoritative cancellation or progress.",
+    "Original standalone Phase 16\u201317 roadmap absent; supplied scope and repository roadmap reviewed."
+  ]
+}
