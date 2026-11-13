@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from .common import ONE, ZERO, VersionedAgent, clamp
-from .ml_features import FEATURE_SCHEMA_VERSION, build_feature_vector
+from .ml_features import FEATURE_SCHEMA_VERSION, FeatureUnavailableError, build_feature_vector
 from .model_artifact import LogisticModelArtifact
 from .models import (AgentHealth, PredictiveAdverseSelectionAgentOutput,
     PredictiveAdverseSelectionMetrics, PredictiveAdverseSelectionState, PredictiveAgentMode,
@@ -74,6 +74,10 @@ class PredictiveAdverseSelectionAgent(VersionedAgent):
                 metrics=metrics, model_provenance=artifact.provenance,
                 reasons=["ML SHADOW: conditional adverse-fill probabilities; NO QUOTE AUTHORITY",
                          "evidence support is heuristic confidence; independent calibration remains research evidence"]))
+        except FeatureUnavailableError as exc:
+            return self._versioned(PredictiveAdverseSelectionAgentOutput(**base,
+                health=AgentHealth.INSUFFICIENT_DATA, state=PredictiveAdverseSelectionState.UNAVAILABLE,
+                model_provenance=artifact.provenance, reasons=[f"SHADOW inference unavailable: {exc}"]))
         except Exception:
             # No exception text/path or stale probability can cross the public boundary.
             return self._versioned(PredictiveAdverseSelectionAgentOutput(**base, health=AgentHealth.ERROR,

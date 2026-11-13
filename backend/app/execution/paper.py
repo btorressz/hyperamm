@@ -137,6 +137,7 @@ class PaperExecutionAdapter:
             price=order.price if price is None else price, size=fill_size, timestamp=self.clock(),
             source=source or order.fill_source,
             liquidity=liquidity,
+            execution_mode="PAPER",
         )
         self.fills.add(fill)
         if self.on_fill is not None:

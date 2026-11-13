@@ -10,6 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.market_data.models import utcnow
+from app.references.models import PriceEvidence
 
 
 class AgentModel(BaseModel):
@@ -209,6 +210,8 @@ class AgentEvidenceSnapshot(AgentModel):
     liquidity_depth_levels: int = Field(default=0, ge=0, le=50)
     upstream_available_levels: int | None = Field(default=None, ge=0, le=100)
     book_timestamp: datetime | None = None
+    perp_timestamp: datetime | None = None
+    reference_provenance: dict[str, PriceEvidence] = Field(default_factory=dict, max_length=3)
     perp_observation_count: int = Field(default=0, ge=0, le=120)
     perp_window_start: datetime | None = None
     perp_window_end: datetime | None = None

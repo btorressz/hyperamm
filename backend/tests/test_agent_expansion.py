@@ -20,6 +20,7 @@ from app.agents.predictive_adverse_selection import PredictiveAdverseSelectionAg
 from app.agents.snapshot import AgentSystemSnapshot
 from app.execution.models import Fill, OrderStatus, StrategyOrder
 from app.market_data.history import MarketPriceHistory, MarketObservation
+from app.references.models import PriceEvidence
 from app.research.ml.dataset import build_dataset, validate_independent_windows, OfflineDataset
 from app.research.ml.validation import PredictionOutcome, evaluate_predictions
 from test_phase9_agents import evidence, history, quote, snapshot
@@ -31,6 +32,14 @@ def feature_evidence(**updates):
     values = dict(updated_at=T0, spread_bps=D(4),top_n_bid_depth_base=D(10),
         top_n_ask_depth_base=D(10),depth_imbalance=D(0),depth_concentration=D('.1'),midpoint_instability_bps=D(0))
     values.update(updates)
+    # Test data explicitly supplies real source times; production never fabricates them.
+    values.setdefault('book_timestamp', values['updated_at'])
+    values.setdefault('perp_timestamp', values['updated_at'])
+    values.setdefault('reference_provenance', {provider: PriceEvidence(
+        market='ETH', provider=provider, source_type=kind, price=D(3000),
+        observed_at=values['updated_at'], source_timestamp=values['updated_at'],
+        healthy=True, status='HEALTHY', simulated=True)
+        for provider, kind in [('REDSTONE','ORACLE'),('KRAKEN','VENUE_REFERENCE')]})
     if values.get('open_interest_change_ratio') is not None or values.get('funding_rate_delta') is not None:
         values.setdefault('perp_observation_count',2)
         values.setdefault('perp_window_start',values['updated_at']-timedelta(seconds=10))
@@ -253,7 +262,7 @@ def test_invalid_artifact_and_missing_features_never_reuse_prediction():
     agent=PredictiveAdverseSelectionAgent(AgentConfig());agent.install_artifact(artifact())
     assert agent.evaluate(feature_evidence()).state.value=='PREDICTED'
     missing=agent.evaluate(feature_evidence().model_copy(update={'spread_bps':None}))
-    assert missing.health==AgentHealth.ERROR and missing.metrics.bid_adverse_probability is None
+    assert missing.health==AgentHealth.INSUFFICIENT_DATA and missing.metrics.bid_adverse_probability is None
     invalid=artifact().model_copy(update={'intercept':D('NaN')})
     with pytest.raises(ValueError): agent.install_artifact(invalid)
     assert agent.evaluate(feature_evidence()).state.value=='ERROR'

@@ -5,7 +5,7 @@ from bisect import bisect_left
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.execution.models import Fill, OrderStatus
 from app.execution.quote_reconciler import ReconcileActionType
@@ -32,6 +32,14 @@ class FillObservation(AgentModel):
     reference_provenance: dict[str, PriceEvidence] = Field(default_factory=dict)
     source: str
     simulated: bool
+
+    @model_validator(mode="after")
+    def evidence_classification(self):
+        # Reuse the execution contract, including at the offline dataset boundary.
+        Fill(client_order_id=self.client_order_id, market=self.market, side=self.side,
+             price=self.price, size=self.size, timestamp=self.timestamp, source=self.source,
+             execution_mode="PAPER" if self.simulated else "TESTNET")
+        return self
 
 
 class MarkoutObservation(AgentModel):
@@ -135,8 +143,13 @@ class AgentTelemetryStore:
                      reference_source: str | None = None,
                      reference_version: int | None = None,
                      reference_provenance: dict[str, PriceEvidence] | None = None) -> bool:
+        # model_copy/assignment can bypass validators. Reject before dedup/eviction.
+        Fill.model_validate({**fill.model_dump(), "execution_mode": fill.execution_mode})
         identity=self.fill_identity(fill)
         if identity in self._fill_ids:
+            previous = next(item for item in self._fills if item.identity == identity)
+            if previous.simulated != (fill.execution_mode == "PAPER") or previous.source != fill.source:
+                raise ValueError("conflicting fill evidence classification")
             return False
         if len(self._fills)>=self.max_fills:
             dropped=self._fills.popleft()
@@ -147,7 +160,7 @@ class AgentTelemetryStore:
             )
             self._fill_ids.discard(dropped.identity)
             self._markouts={key:value for key,value in self._markouts.items() if key[0]!=dropped.identity}
-        simulated=fill.source.startswith("SIMULATED")
+        simulated=fill.execution_mode == "PAPER"
         self._fills.append(FillObservation(
             identity=identity,client_order_id=fill.client_order_id,market=fill.market,side=fill.side,
             price=fill.price,size=fill.size,timestamp=fill.timestamp,reference_price=reference_price,
@@ -383,6 +396,9 @@ def build_agent_evidence(
         mark_mid_basis_bps=perp_context.mark_mid_basis_bps,
         reference_confidence=refs.consensus.confidence_state,
         max_reference_deviation_bps=max_dev,
+        perp_timestamp=perp_context.updated_at,
+        reference_provenance={provider: refs.evidence[provider].model_copy(deep=True)
+            for provider in refs.consensus.eligible_providers if provider in refs.evidence},
         simulated=bool(perp_context.simulated or any(item.simulated for item in refs.evidence.values())),
         **book_metrics, **changes,
         upstream_available_levels=(max((len({q.level_index for q in upstream_quotes if q.side==side})
@@ -415,4 +431,4 @@ def _book_metrics(snapshot, levels):
         depth_imbalance=(bid_depth-ask_depth)/total,
         depth_concentration=max(x.size for x in bids+asks)/total,
         book_span_bps=(asks[-1].price-bids[-1].price)/mid*Decimal(10000),
-        liquidity_depth_levels=levels, book_timestamp=snapshot.latest_valid_update or snapshot.book.timestamp)
+        liquidity_depth_levels=levels, book_timestamp=snapshot.book.timestamp)

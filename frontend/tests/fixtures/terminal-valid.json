@@ -2885,7 +2885,9 @@
       "perp_stale": false,
       "simulated": true,
       "updated_at": "2026-10-07T22:10:21.524555Z",
-      "version": 131645925527270
+      "version": 131645925527270,
+      "perp_timestamp": null,
+      "reference_provenance": {}
     },
     "regime": {
       "agent": "REGIME",

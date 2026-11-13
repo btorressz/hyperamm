@@ -4,6 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Audit 3.0 security and data-evidence hardening
+
+- Patch Vite from locked 7.3.6 to 7.3.8 and raise the compatible 7.x manifest floor; preserve all other dependencies and development configuration.
+- Classify ordinary and modeled PAPER fill telemetry from typed execution mode, rejecting contradictory provenance while preserving legacy PAPER serialization and financial fingerprints.
+- Validate required predictive book, perpetual and reference source freshness with shared offline/inference as-of rules; return explicit unavailable diagnostics and allow fresh recovery. Predictive Adverse Selection remains SHADOW only, without quote authority.
+- Add corrected Audit 3.0 counterexamples, focused regression coverage, generated terminal contract updates and [security/evidence acceptance](docs/AUDIT3_SECURITY_EVIDENCE_ACCEPTANCE.md). Preserve the original audit report.
+
 ## Unreleased — Phase 17.6 (final portfolio research acceptance)
 
 - Harden compact terminal source/configuration bindings, native chart clocks/drawdown extrema and baseline/stress comparison consistency with existing authoritative calculations.

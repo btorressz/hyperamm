@@ -917,6 +917,19 @@
           "title": "Perp Stale",
           "type": "boolean"
         },
+        "perp_timestamp": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Perp Timestamp"
+        },
         "perp_version": {
           "minimum": 0,
           "title": "Perp Version",
@@ -969,6 +982,14 @@
             "INSUFFICIENT"
           ],
           "type": "string"
+        },
+        "reference_provenance": {
+          "additionalProperties": {
+            "$ref": "#/$defs/PriceEvidence"
+          },
+          "maxProperties": 3,
+          "title": "Reference Provenance",
+          "type": "object"
         },
         "reference_version": {
           "minimum": 0,
@@ -1086,6 +1107,8 @@
         "liquidity_depth_levels",
         "upstream_available_levels",
         "book_timestamp",
+        "perp_timestamp",
+        "reference_provenance",
         "perp_observation_count",
         "perp_window_start",
         "perp_window_end",
@@ -2066,6 +2089,15 @@
         "client_order_id": {
           "minLength": 1,
           "title": "Client Order Id",
+          "type": "string"
+        },
+        "execution_mode": {
+          "default": "PAPER",
+          "enum": [
+            "PAPER",
+            "TESTNET"
+          ],
+          "title": "Execution Mode",
           "type": "string"
         },
         "liquidity": {
