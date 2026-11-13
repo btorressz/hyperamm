@@ -77,7 +77,7 @@ export const createPortfolioStore = () =>
       return true;
     },
     fail: (t, error) => {
-      if (get().current(t)) set({ error, pending: null });
+      if (get().current(t)) set({ error, pending: null, preview: null, result: null });
     },
   }));
 export const usePortfolioResearchStore = createPortfolioStore();

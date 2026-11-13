@@ -1,0 +1,76 @@
+{
+  "classification": "PASS",
+  "recommendation": "PASS",
+  "scope": "Bounded hypothetical local PAPER portfolio research",
+  "base_commit": "9a87191f9f78207114453fc0e6eb9c52ad336c9f",
+  "focused": {
+    "tests": 782,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 782,
+    "seconds": 437.477,
+    "warnings": 2
+  },
+  "backend": {
+    "tests": 3303,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "passed": 3302,
+    "seconds": 580.041,
+    "warnings": 4
+  },
+  "phase17_cases": {
+    "phase171a": 115,
+    "phase172": 90,
+    "phase173": 161,
+    "phase173h": 77,
+    "phase174": 183,
+    "phase175": 56,
+    "phase176": 100
+  },
+  "frontend": {
+    "tests": 788,
+    "pass": 788,
+    "fail": 0,
+    "skipped": 0
+  },
+  "frontend_typecheck": "PASS",
+  "frontend_build": "PASS",
+  "npm_ci": "PASS",
+  "pip_check": "PASS",
+  "browser": {
+    "classification": "PASS",
+    "workflow_count": 19,
+    "viewport_count": 5,
+    "section_layout_checks": 20,
+    "native_engine_runs": 58,
+    "normal_console_errors": 0,
+    "page_errors": 0
+  },
+  "resources": {
+    "classification": "PASS",
+    "workloads": 7
+  },
+  "optional_skips": [
+    {
+      "case": "tests.test_agent_expansion.test_offline_training_optional_import_and_real_coefficient_export",
+      "reason": "could not import 'sklearn': No module named 'sklearn'"
+    }
+  ],
+  "development_regression": {
+    "comparator_interface_failures": 5,
+    "corrected_targeted_passed": 109
+  },
+  "external_gates": {
+    "physical_redis": "BLOCKED: redis-server executable unavailable; separate external service acceptance",
+    "phase166b_durable_recovery": "NOT RUN: separately tracked work"
+  },
+  "limitations": [
+    "No authenticated historical performance",
+    "No empirical correlation",
+    "No live-trading authorization",
+    "No production execution readiness"
+  ]
+}

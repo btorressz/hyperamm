@@ -8,6 +8,17 @@ from .models import (PortfolioRiskPolicy, PortfolioRiskCheck, PortfolioRiskRepor
 STATES = ("NORMAL", "WARN", "REDUCE", "HALT")
 
 
+def assessment_state(accounting, temporal, checks):
+    """Shared availability/decision semantics for native and compact reports."""
+    blocked = (accounting.status != "SUPPORTED" or accounting.equity_quote is None or
+               accounting.pnl_quote is None or temporal.classification != "MODELED_ALIGNED" or
+               any(c.state == "UNAVAILABLE" for c in checks))
+    known = max((c.state for c in checks if c.state != "UNAVAILABLE"), key=STATES.index, default="NORMAL")
+    # Keep known hard breaches visible even when another critical metric is missing.
+    decision = "HALT" if known == "HALT" else None if blocked else known
+    return "BLOCKED" if blocked else "ASSESSED", decision, not blocked and decision in {"NORMAL", "WARN"}
+
+
 def evaluate_risk(config, accounting, exposure, temporal, policy):
     config = PortfolioResearchConfig.model_validate(config)
     accounting = PortfolioAccountingReport.model_validate(accounting)
@@ -50,20 +61,14 @@ def evaluate_risk(config, accounting, exposure, temporal, policy):
             if observed is not None and ceiling > 0 and observed >= ceiling:
                 state = "HALT"
             checks.append(PortfolioRiskCheck(limit=name, observed=observed, ceiling=ceiling, state=state))
-    blocked = (accounting.status != "SUPPORTED" or accounting.equity_quote is None or
-               accounting.pnl_quote is None or temporal.classification != "MODELED_ALIGNED" or
-               any(c.state == "UNAVAILABLE" for c in checks))
-    known = max((c.state for c in checks if c.state != "UNAVAILABLE"), key=STATES.index, default="NORMAL")
-    # A known hard breach remains visible even when another critical metric is
-    # missing. Incomplete evidence can never produce an unconditional NORMAL.
-    decision = "HALT" if known == "HALT" else None if blocked else known
+    outcome, decision, compliant = assessment_state(accounting, temporal, checks)
     reasons = tuple(f"{c.limit}:{c.state}" for c in checks if c.state != "NORMAL")
-    if blocked:
+    if outcome == "BLOCKED":
         reasons += ("CRITICAL_EVIDENCE_OR_TEMPORAL_ELIGIBILITY_UNAVAILABLE",)
     return sealed(PortfolioRiskReport, config_fingerprint=config.fingerprint(),
         risk_configuration_fingerprint=stable_fingerprint({"limits": limits, "policy": policy}),
         accounting_fingerprint=accounting.evidence_fingerprint,
         exposure_fingerprint=exposure.evidence_fingerprint, temporal_fingerprint=temporal.evidence_fingerprint,
-        policy=policy, outcome="BLOCKED" if blocked else "ASSESSED", decision=decision,
+        policy=policy, outcome=outcome, decision=decision,
         checks=tuple(checks), reasons=reasons or ("ALL_REQUIRED_LIMITS_BELOW_WARNING",),
-        risk_compliant=not blocked and decision in {"NORMAL", "WARN"})
+        risk_compliant=compliant)
