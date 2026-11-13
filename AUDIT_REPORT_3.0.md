@@ -937,4 +937,3 @@ HyperAMM has a defensible engineering baseline for **bounded local, explicitly h
 No CRITICAL defect or HIGH signed-trading-authority defect was established. The one confirmed HIGH is a published conditional development-dependency advisory and requires a separate patch. Nine previous findings remain PARTIAL, with acceptance/policy boundaries stated rather than inferred closed from modified code or passing test totals.
 
 **Do not describe this audit as production authorization, authenticated historical-performance validation, calibrated predictive performance, full-universe compatibility or signed TESTNET acceptance.** Wider-market/HIP-3 and production/live readiness remain BLOCKED; durable lifecycle/recovery remains BLOCKED; signed TESTNET was NOT RUN. This report is the sole intended committed change, with both prior audits preserved.
-
