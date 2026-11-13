@@ -1,0 +1,72 @@
+{
+  "baseline_commit": "9a87191f9f78207114453fc0e6eb9c52ad336c9f",
+  "backend": [
+    {
+      "case": "clock",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "risk_accounting",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "exposure_temporal",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "chart_maximum",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "risk_decision",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    }
+  ],
+  "frontend": [
+    {
+      "case": "terminal equity",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "terminal pnl",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "first sequence",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "source count",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "sample flag",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "duplicate market",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "risk policy",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    },
+    {
+      "case": "risk decision",
+      "baseline": "ACCEPTED_INCONSISTENT",
+      "fixed": "REJECTED"
+    }
+  ]
+}

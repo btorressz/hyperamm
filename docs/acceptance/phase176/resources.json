@@ -1,0 +1,195 @@
+[
+  {
+    "markets": [
+      "BTC"
+    ],
+    "frames_per_market_per_leg": 3000,
+    "legs": 1,
+    "seconds": 63.9963,
+    "peak_rss_mib": 163.09,
+    "request_bytes": 8047,
+    "response_bytes": 8932,
+    "retained_native_observations": 1500,
+    "native_runs": 1,
+    "workload": {
+      "executed_frames": 3000,
+      "quote_level_frames": 24000,
+      "native_observations": 1500,
+      "ledger_entries": 5000,
+      "event_entries": 125
+    },
+    "baseline_chart_points": 0,
+    "stressed_chart_points": 0,
+    "temporal": "FINAL_ONLY",
+    "risk_outcome": "BLOCKED",
+    "worker_released": true,
+    "worker_threads_stopped": true
+  },
+  {
+    "markets": [
+      "BTC",
+      "ETH"
+    ],
+    "frames_per_market_per_leg": 1500,
+    "legs": 1,
+    "seconds": 111.6221,
+    "peak_rss_mib": 144.44,
+    "request_bytes": 15312,
+    "response_bytes": 11384,
+    "retained_native_observations": 1500,
+    "native_runs": 2,
+    "workload": {
+      "executed_frames": 3000,
+      "quote_level_frames": 24000,
+      "native_observations": 1500,
+      "ledger_entries": 10000,
+      "event_entries": 250
+    },
+    "baseline_chart_points": 0,
+    "stressed_chart_points": 0,
+    "temporal": "FINAL_ONLY",
+    "risk_outcome": "BLOCKED",
+    "worker_released": true,
+    "worker_threads_stopped": true
+  },
+  {
+    "markets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "frames_per_market_per_leg": 1000,
+    "legs": 1,
+    "seconds": 62.3176,
+    "peak_rss_mib": 129.48,
+    "request_bytes": 22578,
+    "response_bytes": 13552,
+    "retained_native_observations": 1500,
+    "native_runs": 3,
+    "workload": {
+      "executed_frames": 3000,
+      "quote_level_frames": 24000,
+      "native_observations": 1500,
+      "ledger_entries": 15000,
+      "event_entries": 375
+    },
+    "baseline_chart_points": 0,
+    "stressed_chart_points": 0,
+    "temporal": "FINAL_ONLY",
+    "risk_outcome": "BLOCKED",
+    "worker_released": true,
+    "worker_threads_stopped": true
+  },
+  {
+    "markets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "frames_per_market_per_leg": 500,
+    "legs": 1,
+    "seconds": 35.1448,
+    "peak_rss_mib": 122.31,
+    "request_bytes": 22572,
+    "response_bytes": 33086,
+    "retained_native_observations": 1500,
+    "native_runs": 3,
+    "workload": {
+      "executed_frames": 1500,
+      "quote_level_frames": 12000,
+      "native_observations": 1500,
+      "ledger_entries": 15000,
+      "event_entries": 375
+    },
+    "baseline_chart_points": 120,
+    "stressed_chart_points": 0,
+    "temporal": "MODELED_ALIGNED",
+    "risk_outcome": "ASSESSED",
+    "worker_released": true,
+    "worker_threads_stopped": true
+  },
+  {
+    "markets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "frames_per_market_per_leg": 250,
+    "legs": 2,
+    "seconds": 40.2263,
+    "peak_rss_mib": 149.97,
+    "request_bytes": 23332,
+    "response_bytes": 69998,
+    "retained_native_observations": 1500,
+    "native_runs": 6,
+    "workload": {
+      "executed_frames": 1500,
+      "quote_level_frames": 12000,
+      "native_observations": 1500,
+      "ledger_entries": 30000,
+      "event_entries": 750
+    },
+    "baseline_chart_points": 120,
+    "stressed_chart_points": 120,
+    "temporal": "MODELED_ALIGNED",
+    "risk_outcome": "ASSESSED",
+    "worker_released": true,
+    "worker_threads_stopped": true
+  },
+  {
+    "markets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "frames_per_market_per_leg": 300,
+    "legs": 2,
+    "seconds": 52.2054,
+    "peak_rss_mib": 161.54,
+    "request_bytes": 23332,
+    "response_bytes": 26971,
+    "retained_native_observations": 1500,
+    "native_runs": 6,
+    "workload": {
+      "executed_frames": 1800,
+      "quote_level_frames": 14400,
+      "native_observations": 1500,
+      "ledger_entries": 30000,
+      "event_entries": 750
+    },
+    "baseline_chart_points": 0,
+    "stressed_chart_points": 0,
+    "temporal": "FINAL_ONLY",
+    "risk_outcome": "BLOCKED",
+    "worker_released": true,
+    "worker_threads_stopped": true
+  },
+  {
+    "markets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "frames_per_market_per_leg": 500,
+    "legs": 2,
+    "seconds": 119.8868,
+    "peak_rss_mib": 200.24,
+    "request_bytes": 23332,
+    "response_bytes": 26931,
+    "retained_native_observations": 1500,
+    "native_runs": 6,
+    "workload": {
+      "executed_frames": 3000,
+      "quote_level_frames": 24000,
+      "native_observations": 1500,
+      "ledger_entries": 30000,
+      "event_entries": 750
+    },
+    "baseline_chart_points": 0,
+    "stressed_chart_points": 0,
+    "temporal": "FINAL_ONLY",
+    "risk_outcome": "BLOCKED",
+    "worker_released": true,
+    "worker_threads_stopped": true
+  }
+]

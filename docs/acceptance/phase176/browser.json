@@ -1,0 +1,349 @@
+{
+  "classification": "PASS",
+  "workflows": [
+    "Actual configured lifespan catalog loads BTC/ETH/SOL with official loader and eligible profiles",
+    "Dedicated page and local controls available without terminal WebSocket; no automatic simulation",
+    "Three-market PAPER run, accounting, risk and eligible equity/PnL/drawdown charts",
+    "Native market selection: BTC",
+    "Native market selection: ETH,SOL",
+    "Exact 18-place shared capital/reserve and server-authoritative configured catalog fingerprints",
+    "Native baseline/stress: CORRELATED_SELLOFF",
+    "Native baseline/stress: BTC_LED_VOLATILITY",
+    "Native baseline/stress: LIQUIDITY_SHOCK",
+    "Native baseline/stress: FUNDING_STRESS",
+    "Native baseline/stress: ORACLE_DEGRADATION",
+    "Native baseline/stress: CONCENTRATION_STRESS",
+    "Provenance: canonical configuration, datasets, accounting, original results and chart fingerprints",
+    "Desktop/tablet/mobile responsive sections, keyboard drawer and actionable exact allocation validation",
+    "Actual FINAL_ONLY native stress: unavailable drawdown/charts, BLOCKED risk with known HALT",
+    "Browser abort does not release worker; actual 429 busy state; retired result never returns",
+    "Unavailable backend retires preview and requires explicit validation after transport recovery",
+    "Sanitized HTTP 500 failure with no private diagnostics",
+    "Reconnect retires previous preview; explicit revalidation recovers; operational authority unchanged"
+  ],
+  "page_errors": [],
+  "console_errors": [],
+  "expected_fault_console": [
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "measurements": [
+    {
+      "kind": "preview",
+      "bytes": 22976
+    },
+    {
+      "kind": "RUN",
+      "bytes": 16183,
+      "points": 12,
+      "native_runs": 3,
+      "request_bytes": 22327
+    },
+    {
+      "kind": "preview",
+      "bytes": 8539
+    },
+    {
+      "kind": "ANALYZE",
+      "bytes": 11389,
+      "points": 12,
+      "native_runs": 1,
+      "request_bytes": 7927
+    },
+    {
+      "kind": "preview",
+      "bytes": 15758
+    },
+    {
+      "kind": "ANALYZE",
+      "bytes": 12788,
+      "points": 12,
+      "native_runs": 2,
+      "request_bytes": 15128
+    },
+    {
+      "kind": "preview",
+      "bytes": 23033
+    },
+    {
+      "kind": "preview",
+      "bytes": 23733
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 32240,
+      "points": 12,
+      "native_runs": 6,
+      "request_bytes": 23103
+    },
+    {
+      "kind": "preview",
+      "bytes": 23609
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 32240,
+      "points": 12,
+      "native_runs": 6,
+      "request_bytes": 22979
+    },
+    {
+      "kind": "preview",
+      "bytes": 23607
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 32234,
+      "points": 12,
+      "native_runs": 6,
+      "request_bytes": 22977
+    },
+    {
+      "kind": "preview",
+      "bytes": 23719
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 32246,
+      "points": 12,
+      "native_runs": 6,
+      "request_bytes": 23089
+    },
+    {
+      "kind": "preview",
+      "bytes": 23620
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 32242,
+      "points": 12,
+      "native_runs": 6,
+      "request_bytes": 22990
+    },
+    {
+      "kind": "preview",
+      "bytes": 23613
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 32229,
+      "points": 12,
+      "native_runs": 6,
+      "request_bytes": 22983
+    },
+    {
+      "kind": "preview",
+      "bytes": 23747
+    },
+    {
+      "kind": "STRESS",
+      "bytes": 27058,
+      "points": 0,
+      "native_runs": 6,
+      "request_bytes": 23116
+    },
+    {
+      "kind": "preview",
+      "bytes": 23737
+    },
+    {
+      "kind": "preview",
+      "bytes": 23737
+    },
+    {
+      "kind": "preview",
+      "bytes": 23737
+    },
+    {
+      "kind": "preview",
+      "bytes": 23737
+    },
+    {
+      "kind": "preview",
+      "bytes": 23735
+    },
+    {
+      "kind": "RUN",
+      "bytes": 16183,
+      "points": 12,
+      "native_runs": 3,
+      "request_bytes": 22328
+    }
+  ],
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "overflow": false,
+      "sections": [
+        "Configure",
+        "Analytics",
+        "Stress Lab",
+        "Provenance"
+      ],
+      "unlabeled_controls": 0,
+      "chart_widths": [
+        706,
+        706,
+        112,
+        112,
+        706,
+        706,
+        112,
+        706,
+        706,
+        112,
+        112,
+        706,
+        706,
+        112
+      ],
+      "scrollable_tables": 7
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "overflow": false,
+      "sections": [
+        "Configure",
+        "Analytics",
+        "Stress Lab",
+        "Provenance"
+      ],
+      "unlabeled_controls": 0,
+      "chart_widths": [
+        466,
+        466,
+        112,
+        112,
+        466,
+        466,
+        112,
+        466,
+        466,
+        112,
+        112,
+        466,
+        466,
+        112
+      ],
+      "scrollable_tables": 7
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "sections": [
+        "Configure",
+        "Analytics",
+        "Stress Lab",
+        "Provenance"
+      ],
+      "unlabeled_controls": 0,
+      "chart_widths": [
+        692,
+        692,
+        112,
+        112,
+        692,
+        692,
+        112,
+        692,
+        692,
+        112,
+        112,
+        692,
+        692,
+        112
+      ],
+      "scrollable_tables": 7
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "overflow": false,
+      "sections": [
+        "Configure",
+        "Analytics",
+        "Stress Lab",
+        "Provenance"
+      ],
+      "unlabeled_controls": 0,
+      "chart_widths": [
+        436,
+        436,
+        112,
+        112,
+        436,
+        436,
+        112,
+        436,
+        436,
+        112,
+        112,
+        436,
+        436,
+        112
+      ],
+      "scrollable_tables": 7
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "sections": [
+        "Configure",
+        "Analytics",
+        "Stress Lab",
+        "Provenance"
+      ],
+      "unlabeled_controls": 0,
+      "chart_widths": [
+        252,
+        252,
+        112,
+        112,
+        252,
+        252,
+        112,
+        252,
+        252,
+        112,
+        112,
+        252,
+        252,
+        112
+      ],
+      "scrollable_tables": 7
+    }
+  ],
+  "browser_version": "151.0.7922.173",
+  "configured_catalog": [
+    {
+      "market": "BTC",
+      "metadata_source": "OFFICIAL_SDK_NATIVE_META",
+      "metadata_status": "EXCHANGE_VERIFIED",
+      "profile_fingerprint": "0fb934d0766f8a53b927c4a0fb1130a525b54bbcc5e1b3e4d968218bc8f15cbf",
+      "sz_decimals": 5
+    },
+    {
+      "market": "ETH",
+      "metadata_source": "OFFICIAL_SDK_NATIVE_META",
+      "metadata_status": "EXCHANGE_VERIFIED",
+      "profile_fingerprint": "12b408265130c157d064b8d2480ce32cbff3b549427709690e1a64e603d7a5d6",
+      "sz_decimals": 4
+    },
+    {
+      "market": "SOL",
+      "metadata_source": "OFFICIAL_SDK_NATIVE_META",
+      "metadata_status": "EXCHANGE_VERIFIED",
+      "profile_fingerprint": "6ded151e42eff7cd51bf2820f4b3f15242b8ccada1493b90f03bac53875f6d57",
+      "sz_decimals": 2
+    }
+  ],
+  "authority_changed_fields": [],
+  "workflow_count": 19,
+  "viewport_count": 5,
+  "engine_runs": 58
+}

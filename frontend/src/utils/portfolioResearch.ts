@@ -345,6 +345,12 @@ export function checkedTerminal(
   )
     fail();
   for (const leg of [r.baseline, ...(r.stressed ? [r.stressed] : [])]) {
+    if (!leg) fail();
+    const known = ["HALT", "REDUCE", "WARN", "NORMAL"].find(
+      (state) => leg.risk.checks.some((c) => c.state === state),
+    ) ?? "NORMAL";
+    const decision = leg.risk.outcome === "BLOCKED"
+      ? (known === "HALT" ? "HALT" : null) : known;
     if (
       !leg ||
       leg.status !== "COMPLETED" ||
@@ -354,10 +360,14 @@ export function checkedTerminal(
       !["ASSESSED", "BLOCKED"].includes(leg.risk.outcome) ||
       !["NORMAL", "WARN", "REDUCE", "HALT", null].includes(leg.risk.decision) ||
       (leg.risk.outcome === "ASSESSED" && !leg.risk.decision) ||
+      leg.risk.decision !== decision ||
+      (leg.risk.outcome === "ASSESSED" && leg.risk.checks.some((c) => c.state === "UNAVAILABLE")) ||
       (leg.risk.outcome === "BLOCKED" &&
         leg.risk.decision !== null &&
         leg.risk.decision !== "HALT") ||
       leg.markets.length !== q.config.scenarios.length ||
+      new Set(leg.markets.map((m) => m.market)).size !== leg.markets.length ||
+      !matchesDraft(leg.risk.policy, q.risk_policy) ||
       leg.markets.some(
         (m) =>
           m.market_profile_fingerprint !==
@@ -380,6 +390,12 @@ export function checkedTerminal(
       if (
         leg.temporal.classification !== "MODELED_ALIGNED" ||
         c.points.length < 2 ||
+        c.points[0].sequence !== 1 ||
+        c.points.at(-1)?.sequence !== c.source_count ||
+        c.sampled !== (c.points.length < c.source_count) ||
+        leg.temporal.clocks.some((k) => !k.complete || k.frames !== c.source_count) ||
+        !matchesDraft(c.points.at(-1)?.equity_quote, leg.accounting.equity_quote) ||
+        !matchesDraft(c.points.at(-1)?.pnl_quote, leg.accounting.pnl_quote) ||
         c.equity_series_fingerprint !==
           leg.accounting.drawdown?.equity_series_fingerprint
       )

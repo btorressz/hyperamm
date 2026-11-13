@@ -4,6 +4,14 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 17.6 (final portfolio research acceptance)
+
+- Harden compact terminal source/configuration bindings, native chart clocks/drawdown extrema and baseline/stress comparison consistency with existing authoritative calculations.
+- Reject inconsistent browser chart endpoints/retention metadata, duplicate market sources and substituted risk policies before accepting presentation evidence.
+- Add all-route adversarial, independent Decimal/native economic, catalog failure and shared-worker cancellation/shutdown acceptance; extend actual configured-catalog Chromium and cold-process workload measurements.
+- Reconcile Phase 17.5 browser claims with committed evidence (14 workflow entries/four measured viewports); record fresh final counts and all five viewport sizes in [Phase 17.6 final acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md).
+- Preserve original APIs/fingerprints, accounting/risk formulas, workload/transport limits and research-only authority. Physical Redis and Phase 16.6B recovery remain separate gates.
+
 ## Unreleased — Phase 17.5 (Portfolio Research Terminal & Frontend Integration)
 
 - Reuse the existing React terminal, responsive navigation, Query/Zustand lifecycle, native research profiles/Vault constructors, accounting/risk/stress services, shared worker and Lightweight Charts.

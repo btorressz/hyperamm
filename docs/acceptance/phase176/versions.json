@@ -1,0 +1,14 @@
+{
+  "python": "3.12.14",
+  "pytest": "8.4.2",
+  "pydantic": "2.14.3",
+  "fastapi": "0.162.5",
+  "starlette": "1.10.0",
+  "httpx": "0.28.1",
+  "playwright": "1.65.1",
+  "hyperliquid-python-sdk": "0.24.0",
+  "fakeredis": "2.40.0",
+  "redis": "6.4.0",
+  "node": "24.19.0",
+  "npm": "11.9.0"
+}

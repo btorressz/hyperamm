@@ -16,6 +16,7 @@ const {useTerminalStore}=read('stores/terminal.js');const {api}=read('api/client
 const {terminalPages,pageFromHash}=read('utils/navigation.js');
 Module._load=original;
 const native=require('./fixtures/portfolio-native.json'),clone=x=>structuredClone(x),render=(C,p)=>renderToStaticMarkup(React.createElement(C,p));
+const nativeMulti=require('./fixtures/portfolio-native-multi.json');
 const q=()=>({mode:'STRESS',config:native.preview.config,config_fingerprint:native.preview.config_fingerprint,risk_policy:native.preview.risk_policy,scenario:native.preview.stress});
 const leg=()=>clone(native.result.baseline);
 
@@ -131,4 +132,31 @@ test('disconnected reconnect attempts leave local REST evidence usable',()=>{
  for(const ws of ['connecting','disconnected','connecting','error'])useTerminalStore.getState().setWsState(ws);
  assert.equal(s.getState().preview,native.preview);
  }finally{useTerminalStore.setState(previous);usePortfolioResearchStore.getState().invalidate();}
+});
+
+for(const corruption of ['terminal equity','terminal pnl','first sequence','source count','sample flag','duplicate market','risk policy','risk decision'])
+test(`Phase 17.6 rejects inconsistent ${corruption} presentation`,()=>{
+ const r=clone(corruption==='duplicate market'?nativeMulti.result:native.result),b=r.baseline,c=b.charts;
+ const request=corruption==='duplicate market'?nativeMulti.request:q();
+ u.checkedTerminal(r,request); // The original native receipt must be eligible before tampering.
+ if(corruption==='terminal equity')c.points.at(-1).equity_quote='1';
+ if(corruption==='terminal pnl')c.points.at(-1).pnl_quote='1';
+ if(corruption==='first sequence')c.points[0].sequence=0;
+ if(corruption==='source count')c.source_count++;
+ if(corruption==='sample flag')c.sampled=!c.sampled;
+ if(corruption==='duplicate market')b.markets[1]=clone(b.markets[0]);
+ if(corruption==='risk policy')b.risk.policy.warning_ratio='0.1';
+ if(corruption==='risk decision')b.risk.decision='NORMAL';
+ assert.throws(()=>u.checkedTerminal(r,request));
+});
+
+test('Phase 17.6 failed current validation retires old preview until explicit revalidation',()=>{
+ const store=createPortfolioStore(),first=store.getState().begin();
+ store.getState().acceptPreview(first,native.preview);
+ const failed=store.getState().begin();store.getState().fail(failed,'Local research connection unavailable');
+ assert.equal(store.getState().preview,null);assert.equal(store.getState().result,null);
+ assert.equal(store.getState().acceptPreview(failed,native.preview),false);
+ const retry=store.getState().begin();assert.ok(retry);
+ assert.equal(store.getState().acceptPreview(retry,native.preview),true);
+ assert.equal(store.getState().preview,native.preview);
 });

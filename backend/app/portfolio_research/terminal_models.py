@@ -1,4 +1,6 @@
 """Compact presentation contracts. Requests contain configuration, never receipts."""
+from datetime import timedelta
+from types import SimpleNamespace
 from typing import Literal
 from pydantic import AwareDatetime, Field, StrictInt, model_validator
 from app.market_data.live_models import FinancialDecimal, NonnegativeDecimal
@@ -92,10 +94,30 @@ class TerminalLeg(PortfolioEvidence):
                 c.native_evidence_fingerprints != tuple(k.native_evidence_fingerprint for k in t.clocks) or
                 tuple(m.receipt_fingerprint for m in self.markets) != tuple(k.market_receipt_fingerprint for k in t.clocks)):
             raise ValueError("terminal chart or market source binding mismatch")
+        x, r = self.exposure, self.risk
+        from .risk import assessment_state
+        if (r.outcome, r.decision, r.risk_compliant) != assessment_state(a, t, r.checks):
+            raise ValueError("terminal risk decision or availability mismatch")
+        if (a.temporal_fingerprint != t.evidence_fingerprint or
+                x.accounting_fingerprint != a.evidence_fingerprint or
+                x.temporal_fingerprint != t.evidence_fingerprint or
+                r.config_fingerprint != a.config_fingerprint or
+                r.accounting_fingerprint != a.evidence_fingerprint or
+                r.exposure_fingerprint != x.evidence_fingerprint or
+                r.temporal_fingerprint != t.evidence_fingerprint or
+                tuple(m.market for m in self.markets) != tuple(k.market for k in t.clocks)):
+            raise ValueError("terminal accounting/exposure/risk source binding mismatch")
         if c.status == "AVAILABLE" and (t.classification != "MODELED_ALIGNED" or a.drawdown is None or
                 c.equity_series_fingerprint != a.drawdown.equity_series_fingerprint or
                 c.points[-1].equity_quote != a.equity_quote or c.points[-1].pnl_quote != a.pnl_quote):
             raise ValueError("terminal chart eligibility or financial endpoint mismatch")
+        if c.status == "AVAILABLE":
+            if (any(not k.complete or k.frames != c.source_count for k in t.clocks) or
+                    any(p.timestamp != k.start_at + timedelta(seconds=p.sequence - 1)
+                        for k in t.clocks for p in c.points) or
+                    max(p.drawdown_fraction for p in c.points) != a.drawdown.max_drawdown_fraction or
+                    c.points[-1].drawdown_fraction != a.drawdown.ending_drawdown_fraction):
+                raise ValueError("terminal chart clock or drawdown extrema mismatch")
         return self
 
 
@@ -122,4 +144,17 @@ class TerminalResult(AnalysisEvidence):
         if any((value is not None) != stress for value in
                 (self.stressed, self.scenario_fingerprint, self.metrics, self.risk_transition)):
             raise ValueError("terminal mode projection mismatch")
+        for leg in (self.baseline, self.stressed):
+            if leg is not None and leg.accounting.config_fingerprint != self.config_fingerprint:
+                raise ValueError("terminal configuration binding mismatch")
+        if stress:
+            from .metrics import compare_metrics, compare_risk
+            # Adapt compact source headers to the existing comparator contract;
+            # native risk comparisons also accept reports without accounting.
+            legs = tuple(SimpleNamespace(
+                execution=SimpleNamespace(config_fingerprint=leg.accounting.config_fingerprint),
+                temporal=leg.temporal, risk=leg.risk, accounting=leg.accounting, exposure=leg.exposure)
+                for leg in (self.baseline, self.stressed))
+            if (self.metrics != compare_metrics(*legs) or self.risk_transition != compare_risk(*legs)):
+                raise ValueError("terminal stress comparison projection mismatch")
         return self
