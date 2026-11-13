@@ -1,4 +1,5 @@
 """Canonical, bounded normalized features shared by offline training and inference."""
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Literal
 
@@ -14,6 +15,26 @@ FEATURE_NAMES = (
     "mark_mid_basis_100bps", "funding_001rate", "inventory_ratio",
     "reference_deviation_100bps", "side_sign",
 )
+
+# Fixed shared as-of policy: match the normal 5s book / 10s perp conventions;
+# 30s admits the existing public-HTTP reference fallback. Provider stale flags
+# still apply when their configured limit is stricter. No wall clock is used.
+FEATURE_MAX_AGE = {"book": timedelta(seconds=5), "perpetual": timedelta(seconds=10),
+                   "reference": timedelta(seconds=30)}
+
+
+class FeatureUnavailableError(ValueError):
+    """Only fixed public diagnostics, safe to expose in SHADOW output."""
+
+
+def _require_fresh(timestamp, *, name, as_of):
+    if timestamp is None or timestamp.tzinfo is None:
+        raise FeatureUnavailableError(f"required {name} timestamp unavailable")
+    age = as_of - timestamp
+    if age < timedelta(0):
+        raise FeatureUnavailableError(f"required {name} observation is future-dated")
+    if age > FEATURE_MAX_AGE[name]:
+        raise FeatureUnavailableError(f"required {name} observation is stale")
 
 
 class FeatureSchema(AgentModel):
@@ -48,16 +69,39 @@ class FeatureVector(AgentModel):
         return self
 
 
-def build_feature_vector(evidence: AgentEvidenceSnapshot, side: Literal["BID", "ASK"]) -> FeatureVector:
+def build_feature_vector(evidence: AgentEvidenceSnapshot, side: Literal["BID", "ASK"], *,
+                         as_of: datetime | None = None) -> FeatureVector:
     # Revalidate copied models at the boundary, including NaN/null fields.
     evidence = AgentEvidenceSnapshot.model_validate(evidence.model_dump())
+    as_of = evidence.updated_at if as_of is None else as_of
+    if as_of.tzinfo is None or as_of < evidence.updated_at:
+        raise FeatureUnavailableError("feature observation exceeds as-of time")
     required = (evidence.momentum_bps, evidence.spread_bps, evidence.top_n_bid_depth_base,
                 evidence.top_n_ask_depth_base, evidence.max_reference_deviation_bps)
     if any(v is None for v in required):
-        raise ValueError("required normalized feature unavailable")
-    if evidence.updated_at.tzinfo is None or any(t is not None and (t.tzinfo is None or t > evidence.updated_at)
-            for t in (evidence.book_timestamp, evidence.perp_window_end)):
-        raise ValueError("feature source evidence exceeds observation time")
+        raise FeatureUnavailableError("required normalized feature unavailable")
+    if evidence.perp_stale:
+        raise FeatureUnavailableError("required perpetual context explicitly stale")
+    if evidence.perp_window_end is not None and (evidence.perp_window_end.tzinfo is None
+            or evidence.perp_window_end > evidence.updated_at):
+        raise FeatureUnavailableError("perpetual observation window exceeds feature time")
+    # Sources must already exist at the feature observation, then remain fresh
+    # at use time (offline fill selection may be later than that observation).
+    for name, timestamp in (("book", evidence.book_timestamp), ("perpetual", evidence.perp_timestamp)):
+        _require_fresh(timestamp, name=name, as_of=evidence.updated_at)
+        _require_fresh(timestamp, name=name, as_of=as_of)
+    if (evidence.reference_confidence not in {"VERIFIED", "DEGRADED"}
+            or len(evidence.reference_provenance) < 2
+            or not evidence.reference_provenance.keys() <= {"REDSTONE", "HYPERLIQUID_ORACLE", "KRAKEN"}):
+        raise FeatureUnavailableError("required reference consensus unavailable")
+    for provider, item in evidence.reference_provenance.items():
+        if (item.provider.value != provider or item.market != evidence.market or not item.healthy
+                or item.stale or item.status.value != "HEALTHY" or item.price is None):
+            raise FeatureUnavailableError("required reference evidence unavailable or explicitly stale")
+        # Validate both receipt and source time; a new envelope cannot refresh an old price.
+        for timestamp in (item.observed_at, item.source_timestamp):
+            _require_fresh(timestamp, name="reference", as_of=evidence.updated_at)
+            _require_fresh(timestamp, name="reference", as_of=as_of)
     values = (
         evidence.volatility_score, evidence.book_imbalance, evidence.momentum_bps/100,
         evidence.spread_bps/100, evidence.top_n_bid_depth_base/100, evidence.top_n_ask_depth_base/100,

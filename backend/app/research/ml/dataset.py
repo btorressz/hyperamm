@@ -89,6 +89,7 @@ def build_dataset(*, market, evidence: list[AgentEvidenceSnapshot], fills: list[
             raise ValueError("conflicting features for one observation timestamp")
         retained[ev.updated_at] = vectors
     times = sorted(retained)
+    evidence_by_time = {ev.updated_at: ev for ev in evidence}
     normalized = {}
     for obs in observations:
         if obs.timestamp.tzinfo is None or not obs.mid_price.is_finite() or obs.mid_price <= 0:
@@ -121,12 +122,15 @@ def build_dataset(*, market, evidence: list[AgentEvidenceSnapshot], fills: list[
         if feature_index < 0 or target_index == len(future_times):
             continue  # Unavailable features/labels are omitted, never synthesized.
         feature_time = times[feature_index]
+        # A fresh feature at observation time must still be fresh at this fill.
+        # Use the same source-time policy as inference; never select future data.
+        vector = build_feature_vector(evidence_by_time[feature_time], fill.side, as_of=fill.timestamp)
         target = normalized[future_times[target_index]]
         sign = Decimal(1 if fill.side == "BID" else -1)
         markout = sign*(target.mid_price-fill.price)/fill.price*10000
         rows.append(DatasetSample(sample_id=semantic_fingerprint((fill.market,fill.client_order_id,fill.timestamp,fill.side,fill.price,fill.size)), feature_timestamp=feature_time,
             fill_timestamp=fill.timestamp, label_timestamp=target.timestamp, label_observation_sequence=target.sequence,
-            features=retained[feature_time][0 if fill.side == "BID" else 1], signed_markout_bps=markout,
+            features=vector, signed_markout_bps=markout,
             adverse=markout < 0, fill_notional_quote=fill.price*fill.size))
     if not rows:
         raise ValueError("no honest matured dataset samples")

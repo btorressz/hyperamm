@@ -157,6 +157,9 @@ def build_contract():
     bounds(schema,TerminalSnapshot.model_json_schema(mode="validation"))
     for name,wire in defs.items(): bounds(wire,validation.get(name,{}))
     normalize(schema)
+    # Fill's compatibility serializer omits the legacy PAPER default so ledger
+    # and replay hashes remain unchanged. Explicit venue modes stay on the wire.
+    defs['Fill']['required'].remove('execution_mode')
     return schema
 
 if __name__=='__main__':

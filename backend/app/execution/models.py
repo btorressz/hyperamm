@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer, model_validator
 from app.market_data.models import utcnow
 
 
@@ -39,3 +39,23 @@ class Fill(BaseModel):
     timestamp: datetime = Field(default_factory=utcnow)
     source: str = "SIMULATED PAPER FILL"
     liquidity: Literal["MAKER", "TAKER"] | None = None
+    # Legacy Fill was PAPER-only. Venue records must supply their mode explicitly.
+    execution_mode: Literal["PAPER", "TESTNET"] = "PAPER"
+
+    @model_validator(mode="after")
+    def evidence_classification(self):
+        paper_source = (self.source == "SIMULATED PAPER FILL"
+            or self.source == "HYPOTHETICAL MODELED PAPER FILL"
+            or self.source.startswith("HYPOTHETICAL MODELED PAPER FILL:"))
+        if paper_source != (self.execution_mode == "PAPER"):
+            raise ValueError("fill source/execution mode contradiction")
+        return self
+
+    @model_serializer(mode="wrap")
+    def compatible_wire(self, handler):
+        data = handler(self)
+        # Preserve existing PAPER economics, ledger hashes and replay archives.
+        # Omission always means PAPER; a venue mode is never omitted.
+        if self.execution_mode == "PAPER":
+            data.pop("execution_mode", None)
+        return data
