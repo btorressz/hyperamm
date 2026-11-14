@@ -21,7 +21,7 @@ button,input,select {font:inherit}
 .panel {background:var(--surface-panel);border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden}
 .panelHead {height:38px;border-bottom:1px solid #18283a;display:flex;align-items:center;justify-content:space-between;padding:0 12px}
 .panelHead b {font-size:11px}
-.panelHead span {font-size:9px;color:#61788d}
+.panelHead span {font-size:11px;color:#a8bed0}
 .orderbook {font-variant-numeric:tabular-nums}
 .bookHeader,.bookRow {display:grid;grid-template-columns:1fr 1fr 1fr;padding:4px 12px;font-size:10px;text-align:right}
 .bookHeader {color:#526a7f;border-bottom:1px solid #162536}
@@ -30,7 +30,10 @@ button,input,select {font:inherit}
 .midline {height:28px;display:flex;justify-content:center;align-items:center;gap:8px;border-top:1px solid #1f3448;border-bottom:1px solid #1f3448;background:#0d1a27}
 .midline b {font-size:12px}
 .midline span {font-size:9px;color:#5a7186}
-.tableWrap {max-height:370px;overflow:auto}
+.tableWrap {max-height:370px;overflow:auto;max-width:100%}
+.tableWrap table {width:100%;min-width:max-content}
+.tableWrap th,.tableWrap td {overflow-wrap:normal;word-break:normal;white-space:nowrap}
+.tableWrap:focus-visible,.researchEventList:focus-visible {outline:2px solid #70aef8;outline-offset:-2px}
 table {width:100%;border-collapse:collapse;font-size:10px;font-variant-numeric:tabular-nums}
 th {text-align:left;color:#5e758a;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border-subtle);position:sticky;top:0;background:var(--surface-panel)}
 td {padding:7px 10px;border-bottom:1px solid #111f2d}
@@ -66,7 +69,7 @@ td {padding:7px 10px;border-bottom:1px solid #111f2d}
 .pagePanel h2,.pagePanel p {margin-left:18px;margin-right:18px}
 .plannedTag {display:inline-block;margin:18px 18px 0;padding:5px 7px;border:1px solid #665128;border-radius:4px;color:#e7b858;background:#281f0d;font-size:9px}
 .riskHero {display:flex;align-items:center;justify-content:space-between;padding:18px}
-.riskHero small {display:block;color:#61778b}
+.riskHero small {display:block;color:#a8bed0;font-size:11px}
 .riskHero strong {display:block;font-size:24px;margin-top:5px}
 .riskList {display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:0 18px}
 .riskList p {margin:0;background:#0d1925;padding:11px;border:1px solid var(--border-subtle);border-radius:6px;font-size:10px;color:#6f8498}
