@@ -41,7 +41,7 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
           Last decision {refs.consensus.confidence_state} · v{refs.version}
         </span>
       </div>
-      <div className="tableWrap">
+      <div className="tableWrap" role="region" aria-label="Reference source evidence table" tabIndex={0}>
         <table>
           <thead>
             <tr>
