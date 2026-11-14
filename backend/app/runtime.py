@@ -877,13 +877,15 @@ class HyperAmmRuntime:
                         pass  # Unavailable market evidence; static checks still apply.
                     else:
                         from app.strategy.perp_policy import PerpContextPolicy
-                        reference = fair
-                        if new_config.perp_context_enabled and self.perp_context_service._context is not None:
-                            context = self.perp_context_service.snapshot(fair)
-                            reference = PerpContextPolicy(new_config).decision(fair, context).final_reference_price
                         try:
+                            reference = fair
+                            if new_config.perp_context_enabled and self.perp_context_service._context is not None:
+                                context = self.perp_context_service.snapshot(fair)
+                                reference = PerpContextPolicy(new_config).decision(fair, context).final_reference_price
                             self.quote_engine.generate_at_reference(new_config, snapshot, reference)
                         except ValueError as exc:
+                            # Perp source freshness is part of quote preflight, not an
+                            # unexpected server failure. Reject before invalidating state.
                             from app.strategy.quote_engine import StrategyFeasibilityError
                             raise StrategyFeasibilityError(str(exc)) from exc
             staged = []

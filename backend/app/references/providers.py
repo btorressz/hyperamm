@@ -408,6 +408,10 @@ class KrakenProvider:
                         if isinstance(parsed,dict) and parsed.get("method")=="subscribe":
                             if not parsed.get("success",False): raise RuntimeError(parsed.get("error") or "Kraken subscription rejected")
                             continue
+                        # Kraken v2 sends control heartbeats in quiet periods. They
+                        # are transport liveness, never new price/source evidence.
+                        if isinstance(parsed,dict) and parsed.get("channel")=="heartbeat" and set(parsed)=={"channel"}:
+                            continue
                         try:self.ingest(parsed)
                         except Exception as exc:self.state.set_status(ProviderStatus.DEGRADED,f"invalid Kraken update: {exc}")
             except asyncio.CancelledError:break

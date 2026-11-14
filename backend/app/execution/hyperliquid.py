@@ -75,8 +75,13 @@ class HyperliquidTestnetExecutionAdapter:
         if any(not v.is_finite() or v <= 0 for v in (req.price, req.size)):
             raise ValueError("Hyperliquid economics must be finite and positive")
         asset=exchange.info.name_to_asset(req.market)
+        # This guarded adapter currently supports native perpetuals only.
+        # Spot and HIP-3 asset IDs have distinct namespaces/precision rules;
+        # rejecting them is safer than misclassifying builder perps as spot.
+        if type(asset) is not int or not 0 <= asset < 10_000:
+            raise ValueError("unsupported Hyperliquid instrument class: native perpetual only")
         sz_decimals=exchange.info.asset_to_sz_decimals[asset]
-        max_decimals=8 if asset >= 10_000 else 6
+        max_decimals=6
         if type(sz_decimals) is not int or not 0 <= sz_decimals <= max_decimals:
             raise ValueError("unsupported Hyperliquid asset precision")
         with localcontext() as ctx:

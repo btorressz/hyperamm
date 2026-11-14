@@ -7,7 +7,7 @@ import { agentNames, checkedAgentEvents, evidenceTime, type AgentName } from '..
 import { Panel, Empty } from '../TerminalPrimitives';
 
 export function AgentEventList({events}: {events: AgentEvent[]}) {
-  return events.length ? <ol className="researchEventList">{[...events].reverse().map((e,i) => <li key={`${e.agent}:${e.version}:${e.timestamp}:${i}`}>
+  return events.length ? <ol className="researchEventList" role="region" aria-label="Recent agent events" tabIndex={0}>{[...events].reverse().map((e,i) => <li key={`${e.agent}:${e.version}:${e.timestamp}:${i}`}>
     <div><strong>{e.agent}</strong> · {e.previous_state ?? 'Initial observation'} → <strong>{e.new_state}</strong> · agent v{e.version}</div>
     <time dateTime={e.timestamp}>{evidenceTime(e.timestamp)}</time>
     <ul>{e.reasons.map((reason, j) => <li key={j}>{reason}</li>)}</ul>
