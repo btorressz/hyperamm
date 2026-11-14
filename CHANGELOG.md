@@ -2,16 +2,31 @@
 
 All notable merged changes to **HyperAMM** are documented here, in reverse chronological order. This is a retrospective change history, not a declaration that all features are production-ready.
 
-The history covers **all 60 merged pull requests (#1–#60)** and the separately committed README contributors update through **2026-11-05**. Dates are the **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Each PR heading links to the original pull request. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe the changes made at that point in history; later entries may supersede earlier behavior.
+The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
-## Unreleased — Audit 3.0 security and data-evidence hardening
+## 2026-11-14 — Audit 3.0 targeted runtime, reference and accessibility hardening ([PR #83](https://github.com/btorressz/hyperamm/pull/83))
+
+- **A3-002 (patched):** Treat stale perpetual-context quote preflight as a configuration-feasibility failure, returning HTTP 422 before lifecycle invalidation, cancellation or strategy mutation instead of an unexpected HTTP 500.
+- **A3-004 (fail-closed mitigation):** Reject unsupported non-native-perpetual asset indices in the guarded Hyperliquid TESTNET order normalizer rather than accidentally applying spot precision to builder-perp IDs. Native perp precision rules are unchanged; **HIP-3 trading is not enabled or certified**.
+- **A3-007 (patched):** Treat strict Kraken v2 heartbeat frames as transport control rather than malformed ticker evidence. Heartbeats must not refresh price/source timestamps or degrade an otherwise healthy ticker; other unknown messages remain rejected.
+- **A3-006 (partial):** Add an HTML document language, keyboard-focusable named reference/agent evidence scroll regions, more legible small status text, and nonbreaking financial-table values. Full contrast, mobile, keyboard, zoom and axe/Chromium acceptance is still outstanding.
+- **Tests/docs:** Add focused source-level regressions in `backend/tests/test_audit3_chatgpt_hardening.py` and the [validation handoff](docs/AUDIT3_CHATGPT_PATCH_REVIEW.md). **Python, npm, and browser suites were not run for PR #83**; do not claim independently accepted remediation.
+- **Still open:** A3-005 stress-preview precision feasibility; full A3-006 visual/accessibility acceptance; historical A2-005 platform-dependent WebSocket teardown acceptance. No signing, new trading markets, infrastructure, or live authority added.
+
+## 2026-11-13 — Audit 3.0 security and data-evidence hardening ([PR #82](https://github.com/btorressz/hyperamm/pull/82))
 
 - Patch Vite from locked 7.3.6 to 7.3.8 and raise the compatible 7.x manifest floor; preserve all other dependencies and development configuration.
 - Classify ordinary and modeled PAPER fill telemetry from typed execution mode, rejecting contradictory provenance while preserving legacy PAPER serialization and financial fingerprints.
 - Validate required predictive book, perpetual and reference source freshness with shared offline/inference as-of rules; return explicit unavailable diagnostics and allow fresh recovery. Predictive Adverse Selection remains SHADOW only, without quote authority.
 - Add corrected Audit 3.0 counterexamples, focused regression coverage, generated terminal contract updates and [security/evidence acceptance](docs/AUDIT3_SECURITY_EVIDENCE_ACCEPTANCE.md). Preserve the original audit report.
+- **Recorded acceptance:** 3,351 backend tests, 788 frontend tests and optional ML coefficient-export test passed; Vite 7.3.8 resolved with zero vulnerabilities in the executed `npm audit`. The legacy Phase 14 browser harness's literal 422-message assertion remains a separately recorded harness failure.
 
-## Unreleased — Phase 17.6 (final portfolio research acceptance)
+## 2026-11-13 — Audit Report 3.0 ([PR #81](https://github.com/btorressz/hyperamm/pull/81))
+
+- Add [`AUDIT_REPORT_3.0.md`](AUDIT_REPORT_3.0.md), covering prior-audit finding dispositions, AMM and quote precision, Hyperliquid/market-data integrations, agent evidence, execution/risk, simulation/portfolio research, frontend screenshots/accessibility, and infrastructure/market-universe readiness.
+- Report eight new findings (one conditional HIGH dependency advisory, six MEDIUM defects, one LOW accessibility issue). The report is a historical audit baseline; remediation dispositions belong to subsequent changes and acceptance records.
+
+## 2026-11-13 — Phase 17.6 (final portfolio research acceptance; [PR #80](https://github.com/btorressz/hyperamm/pull/80))
 
 - Harden compact terminal source/configuration bindings, native chart clocks/drawdown extrema and baseline/stress comparison consistency with existing authoritative calculations.
 - Reject inconsistent browser chart endpoints/retention metadata, duplicate market sources and substituted risk policies before accepting presentation evidence.
@@ -83,7 +98,7 @@ The history covers **all 60 merged pull requests (#1–#60)** and the separately
 
 - The repository began this recorded PR history at **Phase 4.1**; earlier Phase 1–4 foundation is not reconstructed from PR titles.
 - **Phases 15.1–15.5B are merged**, with substantial offline/fixture acceptance. **Final combined Phase 15 acceptance remains open**, particularly permitted genuine Hyperliquid delivery and independent macOS validation.
-- **Phases 16.1A–16.5C.2 are merged** through PR #66: historical contracts/import/storage, segmented replay, hypothetical execution sensitivity, the Replay Studio, and provenance-bound scenario/historical comparison. Phase 16.4.1 and 16.5C.2 recorded native/frontend/Chromium runs. Phase 16.5D's independent final acceptance is documented below; Phase 16.6A.2 native performance acceptance is documented below; Phase 16.6B and Phase 17 remain future work.
+- **Phases 16.1A–16.5C.2 are merged** through PR #66: historical contracts/import/storage, segmented replay, hypothetical execution sensitivity, the Replay Studio, and provenance-bound scenario/historical comparison. Phase 16.4.1 and 16.5C.2 recorded native/frontend/Chromium runs. Phase 16.5D's independent final acceptance is documented below; Phase 16.6A.2 native performance acceptance is documented below; Phase 16.6B durable lifecycle/recovery remains outstanding; Phase 17.1–17.6 have since merged and received final **bounded local PAPER research** acceptance in [Phase 17.6](docs/PHASE176_FINAL_ACCEPTANCE.md). This is not signed TESTNET or production/live-trading certification.
 - Phase 16 historical source, permission and timing labels are user assertions, not independently authenticated data rights or a complete historical market record. Replay and its hypothetical fills do not confer live trading authority.
 - HyperAMM defaults to **DEMO/PAPER**, with live public observation opt-in. Phase 15 market intelligence and research comparisons do not authorize execution.
 - Local fixture and Chromium acceptance **do not establish real Hyperliquid connectivity, U.S. access permission, market-data licensing, commercial deployment readiness, or real-trading performance**. Historical audit findings and environment-dependent gates are detailed in the phase acceptance and audit documents.
