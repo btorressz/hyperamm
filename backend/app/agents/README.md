@@ -17,6 +17,27 @@ No agent or ML model receives execution, signing, risk, kill, accounting, positi
 or FinalQuoteAuthorization authority. No agent can restore suppressed liquidity.
 Training is offline, with no runtime training imports or automatic promotion.
 
+## Package map
+
+| File | Responsibility |
+|---|---|
+| `__init__.py` | Public exports of agent models, configuration, supervisor and research contracts. |
+| `common.py` | Shared bounded Decimal helpers, quantiles, fingerprints and versioned recommendation behavior. |
+| `config.py` | Agent configuration, thresholds, horizon limits and predictive SHADOW mode. |
+| `models.py` | Typed agent evidence, recommendations, metrics, supervisor decisions, event and predictive contracts. |
+| `evidence.py` | Bounded fill/order/perp/reconciliation telemetry; frozen multi-horizon markouts and source-bound evidence snapshots. |
+| `regime.py` | Regime scoring and bounded heuristic recommendations. |
+| `toxic_flow.py` | Multi-horizon adverse markout evaluation and side toxicity. |
+| `execution_quality.py` | Order-lifecycle quality, churn, markouts and retained level metrics. |
+| `liquidity_quality.py` | Top-of-book/depth quality and instability heuristics. |
+| `perp_crowding.py` | Source-timestamped funding, OI, basis and crowding heuristics. |
+| `supervisor.py` | Agent evaluation, neutral error handling, conservative quote transformations and material decision identity. |
+| `snapshot.py` | Coherent, read-only published agent system and telemetry snapshots. |
+| `ml_features.py` | Canonical 12-feature vectors, timestamp/source freshness validation and offline/inference as-of policy. |
+| `model_artifact.py` | Bounded, sealed logistic model artifacts, validation and read-only coefficient inference. |
+| `predictive_adverse_selection.py` | SHADOW-only conditional adverse-fill probabilities and explicit unavailable/error states. |
+| `README.md` | This package contract and operational boundary guide. |
+
 ## Implemented agents
 
 | Agent | Type | Evidence and behavior |
@@ -100,6 +121,26 @@ Venue acknowledgment/reconciliation latency remain null. TESTNET fill-based
 lifecycle, spread capture and markouts remain unavailable because TESTNET lacks
 an authoritative normalized fill ledger. PAPER evidence is explicitly SIMULATED.
 
+### Fill provenance and telemetry classification (Audit 3.0 A3-001)
+
+`execution.models.Fill.execution_mode` is a typed `PAPER` / `TESTNET`
+contract. Both baseline `SIMULATED PAPER FILL` and modeled
+`HYPOTHETICAL MODELED PAPER FILL:...` use `PAPER` and must be classified as
+simulated by `AgentTelemetryStore.observe_fill`; the classification is **not**
+derived from the human-readable `source` prefix. Contradictory reserved PAPER
+source labels and mode values are rejected, including through telemetry
+revalidation of copied input records. Offline dataset construction preserves
+the simulated-versus-nonsimulated evidence boundary.
+
+Legacy serialized PAPER fills omit the default mode to preserve existing
+identities and accounting/replay compatibility. Omitted mode means legacy
+PAPER, not an authenticated venue fill. Non-PAPER evidence must explicitly
+declare `TESTNET`; accepting a typed record does not authenticate its origin
+without trusted ingestion and venue reconciliation.
+
+See [execution contracts](../execution/README.md) and
+[Audit 3.0 security/evidence acceptance](../../../docs/AUDIT3_SECURITY_EVIDENCE_ACCEPTANCE.md).
+
 The liquidity level cap is bounded by the available upstream level count when supplied; transformation still only removes existing slots.
 
 Book depth sums the configured top-N levels in base units. Depth concentration
@@ -145,9 +186,43 @@ ADVISORY/ACTIVE are not implemented and no model can promote itself.
 `passive-adverse-v1` order: volatility score, book imbalance, momentum/100 bps,
 spread/100 bps, BID and ASK depth/100 base, mark-oracle and mark-mid basis/100 bps,
 funding/0.001, inventory ratio, reference deviation/100 bps, and side sign.
-Values are clipped to [-1,1]. Required missing features reject inference;
-there is no silent reshape, zero imputation or arbitrary dictionary input.
-Any ordering/normalization change requires a new schema version.
+Values are clipped to [-1,1]. Required missing or stale features reject
+inference; there is no silent reshape, zero imputation, stale-value
+substitution or arbitrary dictionary input. Any ordering/normalization change
+requires a new schema version.
+
+### Required feature freshness (Audit 3.0 A3-003)
+
+`build_feature_vector(evidence, side, as_of=...)` uses a deterministic
+observation-time policy with **inclusive** source-age ceilings:
+
+| Required evidence | Maximum age |
+|---|---:|
+| Original order-book timestamp | 5 seconds |
+| Perpetual context timestamp | 10 seconds |
+| Reference receipt and source timestamps | 30 seconds |
+
+`as_of` defaults to `evidence.updated_at`; an explicit use-time `as_of`
+cannot precede that evidence observation. Book/perp source times must be
+available and timezone-aware, not future-dated, and fresh both at the recorded
+observation and at use time. An explicit `perp_stale` flag rejects the feature.
+A newer book snapshot envelope cannot refresh an older underlying book timestamp.
+
+Reference evidence requires `VERIFIED` or `DEGRADED` consensus and at least
+two eligible provider records, bounded to the existing REDSTONE,
+HYPERLIQUID_ORACLE and KRAKEN source set. Each retained provider's market,
+identity, health, status, explicit stale flag, source timestamp and receipt
+timestamp must pass validation. An apparently fresh receipt never renews a
+stale underlying price. Existing stricter source-stale flags still apply.
+
+Known missing/stale/future-dated required evidence returns
+`INSUFFICIENT_DATA / UNAVAILABLE` with bounded diagnostics, **not**
+`READY / PREDICTED`; malformed feature/artifact contracts remain
+`ERROR` and fail closed. A subsequent fresh, valid observation can recover.
+These are SHADOW research admission limits, not changes to operational quote,
+capital or FinalQuoteAuthorization authority. No wall-clock substitution,
+inferred source time or fabricated evidence is permitted. See
+[Audit 3.0 security/evidence acceptance](../../../docs/AUDIT3_SECURITY_EVIDENCE_ACCEPTANCE.md).
 
 The model is one transparent logistic classifier. Its bounded JSON artifact
 contains exactly twelve finite coefficients (each [-100,100]), a bounded
@@ -180,9 +255,14 @@ python -m app.research.ml.training --training train.json --validation validation
 
 `app.research.ml.dataset.build_dataset` accepts typed evidence, normalized
 fills and ordered midpoint observations. It selects features at/before the
-fill; future observations construct labels only. Duplicate observations/fills
-cannot inflate sample counts; conflicting identities are rejected. Dataset
-fingerprints cover samples, target, source fingerprints and classification.
+fill; future observations construct labels only. The selected feature
+observation must **also remain fresh at the actual fill timestamp**:
+`build_dataset` reuses the same `build_feature_vector(..., as_of=fill.timestamp)`
+source-time checks as runtime inference. An old but formerly eligible vector
+is not reused, and missing or future features are never manufactured.
+Duplicate observations/fills cannot inflate sample counts; conflicting
+identities are rejected. Dataset fingerprints cover samples, target, source
+fingerprints and classification.
 Bounds include label maturity, preventing a training label from overlapping the
 claimed independent validation window. Training and validation cannot reuse
 sample identities or the same dataset fingerprint. The CLI consumes these
@@ -221,3 +301,21 @@ bounded cohort. Pending labels remain pending at the end, without invented
 future prices. Trace records inference probabilities; side/horizon calibration
 reports compare retained predictions with matured signed markouts. Quote,
 fill, accounting and risk outcomes are invariant to supplying a shadow artifact.
+
+## Audit 3.0 acceptance and limitations
+
+A3-001 and A3-003 were remediated in
+[PR #82](https://github.com/btorressz/hyperamm/pull/82). The
+[committed acceptance report](../../../docs/AUDIT3_SECURITY_EVIDENCE_ACCEPTANCE.md)
+records corrected original counterexamples, feature-staleness boundaries,
+PAPER telemetry-to-dataset regressions and backend/frontend regression results.
+The report is evidence for those bounded implementation changes, not
+authentication of historical market observations or signed TESTNET fills.
+
+Predictive Adverse Selection remains **SHADOW only**. Existing deterministic
+supervisory decisions, the Phase 8 firewall, FinalQuoteAuthorization and
+operational kill controls are not delegated to ML. Venue/market-data
+authenticity, offline model validity on representative independent data and
+signed execution acceptance remain separately scoped; this README does not
+assert live-trading or empirical strategy-performance certification.
+
