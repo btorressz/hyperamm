@@ -168,6 +168,7 @@ export default function App() {
           <div
             id="page-content"
             ref={pageContent}
+            role="group"
             tabIndex={-1}
             aria-label={`${page} workspace`}
           >

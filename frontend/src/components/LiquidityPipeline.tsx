@@ -119,7 +119,7 @@ export function LiquidityPipeline({ t }: { t: TerminalState }) {
           </>}
         </span>
       </div>
-      <div className="tableWrap">
+      <div className="tableWrap" role="region" tabIndex={0} aria-label="Quote transformation evidence">
         <table>
           <thead>
             <tr>

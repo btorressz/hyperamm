@@ -9,10 +9,10 @@ from app.config import Settings
 from app.market_data.models import MarketDataMode, utcnow
 from app.market_data.service import MarketDataService
 from app.market_data.history import MarketPriceHistory
-from app.market_data.perp_context import PerpContextService, PerpPositionContext, demo_perp_context
+from app.market_data.perp_context import PerpContextService, PerpContextUnavailable, PerpPositionContext, demo_perp_context
 from app.references.service import ReferenceService
 from app.strategy.models import StrategyConfig, StrategyState, ExecutionMode
-from app.strategy.quote_engine import QuoteEngine
+from app.strategy.quote_engine import QuoteEngine, StrategyFeasibilityError
 from app.strategy.fair_value import calculate_fair_value
 from app.strategy.inventory import InventoryPolicy, InventoryState, build_inventory_state
 from app.strategy.market_adaptation import MarketAdaptationPolicy
@@ -883,10 +883,9 @@ class HyperAmmRuntime:
                                 context = self.perp_context_service.snapshot(fair)
                                 reference = PerpContextPolicy(new_config).decision(fair, context).final_reference_price
                             self.quote_engine.generate_at_reference(new_config, snapshot, reference)
-                        except ValueError as exc:
+                        except (ValueError, PerpContextUnavailable) as exc:
                             # Perp source freshness is part of quote preflight, not an
                             # unexpected server failure. Reject before invalidating state.
-                            from app.strategy.quote_engine import StrategyFeasibilityError
                             raise StrategyFeasibilityError(str(exc)) from exc
             staged = []
             try:

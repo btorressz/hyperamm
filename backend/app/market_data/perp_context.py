@@ -258,6 +258,10 @@ def normalize_user_position_context(
     )
 
 
+class PerpContextUnavailable(RuntimeError):
+    """Requested perpetual evidence is missing or stale."""
+
+
 class PerpContextService:
     def __init__(self, market: str, stale_after_seconds: float):
         self.market = market
@@ -308,7 +312,7 @@ class PerpContextService:
 
     def snapshot(self, market_mid: Decimal, *, now: datetime | None = None) -> PerpMarketContext:
         if self._context is None:
-            raise RuntimeError("perpetual market context is unavailable")
+            raise PerpContextUnavailable("perpetual market context is unavailable")
         current = now or datetime.now(timezone.utc)
         age = (current - self._context.updated_at).total_seconds()
         stale = age < 0 or age > self.stale_after_seconds
@@ -328,5 +332,5 @@ class PerpContextService:
             stale=stale,
         )
         if context.stale:
-            raise RuntimeError("perpetual market context is stale")
+            raise PerpContextUnavailable("perpetual market context is stale")
         return context

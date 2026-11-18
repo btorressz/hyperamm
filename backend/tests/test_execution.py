@@ -108,7 +108,7 @@ async def test_venue_missing_open_order_gets_authoritative_terminal_status(statu
     assert order==before
 
 
-@pytest.mark.parametrize('asset,decimals',[(0,n) for n in range(7)]+[(10000,n) for n in range(9)])
+@pytest.mark.parametrize('asset,decimals',[(0,n) for n in range(7)]+[(9999,n) for n in range(7)])
 @pytest.mark.parametrize('side',['BID','ASK'])
 def test_decimal_venue_normalization_precision_and_idempotence(asset,decimals,side):
     from types import SimpleNamespace
@@ -120,7 +120,7 @@ def test_decimal_venue_normalization_precision_and_idempotence(asset,decimals,si
     assert isinstance(normalized.price,D) and isinstance(normalized.size,D)
     assert normalized.price <= req.price if side == 'BID' else normalized.price >= req.price
     assert 0 < normalized.size <= req.size
-    max_places=(8 if asset >= 10000 else 6)-decimals
+    max_places=6-decimals
     assert normalized.price == normalized.price.quantize(D(1).scaleb(-max_places))
     assert len(normalized.price.normalize().as_tuple().digits) <= 5 or normalized.price == normalized.price.to_integral_value()
     assert normalized.size == normalized.size.quantize(D(1).scaleb(-decimals))
@@ -160,16 +160,27 @@ def test_sub_quantum_size_rejected_and_audit_counterexample_closed():
         adapter.normalize_order_request(venue,req.model_copy(update={'size':D('.00001')}))
 
 
-def test_spot_perp_fractional_constraint_and_zero_bid_rejection():
+def test_native_fractional_constraint_and_zero_bid_rejection():
     adapter,venue,_=venue_adapter()
     req=OrderRequest(client_order_id='precision',market='ETH',side='BID',price=D('.123456'),size=D('1'))
     assert adapter.normalize_order_request(venue,req).price == D('.12')
-    venue.asset_to_sz_decimals[10000]=4
-    venue.name_to_asset=lambda market:10000
-    assert adapter.normalize_order_request(venue,req).price == D('.1234')
-    venue.name_to_asset=lambda market:0
     with pytest.raises(ValueError,match='non-positive'):
         adapter.normalize_order_request(venue,req.model_copy(update={'price':D('.001')}))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('asset', [-1, 10000, 109999, 110000, 120000, True, '0'])
+async def test_unsupported_market_precision_rejected_before_authority_or_submission(asset):
+    adapter,venue,_=venue_adapter()
+    venue.name_to_asset=lambda market:asset
+    venue.asset_to_sz_decimals[asset]=4
+    from unittest.mock import AsyncMock
+    adapter.authority=AsyncMock()
+    req=OrderRequest(client_order_id='unsupported',market='ETH',side='BID',price=D('2999'),size=D('1'))
+    with pytest.raises(ValueError,match='native perpetual only'):
+        await adapter.submit_orders([req])
+    adapter.authority.assert_not_awaited()
+    assert venue.transmissions == 0 and req.client_order_id not in adapter._orders
 
 
 @pytest.mark.asyncio

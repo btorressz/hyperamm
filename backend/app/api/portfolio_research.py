@@ -9,10 +9,16 @@ from app.portfolio_research.config import PortfolioResponseTooLarge
 from app.portfolio_research.models import (PortfolioResearchRunRequest, PortfolioExecutedResult,
     PortfolioAnalysisRequest, PortfolioAnalysisResult, PortfolioStressRequest, PortfolioStressResult)
 from app.portfolio_research.preview import PortfolioDraft, PreviewResult, prepare
+from app.portfolio_research.scenarios import LiquidityDepthError
 from app.portfolio_research.terminal_models import TerminalRequest, TerminalResult
 from app.simulation.executor import ResearchBusyError
 
 router = APIRouter(prefix="/portfolio-research", tags=["portfolio-research"])
+
+
+def _liquidity_rejection(exc: LiquidityDepthError) -> HTTPException:
+    return HTTPException(422, detail={"code": "LIQUIDITY_DEPTH_PRECISION", "market": exc.market,
+        "side": exc.side, "size_decimals": exc.size_decimals, "message": str(exc)}, headers=NO_STORE)
 
 
 @router.post("/preview", response_model=PreviewResult)
@@ -24,6 +30,8 @@ async def preview(body: PortfolioDraft, request: Request):
         return Response(bounded_json(result), media_type="application/json", headers=NO_STORE)
     except PortfolioResponseTooLarge:
         raise HTTPException(413, "Portfolio preview exceeds transport budget", headers=NO_STORE) from None
+    except LiquidityDepthError as exc:
+        raise _liquidity_rejection(exc) from None
     except ValueError:
         raise HTTPException(422, "Review allocations, reserve, strategy and combined stress workload", headers=NO_STORE) from None
     except Exception:
@@ -63,6 +71,8 @@ async def _compute(body, request, operation, result_type):
         raise HTTPException(429, "Research worker is already running or shutting down", headers=NO_STORE) from None
     except ResearchUnavailableError:
         raise HTTPException(503, "Research admission unavailable", headers=NO_STORE) from None
+    except LiquidityDepthError as exc:
+        raise _liquidity_rejection(exc) from None
     except ValueError:
         raise HTTPException(422, "Portfolio configuration or evidence rejected", headers=NO_STORE) from None
     except Exception:

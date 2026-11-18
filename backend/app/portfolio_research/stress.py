@@ -8,7 +8,7 @@ from .metrics import compare_metrics, compare_risk
 from .models import (ConcentrationSelection, MarketStressEvidence,
     PortfolioStressRequest, STRESS_LIMITATIONS)
 from .orchestration import execute_markets
-from .scenarios import baseline_dataset, transform_dataset
+from .scenarios import baseline_dataset, transform_dataset, validate_liquidity_depth
 
 
 def select_concentration(request, baseline, evidence):
@@ -78,6 +78,7 @@ async def execute_stress(service, *, request, _presentation=None):
 
 async def _execute_stress(service, *, request, _presentation=None):
     request = PortfolioStressRequest.model_validate(request)
+    validate_liquidity_depth(request)
     config = request.config
     # Native baseline generation/execution remains exactly the existing path.
     receipts, observations = await execute_markets(service, config, collect_accounting=True)

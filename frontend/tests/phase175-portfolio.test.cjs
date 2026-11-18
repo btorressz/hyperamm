@@ -113,6 +113,20 @@ for(const status of [429,413,422,503,500])test(`HTTP ${status} gives sanitized p
  const originalFetch=global.fetch;global.fetch=async()=>new Response(JSON.stringify({detail:'SECRET /private/traceback'}),{status});
  try{await assert.rejects(api.portfolioTerminal(q()),e=>{assert.ok(e.message.includes(String(status)));assert.doesNotMatch(e.message,/SECRET|private|traceback/);assert.match(e.message,/cancellation does not stop/);return true;});}finally{global.fetch=originalFetch;}
 });
+test('liquidity-depth diagnostics use only bounded structured evidence',async()=>{
+ const originalFetch=global.fetch;
+ const detail={code:'LIQUIDITY_DEPTH_PRECISION',market:'SOL',side:'ASK',size_decimals:2,message:'/private/traceback'};
+ try{
+  global.fetch=async()=>new Response(JSON.stringify({detail}),{status:422});
+  await assert.rejects(api.portfolioTerminal(q()),{message:'SOL ASK stressed depth is below market size precision (2 decimal places). Increase the depth multiplier for this side.'});
+  detail.side='/private/traceback';
+  await assert.rejects(api.portfolioTerminal(q()),error=>{
+   assert.match(error.message,/HTTP 422.*Configuration rejected/);
+   assert.doesNotMatch(error.message,/private|traceback/);
+   return true;
+  });
+ }finally{global.fetch=originalFetch;}
+});
 test('portfolio API sends exact validated configuration and abort signal once',async()=>{
  const originalFetch=global.fetch,controller=new AbortController();let count=0;global.fetch=async(url,init)=>{count++;assert.equal(url,'/api/v1/portfolio-research/terminal');assert.equal(init.signal,controller.signal);assert.deepEqual(JSON.parse(init.body),q());return new Response(JSON.stringify(native.result),{status:200});};
  try{await api.portfolioTerminal(q(),controller.signal);assert.equal(count,1);}finally{global.fetch=originalFetch;}

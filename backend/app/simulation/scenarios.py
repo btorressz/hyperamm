@@ -4,6 +4,7 @@ from datetime import datetime,timedelta,timezone
 from decimal import Decimal
 from enum import StrEnum
 
+from app.amm.numeric import quantize_size
 from app.market_data.models import MarketConnectionState,MarketDataMode,MarketLevel,MarketSnapshot,OrderBookSnapshot
 from app.market_data.perp_context import build_perp_market_context
 from .models import SimulationDataset,SimulationFrame,SimulationReferencePrices
@@ -81,6 +82,22 @@ def _depths(scenario:ScenarioName,i:int)->tuple[Decimal,Decimal]:
     return Decimal("6"),Decimal("6")
 
 
+def scenario_book_sizes(scenario: ScenarioName, frame: int, market_profile=None):
+    """Generate the five native quantities on each side of a scenario book."""
+    def sizes(depth):
+        for level in range(1, 6):
+            size = depth / Decimal(level)
+            if market_profile is not None:
+                size = quantize_size(size * Decimal("3000") / market_profile.simulated_reference_price,
+                                     market_profile.sz_decimals)
+                if size <= 0:
+                    raise ValueError("scenario book quantity is below market precision")
+            yield size
+
+    bids, asks = _depths(scenario, frame)
+    return tuple(sizes(bids)), tuple(sizes(asks))
+
+
 def _funding(scenario:ScenarioName,i:int)->Decimal:
     if scenario==ScenarioName.POSITIVE_FUNDING_STRESS:return Decimal("0.00045")
     if scenario==ScenarioName.NEGATIVE_FUNDING_STRESS:return Decimal("-0.00045")
@@ -127,22 +144,18 @@ def generate_scenario(
         if not mid.is_finite() or mid<=0:raise ValueError("scenario generated invalid mid price")
         spread=max(Decimal(".2") * (start_price / Decimal("3000") if market_profile is not None else 1),mid*Decimal("0.0001"))
         best_bid=mid-spread/Decimal("2");best_ask=mid+spread/Decimal("2")
-        bid_depth,ask_depth=_depths(scenario,i)
+        bid_sizes,ask_sizes=scenario_book_sizes(scenario,i,market_profile)
         bids=[];asks=[]
         for level in range(5):
             offset=spread/Decimal("2")+Decimal(level)*max(Decimal(".1") * (start_price / Decimal("3000") if market_profile is not None else 1),spread/Decimal("2"))
-            bids.append(MarketLevel(price=mid-offset,size=bid_depth/(Decimal(level)+1),order_count=1))
-            asks.append(MarketLevel(price=mid+offset,size=ask_depth/(Decimal(level)+1),order_count=1))
+            bids.append(MarketLevel(price=mid-offset,size=bid_sizes[level],order_count=1))
+            asks.append(MarketLevel(price=mid+offset,size=ask_sizes[level],order_count=1))
         if market_profile is not None:
             from .market_profiles import normalize_price
-            from app.amm.numeric import quantize_size
             precision = market_profile.sz_decimals
             for levels, up in ((bids, False), (asks, True)):
                 for item in levels:
                     item.price = normalize_price(item.price, precision, up=up)
-                    item.size = quantize_size(item.size * Decimal("3000") / start_price, precision)
-                    if item.size <= 0:
-                        raise ValueError("scenario book quantity is below market precision")
             best_bid, best_ask = bids[0].price, asks[0].price
             mid = (best_bid + best_ask) / 2
         book=OrderBookSnapshot(market=market,bids=bids,asks=asks,timestamp=ts,sequence=sequence)

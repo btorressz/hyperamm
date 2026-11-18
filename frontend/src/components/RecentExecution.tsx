@@ -144,6 +144,7 @@ export function OrderTable({
       </p>
       <div
         className="tableWrap orderTable"
+        role="region"
         tabIndex={0}
         aria-label="Order lifecycle records"
       >

@@ -14,13 +14,14 @@ export function QuoteLadder({ quotes, orders, stage = "STRATEGY", historical = f
         <b>AMM Quote Ladder</b>
         <span>{stage} · quote evidence is not venue confirmation</span>
       </div>
-      <div className="tableWrap">
+      <div className="tableWrap" role="region" tabIndex={0} aria-label={`${stage} quote ladder`}>
         <table>
           <thead><tr>
             <th>Level</th><th>Side</th><th>Price</th><th>Size</th><th>Distance</th>
             <th>Inventory</th><th>Market</th><th>Agents</th><th>Risk</th><th>Order evidence</th>
           </tr></thead>
           <tbody>
+            {!quotes.length && <tr><td className="emptyCell" colSpan={10}>No quote levels available.</td></tr>}
             {quotes.map((q) => {
               const evidence = quoteEvidence(q, orders, stage, historical);
               return (

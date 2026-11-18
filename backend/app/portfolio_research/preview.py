@@ -17,6 +17,7 @@ from .config import (ExactPortfolioDecimal, MAX_TOTAL_FRAMES, MAX_QUOTE_LEVEL_FR
 from .models import (PortfolioEvidence, PortfolioCapitalBudget, MarketResearchAllocation,
     PortfolioRiskLimits, PortfolioResearchConfig, PortfolioResearchScenario,
     PortfolioResearchRunRequest, PortfolioRiskPolicy, PortfolioStressRequest, PortfolioStressScenario)
+from .scenarios import validate_liquidity_depth, workload
 
 
 class StrategyDraft(PortfolioEvidence):
@@ -108,8 +109,8 @@ def prepare(draft, profiles):
         risk_limits=draft.risk_limits, scenarios=tuple(scenarios))
     request = PortfolioResearchRunRequest(config=config, config_fingerprint=config.fingerprint())
     if draft.stress:
-        PortfolioStressRequest(**request.model_dump(), risk_policy=draft.risk_policy, scenario=draft.stress)
-    from .scenarios import workload
+        stress_request = PortfolioStressRequest(**request.model_dump(), risk_policy=draft.risk_policy, scenario=draft.stress)
+        validate_liquidity_depth(stress_request)
     costs = workload(config)
     with localcontext() as ctx:
         ctx.prec = 80

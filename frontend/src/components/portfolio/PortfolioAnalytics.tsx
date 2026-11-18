@@ -32,7 +32,7 @@ export function PortfolioRiskPanel({
           ? "Required evidence or evaluation eligibility is unavailable."
           : "Post-execution hypothetical assessment completed."}
       </p>
-      <div className="tableWrap">
+      <div className="tableWrap" role="region" tabIndex={0} aria-label={`${label} risk limit evidence`}>
         <table>
           <thead>
             <tr>
@@ -109,7 +109,7 @@ export function PortfolioMetrics({
           ["Maximum drawdown", percent(a.drawdown?.max_drawdown_fraction)],
         ]}
       />
-      <div className="tableWrap">
+      <div className="tableWrap" role="region" tabIndex={0} aria-label={`${label} per-market exposure`}>
         <table>
           <caption>
             Native per-market exposure · independent PAPER positions
@@ -263,7 +263,7 @@ export function PortfolioStressComparison({
       title="Baseline versus stressed comparison"
       meta={metrics.temporal_classification}
     >
-      <div className="tableWrap">
+      <div className="tableWrap" role="region" tabIndex={0} aria-label="Baseline and stressed metrics">
         <table>
           <thead>
             <tr>
