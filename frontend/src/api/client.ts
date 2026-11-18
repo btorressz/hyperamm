@@ -20,6 +20,8 @@ import type { ReplaySummary, ReplayProvenance, HistoricalReplayRequest, Historic
 import type { AgentName } from '../utils/researchEvidence';
 import type { ScenarioHistoricalRequest, ScenarioHistoricalResponse } from '../types/scenarioReplayComparison';
 import { checkedComparisonResponse } from '../utils/scenarioReplayComparison';
+import type { MarketUniverseResponse } from '../types/marketUniverse';
+import { checkedMarketUniverse, marketUniverseByteLimit, marketUniverseHttpStatus } from '../utils/marketUniverse';
 const API = "/api/v1";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${API}${path}`, {
@@ -157,6 +159,21 @@ export const api = {
   },
   liveProviderHealth: (market: LiveMarketId, signal?: AbortSignal) =>
     request<LiveProviderHealth>(livePath(market,'references'), {signal,cache:'no-store'}),
+  marketUniverse: async (signal?: AbortSignal): Promise<MarketUniverseResponse> => {
+    const response = await fetch(API + '/market-universe', {method: 'GET', signal, cache: 'no-store'});
+    if (![200, 429, 503, 504].includes(response.status)) {
+      await response.body?.cancel().catch(() => {});
+      throw new Error('Market universe endpoint returned an unexpected status.');
+    }
+    const wire = await readHistoricalJson(response, marketUniverseByteLimit).catch(() => {
+      throw new Error('Market universe response could not be read within its evidence budget.');
+    });
+    const result = checkedMarketUniverse(wire);
+    if (response.status !== marketUniverseHttpStatus(result)) {
+      throw new Error('Market universe response disagrees with its HTTP status.');
+    }
+    return result;
+  },
   researchMarkets: (signal?: AbortSignal) => request<ResearchMarketCatalog>('/research-markets', {signal}),
   researchPresets: (signal?: AbortSignal) => request<ResearchCatalog>('/research-vault/presets', {signal}),
   researchPreview: (body: ResearchProposal, signal?: AbortSignal) => request<ResearchPreviewResponse>('/research-vault/preview',

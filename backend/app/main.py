@@ -12,10 +12,12 @@ from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
 from app.market_data.hyperliquid_metadata import HyperliquidMetadataCatalog
+from app.market_data.market_universe_discovery import MarketUniverseDiscovery
 from app.market_data.live_observations import LiveMarketObservationService
 from app.market_data.live_streams import LiveMarketStreamService
 from app.api.live_market_streams import router as live_market_streams_router
 from app.api.live_markets import router as live_markets_router
+from app.api.market_universe import router as market_universe_router
 from app.api.historical_replay import router as historical_replay_router
 from app.api.research_scenario_replay_comparison import router as scenario_comparison_router
 from app.api.portfolio_research import router as portfolio_research_router
@@ -44,6 +46,8 @@ async def lifespan(app: FastAPI):
     app.state.live_market_streams = LiveMarketStreamService(settings)
     app.state.research_market_catalog = HyperliquidMetadataCatalog(
         allow_demo=settings.market_data_mode == MarketDataMode.DEMO and settings.execution_mode == ExecutionMode.PAPER)
+    app.state.market_universe_discovery = MarketUniverseDiscovery(
+        enabled=settings.market_universe_enabled, network=settings.market_universe_network)
     app.state.terminal_relay = None
     app.state.redis_infrastructure = None
     infrastructure = None
@@ -74,7 +78,10 @@ async def lifespan(app: FastAPI):
                     finally:
                         await app.state.live_market_observer.close()
                 finally:
-                    await app.state.research_market_catalog.close()
+                    try:
+                        await app.state.research_market_catalog.close()
+                    finally:
+                        await app.state.market_universe_discovery.close()
             finally:
                 try:
                     await app.state.runtime.stop_services()
@@ -117,6 +124,7 @@ async def research_validation_errors(request, exc):
 for router in (health.router, markets.router, strategy.router, orders.router, risk.router, positions.router, agents.router, simulation.router, historical_replay_router, research_vault_router, research_markets_router, research_market_comparison_router, live_markets_router, accounting.router, terminal.router):
     app.include_router(router, prefix=settings.api_prefix)
 app.include_router(scenario_comparison_router, prefix=settings.api_prefix)
+app.include_router(market_universe_router, prefix=settings.api_prefix)
 app.include_router(portfolio_research_router, prefix=settings.api_prefix)
 app.include_router(websocket.router)
 app.include_router(live_market_streams_router)
