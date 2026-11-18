@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.0B market-universe contract hardening
+
+- Require explicit Mainnet/Testnet identity, bind official Core/HIP-3 coin names to their namespace, and distinguish bounded metadata universe ordinals from exchange action IDs.
+- Revalidate nested evidence, isolate fixtures, preserve stale/delisted index assignments, and canonicalize catalog ordering. Discovery decisions remain read-only with PAPER and execution eligibility disabled.
+- Document the [versioned contract](docs/PHASE18_0_MARKET_UNIVERSE_ARCHITECTURE.md), frontend compatibility and [independent acceptance evidence](docs/PHASE18_0B_ACCEPTANCE.md).
+
 ## Unreleased — Phase 18.0A market-universe architecture and contracts
 
 - Add isolated versioned read-only Hyperliquid Core/HIP-3 instrument identities, namespace-aware metadata, canonical catalog fingerprints and discovery eligibility decisions.

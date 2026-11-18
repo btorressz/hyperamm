@@ -1,69 +1,73 @@
-# HyperAMM Phase 18.0A — Market-Universe Architecture & Contracts
+# HyperAMM Phase 18.0 market-universe architecture
 
-**Status:** additive contracts only; no SDK discovery, new execution, subscriptions, API endpoints or PAPER market enablement.  
-**Baseline:** main after PR #84, merge commit `14dfde775c0ce1a3b5517b9db6c9c4fafb48c1de`.  
-**Ownership:** ChatGPT 18.0A implementation; Codex 18.0B independent repository and regression acceptance.
+Phase 18.0 defines immutable, read-only evidence for Hyperliquid Core and HIP-3 perpetuals. PR #85 added isolated identity, metadata, catalog and discovery models plus focused tests on top of Audit 3.0 final remediation. Phase 18.0B reviews merge `115f138` and publishes the hardened `phase180b-v2` contract. The market-universe module has no runtime, route, subscriber, persistence or signing integration. [PR #85](https://github.com/btorressz/hyperamm/pull/85) · [Audit 3.0 final remediation](AUDIT3_FINAL_REMEDIATION_ACCEPTANCE.md) · [Contract source](../backend/app/market_data/market_universe_contracts.py)
 
-## Purpose and trust boundary
+## Identity and exchange metadata
 
-HyperAMM's Phase 14–17 research models deliberately limit `ResearchPerpMarketId` to `BTC`, `ETH`, and `SOL`. The existing Hyperliquid TESTNET adapter explicitly rejects non-native asset indices. Phase 18.0A adds a separate read-only, versioned representation for future Core and HIP-3 discovery. It **must not** imply that existing simulation, portfolio, comparison, stream, agents, AMM, Risk Firewall or trading endpoints accept that identity.
+| Field or value | Contract |
+| --- | --- |
+| `contract_version` | `phase180b-v2` on identities, metadata, catalogs and decisions. |
+| `venue`, `network` | `HYPERLIQUID` and an explicit `MAINNET` or `TESTNET`. The collector must establish the network from its configured endpoint. |
+| `instrument_type`, `dex`, `instrument_name` | `CORE_PERP` requires the empty DEX namespace. `HIP3_PERP` requires an explicit namespace. The case-sensitive namespace and unqualified instrument name are bounded to 32 and 64 characters respectively. Both nonempty components begin with an ASCII alphanumeric and allow ASCII alphanumerics, periods, underscores and hyphens. These are representation bounds for observed names. Deployment registration has its own venue rules. |
+| `stable_key` | `venue:network:class:dex:name`. For example, `HYPERLIQUID:MAINNET:CORE_PERP::BTC` and `HYPERLIQUID:MAINNET:HIP3_PERP:xyz:BTC` are distinct. The key is independent of observation time, source, index and display label. |
+| `identity`, `source_coin` | The official row's raw coin must equal the validated identity's derived `exchange_coin`, which is the exact unqualified name for Core and `dex:name` for HIP-3. Future parsing must validate the exact namespace against the requested DEX, preserve case and reject malformed names or contradictory evidence. |
+| `universe_index` | Zero-based ordinal into the unfiltered `meta(dex=…).universe` for the observed network and DEX. The supported range is 0–9,999, which preserves Core's asset-ID range and the HIP-3 offset stride. Enumerate before filtering or sorting and retain delisted entries' ordinals. |
+| `sz_decimals` | Integer 0–6 for both perpetual classes, matching the perpetual `6 - szDecimals` fractional price budget and the existing native research bounds. Precision alone grants no research admission. |
+| `listed` | Explicit boolean for captured official observations. A returned delisted row has `false`; a missing row has no listing evidence. |
+| `observed_at` | Timezone-aware official observation time, normalized to UTC. Freshness is computed relative to a separate supplied evaluation clock. |
 
-Phase 18.0A has zero new network calls, WebSockets, workers, database tables, environment switches, public endpoints, wallet connections, user permissions or signing paths.
+The `perpDexs` response starts with a Core placeholder and then lists builder DEXs. A builder DEX's position in that response is its DEX ordinal and its `name` selects the metadata namespace. Core exchange actions use the local index. The documented HIP-3 action ID is `100000 + 10000 × perp_dex_index + universe_index`. The first builder DEX therefore uses action ID 110000 for local index 0. SDK `Info.name_to_asset()` returns the resulting action ID and `Info.meta(dex=…)` supplies the ordered metadata rows. The v2 contract stores only the local ordinal and canonical identity. It exposes neither the exchange action ID nor its derivation. [Asset IDs](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/asset-ids) · [Perpetuals](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals) · [Tick and lot size](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size) · [Python SDK 0.24.0, Info](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/0.24.0/hyperliquid/info.py)
 
-## Contract definitions
+V2 supersedes the isolated `phase180a-v1` representation. It requires the network, binds the observed coin and replaces the ambiguous `asset_index` with `universe_index`. A v1 payload cannot supply the network or distinguish how its index was obtained. Reconstruct v2 evidence from the source observation. The review found no consumers of v1 outside its tests and documentation. The legacy native `asset_index` and profile versions remain part of their existing contracts.
 
-Source: `backend/app/market_data/market_universe_contracts.py`
+## Provenance, freshness and validation
 
-- `MarketInstrumentIdentity` holds a `HYPERLIQUID` venue, explicit `CORE_PERP` or `HIP3_PERP` class, `dex` namespace, and **unqualified** instrument name. Core requires empty DEX; HIP-3 requires a nonempty bounded namespace. Symbols and namespaces reject delimiters that would introduce identity ambiguity. The stable key is `venue:class:dex:name`; neither a display label nor a mutable SDK asset index is a canonical identity.
-- `MarketUniverseMetadata` keeps observed asset index, size precision, listing state, status, source and UTC observation time. `EXCHANGE_VERIFIED` requires class-matched official metadata, an index, size precision, an explicit listing flag and timestamp. Verified does **not** mean fresh or eligible. DEMO profiles are identified as fixtures, not official evidence.
-- `MarketUniverseCatalog` binds an order-independent fingerprint to distinct canonical identities, prohibits duplicate verified indices **within** a class/DEX namespace and has literal `read_only=True` and `authority=NONE`. Reuse of numeric indices across different namespaces is permitted; downstream integrations cannot merge them by index alone.
-- `DiscoveryEligibility` records a source metadata fingerprint, evaluation timestamp, eligibility and bounded reason. Its `paper_research_eligible=False`, `execution_eligible=False`, `read_only=True`, and `authority=NONE` fields are literal types; callers cannot grant permissions with serialized data.
-- `evaluate_discovery` performs a pure validation and freshness projection with an explicit evaluation time and 1–86,400 second freshness budget. Future timestamps, stale/unavailable evidence, delisted instruments and fixture provenance cannot yield a discoverable result. This is a **read-only discovery signal**, never permission to trade.
-
-Status and freshness are separate: a formerly verified record can age past its configured budget. No metadata source may transform a simulated observation into exchange-verified evidence. Neither a catalog fingerprint nor a discovery decision is a cryptographic identity/authentication of upstream transport.
-
-## Existing code crosswalk (REUSE)
-
-| Existing location | Existing behavior retained | Phase 18 integration constraint |
+| `metadata_status` | Admitted provenance and fields | Discovery outcome |
 | --- | --- | --- |
-| `app/simulation/market_profiles.py` | BTC/ETH/SOL literal; immutable native research profile; native precision/DEMO anchors | Remains unchanged. Do not import dynamic contracts to widen current research eligibility. |
-| `app/market_data/hyperliquid_metadata.py` | Read-only SDK Core metadata single-flight cache, provenance, demo fallback, TTL | 18.1 may adapt existing cache patterns; not its existing three-market authority and not implicit HIP-3 support. |
-| `app/market_data/live_models.py`, `live_stream_models.py`, `live_streams.py` | Financial Decimal checks, immutable evidence, bounded read-only observer, lifecycle ownership | Preserve existing contracts and subscriptions. Dynamic observation expansion requires a separate reviewed migration. |
-| `app/portfolio_research/models.py` | USDC-only, BTC/ETH/SOL exact capital/allocations, PAPER/none authority, three-market limits | No new markets admitted in 18.0A. Currency/collateral aggregation is 18.3. |
-| `app/execution/hyperliquid.py` | Guarded TESTNET, native asset index check `0 <= asset < 10000`, SDK-specific wire/precision normalization | Leave exactly unchanged. HIP-3 discovery must never bypass it. |
-| `app/simulation/models.py` | Canonical financial research fingerprint function | Shared for detached metadata and catalog digests; no duplicate hashing engine. |
-| Existing AMM, agents, risk, accounting, replay and React terminal | Operational/research behavior supported by PR #84 acceptance | Unmodified; no new authority edges. |
+| `EXCHANGE_VERIFIED` | `OFFICIAL_SDK_CORE_META` or `OFFICIAL_SDK_HIP3_META` as selected by the identity class. Requires exact `source_coin`, local index, precision, listing state and observation timestamp. | `NOT_LISTED` for a delisted row. Otherwise `FUTURE_TIMESTAMP` for negative age, `STALE_METADATA` past the supplied freshness budget, or `DISCOVERABLE` within it. The budget boundary is inclusive. |
+| `STALE` | The same complete, class-matched observed evidence retained as stale. | `NOT_LISTED`, `FUTURE_TIMESTAMP` or `STALE_METADATA`, in that order. |
+| `DEMO_PROFILE` | `PINNED_RESEARCH_FIXTURE`. May carry fixture precision. Exchange coin, ordinal, listing state and observation time must be absent. | `UNVERIFIED_METADATA`. |
+| `UNAVAILABLE` | Class-matched official source or `NONE`. No observed coin, ordinal, precision, listing state or timestamp. | `MISSING_METADATA`. |
+| `ERROR` | Class-matched official source or `NONE`. No observed coin, ordinal, precision, listing state or timestamp. | `METADATA_ERROR`. |
 
-## Design boundaries for subsequent Phase 18 milestones
+A catalog contains up to 4,096 records sorted by canonical key. Each key occurs once, and an observed local ordinal occurs once per network, perpetual class and DEX, including retained stale and delisted observations. Constructing, revalidating and fingerprinting a catalog applies those same rules.
 
-**18.0B (Codex):** independently validate these models and tests on the latest merged tree, inspect SDK metadata namespace assumptions, run focused and relevant native regressions, challenge collision/freshness/fingerprint behavior, and document any limitations. Fix only demonstrated contract defects, without implementing 18.1.
+The models inherit frozen fields and forbidden extras from `Evidence` and enable strict validation, default validation and recursive Pydantic instance revalidation. Python inputs use native types, including tuples and aware datetimes. JSON validation accepts arrays and aware datetime strings. The record validator stops at the first malformed entry. The future transport owns its byte and response limits before decoding. Booleans in literal authority fields are checked explicitly. Catalog admission, fingerprinting, discovery evaluation and detached-decision validation recheck model instances. Pydantic's `model_copy(update=…)` and `model_construct()` create unchecked objects that require validation before use.
 
-**18.1 discovery:** load public Core + HIP-3 metadata through existing controlled, read-only SDK/HTTP ownership; validate source classes, bounded cardinality, namespace and stable identity; avoid unbounded subscriptions and ambient permissions. Record verified, stale, unavailable and delisted states. Do not infer listing, asset index or precision from display names. SDK behavior and official API payload formats need independent validation before adding adapters.
+Metadata and catalog fingerprints use the existing `stable_fingerprint` canonical serializer on the validated content. They cover provenance, timestamp and network, with equivalent UTC instants normalized and catalog record order fixed. The status describes declared observation provenance and the digest describes content integrity. Actual exchange provenance depends on the controlled collector and endpoint validation in Phase 18.1.
 
-**18.2 PAPER:** explicitly decide which discovered markets have validated precision, quantization, DEMO scenarios, fee/funding assumptions, market-specific risk and native simulation support. Add new research eligibility only with strict per-instrument regression and explicit provenance; keep existing BTC/ETH/SOL fingerprints stable.
+`evaluate_discovery` requires an aware evaluation clock and a whole-second freshness budget of 1–86,400 seconds. A decision binds the canonical identity, metadata fingerprint, UTC evaluation time, discovery result and reason code. The decision's shape verifies the reason/boolean relationship and digest format. To accept a detached decision, `validate_against` recomputes it using independently trusted metadata, evaluation time and budget, then checks the full result.
 
-**18.3 risk:** add separated collateral/quote currencies and exchange-product-specific margin/exposure assumptions before any cross-market aggregation claim; existing USDC-only capital math must not silently apply to every HIP-3 contract.
+## Authority and compatibility
 
-**18.4 agents:** advisory Market Eligibility, Funding/Basis and Quote Economics agents may consume validated evidence without new trading authority; existing SHADOW/risk supervisor boundaries remain.
+Discovery eligibility enables read-only presentation of current observed listings. PAPER research requires an approved profile, precision, economics and engine behavior. Execution requires the separate guarded TESTNET or PAPER execution architecture and final risk authorization. All v2 decisions fix `paper_research_eligible=false`, `execution_eligible=false`, `read_only=true` and `authority=NONE`. Catalogs fix `read_only=true` and `authority=NONE`. The strategy runtime, simulation, portfolio engine, agent supervisor and execution adapter have no consumer of the discovery decision.
 
-**18.5 AMM:** asset-aware research presets and scenario realism require verified market economics and their own invariant checks; not a new trading permission.
+| Existing path | Reviewed boundary |
+| --- | --- |
+| `simulation/market_profiles.py` | BTC/ETH/SOL literal, native precision and fixed DEMO anchors remain the supported research profiles. The dynamic identity stays outside profile and strategy fingerprints. |
+| `market_data/hyperliquid_metadata.py` | Core mainnet `Info.meta` loader retains its single-flight, TTL, source-aware native profile and optional DEMO fallback. 18.1 can reuse its lifecycle and refresh patterns. |
+| `market_data/live_models.py`, `live_stream_models.py`, `live_streams.py` | Native REST and WebSocket projections share the research market literal. Bounded observer ingress, source ages, provider status and session/sequence identity remain on their native paths. |
+| `market_data/hyperliquid.py` | Operational data retains its configured market, own SDK lifecycle, REST recovery barrier and explicit subscriptions. |
+| `simulation/models.py`, `portfolio_research/models.py` | Shared canonical hashing is reused. Native profile/configuration/result fingerprints, exactly allocated USDC, modeled fees and funding, ledger and risk evidence retain their existing inputs. |
+| `execution/hyperliquid.py` | The existing TESTNET URL and enablement guards, native-only `0 <= asset < 10_000` check, precision normalization and final authorization remain on the established path. The SDK action ID and discovery decision do not cross this boundary. |
+| Audit 3.0 | PR #85 added the isolated module, its tests and two documentation changes. PR #84's runtime, liquidity preview, accessibility and Replay changes remain in the baseline. Audit 3.0 fixtures exercise native order precision, stale-context 422, unrepresentable depth, heartbeat handling, modeled PAPER evidence and SHADOW freshness. |
 
-**18.6 UI:** React Market Explorer and Starter/Pro/Institutional modes display provenance, eligibility and explicit limitations. Tier names do not change backend authorization.
+## Frontend compatibility and Phase 18.6 contract
 
-**18.7 acceptance:** combine independent Core/HIP-3 metadata fixtures, adversarial identity drift and duplicate-index cases, full regression, browser/accessibility, SDK cleanup and explicit no-signing checks. Preserve all unresolved Audit 3.0 external acceptance limits.
+The TypeScript `ResearchMarketId` and `LiveMarketId` are BTC/ETH/SOL. `api/client.ts` uses the existing research, live and portfolio routes. The `ResearchMarketSelector` validates the research catalog, disables selection before admission and surfaces catalog errors with retry. `ResearchMarketDetails` identifies DEMO and official evidence. `LiveMarketSelector` and the Markets workspace use the native observation set, with `liveMarketEvidence.ts` checking identity, transport, metadata and time before rendering. The navigation registry and Markets view keep operational, live and comparison workspaces distinct. The Portfolio Research Terminal binds native configuration and result fingerprints, renders provenance in `PortfolioProvenance`, and gates controls on validated previews and accepted workflow state. `portfolioResearch.ts` validates the compact evidence and `researchMarkets.ts` checks profile availability and provenance. The Phase 18 contract is outside these endpoints, selectors and validators. The review found no Phase 18.0 compatibility defect in frontend source.
 
-## Explicit non-goals
+The future read-only Market Explorer will use the canonical key for row identity, selection and cache keys, and show a separate display label. The row needs the network, Core/HIP-3 class, DEX namespace, listing state (including unknown and delisted), discovery status and reason, metadata source and status, observation and evaluation times, freshness, PAPER eligibility, execution eligibility and visible limitations. Validate the contract version, identity, provenance and freshness together before displaying an eligible state. Retire stale or unsupported selections and surface loading, unavailable, stale and invalid evidence through accessible status and disabled-state patterns. Discovery results stay separate from native research and operational selectors. Starter/Pro/Institutional presentation modes leave eligibility and authorization with the backend.
 
-No dynamic market retrieval in 18.0A, no new order book subscriptions, no strategy or portfolio enablement, no HIP-3 TESTNET, no mainnet signer, no operational portfolio reallocation, no agent activation, no auto trading, no remote operator deployment, no code generation and no user-facing trading toggle.
+## Next milestones
 
-## Exit criteria
+| Phase | Scope |
+| --- | --- |
+| 18.1 | Dynamic read-only Core and HIP-3 metadata collection. Validate endpoint/network, DEX inventory and requested namespace, names, delisting semantics, precision, metadata volume and SDK cleanup before publishing a catalog. Test public provider and failure behavior in the integration. |
+| 18.2 | Generalize profiles, precision, modeled economics and explicit PAPER eligibility with per-instrument acceptance. |
+| 18.3 | Model market-specific collateral, exposure and risk before aggregating across differing products or currencies. |
+| 18.4 | Evaluate Market Eligibility, Funding/Basis and Quote Economics advisory agents within existing authority boundaries. |
+| 18.5 | Add asset-aware AMM research presets and validate execution realism. |
+| 18.6 | Build Market Explorer and Starter/Pro/Institutional UI with accessible provenance and eligibility states. |
+| 18.7 | Run comprehensive multi-market regressions, provider and browser acceptance, and explicit final rollout gates. |
 
-1. New versioned contract module and focused tests merged; source references accurate.
-2. Reject ambiguous Core/HIP-3 identities, duplicate canonical IDs, namespace-local duplicate indices, invalid or contradictory metadata, future/stale timestamps and attempts to elevate authority.
-3. Existing BTC/ETH/SOL types, metadata adapter, stream ownership, guarded execution and accounting are unchanged.
-4. Record focused regression, relevant existing backend tests and any limitations accurately; do not claim unexecuted tests passed.
-5. Phase 18.1 can implement discovery against the versioned contract without creating hidden permission or evidence upgrades.
-
-## Validation note
-
-This artifact is an architecture/contract handoff. GitHub-based authorship does not itself execute pytest, Chromium, external SDK probes or Redis; independent native execution is a required acceptance gate.
+[Phase 18.0B acceptance evidence](PHASE18_0B_ACCEPTANCE.md)
