@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.0A market-universe architecture and contracts
+
+- Add isolated versioned read-only Hyperliquid Core/HIP-3 instrument identities, namespace-aware metadata, canonical catalog fingerprints and discovery eligibility decisions.
+- Preserve BTC/ETH/SOL research profiles, SDK metadata/streams, PAPER portfolio, native-only guarded TESTNET execution, AMM, agents and Risk Firewall without adding dynamic markets or trading authority.
+- Add focused adversarial contract tests and [Phase 18 architecture/crosswalk](docs/PHASE18_0_MARKET_UNIVERSE_ARCHITECTURE.md). Tests require independent execution before acceptance.
+
 ## Unreleased — Audit 3.0 final remediation and acceptance
 
 - Reject unrepresentable native liquidity-shock quantities during preview and before either PAPER engine leg. Stale perpetual configuration preflight returns a bounded 422 before the runtime transition.
