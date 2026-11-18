@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Audit 3.0 final remediation and acceptance
+
+- Reject unrepresentable native liquidity-shock quantities during preview and before either PAPER engine leg. Stale perpetual configuration preflight returns a bounded 422 before the runtime transition.
+- Restore the Historical Replay Chromium workflow and keyboard access to financial evidence. Keep table values intact at narrow widths and maintain retained agent list semantics.
+- [Final acceptance](docs/AUDIT3_FINAL_REMEDIATION_ACCEPTANCE.md) records 3,373 backend tests, 789 frontend tests, 67 Chromium research workflows and seven physical Redis checks. Axe reported zero violations in the measured states. The new picomatch development dependency advisory stays open, and Phase 18 readiness is limited to read-only design and discovery.
+
 ## 2026-11-14 — Audit 3.0 targeted runtime, reference and accessibility hardening ([PR #83](https://github.com/btorressz/hyperamm/pull/83))
 
 - **A3-002 (patched):** Treat stale perpetual-context quote preflight as a configuration-feasibility failure, returning HTTP 422 before lifecycle invalidation, cancellation or strategy mutation instead of an unexpected HTTP 500.
