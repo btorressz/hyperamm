@@ -77,7 +77,7 @@ export function Execution({
         meta={paper ? "SIMULATED · recent retained evidence" : "PARTIAL"}
       >
         {paper ? (
-          <div className="tableWrap">
+          <div className="tableWrap" role="region" tabIndex={0} aria-label="PAPER fill evidence">
             <table>
               <thead>
                 <tr>
@@ -119,7 +119,7 @@ export function Execution({
         historical={historical}
       />
       <Panel title="Reconciliation actions" meta="Latest strategy cycle">
-        <div className="tableWrap">
+        <div className="tableWrap" role="region" tabIndex={0} aria-label="Reconciliation action evidence">
           <table>
             <thead>
               <tr>

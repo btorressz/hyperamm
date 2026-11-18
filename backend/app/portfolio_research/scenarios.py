@@ -5,7 +5,53 @@ from app.amm.numeric import quantize_size
 from app.market_data.perp_context import build_perp_market_context
 from app.simulation.market_profiles import normalize_price, validate_price
 from app.simulation.models import SimulationDataset, SimulationFrame
-from app.simulation.scenarios import DEFAULT_START, generate_scenario
+from app.simulation.scenarios import DEFAULT_START, generate_scenario, scenario_book_sizes
+
+
+class LiquidityDepthError(ValueError):
+    def __init__(self, market, side, size_decimals):
+        self.market = market
+        self.side = side
+        self.size_decimals = size_decimals
+        super().__init__(f"{market} {side} stressed depth is below market size precision ({size_decimals} decimal places). "
+                         "Increase the depth multiplier for this side.")
+
+
+def _shock_strength(stress, elapsed):
+    if stress.recovery_profile == "LINEAR_TO_BASELINE":
+        return Decimal(1) - Decimal(elapsed) / Decimal(stress.duration_frames - 1)
+    return Decimal(1)
+
+
+def _liquidity_size(size, multiplier, strength, profile, side):
+    try:
+        result = quantize_size(size * (1 + (multiplier - 1) * strength), profile.sz_decimals)
+    except ValueError:
+        raise LiquidityDepthError(profile.market, side, profile.sz_decimals) from None
+    if result <= 0:
+        raise LiquidityDepthError(profile.market, side, profile.sz_decimals)
+    return result
+
+
+def validate_liquidity_depth(request):
+    stress = request.scenario
+    if stress.scenario_type != "LIQUIDITY_SHOCK":
+        return
+    assumptions = stress.assumptions
+    with localcontext() as ctx:
+        ctx.prec = 28
+        ctx.rounding = "ROUND_HALF_EVEN"
+        for scenario in request.config.scenarios:
+            if scenario.market not in stress.selected_markets:
+                continue
+            profile = scenario.captured.inputs().market_profile
+            for elapsed in range(stress.duration_frames):
+                strength = _shock_strength(stress, elapsed)
+                bids, asks = scenario_book_sizes(scenario.scenario, stress.onset_frame + elapsed, profile)
+                for side, levels, multiplier in (("BID", bids, assumptions.bid_depth_multiplier),
+                                                  ("ASK", asks, assumptions.ask_depth_multiplier)):
+                    for size in levels:
+                        _liquidity_size(size, multiplier, strength, profile, side)
 
 
 def workload(config):
@@ -106,8 +152,7 @@ def _transform_dataset(dataset, market_scenario, stress, *, concentration_market
         if not onset <= i < onset + stress.duration_frames:
             frames.append(original)
             continue
-        strength = (Decimal(1) - Decimal(i - onset) / Decimal(stress.duration_frames - 1)
-                    if stress.recovery_profile == "LINEAR_TO_BASELINE" else Decimal(1))
+        strength = _shock_strength(stress, i - onset)
         factor = Decimal(1)
         if kind == "CORRELATED_SELLOFF":
             factor -= next(s.decline_fraction for s in a.price_shocks if s.market == market) * strength
@@ -127,7 +172,7 @@ def _transform_dataset(dataset, market_scenario, stress, *, concentration_market
                 if kind == "LIQUIDITY_SHOCK":
                     price = mid + (price - mid) * (1 + (a.spread_multiplier - 1) * strength)
                     multiplier = a.bid_depth_multiplier if side == "bids" else a.ask_depth_multiplier
-                    level["size"] = quantize_size(level["size"] * (1 + (multiplier - 1) * strength), p.sz_decimals)
+                    level["size"] = _liquidity_size(level["size"], multiplier, strength, p, "ASK" if up else "BID")
                 level["price"] = normalize_price(price, p.sz_decimals, up=up)
         bid, ask = raw["market"]["book"]["bids"][0]["price"], raw["market"]["book"]["asks"][0]["price"]
         new_mid = (bid + ask) / 2

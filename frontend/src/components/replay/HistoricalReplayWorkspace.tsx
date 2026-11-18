@@ -43,7 +43,9 @@ export function HistoricalReplayWorkspace() {
   const requestEpoch=useRef(0);
   const busy=useRef(false);
   const submitted=useRef(false);
-  const terminalIdentity=useTerminalStore(s=>(s.terminal?.process_id ?? '')+':'+(s.terminal?.session_id ?? '')+':'+s.wsState);
+  // An accepted session transition retires evidence. Repeated connection
+  // attempts while the terminal is already unavailable leave REST replay usable.
+  const terminalIdentity=useTerminalStore(s=>(s.terminal?.process_id ?? '')+':'+(s.terminal?.session_id ?? '')+':'+(s.wsState==='connected'));
   const latestIdentity=useRef(terminalIdentity);latestIdentity.current=terminalIdentity;
   // Keep query promises shared through StrictMode remounts: aborting the HTTP
   // waiter would leave its admitted worker busy for the immediate replacement.

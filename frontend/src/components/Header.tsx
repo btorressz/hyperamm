@@ -76,6 +76,7 @@ export function Header({
       </div>
       <div
         className="headerBadges"
+        role="group"
         aria-label={
           observationCurrent
             ? "Current terminal status"

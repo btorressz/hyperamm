@@ -121,6 +121,13 @@ async def main(args):
           assert charts and all(0 < width <= w for width in charts),f'chart bounds at {w}: {charts}'
           tables=await page.locator('.portfolioWorkspace .tableWrap').evaluate_all("els=>els.map(e=>({width:e.getBoundingClientRect().width,overflow:getComputedStyle(e).overflowX}))")
           assert all(t['width']<=w and t['overflow'] in ('auto','scroll') for t in tables)
+          numeric=await page.locator('.portfolioWorkspace td').evaluate_all(r"""cells => cells.flatMap(cell => {
+            const text = cell.textContent.trim();
+            if (!/^[-+]?[$]?[\d,]+(?:\.\d+)?(?: (?:USDC|%|×))?$/.test(text)) return [];
+            const range = document.createRange(); range.selectNodeContents(cell);
+            return [{text, lines: new Set([...range.getClientRects()].map(rect => rect.y)).size}];
+          })""")
+          assert numeric and all(cell['lines']==1 for cell in numeric), numeric
           sections=[]
           for name in ('Configure','Analytics','Stress Lab','Provenance'):
             await section(name)
@@ -128,7 +135,7 @@ async def main(args):
             missing=await page.locator('input:not([type=hidden]),select').evaluate_all("els=>els.filter(e=>!e.labels?.length&&!e.getAttribute('aria-label')).length")
             assert missing==0
             sections.append(name)
-          report['viewports'].append({'width':w,'height':h,'overflow':False,'sections':sections,'unlabeled_controls':0,'chart_widths':charts,'scrollable_tables':len(tables)})
+          report['viewports'].append({'width':w,'height':h,'overflow':False,'sections':sections,'unlabeled_controls':0,'chart_widths':charts,'scrollable_tables':len(tables),'unbroken_financial_cells':len(numeric),'negative_value_example':next((cell['text'] for cell in numeric if cell['text'].startswith('-')),None)})
         await page.evaluate('window.scrollTo(0,0)');await page.screenshot(path=str(out/'mobile.png'),full_page=True)
         await page.get_by_role('button',name='Open navigation',exact=True).click();await page.get_by_role('dialog',name='Terminal navigation').wait_for()
         await page.keyboard.press('Escape');assert not await page.get_by_role('button',name='Open navigation',exact=True).get_attribute('aria-expanded')=='true'
@@ -192,13 +199,57 @@ async def main(args):
         await preview();await control(terminal=True);await asyncio.sleep(12)
         assert await page.get_by_role('button',name='Run PAPER portfolio',exact=True).is_disabled()
         await preview();await execute('Run PAPER portfolio','RUN')
+        passed('Reconnect retires previous preview and explicit revalidation recovers')
+
+        await section('Configure')
+        for market in ('BTC','ETH'):
+          await page.get_by_label(market+'-PERP',exact=True).uncheck()
+        await section('Stress Lab')
+        await page.get_by_label('Stress scenario',exact=True).select_option('LIQUIDITY_SHOCK')
+        bid=page.get_by_label('Bid depth multiplier (0–1)',exact=True)
+        ask=page.get_by_label('Ask depth multiplier (0–1)',exact=True)
+        await bid.fill('0.000001');await ask.fill('0.000001')
+        await page.get_by_label('Spread multiplier (1–20)',exact=True).fill('3')
+        runs_before=(await status())['runs']
+        faults=True
+        await preview(422)
+        detail,_=await read_wire('/preview')
+        assert detail['detail']['code']=='LIQUIDITY_DEPTH_PRECISION'
+        assert detail['detail']['market']=='SOL' and detail['detail']['size_decimals']==2
+        error=page.get_by_role('alert').filter(has_text='SOL BID stressed depth is below market size precision')
+        await error.wait_for()
+        assert (await status())['runs']==runs_before
+        assert await page.get_by_role('button',name='Run baseline + stress',exact=True).is_disabled()
+        await page.set_viewport_size({'width':390,'height':844})
+        await error.scroll_into_view_if_needed()
+        await page.screenshot(path=str(out/'sol-precision-390.png'))
+        assert await page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+        faults=False
+        passed('SOL subquantum preview returns readable HTTP 422 and starts zero native engines')
+
+        await page.set_viewport_size({'width':1440,'height':1000})
+        await bid.fill('0.005');await ask.fill('0.005')
+        await preview();corrected=await execute('Run baseline + stress','STRESS')
+        assert [market['market'] for market in corrected['stressed']['markets']]==['SOL']
+        await section('Analytics')
+        await page.get_by_role('heading',name='Baseline versus stressed comparison',exact=True).wait_for()
+        await page.set_viewport_size({'width':390,'height':844})
+        comparison=page.get_by_role('region',name='Baseline and stressed metrics',exact=True)
+        await comparison.scroll_into_view_if_needed()
+        assert await comparison.get_by_role('columnheader').all_text_contents()==['Metric','Baseline','Stressed','Difference']
+        await page.evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
+        await page.screenshot(path=str(out/'sol-stress-390.png'))
+        await section('Stress Lab');await bid.fill('0.006');await section('Analytics')
+        await page.get_by_text('No accepted result for the current draft.',exact=False).wait_for()
+        passed('Corrected custom SOL preview and two native engines succeed; editing retires comparison')
+
         after=(await status())['authority']
         report['authority_changed_fields']=[key for key in before if before[key]!=after[key]]
         assert after==before,report['authority_changed_fields']
-        passed('Reconnect retires previous preview; explicit revalidation recovers; operational authority unchanged')
+        passed('Operational authority remains unchanged through portfolio acceptance')
         assert not report['page_errors'],report['page_errors']
         assert not report['console_errors'],report['console_errors']
-        assert all(any(expected in entry for expected in ('status of 429','status of 500','ERR_CONNECTION_REFUSED'))
+        assert all(any(expected in entry for expected in ('status of 422','status of 429','status of 500','ERR_CONNECTION_REFUSED'))
                    for entry in report['expected_fault_console']),report['expected_fault_console']
         report['workflow_count']=len(report['workflows'])
         report['viewport_count']=len(report['viewports'])

@@ -90,7 +90,7 @@
   min-width: 0;
 }
 .portfolioWorkspace .terminalMetrics {
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
 }
 .portfolioRisk {
   font: 700 22px monospace;
@@ -221,9 +221,6 @@
 }
 .portfolioWorkspace .panel .alert {
   margin-bottom: 16px;
-}
-.portfolioWorkspace .terminalMetrics strong {
-  overflow-wrap: anywhere;
 }
 .portfolioTitle {
   flex-wrap: wrap;

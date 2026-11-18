@@ -21,6 +21,7 @@ export function PortfolioResearch() {
   return (
     <div
       className="portfolioWorkspace stack"
+      role="group"
       aria-label="Portfolio Research Terminal"
     >
       <div className="portfolioTitle">

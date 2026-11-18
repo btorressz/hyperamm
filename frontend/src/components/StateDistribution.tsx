@@ -9,7 +9,7 @@ export function StateDistribution({
   const entries = Object.entries(counts),
     total = entries.reduce((n, [, count]) => n + count, 0);
   return (
-    <div className="stateDistribution" aria-label={label}>
+    <div className="stateDistribution" role="group" aria-label={label}>
       <h3>{label}</h3>
       <p className="muted">
         Retained observation counts · share of sample count, not time-weighted

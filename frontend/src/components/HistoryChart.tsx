@@ -309,6 +309,7 @@ export function HistoryChart({
       <div
         ref={container}
         className="historyChart"
+        role="group"
         aria-label={
           lines.map((l) => l.label).join(", ") +
           (axis === "frame"

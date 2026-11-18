@@ -12,7 +12,7 @@ async def main(args):
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
     work=ROOT/'work/browser1641';work.mkdir(parents=True,exist_ok=True)
     report={'classification':'FAIL','fixture_notice':'GENERATED FIXTURES / USER-ASSERTED LABELS — NOT LIVE EXCHANGE ACCEPTANCE',
-        'workflows':[],'page_errors':[],'console_errors':[],'requests':[],'viewports':[],'screenshots':[]}
+        'workflows':[],'page_errors':[],'console_errors':[],'requests':[],'responses':[],'viewports':[],'screenshots':[]}
     env={**os.environ,'MARKET_DATA_MODE':'DEMO','EXECUTION_MODE':'PAPER','ENABLE_HYPERLIQUID_TESTNET_ORDERS':'false',
          'LIVE_OBSERVATIONS_ENABLED':'false','LIVE_STREAMS_ENABLED':'false','REDIS_ENABLED':'false',
          'PHASE1641_FIXTURE_ROOT':tempfile.mkdtemp(prefix='vaults-',dir=work)}
@@ -45,6 +45,9 @@ async def main(args):
         page.on('pageerror',lambda e:report['page_errors'].append(str(e)))
         page.on('console',lambda m:report['console_errors'].append(m.text) if m.type=='error' else None)
         page.on('request',lambda r:report['requests'].append({'method':r.method,'path':r.url.split('5173')[-1]}) if r.method in ('POST','PUT','PATCH','DELETE') else None)
+        page.on('response', lambda r: report['responses'].append({'method': r.request.method,
+            'path': r.url.split('/api/v1/', 1)[1].split('?')[0], 'status': r.status})
+            if '/api/v1/' in r.url and r.request.method == 'POST' else None)
         async def ready():
             async with asyncio.timeout(20):
                 while True:
@@ -80,6 +83,11 @@ async def main(args):
             await studio.get_by_role('heading',name='Segment-only PAPER results',exact=True).wait_for()
             return value
         await page.goto('http://127.0.0.1:5173/#/simulation')
+        workspaces = page.get_by_role('navigation', name='Simulation research workspaces')
+        async def open_replay():
+            await workspaces.get_by_role('button',name='Historical replay',exact=True).click()
+
+        await open_replay()
         studio=page.get_by_role('region',name='Historical Replay Studio',exact=True)
         await studio.get_by_role('heading',name='Historical Replay Studio',exact=True).wait_for()
         await page.evaluate("()=>{const e=document.createElement('div');e.textContent='GENERATED HISTORICAL FIXTURES · NOT LIVE EXCHANGE ACCEPTANCE';e.style='position:fixed;bottom:0;left:0;right:0;background:#653f08;color:white;z-index:9999;padding:6px;text-align:center;font:12px sans-serif';document.body.appendChild(e)}")
@@ -113,8 +121,10 @@ async def main(args):
         held=asyncio.create_task(ctx.request.post('http://127.0.0.1:8000/api/v1/historical-replay/run',data=receipt['request']))
         async with asyncio.timeout(5):
             while not (await status())['busy']:await asyncio.sleep(.01)
-        await studio.get_by_role('button',name='Run Historical PAPER Replay',exact=True).click()
-        await studio.get_by_role('alert').filter(has_text='Shared research worker busy').wait_for()
+        async with page.expect_response(lambda r:r.url.endswith('/historical-replay/run') and r.request.method=='POST') as pending:
+            await studio.get_by_role('button',name='Run Historical PAPER Replay',exact=True).click()
+        assert (await pending.value).status == 429
+        await studio.get_by_role('alert',name='Research diagnostics').filter(has_text='Shared research worker is busy').wait_for()
         await shot('fixture-worker-busy-429.png')
         assert (await held).status==200
         await control(delay=0)
@@ -163,8 +173,12 @@ async def main(args):
         passed('Explicit test-configured reference firewall permits actual modeled partial PAPER fills and backend Decimal comparison without changing seeded operational state')
 
         await select('BTC','missing')
-        await studio.get_by_role('button',name='Run Historical PAPER Replay',exact=True).click()
-        await studio.get_by_role('alert').filter(has_text='NO_VIABLE_FRAMES').wait_for()
+        async with page.expect_response(lambda r:r.url.endswith('/historical-replay/run') and r.request.method=='POST') as pending:
+            await studio.get_by_role('button',name='Run Historical PAPER Replay',exact=True).click()
+        rejected = await pending.value
+        assert rejected.status == 422
+        assert any(issue['code']=='NO_VIABLE_FRAMES' for issue in (await rejected.json())['detail']['issues'])
+        await studio.get_by_role('alert',name='Research diagnostics').filter(has_text='Research evidence or settings were rejected').wait_for()
         await shot('fixture-missing-economics-422.png')
         passed('Actual structured 422 missing-economics/zero-viable rejection is visible')
         await select();await control(delay=1)
@@ -185,7 +199,8 @@ async def main(args):
         await select();await control(delay=.8)
         await studio.get_by_role('button',name='Run Historical PAPER Replay',exact=True).click()
         await page.evaluate("location.hash='#/markets'");await idle();await control(delay=0)
-        await page.evaluate("location.hash='#/simulation'");await studio.get_by_role('heading',name='Historical Replay Studio',exact=True).wait_for()
+        await page.evaluate("location.hash='#/simulation'");await open_replay()
+        await studio.get_by_role('heading',name='Historical Replay Studio',exact=True).wait_for()
         assert await studio.get_by_role('heading',name='Replay receipt',exact=True).count()==0
         passed('Navigation/unmount retires pending responses; remounted Studio starts without obsolete result')
         await control(storage='empty');await studio.get_by_role('button',name='Refresh catalog',exact=True).click()
@@ -197,13 +212,15 @@ async def main(args):
         passed('Empty vault, storage-disabled 503 and explicit refresh recovery retire removed dataset results')
         stop(server)
         await studio.get_by_role('button',name='Run Historical PAPER Replay',exact=True).click()
-        await studio.get_by_role('alert').filter(has_text=re.compile('connection unavailable|HTTP 500')).wait_for()
+        await studio.get_by_role('alert',name='Research diagnostics').filter(
+            has_text=re.compile('Browser connection to the backend was interrupted|Research could not be completed')).wait_for()
         server=backend();await ready()
         await studio.get_by_role('button',name='Refresh catalog',exact=True).click();await select();await run()
         passed('Actual backend shutdown/restart gives safe network error and successful retry')
         await control(terminal=True)
         async with asyncio.timeout(20):
             while not await page.evaluate("async()=>!!(await import('/src/stores/terminal.ts')).useTerminalStore.getState().terminal"):await asyncio.sleep(.1)
+        await workspaces.get_by_role('button',name='Scenario & optimization',exact=True).click()
         await page.get_by_label('Frames',exact=True).fill('3')
         await page.get_by_role('button',name='Run Simulation',exact=True).click()
         await page.get_by_role('region',name='Completed simulation',exact=True).wait_for()
@@ -219,6 +236,8 @@ async def main(args):
     finally:
         for proc in processes:stop(proc)
         for log in logs:log.close()
+        report['process_exit_codes']=[proc.returncode for proc in processes]
+        report['workflow_count']=len(report['workflows'])
         report['duration_seconds']=round(time.monotonic()-started,3)
         (out/'browser-results.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2))

@@ -115,6 +115,19 @@ function livePath(market: LiveMarketId, resource: string) {
 async function portfolioRequest<T>(path:string,body:unknown,signal?:AbortSignal):Promise<T>{
   const response=await fetch(API+'/portfolio-research/'+path,{method:'POST',body:JSON.stringify(body),signal,cache:'no-store',headers:{'Content-Type':'application/json'}});
   if(!response.ok){
+    if(response.status===422){
+      const wire=await readHistoricalJson(response,4096).catch(()=>null) as {
+        detail?:{code?:unknown;market?:unknown;side?:unknown;size_decimals?:unknown};
+      }|null;
+      const detail=wire?.detail;
+      if(detail?.code==='LIQUIDITY_DEPTH_PRECISION' &&
+        (detail.market==='BTC'||detail.market==='ETH'||detail.market==='SOL') &&
+        (detail.side==='BID'||detail.side==='ASK') && typeof detail.size_decimals==='number' &&
+        Number.isInteger(detail.size_decimals) && detail.size_decimals>=0 && detail.size_decimals<=6){
+        const places=detail.size_decimals===1?'decimal place':'decimal places';
+        throw new Error(`${detail.market} ${detail.side} stressed depth is below market size precision (${detail.size_decimals} ${places}). Increase the depth multiplier for this side.`);
+      }
+    }
     const guidance:Record<number,string>={429:'Shared research worker busy. Retry after its current job completes.',
       413:'Request or response exceeds the portfolio size limit. Reduce frames or selected markets.',
       422:'Configuration rejected. Check positive allocations, minimum reserve, risk limits, strategy feasibility and combined stress window/workload. Funding needs an observed accrual boundary; concentration needs complete pre-onset positions.',
