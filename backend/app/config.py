@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Literal
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,6 +19,8 @@ class Settings(BaseSettings):
     execution_mode: str = "PAPER"
     market_stale_after_seconds: float = 5.0
     demo_update_interval_seconds: float = 1.0
+    market_universe_enabled: bool = False
+    market_universe_network: Literal["MAINNET", "TESTNET"] = "MAINNET"
     live_observations_enabled: bool = False
     live_streams_enabled: bool = False
     live_stream_max_subscribers: int = Field(default=16, ge=1, le=64, strict=True)
