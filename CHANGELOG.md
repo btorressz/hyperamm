@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.4A advisory evidence foundation
+
+- Add versioned, immutable, source-bound contracts for Market Eligibility, Funding/Basis and Quote Economics advisories; preserve Core/HIP-3 canonical identity and explicit observed versus synthetic provenance.
+- Keep all new agent outputs separate from the existing six-agent supervisor, quote multipliers, Risk Firewall and final authorization. Reject forged authority, ambiguous evidence, unsupported READY states and claimed guaranteed quote profitability.
+- Add focused adversarial contract tests and [Phase 18.4 advisory architecture and Codex handoff](docs/PHASE18_4_ADVISORY_ARCHITECTURE.md). Native execution of tests remains an independent draft-PR acceptance gate.
+
 ## Unreleased — Phase 18.3E–F collateral and margin research
 
 - Add a versioned read-only lookup for one selected market's collateral, margin tiers, source freshness and supported PAPER configurations.
