@@ -5,7 +5,7 @@ from decimal import Context, Decimal, localcontext
 from typing import Annotated, Literal
 
 from pydantic import (
-    BeforeValidator, ConfigDict, Field, StrictInt, field_validator, model_validator,
+    BeforeValidator, ConfigDict, Field, StrictInt, field_validator, model_serializer, model_validator,
 )
 
 from app.accounting.config import AccountingConfig, bounded_exact_decimal
@@ -13,6 +13,7 @@ from app.agents.config import AgentConfig
 from app.amm.numeric import executable_distance, quantize_size
 from app.market_data.history import MarketPriceHistory
 from app.market_data.live_models import Evidence
+from app.market_data.market_risk_metadata import MarketFinancialObservation, SourceStatus
 from app.market_data.market_universe_contracts import (
     DiscoveryEligibility, MarketInstrumentIdentity, MarketUniverseMetadata, Network, UtcDatetime, _strict_bool,
     evaluate_discovery,
@@ -21,6 +22,10 @@ from app.references.models import GENERALIZED_REFERENCE_SOURCE, SYNTHETIC_AGREEM
 from app.risk.firewall import RiskFirewallConfig
 from app.risk.limits import validate_quotes
 from app.risk.models import RiskStatus
+from app.risk.market_risk_engine import (
+    PaperRiskResult, PaperRiskRun, ResearchRiskError, ResearchRiskModel, ResearchRiskSettings,
+    bind_research_model, evaluate_research_risk, opening_feasible,
+)
 from app.strategy.inventory import build_inventory_state
 from app.strategy.models import StrategyConfig
 from app.strategy.quote_engine import QuoteEngine
@@ -58,7 +63,10 @@ Reason = Literal[
     "IDENTITY_MISMATCH", "PROFILE_UNSUPPORTED", "PRICE_UNREPRESENTABLE",
     "SIZE_UNREPRESENTABLE", "SCENARIO_INFEASIBLE", "FUNDING_MODEL_UNSUPPORTED",
     "CONFIGURATION_INVALID", "PROFILE_FINGERPRINT_MISMATCH", "METADATA_FINGERPRINT_MISMATCH",
-    "CONFIGURATION_FINGERPRINT_MISMATCH", "CATALOG_FINGERPRINT_MISMATCH",
+    "CONFIGURATION_FINGERPRINT_MISMATCH", "CATALOG_FINGERPRINT_MISMATCH", "RISK_FINGERPRINT_MISMATCH",
+    "RISK_SOURCE_UNAVAILABLE", "RISK_SOURCE_STALE", "RISK_SOURCE_UNSUPPORTED", "RISK_UNIT_MISMATCH",
+    "RISK_MARGIN_MODE_UNSUPPORTED", "RISK_LEVERAGE_UNSUPPORTED", "RISK_CAPITAL_INSUFFICIENT",
+    "RISK_EXPOSURE_INVALID",
 ]
 REASONS = {
     "ADMITTED": ("admission", "The captured scenario is eligible for local hypothetical PAPER research."),
@@ -76,14 +84,31 @@ REASONS = {
     "PROFILE_FINGERPRINT_MISMATCH": ("profile_fingerprint", "The profile changed or failed verification. Check eligibility again."),
     "METADATA_FINGERPRINT_MISMATCH": ("metadata_fingerprint", "The metadata observation changed. Check eligibility again."),
     "CATALOG_FINGERPRINT_MISMATCH": ("catalog_fingerprint", "The discovery catalog changed. Check eligibility again."),
+    "RISK_FINGERPRINT_MISMATCH": ("research_risk_fingerprint", "The modeled settings or source observation changed. Check eligibility again."),
+    "RISK_SOURCE_UNAVAILABLE": ("financial_source", "The current public collateral or margin observation is unavailable."),
+    "RISK_SOURCE_STALE": ("financial_source", "The captured financial source expired or its discovery generation was retired."),
+    "RISK_SOURCE_UNSUPPORTED": ("financial_source", "The observed margin schedule or collateral is unsupported for this model."),
+    "RISK_UNIT_MISMATCH": ("risk_valuation", "An explicit valuation matching the observed collateral identity is required."),
+    "RISK_MARGIN_MODE_UNSUPPORTED": ("margin_mode", "The selected mode cannot be modeled for this market and single-market PAPER scope."),
+    "RISK_LEVERAGE_UNSUPPORTED": ("research_leverage", "The selected leverage exceeds a supported margin tier limit."),
+    "RISK_CAPITAL_INSUFFICIENT": ("research_capital", "The modeled capital cannot support the smallest generated opening quote."),
+    "RISK_EXPOSURE_INVALID": ("research_exposure", "The modeled exposure or stress falls outside supported financial bounds."),
     "CONFIGURATION_FINGERPRINT_MISMATCH": ("configuration_fingerprint", "The scenario or economic assumptions changed. Check eligibility again."),
 }
-UNAVAILABLE_REASONS = {"METADATA_UNAVAILABLE", "METADATA_STALE"}
+UNAVAILABLE_REASONS = {"METADATA_UNAVAILABLE", "METADATA_STALE", "RISK_SOURCE_UNAVAILABLE", "RISK_SOURCE_STALE"}
 
 
 class PaperContract(Evidence):
     model_config = ConfigDict(revalidate_instances="always", validate_default=True)
     profile_version: Literal["phase182-v1"] = PROFILE_VERSION
+
+    @model_serializer(mode="wrap")
+    def omit_unset_risk(self, serialize):
+        payload = serialize(self)
+        for name in ("research_risk", "risk_model", "risk_source", "risk_source_status"):
+            if payload.get(name) is None:
+                payload.pop(name, None)
+        return payload
 
 
 class HypotheticalEconomics(Evidence):
@@ -121,6 +146,7 @@ class PaperProposal(PaperContract):
     frames: StrictInt = Field(default=40, ge=2, le=MAX_FRAMES)
     trace_max_points: StrictInt = Field(default=40, ge=0, le=MAX_FRAMES)
     economics: HypotheticalEconomics
+    research_risk: ResearchRiskSettings | None = None
 
 
 class PaperFingerprintBinding(Evidence):
@@ -129,6 +155,14 @@ class PaperFingerprintBinding(Evidence):
     profile_fingerprint: Fingerprint
     configuration_fingerprint: Fingerprint
     catalog_fingerprint: Fingerprint | None = None
+    research_risk_fingerprint: Fingerprint | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_unset_risk(self, serialize):
+        payload = serialize(self)
+        if payload.get("research_risk_fingerprint") is None:
+            payload.pop("research_risk_fingerprint", None)
+        return payload
 
 
 class PaperRunRequest(PaperProposal):
@@ -237,6 +271,9 @@ class PaperAdmission(PaperContract):
     valid_until: UtcDatetime | None
     profile: GeneralizedMarketProfile | None
     binding: PaperFingerprintBinding | None
+    risk_model: ResearchRiskModel | None = None
+    risk_source: MarketFinancialObservation | None = None
+    risk_source_status: SourceStatus | None = None
     limitations: tuple[str, ...] = Field(default=LIMITATIONS, max_length=len(LIMITATIONS))
     scope: Literal["LOCAL_PAPER_ONLY"] = "LOCAL_PAPER_ONLY"
     authority: Literal["NONE"] = "NONE"
@@ -253,6 +290,9 @@ class PaperAdmission(PaperContract):
             raise ValueError("inconsistent PAPER admission decision")
         if self.profile is not None and self.profile.metadata.identity != self.identity:
             raise ValueError("PAPER admission profile identity mismatch")
+        if ((self.risk_model is not None and self.risk_model.identity != self.identity)
+                or (self.risk_source is not None and self.risk_source.identity != self.identity)):
+            raise ValueError("PAPER research risk identity mismatch")
         if status == "ELIGIBLE":
             if (self.profile is None or self.binding is None or self.valid_until is None
                     or not self.profile.discovery.discovery_eligible
@@ -263,20 +303,23 @@ class PaperAdmission(PaperContract):
                     or not self.profile.metadata.observed_at <= self.evaluated_at < self.valid_until
                     <= self.profile.metadata.observed_at + timedelta(days=1)
                     or self.binding.metadata_fingerprint != self.profile.metadata_fingerprint
-                    or self.binding.profile_fingerprint != self.profile.profile_fingerprint):
+                    or self.binding.profile_fingerprint != self.profile.profile_fingerprint
+                    or self.binding.research_risk_fingerprint != (
+                        self.risk_model.fingerprint() if self.risk_model is not None else None
+                    )):
                 raise ValueError("missing or inconsistent admission evidence")
         elif self.binding is not None or self.valid_until is not None:
             raise ValueError("rejected admission cannot bind execution inputs")
         return self
 
 
-def decision(identity, evaluated_at, reason, *, profile=None, binding=None, valid_until=None):
+def decision(identity, evaluated_at, reason, *, profile=None, binding=None, valid_until=None, **risk_evidence):
     check, explanation = REASONS[reason]
     status = ("ELIGIBLE" if reason == "ADMITTED" else
               "UNAVAILABLE" if reason in UNAVAILABLE_REASONS else "REJECTED")
     return PaperAdmission(identity=identity, status=status, reason=reason, explanation=explanation,
                           checks=() if status == "ELIGIBLE" else (check,), evaluated_at=evaluated_at,
-                          valid_until=valid_until, profile=profile, binding=binding)
+                          valid_until=valid_until, profile=profile, binding=binding, **risk_evidence)
 
 
 @dataclass(frozen=True)
@@ -323,12 +366,12 @@ def _build_scenario(proposal, profile):
     return PreparedScenario(dataset, strategy, AgentConfig(), risk, simulation)
 
 
-def _preflight(prepared, profile):
+def _preflight(prepared, profile, risk_model):
     strategy = prepared.strategy
     history = MarketPriceHistory()
     engine = QuoteEngine()
     limits = RiskStatus(max_order_size=strategy.total_liquidity)
-    for frame in prepared.dataset.frames:
+    for index, frame in enumerate(prepared.dataset.frames):
         history.add_snapshot(frame.market)
         flat = build_inventory_state(
             market=profile.market, position=Decimal(0), target=Decimal(0),
@@ -340,21 +383,35 @@ def _preflight(prepared, profile):
         )
         rounded = profile.normalize_quotes(quotes, inventory.reservation_price, preflight=True)
         validate_quotes(rounded, frame.market, limits)
+        if risk_model is not None:
+            inputs = dict(mark=frame.perp_context.mark_price, position=Decimal(0),
+                          position_limit=strategy.hard_inventory_limit_base, valuation_time=frame.timestamp)
+            evaluate_research_risk(risk_model, quotes=rounded, include_stresses=index == 0, **inputs)
+            if index == 0:
+                minimum = tuple(min((quote for quote in rounded if quote.side == side), key=lambda quote: quote.size)
+                                for side in ("BID", "ASK"))
+                margin = evaluate_research_risk(risk_model, quotes=minimum, include_stresses=False, **inputs).margin
+                if not (margin.projected_long.leverage_supported and margin.projected_short.leverage_supported):
+                    raise ResearchRiskError("RISK_LEVERAGE_UNSUPPORTED")
+                if not opening_feasible(margin):
+                    raise ResearchRiskError("RISK_CAPITAL_INSUFFICIENT")
 
 
 def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
            network: Network, evaluated_at: datetime, max_age_seconds: int,
            metadata_current: bool = True, expected: PaperFingerprintBinding | None = None,
-           catalog_fingerprint: str | None = None, catalog_valid_until: datetime | None = None):
+           catalog_fingerprint: str | None = None, catalog_valid_until: datetime | None = None,
+           risk_source: MarketFinancialObservation | None = None):
     """Use a server-owned observation and clock. Client input contains assumptions only."""
     from . import version
 
     proposal = PaperProposal.model_validate(proposal)
     identity = proposal.identity
     profile = None
+    risk_evidence = {}
 
     def reject(reason):
-        return decision(identity, evaluated_at, reason, profile=profile), None
+        return decision(identity, evaluated_at, reason, profile=profile, **risk_evidence), None
 
     if identity.network != network:
         return reject("NETWORK_MISMATCH")
@@ -383,6 +440,21 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
             return reject("CATALOG_FINGERPRINT_MISMATCH")
         if expected.profile_fingerprint != profile.profile_fingerprint:
             return reject("PROFILE_FINGERPRINT_MISMATCH")
+    risk_model = None
+    if proposal.research_risk is not None:
+        risk_evidence = {"risk_source_status": "UNAVAILABLE"}
+        if risk_source is not None and risk_source.identity == identity:
+            risk_evidence = {"risk_source": risk_source, "risk_source_status": risk_source.status_at(evaluated_at, max_age_seconds)}
+        try:
+            risk_model = bind_research_model(proposal.research_risk, metadata, source=risk_source,
+                                             evaluated_at=evaluated_at, max_age_seconds=max_age_seconds)
+        except ResearchRiskError as exc:
+            return reject(exc.reason)
+        if risk_model.source is not None:
+            valid_until = min(valid_until, risk_model.source.valid_until(max_age_seconds))
+    risk_fingerprint = risk_model.fingerprint() if risk_model is not None else None
+    if expected is not None and expected.research_risk_fingerprint != risk_fingerprint:
+        return reject("RISK_FINGERPRINT_MISMATCH")
     if proposal.scenario in FUNDING_SCENARIOS:
         interval = proposal.economics.funding_interval_seconds
         if interval is None or interval >= proposal.frames:
@@ -401,24 +473,28 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
             prepared = _build_scenario(proposal, profile)
             binding = PaperFingerprintBinding(
                 metadata_fingerprint=profile.metadata_fingerprint, profile_fingerprint=profile.profile_fingerprint,
-                catalog_fingerprint=catalog_fingerprint,
+                catalog_fingerprint=catalog_fingerprint, research_risk_fingerprint=risk_fingerprint,
                 configuration_fingerprint=stable_fingerprint({
                     "profile_fingerprint": profile.profile_fingerprint, "proposal": proposal,
                     "catalog_fingerprint": catalog_fingerprint,
                     "engine_version": version.SIMULATION_ENGINE_VERSION, "dataset": prepared.dataset.fingerprint,
                     "strategy": prepared.strategy, "agents": prepared.agents, "risk": prepared.risk,
                     "simulation": prepared.simulation,
+                    **({"research_risk_fingerprint": risk_fingerprint} if risk_fingerprint is not None else {}),
                 }),
             )
             if expected is not None and expected != binding:
                 return reject("CONFIGURATION_FINGERPRINT_MISMATCH")
-            _preflight(prepared, profile)
+            _preflight(prepared, profile, risk_model)
+        except ResearchRiskError as exc:
+            return reject(exc.reason)
         except GeneralizedPrecisionError as exc:
             return reject(exc.reason)
         except (ArithmeticError, ValueError):
             return reject("SCENARIO_INFEASIBLE")
     return decision(identity, evaluated_at, "ADMITTED", profile=profile, binding=binding,
-                    valid_until=valid_until), prepared
+                    valid_until=valid_until, risk_model=risk_model,
+                    risk_source_status=risk_evidence.get("risk_source_status")), prepared
 
 
 class PaperRejected(ValueError):
@@ -432,6 +508,7 @@ class GeneralizedPaperResult(PaperContract):
     proposal: PaperProposal
     result: SimulationResult
     result_fingerprint: Fingerprint
+    research_risk: PaperRiskResult | None = None
     started_at: UtcDatetime
     execution_mode: Literal["PAPER"] = "PAPER"
     simulated: Literal[True] = True
@@ -441,6 +518,23 @@ class GeneralizedPaperResult(PaperContract):
     def verify_result(self):
         profile = self.admission.profile
         result = self.result
+        model = self.admission.risk_model
+        risk_result = self.research_risk
+        binding = self.admission.binding
+        if ((self.proposal.research_risk is None) != (model is None)
+                or (risk_result is None) != (model is None)
+                or (model is not None and (
+                    self.proposal.research_risk != model.settings
+                    or risk_result.model_fingerprint != model.fingerprint()
+                    or len(risk_result.frames) != result.metrics.frame_count
+                    or (risk_result.final_snapshot is not None and (
+                        risk_result.final_snapshot.configuration_fingerprint != model.fingerprint()
+                        or risk_result.final_snapshot.exposure.base_instrument != model.identity
+                        or result.vault is None
+                        or risk_result.final_snapshot.exposure.signed_base != result.vault.position_base
+                    ))
+                ))):
+            raise ValueError("PAPER research risk result mismatch")
         if (self.admission.status != "ELIGIBLE" or profile is None
                 or not self.admission.evaluated_at <= self.started_at < self.admission.valid_until
                 or self.proposal.identity != self.admission.identity
@@ -461,33 +555,43 @@ class GeneralizedPaperResult(PaperContract):
                        for fill in result.fills)
                 or any(entry.simulated is not True or entry.market != profile.stable_key
                        for entry in result.accounting_ledger)
-                or self.result_fingerprint != stable_fingerprint((self.admission.binding.configuration_fingerprint, self.proposal, result))):
+                or self.result_fingerprint != _result_fingerprint(binding, self.proposal, result, risk_result)):
             raise ValueError("generalized PAPER result evidence mismatch")
         return self
 
 
+def _result_fingerprint(binding, proposal, result, research_risk):
+    components = (binding.configuration_fingerprint, proposal, result)
+    return stable_fingerprint(components if research_risk is None else (*components, research_risk))
+
+
 async def execute_paper(engine, *, proposal, metadata, network, max_age_seconds, expected,
-                        catalog_valid_until=None, catalog_guard=None):
+                        catalog_valid_until=None, catalog_guard=None, risk_source=None):
     expected = PaperFingerprintBinding.model_validate(expected)
     if expected.catalog_fingerprint is not None and (catalog_guard is None or catalog_valid_until is None):
         raise ValueError("catalog-bound PAPER worker requires captured server generation")
     admission, prepared = assess(proposal, metadata, network=network, evaluated_at=datetime.now(timezone.utc),
                                  max_age_seconds=max_age_seconds, expected=expected,
-                                 catalog_fingerprint=expected.catalog_fingerprint, catalog_valid_until=catalog_valid_until)
+                                 catalog_fingerprint=expected.catalog_fingerprint, catalog_valid_until=catalog_valid_until,
+                                 risk_source=risk_source)
     if prepared is None:
         raise PaperRejected(admission)
     started_at = datetime.now(timezone.utc)
     if started_at >= admission.valid_until or (catalog_guard is not None and not catalog_guard()):
         raise PaperRejected(decision(proposal.identity, started_at,
-                                     "METADATA_STALE", profile=admission.profile))
+                                     "RISK_SOURCE_STALE" if admission.risk_model and admission.risk_model.source else "METADATA_STALE",
+                                     profile=admission.profile))
+    risk_run = PaperRiskRun(admission.risk_model) if admission.risk_model is not None else None
     with localcontext(DECIMAL_CONTEXT):
         result = await engine.run(
             dataset=prepared.dataset, strategy_config=prepared.strategy, agent_config=prepared.agents,
             risk_config=prepared.risk, simulation_config=prepared.simulation, scenario=proposal.scenario.value,
             generalized_profile=admission.profile,
+            **({"paper_risk_run": risk_run} if risk_run is not None else {}),
         )
+    risk_result = risk_run.evidence() if risk_run is not None else None
     return GeneralizedPaperResult(
         admission=admission, proposal=proposal, result=result,
-        started_at=started_at,
-        result_fingerprint=stable_fingerprint((admission.binding.configuration_fingerprint, proposal, result)),
+        started_at=started_at, research_risk=risk_result,
+        result_fingerprint=_result_fingerprint(admission.binding, proposal, result, risk_result),
     )

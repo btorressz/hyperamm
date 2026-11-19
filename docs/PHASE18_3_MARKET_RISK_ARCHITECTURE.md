@@ -1,8 +1,7 @@
-# Phase 18.3A — Market-Specific Collateral, Margin & Risk Evidence Foundation
+# Phase 18.3 — Market-Specific Collateral, Margin & PAPER Risk
 
-**Status:** additive contracts and focused tests. No financial engine, provider integration,
-public endpoint, Risk Firewall mutation, simulated order behavior, or new execution
-authority. Baseline: merged Phase 18.2G PR #89, commit
+**18.3A baseline:** additive risk contracts from merged PR #90. The
+foundation was implemented on top of Phase 18.2G PR #89, commit
 `4d57eaf8a0ce8a19c36fe436d8a62ca7e46adfa9`.
 
 ## Scope and ownership
@@ -120,7 +119,7 @@ accepted for a specific DEX, market, account or margin mode.
 
 | Milestone | Owner | Required implementation and acceptance |
 | --- | --- | --- |
-| **18.3B** | Codex | Read-only *actual source-backed* per-DEX/account collateral and settlement evidence. Validate provenance, timestamps, market/network/DEX association, provider capabilities, unavailable states and model version. No default USDC inference. |
+| **18.3B** | Codex | Read-only source-backed per-DEX product collateral and independently documented financial units. Validate provenance, timestamps, market/network/DEX association, provider capabilities, unavailable states and model version. No default USDC inference. |
 | **18.3C** | Codex | Separate hypothetical vs independently supported margin calculations. Exact Decimal notional, currency-aware base/quote units, bounded leverage and margin stress, FX/haircut provenance. Refuse unsupported currencies and missing evidence. |
 | **18.3D** | Codex | Integrate optional risk evidence into single-market local PAPER preflight and Risk Firewall using existing authorization; never let a research decision reach exchange orders. Do not automatically enable cross-market portfolio allocation. |
 | **18.3E** | ChatGPT + Codex | Minimal bounded read-only research API evidence and existing Simulation UI: source, freshness, margin mode, collateral and hypothetical/unverified labels. Keep the full Market Explorer for 18.6. |
@@ -131,6 +130,28 @@ or `risk_ready` by simply changing the v1 contract literals. Require new
 source-backed and independently verified evidence/contracts, checked against
 real SDK behavior and supported product/account modes. Treat hypothetical
 calculations as hypothetical and preserve PAPER-only authorization.
+
+## 18.3B–D implementation
+
+- Discovery keeps one bounded public SDK refresh. The financial supplement
+  resolves `meta.collateralToken` to the same network's `spotMeta` token ID,
+  records market modes and tier policy, and preserves source timestamps,
+  status and fingerprints. Independently documented price denomination and
+  P&L use separate fields. Account mode remains unknown.
+- The optional `phase183c-v1` model uses strict Decimal assumptions and
+  the existing exposure overlap rules. Source-constrained assessments require
+  a supported observed policy, an exact asset match, and an explicit fixed
+  hypothetical valuation. Source and modeled formulas have distinct evidence.
+- Existing PAPER eligibility and dispatch bind the source generation and the
+  model fingerprint. The existing Firewall can tighten local quote decisions,
+  and the existing ledger retains full-notional reservation. The
+  `phase183d-v1` result includes only local research control and margin evidence.
+  The runtime and guarded TESTNET adapter retain their existing authorization.
+- Phase 18.3E owns the risk API and UI expansion. Phase 18.3F owns extended
+  financial and cross-market verification.
+
+See the [implementation acceptance report](PHASE18_3BCD_RISK_IMPLEMENTATION_ACCEPTANCE.md)
+for provider details, formulas, test evidence, and unsupported cases.
 
 ## Focused verification
 

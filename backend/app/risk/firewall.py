@@ -179,6 +179,9 @@ def paper_pnl(fills,market,mark)->PnlDrawdown:
                        session_pnl=pnl.net_pnl,source="SIMULATED PAPER PNL",simulated=True)
 
 
+RISK_SEVERITY = (RiskState.NORMAL, RiskState.WIDEN, RiskState.REDUCE, RiskState.HALT)
+
+
 class RiskFirewall:
     def __init__(self,config:RiskFirewallConfig,*,generalized_paper=False):
         self.config=config;self.state=RiskState.NORMAL;self.version=0;self.confirmations=0;self.changed_at=utcnow();self.events=deque(maxlen=250)
@@ -207,7 +210,10 @@ class RiskFirewall:
             elif pnl.drawdown_pct>=c.drawdown_warn_pct:severity=max(severity,1);reasons.append("drawdown warning")
         if venue_uncertain:severity=3;reasons.append("venue exposure is uncertain")
         return [RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT][severity],reasons,maxdev
-    def evaluate(self,*,refs,quotes,current_position,mark,liquidation,pnl,market_version,inventory_version,perp_version,venue_uncertain=False,existing_orders=None,capital=None,max_capital_utilization=Decimal("1")):
+    def evaluate(self,*,refs,quotes,current_position,mark,liquidation,pnl,market_version,inventory_version,perp_version,venue_uncertain=False,existing_orders=None,capital=None,max_capital_utilization=Decimal("1"),
+                 research_risk=None, research_risk_invalid=False):
+        if (research_risk is not None or research_risk_invalid) and not self.generalized_paper:
+            raise ValueError("modeled margin controls require generalized PAPER")
         if refs.is_generalized_paper != self.generalized_paper:
             raise ValueError("reference provenance does not match the firewall context")
         c=self.config;price=refs.consensus.consensus_price or mark;exp=exposure_metrics(quotes,current_position,price,max(c.max_projected_long_base,c.max_projected_short_base),existing_orders);liq=liquidation_evidence(current_position,mark,liquidation)
@@ -222,8 +228,23 @@ class RiskFirewall:
             elif capital.mode=="PAPER" and (capital.equity_quote is None or capital.reserved_capital_quote is None
                     or capital.reserved_capital_quote>max(Decimal("0"),capital.equity_quote)*max_capital_utilization):
                 candidate=RiskState.HALT;reasons.append("SIMULATED CAPITAL RESERVATION exceeds research capital limit")
+        if research_risk_invalid:
+            candidate = RiskState.HALT
+            reasons.append("PAPER modeled exposure is unrepresentable")
+        elif research_risk is not None:
+            from app.risk.market_risk_engine import opening_feasible
+            margin = research_risk.margin
+            if margin.capital <= 0 or margin.maintenance_headroom < 0:
+                candidate = RiskState.HALT
+                reasons.append("PAPER modeled maintenance headroom exhausted")
+            elif not opening_feasible(margin):
+                candidate = max(candidate, RiskState.REDUCE, key=RISK_SEVERITY.index)
+                reasons.append("PAPER projected modeled initial margin or leverage limit")
+            elif margin.projected_utilization >= Decimal("0.8"):
+                candidate = max(candidate, RiskState.WIDEN, key=RISK_SEVERITY.index)
+                reasons.append("PAPER projected modeled margin utilization is at least 80%")
         previous=self.state
-        if candidate.value==RiskState.HALT.value or [RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT].index(candidate)>[RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT].index(self.state):
+        if candidate == RiskState.HALT or RISK_SEVERITY.index(candidate) > RISK_SEVERITY.index(self.state):
             effective=candidate;self.confirmations=0
         elif candidate==self.state:
             effective=self.state;self.confirmations=0 if self.state==RiskState.NORMAL else self.confirmations
@@ -252,7 +273,7 @@ class RiskFirewall:
         return RiskDecision(state=effective,allow_quotes=effective!=RiskState.HALT,spread_multiplier=spread,size_multiplier=size,max_levels=levels,reasons=reasons or ["risk inputs within configured limits"],reference_version=refs.version,market_version=market_version,inventory_version=inventory_version,perp_version=perp_version,projected_long_base=exp.projected_long_base,projected_short_base=exp.projected_short_base,exposure=exp,liquidation=liq,pnl_drawdown=pnl,healthy_confirmation_count=self.confirmations,version=self.version)
     def transform(self,quotes,decision,*,center,tick_size,size_precision,base_order_size):
         if not decision.allow_quotes:return []
-        if decision.state==RiskState.NORMAL or not self.config.enabled:
+        if decision.state == RiskState.NORMAL or (not self.config.enabled and not self.generalized_paper):
             return [q.model_copy(update={"pre_risk_price":q.price,"pre_risk_size":q.size,"risk_spread_multiplier":Decimal("1"),"risk_size_multiplier":Decimal("1"),"risk_state":RiskState.NORMAL.value}) for q in quotes]
         out=[]
         for q in quotes:

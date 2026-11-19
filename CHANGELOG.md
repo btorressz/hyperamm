@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.3B–D market-specific PAPER risk
+
+- Resolve Core and HIP-3 collateral through public, network-qualified token metadata and capture market restrictions, margin tiers, source times, and fingerprints.
+- Add exact Decimal exposure, initial and maintenance margin, headroom, and stress calculations for explicit hypothetical or source-constrained scenarios.
+- Bind optional modeled margin to the existing local PAPER admission and Risk Firewall. Preserve full-notional ledger reservation, legacy fingerprints, and existing trading authority.
+
 ## Unreleased — Phase 18.3A market-specific risk contracts
 
 - Add versioned, immutable collateral/price-quote/settlement/PAPER financial-unit and margin-policy declarations, with explicit network, provenance, and strict Decimal constraints.
