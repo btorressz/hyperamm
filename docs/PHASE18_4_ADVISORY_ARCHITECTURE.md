@@ -121,13 +121,21 @@ Each evaluator accepts a server-created `AdvisoryContext`, its applicable captur
 | Entry point | Capture and scope |
 | --- | --- |
 | `MarketEligibilityAgent.evaluate` | Verified discovery and a `PaperEligibilityCapture` obtained through the existing server assessor, or the applicable funding or quote evidence. |
-| `AdvisoryMarketObservations.observe` | On-demand official SDK acquisition for the exact network, DEX and observed market. The later application owner closes the adapter. |
+| `AdvisoryMarketObservations.observe` | On-demand official SDK acquisition for the exact network, DEX and observed market. The application closes the adapter at shutdown. |
 | `FundingBasisAgent.evaluate` | The official adapter capture or a `PaperFundingObservation` from a completed Generalized PAPER run. Only one mode contributes to a recommendation. |
 | `QuoteEconomicsAgent.evaluate` | A `QuoteEconomicsObservation` for one retained PAPER quote cohort with specific hold, exit, slippage and inventory assumptions. |
 
-Use `capture_context` to bind the selected metadata, source evidence, evaluation clock and applicable catalog, risk and PAPER fingerprints. Each source digest includes its value and capture envelope. The worker and discovery continue to own the actual evidence. Phase 18.4E must resolve the current generation server-side when publishing any READY recommendation.
+Use `capture_context` to bind the selected metadata, source evidence, evaluation clock and applicable catalog, risk and PAPER fingerprints. Each source digest includes its value and capture envelope. The worker and discovery continue to own the actual evidence. The coordinator checks the active generation before it assembles evidence and again before publishing the snapshot.
 
-## Codex handoff
+## Application and Simulation integration
+
+The application lifespan owns an `AdvisoryCoordinator` and the existing on-demand public adapter for the configured discovery network. The coordinator captures the selected active generation, uses the PAPER assessor for requested admission research and resolves optional synthetic evidence from a worker receipt. It runs the existing evaluators with a shared context and validates the snapshot again with the current publication clock. An independent public observation failure leaves other valid findings available.
+
+The local `POST /api/v1/market-universe/advisory` endpoint accepts one identity and catalog fingerprint, a research operation and optional selectors. Completed `/generalized-paper/run` responses expose an opaque `X-Paper-Advisory-Receipt` header, with the serialized financial result body unchanged. Receipts expire with the original admission and are held in a bounded in-memory cache. The `phase184e-v1` response supplies limits, expiry, source references, selected quote frame status and the applicable existing recommendations. Its outer and nested recommendation authority flags prohibit trade, risk and PAPER permission changes.
+
+The Generalized PAPER workspace displays Market Eligibility, Funding/Basis and Quote Economics. Funding uses separate public and synthetic sections and preserves the actual clock supplied by each source. Economics uses the selected simulated quote cohort and explicit cost inputs. React Query retires outdated requests, and the browser validates evidence plus context and snapshot digests before rendering results. [Phase 18.4 final acceptance](PHASE18_4_FINAL_ACCEPTANCE.md)
+
+## Original phase handoff
 
 | Phase | Owner | Implementation |
 | --- | --- | --- |

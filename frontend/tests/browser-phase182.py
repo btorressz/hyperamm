@@ -12,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def fixture_app():
     from app.main import app
+    from app.agents.advisory_coordinator import AdvisoryCoordinator
+    from app.market_data.advisory_market_observations import _epoch_ms
+    from app.market_data.market_universe_discovery import DiscoveryFailure
+    from app.market_data.models import utcnow
     from app.market_data.market_universe_discovery import MarketUniverseDiscovery
 
     def provider(method, dex, deadline):
@@ -30,6 +34,21 @@ def fixture_app():
         return {"universe": [row("DOGE", 2), row("BTC", 3),
                              {"name": "OLD", "szDecimals": 2, "isDelisted": True}], "collateralToken": 0}
 
+    def public(operation, identity, deadline, **_kwargs):
+        coin = identity.exchange_coin
+        if coin == "missing:GOLD":
+            raise DiscoveryFailure("RATE_LIMITED")
+        at = _epoch_ms(utcnow())
+        if operation == "metaAndAssetCtxs":
+            metadata = provider("meta", identity.dex, deadline)
+            return [metadata, [{"coin": row["name"], "markPx": "100.13", "oraclePx": None if coin == "xyz:UNKNOWN" else "100",
+                                "funding": "0.0002", "openInterest": "100"} for row in metadata["universe"]]]
+        if operation == "l2Book":
+            return {"coin": coin, "time": at - (11_000 if coin == "xyz:GOLD" else 20),
+                    "levels": [[{"px": "100.10", "sz": "1"}], [{"px": "100.14", "sz": "1"}]]}
+        assert operation == "fundingHistory"
+        return [{"coin": coin, "time": at - 200, "fundingRate": "-0.0002"}]
+
     original = app.router.lifespan_context
 
     @asynccontextmanager
@@ -37,11 +56,17 @@ def fixture_app():
         async with original(instance):
             previous = instance.state.market_universe_discovery
             discovery = MarketUniverseDiscovery(enabled=True, network="MAINNET", client=provider)
+            previous_advisory = instance.state.advisory_coordinator
+            advisory = AdvisoryCoordinator(discovery)
+            advisory._observations._client.request = public
             instance.state.market_universe_discovery = discovery
+            instance.state.advisory_coordinator = advisory
             try:
                 yield
             finally:
                 instance.state.market_universe_discovery = previous
+                instance.state.advisory_coordinator = previous_advisory
+                await advisory.close()
                 await discovery.close()
 
     app.router.lifespan_context = lifespan
@@ -170,9 +195,13 @@ async def browser_check(chromium):
             await expect(run).to_be_enabled()
             await run.click()
             await expect(result).to_be_visible()
+            advisory = panel.get_by_role("region", name="Market Eligibility")
+            await advisory.get_by_role("button", name="Evaluate market eligibility").click()
+            await expect(advisory.get_by_text("Discovery suitability")).to_be_visible()
             await page.route("**/market-universe", testnet_catalog)
             await page.evaluate("window.dispatchEvent(new Event('visibilitychange'))")
             await expect(panel.get_by_text("TESTNET metadata available.", exact=False)).to_be_visible()
+            await expect(advisory).to_have_count(0)
             await expect(market).to_have_value("")
             await expect(result).to_have_count(0)
             await expect(run).to_be_disabled()
@@ -180,7 +209,7 @@ async def browser_check(chromium):
             await refresh.click()
             await expect(panel.get_by_text("MAINNET metadata available.", exact=False)).to_be_visible()
             await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD")
-            print("PASS explicit refresh and automatic network replacement retire admission", flush=True)
+            print("PASS explicit refresh and automatic network replacement retire admission and advisory evidence", flush=True)
 
             await check.click()
             await expect(run).to_be_enabled()
@@ -214,7 +243,8 @@ async def browser_check(chromium):
             await tabs.get_by_role("button", name="Scenario & optimization").click()
             await expect(native_market).to_have_value("SOL")
             assert not page_errors, page_errors
-            assert writes and all("/api/v1/generalized-paper/" in url for url in writes), writes
+            assert writes and all("/api/v1/generalized-paper/" in url or url.endswith("/market-universe/advisory")
+                                  for url in writes), writes
             print("PASS native selection preserved and write requests confined to PAPER", flush=True)
         finally:
             await browser.close()
@@ -342,7 +372,18 @@ async def browser_risk_check(chromium):
                 await expect(result.get_by_text(re.compile(assertion))).to_be_visible()
             await result.get_by_text("Per-frame Risk Firewall decisions").click()
             await expect(result.get_by_text("PAPER modeled maintenance headroom exhausted", exact=False).first).to_be_visible()
-            print("PASS real worker quote retirement and modeled maintenance HALT", flush=True)
+            halted = await result.get_by_text(re.compile(r"^Frame \d+ · HALT$")).first.inner_text()
+            quote = panel.get_by_role("region", name="Quote Economics")
+            await quote.get_by_role("button", name="Load PAPER quote cohorts").click()
+            await quote.get_by_role("combobox", name="Simulated quote cohort").select_option(halted.split()[1])
+            await quote.get_by_role("textbox", name="Holding period in seconds").fill("6")
+            await quote.get_by_role("textbox", name="Exit slippage in bps").fill("0")
+            await quote.get_by_role("textbox", name="Inventory cost in bps").fill("0")
+            await quote.get_by_role("button", name="Evaluate quote economics").click()
+            await expect(quote.get_by_text("Risk Firewall HALT", exact=False).first).to_be_visible()
+            await expect(quote.get_by_role("status")).to_contain_text("unsupported")
+            await expect(quote.get_by_role("table")).to_have_count(0)
+            print("PASS real worker quote retirement and modeled maintenance HALT reflected in the advisory", flush=True)
 
             waiting, release = asyncio.Event(), asyncio.Event()
             async def delayed_admission(route):
@@ -407,8 +448,178 @@ async def browser_risk_check(chromium):
             await expect(sources.get_by_text("Financial evidence is stale.", exact=False)).to_be_visible()
             assert not await panel.get_by_role("button", name=re.compile(r"Trade|Submit order|Execute live", re.I)).count()
             assert not errors, errors
-            assert writes and all("/api/v1/generalized-paper/" in url for url in writes), writes
+            assert writes and all("/api/v1/generalized-paper/" in url or url.endswith("/market-universe/advisory")
+                                  for url in writes), writes
             print("PASS provider and admission expiry retire risk actions and completed output, with PAPER-only writes", flush=True)
+        finally:
+            await browser.close()
+
+
+
+async def browser_advisory_check(chromium, axe):
+    from playwright.async_api import Error, async_playwright, expect
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(executable_path=chromium, args=["--no-sandbox"])
+        try:
+            page = await browser.new_page(viewport={"width": 1440, "height": 900})
+            errors, writes = [], []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on("request", lambda request: writes.append(request.url) if request.method == "POST" else None)
+            async with asyncio.timeout(20):
+                while True:
+                    try:
+                        if (await page.request.get("http://127.0.0.1:5173/api/v1/health", timeout=1000)).ok:
+                            break
+                    except Error:
+                        pass
+                    await asyncio.sleep(0.15)
+            await page.goto("http://127.0.0.1:5173/#/simulation")
+            await page.get_by_role("button", name="Generalized PAPER", exact=True).click()
+            panel = page.get_by_role("region", name="Generalized PAPER research")
+            market = panel.get_by_role("combobox", name="Discovered perpetual")
+            core = "HYPERLIQUID:MAINNET:CORE_PERP::BTC"
+            hip = "HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD"
+            await market.select_option(core)
+            eligibility = panel.get_by_role("region", name="Market Eligibility")
+            operation = eligibility.get_by_role("combobox", name="Advisory research operation")
+            evaluate = eligibility.get_by_role("button", name="Evaluate market eligibility")
+            await evaluate.focus()
+            await page.keyboard.press("Enter")
+            await expect(eligibility.get_by_text("Discovery suitability")).to_be_visible()
+            await expect(eligibility.get_by_role("status")).to_contain_text("ready")
+            await operation.select_option("STANDARD_PAPER")
+            await evaluate.click()
+            await expect(eligibility.get_by_text("Missing requirements")).to_contain_text("paper proposal")
+            print("PASS advisory Core discovery, keyboard action and missing PAPER prerequisites", flush=True)
+
+            observed = panel.get_by_role("region", name="Observed public funding and basis")
+            inspect = observed.get_by_role("button", name="Inspect observed funding")
+            await inspect.click()
+            await expect(observed.get_by_role("cell", name="100.12 venue quote per base")).to_be_visible()
+            await observed.get_by_text("Source provenance and freshness").click()
+            await expect(observed.get_by_text("Provider event time unavailable.").first).to_be_visible()
+            await expect(observed.get_by_text(re.compile(r"^Provider event [0-9]{4}-")).first).to_be_visible()
+            await market.select_option(hip)
+            await expect(observed.get_by_role("table")).to_have_count(0)
+            await inspect.click()
+            await expect(observed.get_by_role("table")).to_be_visible()
+            await expect(observed.get_by_role("row").filter(has_text="Order-book midpoint")).to_contain_text("Unavailable")
+            await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:xyz:UNKNOWN")
+            await inspect.click()
+            await expect(observed.get_by_role("row").filter(has_text="Oracle price")).to_contain_text("Unavailable")
+            await expect(observed.get_by_role("row").filter(has_text="Mark price")).to_contain_text("100.13")
+            await market.select_option(hip)
+            print("PASS advisory Core and HIP-3 fixtures, receipt/event clocks, stale book and missing oracle", flush=True)
+
+            waiting, release = asyncio.Event(), asyncio.Event()
+            async def delay(route):
+                response = await route.fetch()
+                waiting.set()
+                await release.wait()
+                try:
+                    await route.fulfill(response=response)
+                except Error:
+                    pass
+
+            await page.route("**/market-universe/advisory", delay)
+            await inspect.click()
+            try:
+                await asyncio.wait_for(waiting.wait(), 10)
+                await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:missing:GOLD")
+            finally:
+                release.set()
+            await expect(observed.get_by_role("table")).to_have_count(0)
+            await page.unroute("**/market-universe/advisory", delay)
+            await inspect.click()
+            await expect(observed.get_by_text("public provider is rate limited", exact=False)).to_be_visible()
+            await expect(observed.get_by_role("status")).to_contain_text("Confidence 0%")
+            print("PASS advisory DEX change retires delayed data and reports provider backoff", flush=True)
+
+            await market.select_option(hip)
+            await panel.get_by_role("textbox", name="Synthetic reference price").fill("3000")
+            await panel.get_by_role("combobox", name="PAPER scenario").select_option("HIGH_VOLATILITY")
+            await panel.get_by_role("checkbox", name="Apply hypothetical funding", exact=False).check()
+            await panel.get_by_role("button", name="Check PAPER eligibility").click()
+            run = panel.get_by_role("button", name="Run local PAPER")
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(panel.get_by_role("region", name="PAPER result evidence")).to_be_visible(timeout=12_000)
+            synthetic = panel.get_by_role("region", name="Synthetic PAPER funding and basis")
+            await synthetic.get_by_role("button", name="Inspect synthetic funding").click()
+            await expect(synthetic.get_by_role("status")).to_contain_text("scenario synthetic")
+            await expect(synthetic.get_by_role("row").filter(has_text="Funding interval")).to_contain_text("1 s")
+            print("PASS advisory real PAPER receipt and separate synthetic funding evidence", flush=True)
+
+            quote = panel.get_by_role("region", name="Quote Economics")
+            await quote.get_by_role("button", name="Load PAPER quote cohorts").click()
+            cohort = quote.get_by_role("combobox", name="Simulated quote cohort")
+            await expect(cohort).to_be_visible()
+            await quote.get_by_role("textbox", name="Holding period in seconds").fill("6")
+            await quote.get_by_role("textbox", name="Exit slippage in bps").fill("0")
+            await quote.get_by_role("textbox", name="Inventory cost in bps").fill("0")
+            button = quote.get_by_role("button", name="Evaluate quote economics")
+            ready, missing = None, False
+            for index in (40, 39, 38, 37, 36, 35, 1, 2, 3, 4, 5):
+                await cohort.select_option(str(index))
+                await button.click()
+                status = quote.get_by_role("status").filter(has_text=re.compile(r"^Status "))
+                await expect(status).to_be_visible()
+                if await quote.get_by_text("matured synthetic markout", exact=False).count():
+                    missing = True
+                if "Status ready" in await status.inner_text():
+                    ready = index
+                    await expect(quote.get_by_role("row").filter(has_text="Hypothetical modeled residual edge")).to_be_visible()
+                    if missing:
+                        break
+            assert missing and ready is not None
+            if (await cohort.input_value()) != str(ready):
+                await cohort.select_option(str(ready))
+                await button.click()
+                await expect(quote.get_by_role("table")).to_be_visible()
+            await expect(quote.get_by_text("modeled negative · Hypothetical PAPER model")).to_be_visible()
+            await cohort.select_option("3")
+            await quote.get_by_role("textbox", name="Holding period in seconds").fill("10000")
+            await button.click()
+            await expect(quote.get_by_text("modeled positive · Hypothetical PAPER model")).to_be_visible()
+            await expect(quote.get_by_role("row").filter(has_text="Funding carry cost")).to_contain_text("-500.01000020")
+            print("PASS advisory real mature cohort reconciles positive and negative modeled edge with configured carry", flush=True)
+
+            await page.set_viewport_size({"width": 390, "height": 844})
+            summary = quote.get_by_text("Source provenance and freshness", exact=True)
+            await summary.focus()
+            await page.keyboard.press("Enter")
+            await expect(quote.get_by_text("Snapshot fingerprint", exact=False)).to_be_visible()
+            tree = await quote.aria_snapshot()
+            assert "table" in tree and "rowheader" in tree and "Matured markout count" in tree
+            assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            assert await quote.evaluate("(node) => node.scrollWidth <= node.clientWidth")
+            await quote.get_by_role("button", name="Load PAPER quote cohorts").focus()
+            for role, accessible_name in (
+                ("combobox", "Simulated quote cohort"), ("textbox", "Holding period in seconds"),
+                ("combobox", "Residual exit liquidity"), ("textbox", "Exit slippage in bps"),
+                ("textbox", "Inventory cost in bps"), ("button", "Evaluate quote economics"),
+            ):
+                await page.keyboard.press("Tab")
+                await expect(quote.get_by_role(role, name=accessible_name, exact=True)).to_be_focused()
+            if axe:
+                await page.add_script_tag(path=axe)
+                audits = await page.evaluate("""async () => {
+                    const result = await axe.run('.paperAdvisory', {runOnly: {type: 'tag',
+                        values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']}});
+                    return {version: result.testEngine.version, violations: result.violations.map(item => item.id),
+                        manual: result.incomplete.map(item => item.id)};
+                }""")
+                assert not audits["violations"], audits
+                print(f"PASS advisory axe {audits['version']} WCAG A/AA scan, manual items {audits['manual']}", flush=True)
+            await page.clock.install()
+            await page.clock.fast_forward(61_000)
+            await expect(quote.get_by_role("table")).to_have_count(0)
+            await expect(quote.get_by_text("Advisory evidence expired", exact=False).first).to_be_visible()
+            assert not await panel.get_by_role("button", name=re.compile(r"Trade|Submit order|Execute live|Sign wallet", re.I)).count()
+            assert not errors, errors
+            assert writes and all(re.search(r"/(generalized-paper/(eligibility|run)|market-universe/advisory)$", url) for url in writes)
+            print("PASS advisory matured and missing markouts, modeled edge, mobile table, keyboard and expiry", flush=True)
         finally:
             await browser.close()
 
@@ -418,6 +629,8 @@ def main():
     parser.add_argument("--python", required=True)
     parser.add_argument("--chromium", default="/usr/bin/chromium")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--advisory-only", action="store_true")
+    parser.add_argument("--axe", type=Path)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     env = {**os.environ, "MARKET_DATA_MODE": "DEMO", "EXECUTION_MODE": "PAPER",
@@ -433,8 +646,10 @@ def main():
         for (directory, command), name in zip(commands, ("backend", "vite"), strict=True):
             with (args.output / f"{name}.log").open("w") as log:
                 processes.append(subprocess.Popen(command, cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT))
-        asyncio.run(browser_check(args.chromium))
-        asyncio.run(browser_risk_check(args.chromium))
+        if not args.advisory_only:
+            asyncio.run(browser_check(args.chromium))
+            asyncio.run(browser_risk_check(args.chromium))
+        asyncio.run(browser_advisory_check(args.chromium, args.axe))
     finally:
         for process in reversed(processes):
             if process.poll() is None:

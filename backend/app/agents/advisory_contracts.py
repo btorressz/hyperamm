@@ -207,6 +207,8 @@ class AdvisoryRecommendation(AdvisoryEvidence):
             "slippage_cost_bps", "break_even_capture_bps", "quoted_notional", "executed_reference_notional",
             "holding_seconds", "fill_coverage", "bid_capture_bps", "ask_capture_bps", "filled_base",
             "residual_base", "inventory_expansion_base", "projected_margin_headroom", "margin_headroom_unit",
+            "mark_price", "oracle_price", "midpoint_price", "submitted_bid", "submitted_ask",
+            "entry_fees_quote", "exit_fees_quote", "attributed_fill_count", "matured_markout_count",
         ):
             if data.get(field) is None:
                 data.pop(field, None)
@@ -264,6 +266,9 @@ class FundingBasisAdvisory(AdvisoryRecommendation):
     funding_convention: Literal["HYPERLIQUID_HOURLY", "PAPER_SCHEDULED_INTERVAL"] | None = None
     funding_direction: Literal["LONGS_PAY", "SHORTS_PAY", "FLAT"] | None = None
     open_interest_base: Annotated[AdvisoryDecimal, Field(ge=0)] | None = None
+    mark_price: Annotated[AdvisoryDecimal, Field(gt=0)] | None = None
+    oracle_price: Annotated[AdvisoryDecimal, Field(gt=0)] | None = None
+    midpoint_price: Annotated[AdvisoryDecimal, Field(gt=0)] | None = None
     history_count: int | None = Field(default=None, ge=0, le=24)
     recent_history_mean_rate: AdvisoryDecimal | None = None
     missing_requirements: tuple[ShortReason, ...] = Field(default=(), max_length=12)
@@ -323,6 +328,12 @@ class QuoteEconomicsAdvisory(AdvisoryRecommendation):
     projected_margin_headroom: AdvisoryDecimal | None = None
     margin_headroom_unit: RiskFinancialUnit | None = None
     missing_requirements: tuple[ShortReason, ...] = Field(default=(), max_length=12)
+    submitted_bid: Annotated[AdvisoryDecimal, Field(gt=0)] | None = None
+    submitted_ask: Annotated[AdvisoryDecimal, Field(gt=0)] | None = None
+    entry_fees_quote: Annotated[AdvisoryDecimal, Field(ge=0)] | None = None
+    exit_fees_quote: Annotated[AdvisoryDecimal, Field(ge=0)] | None = None
+    attributed_fill_count: int | None = Field(default=None, ge=1, le=1000)
+    matured_markout_count: int | None = Field(default=None, ge=1, le=1000)
     hypothetical_only: Literal[True] = True
     guarantees_profit: Literal[False] = False
 
@@ -360,6 +371,13 @@ class QuoteEconomicsAdvisory(AdvisoryRecommendation):
                         self.filled_base, self.residual_base, self.inventory_expansion_base)
             if self.status == "READY" and any(value is None for value in required):
                 raise ValueError("ready quote analysis requires captured fills, horizon and funding interval")
+        detail = (self.submitted_bid, self.submitted_ask, self.entry_fees_quote, self.exit_fees_quote,
+                  self.attributed_fill_count, self.matured_markout_count)
+        if any(value is not None for value in detail):
+            if (self.status != "READY" or any(value is None for value in detail)
+                    or self.submitted_ask <= self.submitted_bid
+                    or self.attributed_fill_count != self.matured_markout_count):
+                raise ValueError("quote details require a reconciled ladder and mature PAPER fills")
         if (self.projected_margin_headroom is None) != (self.margin_headroom_unit is None):
             raise ValueError("margin headroom requires its exact denomination")
         return self
@@ -418,6 +436,10 @@ class AdvisorySnapshot(AdvisoryEvidence):
             if isinstance(result, FundingBasisAdvisory):
                 kinds = {source.category for source in context.sources
                          if source.source_fingerprint in result.source_fingerprints}
+                prices = {"MARK_PRICE": result.mark_price, "ORACLE_PRICE": result.oracle_price,
+                          "MID_PRICE": result.midpoint_price}
+                if any(price is not None and category not in kinds for category, price in prices.items()):
+                    raise ValueError("funding display prices require corresponding captured sources")
                 if result.funding_rate is not None and "FUNDING" not in kinds:
                     raise ValueError("funding rate lacks funding-specific evidence")
                 if (result.mark_oracle_basis_bps is not None or result.mark_mid_basis_bps is not None) and not (

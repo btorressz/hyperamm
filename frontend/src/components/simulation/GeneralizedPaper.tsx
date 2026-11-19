@@ -8,6 +8,7 @@ import { marketUniverseKey } from '../../utils/marketUniverse';
 import { buildRiskSettings, financialEvidenceIsCurrent } from '../../utils/marketRisk';
 import { accountingValue } from '../../utils/researchEvidence';
 import { Panel } from '../TerminalPrimitives';
+import { GeneralizedPaperAdvisory } from './GeneralizedPaperAdvisory';
 import { initialRiskDraft, PaperFinancialEvidence, PaperRiskConfiguration, PaperRiskEvidence } from './GeneralizedPaperRisk';
 
 export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: string }[] }) {
@@ -25,6 +26,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
   const [result, setResult] = useState<GeneralizedPaperResult | null>(null);
   const [error, setError] = useState('');
   const [working, setWorking] = useState<'checking' | 'running' | null>(null);
+  const [advisoryEpoch, setAdvisoryEpoch] = useState(0);
   const [expired, setExpired] = useState(false);
   const [expiredFinancialDeadline, setExpiredFinancialDeadline] = useState('');
   const pending = useRef<AbortController | null>(null);
@@ -58,6 +60,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     ? `${financial.source_fingerprint ?? ''}:${financial.valid_until}:${financialExpired}` : '';
 
   function reset() {
+    setAdvisoryEpoch(epoch => epoch + 1);
     pending.current?.abort();
     pending.current = null;
     setWorking(null);
@@ -124,6 +127,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
         (run && (!ready || !paperAdmissionIsCurrent(admission) || admission?.status !== 'ELIGIBLE'))) return;
     if (proposal.research_risk?.mode === 'SOURCE_CONSTRAINED' && !financialEvidenceIsCurrent(financial)) return;
     if (!run) reset();
+    else setAdvisoryEpoch(epoch => epoch + 1);
     const controller = new AbortController();
     pending.current = controller;
     setWorking(run ? 'running' : 'checking');
@@ -161,6 +165,9 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
       }
     }
   }
+
+  const visibleResult = result && catalogMatches && (!riskEnabled || (!expired && paperAdmissionIsCurrent(admission)))
+    ? result : null;
 
   return <Panel title="Generalized PAPER research">
     <div className="researchInset stack">
@@ -237,8 +244,10 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
         </> : <p>{admission.explanation}</p>}
         {admission.status !== 'ELIGIBLE' && <p><code>{admission.reason}</code> · {admission.checks.join(', ').replaceAll('_', ' ')}</p>}
       </div>}
-      {result && catalogMatches && (!riskEnabled || (!expired && paperAdmissionIsCurrent(admission))) &&
-        <PaperResult result={result} />}
+      {visibleResult && <PaperResult result={visibleResult} />}
+      {selection && !isFetching && !busy && <GeneralizedPaperAdvisory
+        key={JSON.stringify([market, catalogFingerprint, financialGeneration, advisoryEpoch, visibleResult?.advisory_receipt])}
+        selection={selection} proposal={proposal} paperRun={visibleResult} />}
     </div>
   </Panel>;
 }

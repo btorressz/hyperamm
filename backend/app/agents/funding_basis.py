@@ -74,9 +74,9 @@ class FundingBasisAgent:
     ) -> FundingBasisAdvisory:
         evaluation = AdvisoryEvaluation(context, as_of=as_of, max_metadata_age_seconds=self._metadata_age)
 
-        def unavailable(status, reason, missing=()):
+        def unavailable(status, reason, missing=(), **fields):
             return FundingBasisAdvisory(
-                **evaluation.fields(), status=status, reasons=(reason,), missing_requirements=missing,
+                **evaluation.fields(), status=status, reasons=(reason,), missing_requirements=missing, **fields,
             )
 
         if issue := evaluation.market_issue:
@@ -92,7 +92,13 @@ class FundingBasisAgent:
                 if observation.status == "INSUFFICIENT_DATA":
                     if not evaluation.bind(observation.source_evidence()):
                         return unavailable("STALE", "Public funding evidence has expired.", missing)
-                return unavailable(observation.status, observation.limitations[0], missing)
+                prices = {
+                    field: point.value
+                    for category, field in (("MARK_PRICE", "mark_price"), ("ORACLE_PRICE", "oracle_price"))
+                    if (point := observation.point(category)) is not None
+                    and observation.status == "INSUFFICIENT_DATA"
+                }
+                return unavailable(observation.status, observation.limitations[0], missing, **prices)
             points = {point.category: point for point in observation.points}
             if (not set(REQUIRED_CATEGORIES) <= points.keys()
                     or {points[key].operation for key in REQUIRED_CATEGORIES} != {"metaAndAssetCtxs"}
@@ -173,7 +179,8 @@ class FundingBasisAgent:
         return FundingBasisAdvisory(
             **evaluation.fields(), status="READY", confidence=confidence, state=state,
             funding_rate=rate, funding_interval_seconds=interval, funding_direction=direction,
-            funding_convention=convention, mark_oracle_basis_bps=mark_oracle,
+            funding_convention=convention, mark_price=mark, oracle_price=oracle, midpoint_price=mid,
+            mark_oracle_basis_bps=mark_oracle,
             mark_mid_basis_bps=mark_mid, oracle_mid_basis_bps=oracle_mid, open_interest_base=oi,
             history_count=len(history) if convention == "HYPERLIQUID_HOURLY" else None,
             recent_history_mean_rate=average, reasons=tuple(reasons), missing_requirements=missing,

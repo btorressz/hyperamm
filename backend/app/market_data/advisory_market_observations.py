@@ -18,6 +18,7 @@ from .market_universe_contracts import MarketUniverseMetadata, Network, _utc, ev
 from .market_universe_discovery import (
     RATE_LIMIT_BACKOFF,
     DiscoveryFailure,
+    FailureCode,
     OfficialMetadataClient,
     _failure_code,
     normalize_metadata,
@@ -103,14 +104,16 @@ class OfficialPerpObservation:
     status: Status
     points: tuple[_Point, ...]
     limitations: tuple[str, ...]
+    failure_code: FailureCode | None
 
     @classmethod
-    def _from_acquisition(cls, metadata, status, points=(), limitations=()):
+    def _from_acquisition(cls, metadata, status, points=(), limitations=(), *, failure_code=None):
         capture = object.__new__(cls)
         object.__setattr__(capture, "metadata", metadata)
         object.__setattr__(capture, "status", status)
         object.__setattr__(capture, "points", tuple(points))
         object.__setattr__(capture, "limitations", tuple(limitations))
+        object.__setattr__(capture, "failure_code", failure_code)
         return capture
 
     def source_evidence(self):
@@ -276,7 +279,8 @@ class AdvisoryMarketObservations:
             self._cache.move_to_end(key)
             return cached[1]
         if monotonic() < self._backoff_until:
-            return failure(metadata, "ERROR", limitations=("Public provider rate-limit backoff is active.",))
+            return failure(metadata, "ERROR", limitations=("Public provider rate-limit backoff is active.",),
+                           failure_code="RATE_LIMITED")
         task = self._tasks.get(key)
         if task is None:
             if len(self._tasks) >= MAX_CONCURRENT_MARKETS:
@@ -286,7 +290,7 @@ class AdvisoryMarketObservations:
         try:
             return await asyncio.wait_for(asyncio.shield(task), REQUEST_BUDGET_SECONDS)
         except TimeoutError:
-            return failure(metadata, "ERROR", limitations=("Public observation timed out.",))
+            return failure(metadata, "ERROR", limitations=("Public observation timed out.",), failure_code="TIMEOUT")
 
     async def _refresh(self, key, metadata):
         try:
@@ -320,7 +324,8 @@ class AdvisoryMarketObservations:
         except Exception as exc:
             code = "INVALID_DATA" if isinstance(exc, (ValueError, KeyError)) else _failure_code(exc)
             status = {"MISSING_METADATA": "INSUFFICIENT_DATA", "UNSUPPORTED_METADATA": "UNSUPPORTED"}.get(code, "ERROR")
-            return acquired(metadata, status, limitations=(f"Public current context: {code}",)), code == "RATE_LIMITED"
+            return acquired(metadata, status, limitations=(f"Public current context: {code}",),
+                            failure_code=code), code == "RATE_LIMITED"
 
         if not {"FUNDING", "MARK_PRICE", "ORACLE_PRICE"} <= {point.category for point in points}:
             return acquired(metadata, "INSUFFICIENT_DATA", points, issues), False
@@ -343,9 +348,9 @@ class AdvisoryMarketObservations:
                 code = "INVALID_DATA" if isinstance(exc, ValueError) else _failure_code(exc)
                 issues.append(f"{operation} unavailable: {code}")
                 if code in {"NAMESPACE_CONFLICT", "NETWORK_MISMATCH"}:
-                    return acquired(metadata, "ERROR", limitations=issues), False
+                    return acquired(metadata, "ERROR", limitations=issues, failure_code=code), False
                 if code == "RATE_LIMITED":
-                    return acquired(metadata, "AVAILABLE", points, issues), True
+                    return acquired(metadata, "AVAILABLE", points, issues, failure_code=code), True
                 if code == "TIMEOUT":
                     break
         return acquired(metadata, "AVAILABLE", points, issues), False

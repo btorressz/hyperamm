@@ -20,6 +20,8 @@ import type { ReplaySummary, ReplayProvenance, HistoricalReplayRequest, Historic
 import type { AgentName } from '../utils/researchEvidence';
 import type { ScenarioHistoricalRequest, ScenarioHistoricalResponse } from '../types/scenarioReplayComparison';
 import { checkedComparisonResponse } from '../utils/scenarioReplayComparison';
+import type { AdvisoryPaperBinding, AdvisoryRequest, AdvisorySelection } from '../types/advisory';
+import { advisoryByteLimit, advisoryFingerprint, checkedAdvisoryResponse } from '../utils/advisory';
 import type { MarketUniverseResponse } from '../types/marketUniverse';
 import { checkedMarketUniverse, marketUniverseByteLimit, marketUniverseHttpStatus } from '../utils/marketUniverse';
 import type { GeneralizedPaperResult, PaperAdmission, PaperBinding, PaperProposal } from '../types/generalizedPaper';
@@ -156,7 +158,11 @@ async function generalizedPaperRequest(
       response.status === 413 ? 'The PAPER request exceeds its size limit.' : 'The local PAPER request failed.');
   }
   const wire = await readHistoricalJson(response, paperResponseByteLimit);
-  if (expected && response.ok) return checkedPaperResult(wire, proposal, expected);
+  if (expected && response.ok) {
+    const result = checkedPaperResult(wire, proposal, expected);
+    const receipt = response.headers.get('X-Paper-Advisory-Receipt');
+    return { ...result, advisory_receipt: advisoryFingerprint(receipt) ? receipt : undefined };
+  }
   if (response.status === 503 && typeof wire === 'object' && wire !== null && 'detail' in wire) {
     throw new Error('The shared PAPER worker is unavailable.');
   }
@@ -173,6 +179,30 @@ export const api = {
   },
   runGeneralizedPaper: (proposal: PaperProposal, expected: PaperBinding, signal?: AbortSignal) =>
     generalizedPaperRequest(proposal, expected, signal),
+  advisory: async (body: AdvisoryRequest, selection: AdvisorySelection, paper?: AdvisoryPaperBinding, signal?: AbortSignal) => {
+    const response = await fetch(API + '/market-universe/advisory', {
+      method: 'POST', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const evidence = await readHistoricalJson(response, advisoryByteLimit);
+    if (!response.ok) {
+      const code = (evidence as { detail?: { code?: unknown } } | null)?.detail?.code;
+      const guidance: Record<string, string> = {
+        WRONG_NETWORK: 'This market belongs to a different discovery network.',
+        WRONG_DEX: 'The DEX namespace is unavailable in this catalog.',
+        UNKNOWN_MARKET: 'The selected market is unavailable in this catalog.',
+        CATALOG_UNAVAILABLE: 'Current discovery metadata is unavailable.',
+        CATALOG_STALE: 'Discovery changed or expired. Refresh discovery and select the market again.',
+        PAPER_BINDING_MISMATCH: 'The retained PAPER run belongs to a different market.',
+        RESEARCH_WORKER_UNAVAILABLE: 'Advisory research is busy or unavailable. Try again.',
+        EVIDENCE_EXPIRED: 'Advisory evidence expired during evaluation. Try again.',
+        EVIDENCE_BINDING_FAILURE: 'Advisory evidence failed its server binding checks.',
+      };
+      throw new Error(typeof code === 'string' && Object.hasOwn(guidance, code) ? guidance[code] :
+        'The advisory request could not be evaluated. Check the selected research inputs.');
+    }
+    return checkedAdvisoryResponse(evidence, body, selection, paper);
+  },
   marketRiskEvidence: async (selection: FinancialEvidenceSelection, signal?: AbortSignal) => {
     const { network, instrument_type, dex, instrument_name } = selection.metadata.identity;
     const query = new URLSearchParams({ network, instrument_type, dex, instrument_name,
