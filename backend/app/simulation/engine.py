@@ -14,6 +14,9 @@ from app.risk.firewall import RiskFirewall,RiskFirewallConfig
 from app.accounting import AccountingConfig,AccountingService
 from app.accounting.pnl import to_pnl_drawdown
 from app.risk.limits import validate_quotes
+from app.risk.market_risk_engine import (
+    PaperRiskFrame, ResearchRiskError, evaluate_research_risk, opening_feasible,
+)
 from app.risk.models import RiskStatus
 from app.strategy.inventory import build_inventory_state
 from app.strategy.models import ExecutionMode,StrategyConfig
@@ -70,6 +73,7 @@ class SimulationEngine:
         market_profile=None,
         execution_evidence_keys=None,
         generalized_profile=None,
+        paper_risk_run=None,
     )->SimulationResult:
         simulation_config=SimulationConfig.model_validate_json(simulation_config.model_dump_json())
         frames=bounded_frames(dataset,simulation_config.max_frames)
@@ -92,6 +96,11 @@ class SimulationEngine:
                 or generalized_profile.market != dataset.market or not dataset.simulated
                 or strategy.size_precision != generalized_profile.sz_decimals):
             raise ValueError("generalized profile must match synthetic dataset and strategy precision")
+        research_risk_model = paper_risk_run.model if paper_risk_run is not None else None
+        if research_risk_model is not None and (
+            not generalized_paper or research_risk_model.declaration.financial_units.metadata != generalized_profile.metadata
+        ):
+            raise ValueError("research margin must match the generalized PAPER profile")
         profile = generalized_profile if generalized_profile is not None else market_profile
 
         clock=SimulationClock(frames[0].timestamp)
@@ -177,6 +186,7 @@ class SimulationEngine:
             **({"research_market_profile": profile.evidence()} if profile is not None else {}),
             **({"execution_assumptions_fingerprint": simulation_config.execution.fingerprint,
                 "execution_evidence_keys": execution_evidence_keys} if simulation_config.execution.modeled else {}),
+            **({"research_risk_fingerprint": research_risk_model.fingerprint()} if research_risk_model is not None else {}),
             "engine_version":version.SIMULATION_ENGINE_VERSION,
             "dataset_fingerprint":dataset.fingerprint,
             "strategy":strategy,
@@ -241,12 +251,27 @@ class SimulationEngine:
             existing=await paper.get_open_orders()
             vault=accounting.reservation_snapshot(agent_quotes,existing)
             pnl_for_risk=to_pnl_drawdown(vault)
+            research_inputs = {}
+            research_snapshot = None
+            if research_risk_model is not None:
+                research_inputs = dict(mark=frame.perp_context.mark_price, position=inventory.position_base,
+                                       position_limit=strategy.hard_inventory_limit_base, valuation_time=frame.timestamp,
+                                       existing=existing, net_pnl=vault.net_pnl_quote)
+                try:
+                    research_snapshot = evaluate_research_risk(research_risk_model, **research_inputs,
+                                                               quotes=agent_quotes, include_stresses=False)
+                    research_control = {"research_risk": research_snapshot}
+                except ResearchRiskError:
+                    research_control = {"research_risk_invalid": True}
+            else:
+                research_control = {}
             risk_decision=firewall.evaluate(
                 refs=refs,quotes=agent_quotes,current_position=inventory.position_base,
                 mark=frame.perp_context.mark_price,liquidation=None,pnl=pnl_for_risk,
                 market_version=market_decision.version,inventory_version=inventory.version,
                 perp_version=frame.perp_context.version,venue_uncertain=False,existing_orders=existing,
                 capital=vault,max_capital_utilization=accounting.config.max_capital_utilization,
+                **research_control,
             )
             risk_decision=risk_decision.model_copy(update={"created_at":frame.timestamp})
             authorized=firewall.transform(
@@ -258,6 +283,24 @@ class SimulationEngine:
                 authorized = generalized_profile.normalize_quotes(authorized, inventory_decision.reservation_price)
             elif market_profile is not None:
                 authorized = normalize_quotes(authorized, market_profile)
+            margin_retired = False
+            if research_risk_model is not None and authorized:
+                try:
+                    # Recheck the executable ladder after the existing firewall and precision transforms.
+                    adjusted = evaluate_research_risk(research_risk_model, **research_inputs,
+                                                      quotes=authorized, include_stresses=False)
+                    margin_retired = not opening_feasible(adjusted.margin)
+                except ResearchRiskError:
+                    margin_retired = True
+                if margin_retired:
+                    authorized = []
+            if paper_risk_run is not None:
+                paper_risk_run.frames.append(PaperRiskFrame(
+                    sequence=frame.sequence, state=risk_decision.state.value, candidate_quotes=len(agent_quotes),
+                    authorized_quotes=len(authorized), margin_retired_quotes=margin_retired,
+                    projected_headroom=research_snapshot.margin.projected_headroom if research_snapshot else None,
+                    decision_reasons=tuple(reason[:180] for reason in risk_decision.reasons[:16]),
+                ))
             validate_quotes(authorized,frame.market,risk_status)
             accounting.reserve(authorized,existing)
             vault=accounting.snapshot()
@@ -294,6 +337,15 @@ class SimulationEngine:
             session_after=vault_after.net_pnl_quote
             equity_after=vault_after.equity_quote
             drawdown_after=vault_after.drawdown_pct
+            if paper_risk_run is not None and frame is frames[-1]:
+                try:
+                    paper_risk_run.final = evaluate_research_risk(
+                        research_risk_model, mark=frame.perp_context.mark_price, position=inventory_after.position_base,
+                        position_limit=strategy.hard_inventory_limit_base, valuation_time=frame.timestamp,
+                        existing=await paper.get_open_orders(), net_pnl=vault_after.net_pnl_quote,
+                    )
+                except ResearchRiskError:
+                    paper_risk_run.final = None
             metrics.record(
                 authorized_quotes=authorized,inventory=inventory_after,risk_decision=risk_decision,
                 agent_decision=agent_decision,equity=equity_after,drawdown_pct=drawdown_after,actions=actions,

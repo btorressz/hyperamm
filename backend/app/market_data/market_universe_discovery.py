@@ -17,6 +17,9 @@ from requests import Request
 from urllib3.exceptions import HTTPError, TimeoutError as HTTPTimeout
 
 from app.market_data.live_observations import classify
+from app.market_data.market_risk_metadata import (
+    MarketFinancialObservation, normalize_financial_metadata, normalize_spot_tokens,
+)
 from app.market_data.market_universe_contracts import (
     MAX_CATALOG_RECORDS,
     DiscoveryEligibility,
@@ -143,7 +146,7 @@ class OfficialMetadataClient:
             raise DiscoveryFailure("NETWORK_MISMATCH")
         self.endpoint = official
 
-    def __call__(self, method: Literal["perpDexs", "meta"], dex: str, deadline: float):
+    def __call__(self, method: Literal["perpDexs", "meta", "spotMeta"], dex: str, deadline: float):
         from hyperliquid.info import Info
 
         info = Info.__new__(Info)
@@ -157,6 +160,8 @@ class OfficialMetadataClient:
                 return info.perp_dexs()
             if method == "meta":
                 return info.meta(dex=dex)
+            if method == "spotMeta" and dex == "":
+                return info.spot_meta()
             raise DiscoveryFailure("UNSUPPORTED_METADATA")
         finally:
             session = getattr(info, "session", None)
@@ -168,7 +173,7 @@ class OfficialMetadataClient:
                     raise DiscoveryFailure("CLEANUP_ERROR") from None
 
     def _post(self, session, path, payload, deadline):
-        if path != "/info" or payload.get("type") not in {"perpDexs", "meta"}:
+        if path != "/info" or payload.get("type") not in {"perpDexs", "meta", "spotMeta"}:
             raise DiscoveryFailure("UNSUPPORTED_METADATA")
         remaining = deadline - monotonic()
         if remaining <= 0:
@@ -301,17 +306,19 @@ class Refresh:
     inventory: MetadataCheck | None = None
     namespaces: tuple[NamespaceCheck, ...] = ()
     error: FailureCode | None = None
+    financial_error: FailureCode | None = None
 
     @property
     def rate_limited(self) -> bool:
         return "RATE_LIMITED" in (
-            self.error, self.inventory.error if self.inventory else None, *(item.error for item in self.namespaces),
+            self.error, self.financial_error, self.inventory.error if self.inventory else None, *(item.error for item in self.namespaces),
         )
 
 
 @dataclass(frozen=True)
 class Snapshot:
     catalog: MarketUniverseCatalog
+    financial: dict[str, MarketFinancialObservation] = field(default_factory=dict)
     retired: Event = field(default_factory=Event, compare=False, repr=False)
 
     @cached_property
@@ -379,10 +386,12 @@ class MarketUniverseDiscovery:
         checks: dict[str, NamespaceCheck] = {}
         records: list[MarketUniverseMetadata] = []
         targets = iter(dexes)
+        financial_inputs = {}
+        spot_task = None
         rate_limited = over_capacity = False
 
         async def collect_namespaces():
-            nonlocal rate_limited, over_capacity
+            nonlocal rate_limited, over_capacity, spot_task
             for dex in targets:
                 if over_capacity or rate_limited:
                     code = "CATALOG_CAPACITY" if over_capacity else "RATE_LIMITED"
@@ -403,6 +412,11 @@ class MarketUniverseDiscovery:
                     over_capacity = True
                 else:
                     records.extend(rows)
+                    financial_inputs[dex] = raw, rows
+                    if (spot_task is None and type(raw.get("collateralToken")) is int
+                            and 0 <= raw["collateralToken"] < 2**31):
+                        # Share the existing bounded pool and refresh deadline.
+                        spot_task = asyncio.create_task(get("spotMeta"))
                 checks[dex] = NamespaceCheck(dex=dex, status="REFRESHED", observed_at=observed_at)
 
         worker_count = min(MAX_CONCURRENCY, len(dexes))
@@ -410,13 +424,26 @@ class MarketUniverseDiscovery:
         for outcome in outcomes:
             if isinstance(outcome, BaseException):
                 raise outcome
+        spot_tokens, financial_error = None, None
+        if spot_task is not None:
+            try:
+                raw_spot, spot_at = await spot_task
+                spot_tokens = normalize_spot_tokens(raw_spot, network=self.network, observed_at=spot_at)
+            except Exception as exc:
+                financial_error = _failure_code(exc)
         namespaces = tuple(checks[dex] for dex in dexes)
         if over_capacity:
             return Refresh("UNAVAILABLE", inventory, namespaces, "CATALOG_CAPACITY"), None
         if any(check.status != "REFRESHED" for check in namespaces):
             availability = "PARTIAL" if namespaces[0].status == "REFRESHED" else "UNAVAILABLE"
-            return Refresh(availability, inventory, namespaces), None
-        return Refresh("AVAILABLE", inventory, namespaces), Snapshot(MarketUniverseCatalog(records=tuple(records)))
+            return Refresh(availability, inventory, namespaces, financial_error=financial_error), None
+        financial = {
+            observation.identity.stable_key: observation
+            for dex in dexes
+            for observation in normalize_financial_metadata(*financial_inputs[dex], spot_tokens)
+        }
+        return (Refresh("AVAILABLE", inventory, namespaces, financial_error=financial_error),
+                Snapshot(MarketUniverseCatalog(records=tuple(records)), financial))
 
     async def _refresh(self, started: float):
         try:
@@ -430,7 +457,8 @@ class MarketUniverseDiscovery:
         if snapshot is not None:
             self._snapshot = snapshot
             self._failed_attempts = 0
-            self._expires = started + self._cache_seconds
+            delay = max(self._cache_seconds, RATE_LIMIT_BACKOFF) if result.rate_limited else self._cache_seconds
+            self._expires = started + delay
         else:
             self._failed_attempts = min(self._failed_attempts + 1, 5)
             delay = min(60, 5 * 2 ** (self._failed_attempts - 1))
@@ -489,6 +517,13 @@ class MarketUniverseDiscovery:
             return None
         deadline = snapshot.observation_range[0] + timedelta(seconds=self._cache_seconds)
         return deadline, lambda: not snapshot.retired.is_set()
+
+    def financial_observation(self, fingerprint: str, identity: MarketInstrumentIdentity):
+        """Resolve server-owned financial evidence from the same active catalog."""
+        snapshot = self._snapshot
+        if self.paper_generation(fingerprint) is None:
+            return None
+        return snapshot.financial.get(identity.stable_key)
 
     async def _drain(self):
         try:

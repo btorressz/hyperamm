@@ -89,13 +89,16 @@ async def _admit(request: Request, proposal: PaperProposal, expected=None):
     generation = (source.paper_generation(catalog.catalog_fingerprint)
                   if catalog.availability == "AVAILABLE" and catalog.catalog_fingerprint is not None else None)
     worker_inputs = (dict(catalog_valid_until=generation[0], catalog_guard=generation[1]) if generation else {})
+    if generation is not None and proposal.research_risk is not None:
+        worker_inputs["risk_source"] = source.financial_observation(catalog.catalog_fingerprint, proposal.identity)
     metadata = next((record for record in catalog.catalog.records
                      if record.identity == proposal.identity), None) if catalog.catalog is not None else None
     admission, _ = assess(proposal, metadata, network=catalog.network, evaluated_at=catalog.evaluated_at,
                           max_age_seconds=catalog.max_age_seconds,
                           metadata_current=generation is not None, expected=expected,
                           catalog_fingerprint=catalog.catalog_fingerprint,
-                          catalog_valid_until=worker_inputs.get("catalog_valid_until"))
+                          catalog_valid_until=worker_inputs.get("catalog_valid_until"),
+                          risk_source=worker_inputs.get("risk_source"))
     return admission, dict(max_age_seconds=catalog.max_age_seconds, **worker_inputs)
 
 
@@ -111,6 +114,11 @@ async def paper_run(body: PaperRunRequest, request: Request):
     admission, worker_inputs = await _admit(request, proposal, expected=body.expected)
     if admission.status != "ELIGIBLE":
         return _decision_response(admission)
+    if admission.risk_model is not None:
+        now = datetime.now(timezone.utc)
+        if now >= admission.valid_until or not worker_inputs["catalog_guard"]():
+            reason = "RISK_SOURCE_STALE" if admission.risk_model.source is not None else "METADATA_STALE"
+            return _decision_response(decision(admission.identity, now, reason, profile=admission.profile))
     try:
         result = await request.app.state.simulation_executor.execute(
             "run_generalized_paper", proposal=proposal, metadata=admission.profile.metadata,
