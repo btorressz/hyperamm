@@ -21,7 +21,7 @@ from app.risk.authorization import FinalQuoteAuthorization
 from app.accounting.models import PnlBreakdown, AccountingNotice, ExecutionAccountingConsistency
 from app.accounting.config import AccountingConfig
 from app.execution.quote_reconciler import ReconcileAction
-from app.references.models import ProviderStatus
+from app.references.models import ProviderStatus, SourceType
 from app.references.consensus import MATERIAL_PROVIDERS
 from app.agents.models import MarketRegime, ToxicFlowState, ExecutionQualityState
 from app.strategy.market_adaptation import VolatilityRegime
@@ -67,6 +67,8 @@ def build_contract():
     inv=properties(InventoryState)
     inv.update({k:nullable(v) for k,v in properties(InventoryDecision).items() if k!='fair_value'})
     perp=properties(PerpMarketContext)
+    for source in (perp['source'], defs['PerpMarketContext']['properties']['source']):
+        source['enum']=['HYPERLIQUID','DEMO']
     decision=properties(PerpReferenceDecision)
     for key in ('market_fair_value','funding_score','funding_shift_bps','reference_shift_bps'):
         source='final_reference_shift_bps' if key=='reference_shift_bps' else key
@@ -92,9 +94,10 @@ def build_contract():
     for key,cls in [('agent_regime',RegimeAgentOutput),('agent_toxic_flow_state',ToxicFlowAgentOutput),('agent_execution_quality_state',ExecutionQualityAgentOutput)]:
         q[key]=nullable(defs[cls.__name__]['properties']['state'])
     defs['ReferenceConsensus']['properties']['confidence_state']=enum('VERIFIED','DEGRADED','CONFLICTED','INSUFFICIENT')
-    # PriceEvidence is also used by the separate observations REST API. Its
-    # shared enum must not expand the material phase12-v1 streaming contract.
+    # Keep observational and generalized PAPER sources outside the material
+    # phase12-v1 streaming contract.
     defs['ProviderId']['enum']=[provider.value for provider in MATERIAL_PROVIDERS]
+    defs['SourceType']['enum']=[source.value for source in SourceType if source != SourceType.SYNTHETIC_SCENARIO]
     defs['ReferenceConsensus']['properties']['source_statuses']['additionalProperties']=enum(*(x.value for x in ProviderStatus))
     defs['LiquidationEvidence']['properties']['status']=enum('FLAT','UNAVAILABLE','BREACHED','AVAILABLE')
     defs['AgentEvidenceSnapshot']['properties']['reference_confidence']=defs['ReferenceConsensus']['properties']['confidence_state']

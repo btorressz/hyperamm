@@ -11,7 +11,7 @@ from app.execution.models import Fill, OrderStatus
 from app.execution.quote_reconciler import ReconcileActionType
 from app.market_data.history import MarketPriceHistory
 from app.market_data.models import utcnow
-from app.references.models import PriceEvidence, ReferenceSnapshot
+from app.references.models import GENERALIZED_REFERENCE_SOURCE, PriceEvidence, ReferenceSnapshot
 from .models import AgentEvidenceSnapshot, AgentModel, semantic_fingerprint
 from .common import seconds
 
@@ -126,12 +126,15 @@ class AgentTelemetryStore:
         The timestamp identifies consensus evaluation; provider evidence retains each
         accepted source timestamp/transport separately. Later updates cannot rebind a fill.
         """
+        if refs is not None and refs.is_generalized_paper and fill.execution_mode != "PAPER":
+            raise ValueError("generalized PAPER references require a simulated fill")
         if refs is None or refs.consensus.consensus_price is None:
             return self.observe_fill(fill, None)
         return self.observe_fill(
             fill, refs.consensus.consensus_price,
             reference_timestamp=refs.consensus.updated_at,
-            reference_source="CONSENSUS", reference_version=refs.version,
+            reference_source=GENERALIZED_REFERENCE_SOURCE if refs.is_generalized_paper else "CONSENSUS",
+            reference_version=refs.version,
             reference_provenance={
                 provider: refs.evidence[provider].model_copy(deep=True)
                 for provider in refs.consensus.eligible_providers
@@ -374,6 +377,8 @@ def build_agent_evidence(
         instability = max(abs((b.mid_price-a.mid_price)/a.mid_price)*Decimal("10000")
                           for a,b in zip(selected,selected[1:]))
     versions=(market_decision.version,inventory.version,perp_context.version,refs.version,book_metrics,changes)
+    if refs.is_generalized_paper:
+        versions += (GENERALIZED_REFERENCE_SOURCE,)
     return AgentEvidenceSnapshot(
         market=inventory.market,
         market_version=market_decision.version,

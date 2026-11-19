@@ -1,5 +1,5 @@
 import type { GeneralizedPaperResult, PaperAdmission, PaperBinding, PaperProposal, PaperReason } from '../types/generalizedPaper';
-import { paperProfileVersion, paperReasons } from '../types/generalizedPaper';
+import { paperEvidenceBoundary, paperProfileVersion, paperReasons } from '../types/generalizedPaper';
 import { checkedMarketUniverseIdentity, marketUniverseKey, marketUniverseTimestamp } from './marketUniverse';
 import { exactDecimal } from './orderView';
 
@@ -40,6 +40,11 @@ function matchesIdentity(value: unknown, proposal: PaperProposal) {
   return marketUniverseKey(checkedMarketUniverseIdentity(value, proposal.identity.network)) === marketUniverseKey(proposal.identity);
 }
 
+function matchesResearchBoundary(value: unknown) {
+  return object(value) && Object.keys(value).length === Object.keys(paperEvidenceBoundary).length &&
+    Object.entries(paperEvidenceBoundary).every(([key, expected]) => value[key] === expected);
+}
+
 export function checkedPaperAdmission(value: unknown, proposal: PaperProposal): PaperAdmission {
   if (!object(value) || value.profile_version !== paperProfileVersion || value.scope !== 'LOCAL_PAPER_ONLY' ||
       value.authority !== 'NONE' || value.execution_eligible !== false || typeof value.reason !== 'string' ||
@@ -63,6 +68,7 @@ export function checkedPaperAdmission(value: unknown, proposal: PaperProposal): 
     if (!object(profile) || profile.profile_version !== paperProfileVersion || profile.authority !== 'NONE' ||
         profile.execution_eligible !== false || profile.paper_eligibility !== 'REQUIRES_ADMISSION' ||
         profile.reference_source !== 'USER_SUPPLIED_SYNTHETIC' || profile.model_compatibility !== 'HYPOTHETICAL_LINEAR_ONLY' ||
+        !matchesResearchBoundary(profile.evidence_boundary) ||
         !Array.isArray(profile.limitations) || profile.limitations.length !== value.limitations.length ||
         profile.limitations.some((limit, index) => limit !== (value.limitations as string[])[index]) ||
         !digest(profile.profile_fingerprint) || !digest(profile.metadata_fingerprint) ||
@@ -90,9 +96,10 @@ export function checkedPaperAdmission(value: unknown, proposal: PaperProposal): 
     if (eligible) {
       const expires = marketUniverseTimestamp(value.valid_until);
       if (metadata.metadata_status !== 'EXCHANGE_VERIFIED' || metadata.listed !== true ||
-          discovered !== evaluated || discovery.discovery_eligible !== true || observed > evaluated || evaluated > expires || expires - observed > 86_400_000_000n ||
+          discovered !== evaluated || discovery.discovery_eligible !== true || observed > evaluated || evaluated >= expires || expires - observed > 86_400_000_000n ||
           !object(binding) || binding.metadata_fingerprint !== profile.metadata_fingerprint ||
-          binding.profile_fingerprint !== profile.profile_fingerprint || !digest(binding.configuration_fingerprint)) malformed();
+          binding.profile_fingerprint !== profile.profile_fingerprint || !digest(binding.configuration_fingerprint) ||
+          !digest(binding.catalog_fingerprint)) malformed();
     }
   }
   if (eligible ? profile === null : value.valid_until !== null || binding !== null) malformed();
@@ -116,7 +123,11 @@ export function checkedPaperResult(value: unknown, proposal: PaperProposal, expe
   const admission = checkedPaperAdmission(value.admission, proposal);
   if (admission.status !== 'ELIGIBLE' || admission.binding.profile_fingerprint !== expected.profile_fingerprint ||
       admission.binding.metadata_fingerprint !== expected.metadata_fingerprint ||
+      admission.binding.catalog_fingerprint !== expected.catalog_fingerprint ||
       admission.binding.configuration_fingerprint !== expected.configuration_fingerprint) malformed();
+  const started = marketUniverseTimestamp(value.started_at);
+  if (started < marketUniverseTimestamp(admission.evaluated_at) ||
+      started >= marketUniverseTimestamp(admission.valid_until)) malformed();
   const captured = value.proposal;
   if (captured.profile_version !== paperProfileVersion || !matchesIdentity(captured.identity, proposal) ||
       captured.scenario !== proposal.scenario || captured.frames !== proposal.frames ||
@@ -135,6 +146,7 @@ export function checkedPaperResult(value: unknown, proposal: PaperProposal, expe
       !integer(result.metrics.frame_count, 2, maxFrames) || result.metrics.frame_count !== proposal.frames ||
       !integer(result.metrics.fill_count, 0, maxFrames * 8) || !object(result.vault) ||
       result.vault.simulated !== true || result.vault.mode !== 'PAPER' || result.vault.market !== result.research_market) malformed();
-  for (const field of ['net_pnl_quote', 'fees_quote', 'funding_quote', 'position_base']) decimal(result.vault[field]);
+  for (const field of ['net_pnl_quote', 'fees_quote', 'funding_quote', 'position_base', 'initial_equity_quote',
+    'equity_quote', 'reserved_capital_quote', 'realized_pnl_quote', 'unrealized_pnl_quote']) decimal(result.vault[field]);
   return value as unknown as GeneralizedPaperResult;
 }

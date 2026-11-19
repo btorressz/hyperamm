@@ -41,7 +41,11 @@ class CoordinatedSimulationExecutor:
             raise ResearchBusyError("Phase 10 research worker is shutting down")
         inputs = deepcopy(inputs)
         process_id, session_id = self.identity()
-        request_digest = digest({"operation": operation, "inputs": inputs,
+        # The worker's generation check is process-local. Its immutable
+        # catalog fingerprint is already part of the captured request binding.
+        fingerprint_inputs = ({key: value for key, value in inputs.items() if key != "catalog_guard"}
+                              if operation == "run_generalized_paper" else inputs)
+        request_digest = digest({"operation": operation, "inputs": fingerprint_inputs,
                                  "engine_version": SIMULATION_ENGINE_VERSION})
         try:
             lease = await self.infrastructure.acquire("research", 1)

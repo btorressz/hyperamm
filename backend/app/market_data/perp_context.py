@@ -4,11 +4,12 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .models import MarketSnapshot, utcnow
 
 BPS = Decimal("10000")
+PerpContextSource = Literal["HYPERLIQUID", "DEMO", "GENERALIZED_PAPER"]
 
 
 class PerpMarketContext(BaseModel):
@@ -27,8 +28,14 @@ class PerpMarketContext(BaseModel):
     updated_at: datetime = Field(default_factory=utcnow)
     stale: bool = False
     version: int = Field(default=0, ge=0)
-    source: Literal["HYPERLIQUID", "DEMO"]
+    source: PerpContextSource
     simulated: bool = False
+
+    @model_validator(mode="after")
+    def validate_research_source(self):
+        if self.source == "GENERALIZED_PAPER" and not self.simulated:
+            raise ValueError("generalized PAPER context requires simulated provenance")
+        return self
 
 
 class PerpPositionContext(BaseModel):
@@ -89,7 +96,7 @@ def build_perp_market_context(
     premium: Decimal | None,
     provider_mid_price: Decimal | None,
     updated_at: datetime,
-    source: Literal["HYPERLIQUID", "DEMO"],
+    source: PerpContextSource,
     simulated: bool,
     version: int = 0,
     stale: bool = False,

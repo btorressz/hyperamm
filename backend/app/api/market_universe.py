@@ -6,13 +6,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
 from app.infrastructure.research import ResearchUnavailableError
-from app.market_data.market_universe_contracts import MarketInstrumentIdentity
+from app.market_data.market_universe_contracts import CONTRACT_VERSION, MarketInstrumentIdentity
 from app.simulation.executor import ResearchBusyError
 from app.simulation.generalized_market_profiles import (
     GeneralizedPaperResult, MAX_RESPONSE_BYTES, PROFILE_VERSION, PaperAdmission, PaperProposal,
     PaperRejected, PaperRunRequest, assess, decision,
 )
-from app.market_data.market_universe_discovery import MarketUniverseResponse, RATE_LIMIT_BACKOFF
+from app.market_data.market_universe_discovery import MarketUniverseResponse, RATE_LIMIT_BACKOFF, RESPONSE_VERSION
 
 router = APIRouter(tags=["market-universe"])
 
@@ -83,12 +83,20 @@ PAPER_DECISIONS = {status: {"model": PaperAdmission} for status in (409, 422, 50
 async def _admit(request: Request, proposal: PaperProposal, expected=None):
     source = request.app.state.market_universe_discovery
     catalog = await source.catalog()
+    if (catalog.schema_version != RESPONSE_VERSION or catalog.contract_version != CONTRACT_VERSION
+            or (catalog.catalog is not None and catalog.catalog.contract_version != CONTRACT_VERSION)):
+        return decision(proposal.identity, datetime.now(timezone.utc), "METADATA_UNAVAILABLE"), {}
+    generation = (source.paper_generation(catalog.catalog_fingerprint)
+                  if catalog.availability == "AVAILABLE" and catalog.catalog_fingerprint is not None else None)
+    worker_inputs = (dict(catalog_valid_until=generation[0], catalog_guard=generation[1]) if generation else {})
     metadata = next((record for record in catalog.catalog.records
                      if record.identity == proposal.identity), None) if catalog.catalog is not None else None
     admission, _ = assess(proposal, metadata, network=catalog.network, evaluated_at=catalog.evaluated_at,
                           max_age_seconds=catalog.max_age_seconds,
-                          metadata_current=catalog.availability == "AVAILABLE", expected=expected)
-    return admission, catalog.max_age_seconds
+                          metadata_current=generation is not None, expected=expected,
+                          catalog_fingerprint=catalog.catalog_fingerprint,
+                          catalog_valid_until=worker_inputs.get("catalog_valid_until"))
+    return admission, dict(max_age_seconds=catalog.max_age_seconds, **worker_inputs)
 
 
 @paper_router.post("/eligibility", response_model=PaperAdmission, responses=PAPER_DECISIONS)
@@ -100,14 +108,13 @@ async def paper_eligibility(proposal: PaperProposal, request: Request):
 @paper_router.post("/run", response_model=GeneralizedPaperResult, responses=PAPER_DECISIONS)
 async def paper_run(body: PaperRunRequest, request: Request):
     proposal = PaperProposal.model_validate(body.model_dump(exclude={"expected"}))
-    admission, max_age_seconds = await _admit(request, proposal, expected=body.expected)
+    admission, worker_inputs = await _admit(request, proposal, expected=body.expected)
     if admission.status != "ELIGIBLE":
         return _decision_response(admission)
     try:
         result = await request.app.state.simulation_executor.execute(
             "run_generalized_paper", proposal=proposal, metadata=admission.profile.metadata,
-            network=admission.identity.network, max_age_seconds=max_age_seconds,
-            expected=admission.binding,
+            network=admission.identity.network, expected=admission.binding, **worker_inputs,
         )
     except PaperRejected as exc:
         return _decision_response(exc.admission)

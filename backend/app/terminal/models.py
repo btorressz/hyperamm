@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any, Literal
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 from app.market_data.models import MarketSnapshot
 from app.strategy.models import StrategyState
 from app.amm.models import QuoteLevel, VirtualPool
@@ -74,6 +74,13 @@ class TerminalSnapshot(Observation):
     system_health: SystemHealthState
     execution_summary: dict[str, Any]
     diagnostics: dict[str, bool]
+
+    @field_validator("references", "reference_consensus")
+    @classmethod
+    def require_operational_reference(cls, value):
+        if value is not None and value.is_generalized_paper:
+            raise ValueError("generalized PAPER references cannot enter terminal evidence")
+        return value
 
 
 class TerminalHistoryPoint(Observation):

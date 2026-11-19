@@ -22,10 +22,24 @@ export interface PaperProposal {
 }
 
 export interface PaperBinding {
+  catalog_fingerprint: string;
   metadata_fingerprint: string;
   profile_fingerprint: string;
   configuration_fingerprint: string;
 }
+
+export const paperEvidenceBoundary = {
+  version: 'phase182g-v1',
+  references: 'phase182g-v1:synthetic-scenario',
+  reference_clock: 'SIMULATION_FRAME_TIME',
+  order_book: 'SYNTHETIC_DEPTH',
+  accounting_units: 'HYPOTHETICAL_QUOTE',
+  capital_reservation: 'SIMULATED_FULL_NOTIONAL',
+  fees: 'HYPOTHETICAL_MAKER_TAKER',
+  funding: 'HYPOTHETICAL_SCHEDULED',
+  exchange_economics: 'UNVERIFIED',
+  risk_readiness: 'SINGLE_MARKET_RESEARCH_ONLY',
+} as const;
 
 export interface GeneralizedMarketProfile {
   profile_version: typeof paperProfileVersion;
@@ -40,6 +54,7 @@ export interface GeneralizedMarketProfile {
   economics: Required<HypotheticalEconomics>;
   reference_source: 'USER_SUPPLIED_SYNTHETIC';
   model_compatibility: 'HYPOTHETICAL_LINEAR_ONLY';
+  evidence_boundary: typeof paperEvidenceBoundary;
   paper_eligibility: 'REQUIRES_ADMISSION';
   limitations: string[];
   authority: 'NONE';
@@ -61,6 +76,7 @@ export const paperReasons = {
   CONFIGURATION_INVALID: 'request',
   PROFILE_FINGERPRINT_MISMATCH: 'profile_fingerprint',
   METADATA_FINGERPRINT_MISMATCH: 'metadata_fingerprint',
+  CATALOG_FINGERPRINT_MISMATCH: 'catalog_fingerprint',
   CONFIGURATION_FINGERPRINT_MISMATCH: 'configuration_fingerprint',
 } as const;
 export type PaperReason = keyof typeof paperReasons;
@@ -91,6 +107,7 @@ export interface GeneralizedPaperResult {
   execution_mode: 'PAPER';
   simulated: true;
   result_fingerprint: string;
+  started_at: string;
   result: {
     engine_version: string;
     run_fingerprint: string;
@@ -103,6 +120,8 @@ export interface GeneralizedPaperResult {
     simulated: true;
     metrics: { frame_count: number; fill_count: number };
     vault: { market: string; mode: 'PAPER'; simulated: true; net_pnl_quote: string;
+        initial_equity_quote: string; equity_quote: string; reserved_capital_quote: string;
+        realized_pnl_quote: string; unrealized_pnl_quote: string;
         fees_quote: string; funding_quote: string; position_base: string };
   };
 }

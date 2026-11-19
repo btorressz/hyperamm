@@ -5,9 +5,10 @@ import asyncio
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from functools import cached_property
+from threading import Event
 from time import monotonic
 from typing import Callable, Literal
 
@@ -38,6 +39,7 @@ HTTP_TIMEOUT = 5.0
 REFRESH_TIMEOUT = 15.0
 CACHE_SECONDS = 60
 RATE_LIMIT_BACKOFF = 30
+RESPONSE_VERSION = "phase181-v1"
 
 FailureCode = Literal[
     "DISABLED", "CLOSED", "TIMEOUT", "RATE_LIMITED", "FORBIDDEN", "UPSTREAM_ERROR",
@@ -68,7 +70,7 @@ class NamespaceCheck(MetadataCheck):
 
 
 class MarketUniverseResponse(MarketUniverseEvidence):
-    schema_version: Literal["phase181-v1"] = "phase181-v1"
+    schema_version: Literal["phase181-v1"] = RESPONSE_VERSION
     network: Network
     availability: Availability
     catalog: MarketUniverseCatalog | None = None
@@ -310,6 +312,7 @@ class Refresh:
 @dataclass(frozen=True)
 class Snapshot:
     catalog: MarketUniverseCatalog
+    retired: Event = field(default_factory=Event, compare=False, repr=False)
 
     @cached_property
     def fingerprint(self) -> str:
@@ -464,6 +467,8 @@ class MarketUniverseDiscovery:
         # Task selection/publication has no suspension points on the owning loop.
         now = monotonic()
         if now >= self._expires and (self._task is None or self._task.done()):
+            if self._snapshot is not None:
+                self._snapshot.retired.set()
             self._deadline = now + self._refresh_timeout
             self._task = asyncio.create_task(self._refresh(now), name="market-universe-refresh")
         if self._task is not None and not self._task.done():
@@ -476,6 +481,15 @@ class MarketUniverseDiscovery:
             return self._view(Refresh("UNAVAILABLE", error="CLOSED"), None)
         return self._view(self._refresh_result, self._snapshot)
 
+    def paper_generation(self, fingerprint: str):
+        """Capture the current generation's deadline and thread-safe validity check."""
+        snapshot = self._snapshot
+        if (self._closed or snapshot is None or snapshot.retired.is_set()
+                or snapshot.fingerprint != fingerprint):
+            return None
+        deadline = snapshot.observation_range[0] + timedelta(seconds=self._cache_seconds)
+        return deadline, lambda: not snapshot.retired.is_set()
+
     async def _drain(self):
         try:
             if self._task is not None:
@@ -485,6 +499,8 @@ class MarketUniverseDiscovery:
 
     async def close(self):
         self._closed = True
+        if self._snapshot is not None:
+            self._snapshot.retired.set()
         if self._close_task is None:
             self._close_task = asyncio.create_task(self._drain(), name="market-universe-shutdown")
         await asyncio.shield(self._close_task)

@@ -3,6 +3,7 @@ const test = require('node:test');
 const path = require('node:path');
 const load = name => require(path.join(process.env.TERMINAL_TEST_BUILD, name));
 const { api } = load('api/client.js');
+const { paperEvidenceBoundary } = load('types/generalizedPaper.js');
 const { checkedPaperAdmission, checkedPaperResult, paperAdmissionIsCurrent } = load('utils/generalizedPaper.js');
 const { marketUniverseKey } = load('utils/marketUniverse.js');
 
@@ -15,7 +16,7 @@ const evaluated_at = '2026-11-18T20:00:12.000001Z';
 const valid_until = '2026-11-18T20:01:00.000001Z';
 const limitations = ['local', 'synthetic', 'hypothetical', 'unverified', 'no authority'];
 const binding = { metadata_fingerprint: 'a'.repeat(64), profile_fingerprint: 'b'.repeat(64),
-  configuration_fingerprint: 'c'.repeat(64) };
+  configuration_fingerprint: 'c'.repeat(64), catalog_fingerprint: '1'.repeat(64) };
 const proposal = { profile_version, identity, simulated_reference_price: '2.500e3', scenario: 'FLASH_MOVE',
   frames: 40, trace_max_points: 10, economics: { model: 'HYPOTHETICAL_LINEAR' } };
 const economics = { ...proposal.economics, maker_fee_bps: '0', taker_fee_bps: '0', funding_interval_seconds: null };
@@ -27,6 +28,7 @@ function admission() {
     profile: { profile_version, limitations, stable_key: marketUniverseKey(identity), exchange_coin: 'xyz:GOLD',
       metadata_fingerprint: binding.metadata_fingerprint, profile_fingerprint: binding.profile_fingerprint,
       model_compatibility: 'HYPOTHETICAL_LINEAR_ONLY', paper_eligibility: 'REQUIRES_ADMISSION',
+      evidence_boundary: paperEvidenceBoundary,
       authority: 'NONE', execution_eligible: false, reference_source: 'USER_SUPPLIED_SYNTHETIC',
       simulated_reference_price: '2500', synthetic_top_depth_quote: '18000', economics,
       discovery: { contract_version, identity, metadata_fingerprint: binding.metadata_fingerprint, evaluated_at,
@@ -44,14 +46,16 @@ function rejection(reason, check, unavailable = false) {
 function result() {
   const market = marketUniverseKey(identity);
   return { profile_version, admission: admission(), simulated: true, execution_mode: 'PAPER',
-    result_fingerprint: 'd'.repeat(64),
+    result_fingerprint: 'd'.repeat(64), started_at: '2026-11-18T20:00:13Z',
     proposal: { ...proposal, economics, minimum_order_notional: '100', synthetic_top_depth_quote: '18000' },
     result: { engine_version: 'phase10-v1', run_fingerprint: 'e'.repeat(64), dataset_fingerprint: 'f'.repeat(64),
       strategy_fingerprint: '0'.repeat(64), scenario: proposal.scenario, research_market: market,
       market_profile_version: profile_version, market_profile_fingerprint: binding.profile_fingerprint, simulated: true,
       metrics: { frame_count: 40, fill_count: 4 },
       vault: { market, mode: 'PAPER', simulated: true, net_pnl_quote: '-12.95001', fees_quote: '0',
-        funding_quote: '0', position_base: '1.2500' } } };
+        funding_quote: '0', position_base: '1.2500', initial_equity_quote: '10000',
+        equity_quote: '9987.04999', reserved_capital_quote: '1300',
+        realized_pnl_quote: '0', unrealized_pnl_quote: '-12.95001' } } };
 }
 
 test('PAPER validation retains canonical evidence and retires expired admission', () => {
@@ -77,6 +81,12 @@ for (const [name, mutate] of [
   ['expired eligible evidence within the same millisecond', w => { w.valid_until = '2026-11-18T20:00:12.000000Z'; }],
   ['forked profile digest', w => { w.binding.profile_fingerprint = '9'.repeat(64); }],
   ['forged discovery PAPER eligibility', w => { w.profile.discovery.paper_research_eligible = true; }],
+  ['missing catalog binding', w => { delete w.binding.catalog_fingerprint; }],
+  ['legacy evidence boundary', w => { delete w.profile.evidence_boundary; }],
+  ['verified reference evidence', w => { w.profile.evidence_boundary.references = 'REDSTONE'; }],
+  ['verified collateral evidence', w => { w.profile.evidence_boundary.exchange_economics = 'VERIFIED'; }],
+  ['forged risk readiness', w => { w.profile.evidence_boundary.risk_readiness = 'RISK_READY'; }],
+  ['additional authority marker', w => { w.profile.evidence_boundary.testnet_eligible = true; }],
   ['wrong synthetic assumption', w => { w.profile.simulated_reference_price = '2501'; }],
   ['unbounded precision', w => { w.profile.metadata.sz_decimals = 7; }],
 ]) {
@@ -94,6 +104,10 @@ test('PAPER result requires scoped execution and exact request identity and fing
   assert.throws(() => checkedPaperResult(result(), { ...proposal, frames: 12 }, binding), /Invalid or unsupported/);
   assert.throws(() => checkedPaperResult(result(), proposal, { ...binding, configuration_fingerprint: '9'.repeat(64) }),
     /Invalid or unsupported/);
+  assert.throws(() => checkedPaperResult(result(), proposal, { ...binding, catalog_fingerprint: '9'.repeat(64) }),
+    /Invalid or unsupported/);
+  assert.throws(() => checkedPaperResult({ ...result(), started_at: valid_until }, proposal, binding), /Invalid or unsupported/);
+  assert.throws(() => checkedPaperResult({ ...result(), started_at: observed_at }, proposal, binding), /Invalid or unsupported/);
 });
 
 test('PAPER client sends only the captured fingerprint binding to the research endpoint', async t => {

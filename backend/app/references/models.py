@@ -5,11 +5,21 @@ from decimal import Decimal
 from enum import StrEnum
 from pydantic import BaseModel, Field, model_validator
 
+GENERALIZED_REFERENCE_SOURCE = "phase182g-v1:synthetic-scenario"
+SYNTHETIC_AGREEMENT = "SYNTHETIC_AGREEMENT"
+
 class ProviderId(StrEnum):
     REDSTONE="REDSTONE"; HYPERLIQUID_ORACLE="HYPERLIQUID_ORACLE"; KRAKEN="KRAKEN"; COINGECKO="COINGECKO"; YAHOO_FINANCE="YAHOO_FINANCE"; HYPERLIQUID_MID="HYPERLIQUID_MID"; HYPERLIQUID_MARK="HYPERLIQUID_MARK"
+    SCENARIO_PRIMARY = "SCENARIO_PRIMARY"
+    SCENARIO_ORACLE = "SCENARIO_ORACLE"
+    SCENARIO_SECONDARY = "SCENARIO_SECONDARY"
+    SCENARIO_TERTIARY = "SCENARIO_TERTIARY"
+    SCENARIO_MID = "SCENARIO_MID"
+    SCENARIO_MARK = "SCENARIO_MARK"
 
 class SourceType(StrEnum):
     ORACLE="ORACLE"; NATIVE_ORACLE="NATIVE_ORACLE"; VENUE_REFERENCE="VENUE_REFERENCE"; EXECUTION_VENUE="EXECUTION_VENUE"; PERP_MARK="PERP_MARK"; AGGREGATOR_REFERENCE="AGGREGATOR_REFERENCE"
+    SYNTHETIC_SCENARIO = "SYNTHETIC_SCENARIO"
 
 class ProviderStatus(StrEnum):
     HEALTHY="HEALTHY"; DEGRADED="DEGRADED"; STALE="STALE"; ERROR="ERROR"; DISABLED="DISABLED"
@@ -37,12 +47,27 @@ class PriceEvidence(BaseModel):
     simulated:bool=False
     version:int=Field(default=0,ge=0)
     error:str|None=None
+
+    @property
+    def is_generalized_paper(self) -> bool:
+        return (str(self.provider).startswith("SCENARIO_")
+                or self.source_type == SourceType.SYNTHETIC_SCENARIO
+                or self.source_id == GENERALIZED_REFERENCE_SOURCE)
+
     @model_validator(mode="after")
     def valid(self):
         if self.price is not None and (not self.price.is_finite() or self.price<=0):
             raise ValueError("price evidence price must be finite and positive")
         if self.status==ProviderStatus.HEALTHY and self.price is None:
             raise ValueError("healthy evidence requires price")
+        if self.is_generalized_paper and (
+                not self.provider.value.startswith("SCENARIO_")
+                or self.source_type != SourceType.SYNTHETIC_SCENARIO
+                or self.source_id != GENERALIZED_REFERENCE_SOURCE
+                or self.transport != ReferenceTransport.DEMO
+                or self.transport_quality != TransportQuality.SIMULATED
+                or self.simulated is not True or self.source_timestamp is not None):
+            raise ValueError("generalized PAPER references require synthetic scenario provenance")
         return self
 
 class ReferenceConsensus(BaseModel):
@@ -63,6 +88,11 @@ class ReferenceConsensus(BaseModel):
     version:int=0
     updated_at:datetime
 
+    @property
+    def is_generalized_paper(self) -> bool:
+        return (self.confidence_state == SYNTHETIC_AGREEMENT
+                or any(provider.startswith("SCENARIO_") for provider in self.source_statuses))
+
 class ReferenceSnapshot(BaseModel):
     market:str
     evidence:dict[str,PriceEvidence]
@@ -71,6 +101,11 @@ class ReferenceSnapshot(BaseModel):
     deviation_magnitudes_bps:dict[str,Decimal|None]
     version:int=0
     updated_at:datetime
+
+    @property
+    def is_generalized_paper(self) -> bool:
+        return (self.consensus.is_generalized_paper
+                or any(item.is_generalized_paper for item in self.evidence.values()))
 
 def utcnow(): return datetime.now(timezone.utc)
 def decimal_price(value,name="price"):

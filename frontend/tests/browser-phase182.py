@@ -4,6 +4,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import os
 from pathlib import Path
+import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -44,7 +45,7 @@ async def browser_check(chromium):
     async with async_playwright() as p:
         browser = await p.chromium.launch(executable_path=chromium, args=["--no-sandbox"])
         try:
-            page = await browser.new_page()
+            page = await browser.new_page(viewport={"width": 1440, "height": 900})
             page_errors, writes = [], []
             page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.on("request", lambda request: writes.append(request.url)
@@ -69,6 +70,9 @@ async def browser_check(chromium):
             scenario = page.get_by_role("combobox", name="PAPER scenario")
             check = page.get_by_role("button", name="Check PAPER eligibility")
             run = page.get_by_role("button", name="Run local PAPER")
+            panel = page.get_by_role("region", name="Generalized PAPER research")
+            result = panel.get_by_role("region", name="PAPER result evidence")
+            refresh = panel.get_by_role("button", name="Refresh discovery")
             await expect(page.get_by_text("Venue fees, funding", exact=False)).to_be_visible()
             await expect(run).to_be_disabled()
             await market.select_option("HYPERLIQUID:MAINNET:CORE_PERP::OLD")
@@ -88,9 +92,102 @@ async def browser_check(chromium):
                 await check.click()
                 await expect(run).to_be_enabled()
                 await run.click()
-                await expect(page.get_by_text(f"Simulated PAPER result for {coin}", exact=False)).to_be_visible()
-                await expect(page.get_by_text("Net P&L in hypothetical quote units")).to_be_visible()
+                await expect(result.get_by_role("status")).to_contain_text(f"Simulated PAPER result for {coin}")
+                await expect(result.get_by_text("Net P&L in hypothetical quote units")).to_be_visible()
+                await expect(result.get_by_text("Synthetic top depth", exact=False)).to_be_visible()
+                await expect(result.get_by_text("Modeled maker fee 0 bps", exact=False)).to_be_visible()
+                await expect(result.get_by_text("Hypothetical funding disabled.", exact=False)).to_be_visible()
+                await expect(result.get_by_text("Exchange collateral, margin, liquidation", exact=False)).to_be_visible()
+                await expect(panel.get_by_text(key, exact=True)).to_be_visible()
                 print(f"PASS {coin} completes through the real worker with synthetic labeling", flush=True)
+            await page.set_viewport_size({"width": 390, "height": 844})
+            provenance = result.get_by_text("Result fingerprint and provenance", exact=True)
+            await provenance.focus()
+            await page.keyboard.press("Enter")
+            await expect(result.get_by_text("Reference confidence and timestamps", exact=False)).to_be_visible()
+            assert await result.evaluate("(node) => node.scrollWidth <= node.clientWidth")
+            assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            assert not await panel.get_by_role("button", name=re.compile(r"Trade|Submit order|Execute live", re.I)).count()
+            print("PASS narrow financial evidence and keyboard-accessible provenance", flush=True)
+
+            await market.select_option("HYPERLIQUID:MAINNET:CORE_PERP::DOGE")
+            await expect(result).to_have_count(0)
+            await expect(run).to_be_disabled()
+            await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD")
+            await panel.get_by_role("checkbox", name="Apply hypothetical funding", exact=False).check()
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(result.get_by_text("Hypothetical funding interval 1 s.", exact=False)).to_be_visible()
+
+            checking = asyncio.Event()
+            release = asyncio.Event()
+            async def unavailable(route):
+                checking.set()
+                await release.wait()
+                await route.fulfill(status=429, body="busy")
+            await page.route("**/generalized-paper/run", unavailable)
+            try:
+                await run.click()
+                await asyncio.wait_for(checking.wait(), 5)
+                await expect(panel.get_by_text("Running local PAPER simulation…")).to_have_attribute("role", "status")
+                await expect(result).to_have_count(0)
+            finally:
+                release.set()
+            await expect(panel.get_by_role("alert")).to_contain_text("PAPER worker is busy")
+            await expect(run).to_be_disabled()
+            await page.unroute("**/generalized-paper/run")
+            print("PASS proposal and market edits, accessible run status and failed-result retirement", flush=True)
+
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(result).to_be_visible()
+            await refresh.click()
+            await expect(result).to_have_count(0)
+            await expect(run).to_be_disabled()
+            await expect(check).to_be_enabled()
+
+            async def testnet_catalog(route):
+                response = await route.fetch()
+                wire = await response.json()
+                wire["network"] = "TESTNET"
+                wire["catalog_fingerprint"] = "9" * 64
+                for row in (*wire["catalog"]["records"], *wire["eligibility"]):
+                    row["identity"]["network"] = "TESTNET"
+                await route.fulfill(response=response, json=wire)
+
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(result).to_be_visible()
+            await page.route("**/market-universe", testnet_catalog)
+            await page.evaluate("window.dispatchEvent(new Event('visibilitychange'))")
+            await expect(panel.get_by_text("TESTNET metadata available.", exact=False)).to_be_visible()
+            await expect(market).to_have_value("")
+            await expect(result).to_have_count(0)
+            await expect(run).to_be_disabled()
+            await page.unroute("**/market-universe")
+            await refresh.click()
+            await expect(panel.get_by_text("MAINNET metadata available.", exact=False)).to_be_visible()
+            await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD")
+            print("PASS explicit refresh and automatic network replacement retire admission", flush=True)
+
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(result).to_be_visible()
+            await page.route("**/market-universe",
+                lambda route: route.fulfill(status=500, json={"detail": "fixture refresh failure"}))
+            await page.evaluate("window.dispatchEvent(new Event('visibilitychange'))")
+            await expect(panel.get_by_role("alert")).to_have_text("Discovery could not be loaded.")
+            await expect(result).to_have_count(0)
+            await expect(run).to_be_disabled()
+            await page.unroute("**/market-universe")
+            await refresh.click()
+            await expect(check).to_be_enabled()
+            print("PASS failed background refresh clears evidence and announces failure", flush=True)
+
             await price.fill("2500.123")
             await expect(run).to_be_disabled()
             await check.click()

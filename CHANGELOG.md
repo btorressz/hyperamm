@@ -4,6 +4,13 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.2G final PAPER hardening
+
+- Tag generalized reference inputs, consensus and agent evidence as synthetic, with scenario time separate from provider acquisition time.
+- Bind local PAPER admission to the complete discovery generation and verify expiry and generation ownership at worker start.
+- Publish typed hypothetical accounting and single-market research scope. Show fees, funding, full-notional reservation and financial limitations beside results.
+- Extend adversarial reference, accounting, refresh and concurrency tests and verify native BTC/ETH/SOL compatibility. [Phase 18.2G acceptance](docs/PHASE18_2G_FINAL_HARDENING_ACCEPTANCE.md)
+
 ## Unreleased — Phase 18.2 generalized PAPER research
 
 - Add versioned Core and HIP-3 research profiles and independent PAPER admission from current, canonical discovery evidence.

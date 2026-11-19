@@ -89,6 +89,8 @@ class ReferenceService:
         return {p.value:self._evidence(market=self.market,provider=p,source_type=types[p],price=mid*(Decimal("1")+bps/Decimal("10000")),timestamp=ts,version=seq,simulated=True,source_id=("redstone-demo" if p==ProviderId.REDSTONE else "kraken-demo" if p==ProviderId.KRAKEN else "coingecko-demo")) for p,bps in offsets.items()}
 
     def snapshot(self,snapshot:MarketSnapshot,perp:PerpMarketContext,*,agreement_bps:Decimal,outlier_bps:Decimal)->ReferenceSnapshot:
+        if perp.source == "GENERALIZED_PAPER":
+            raise ValueError("generalized PAPER context cannot enter the reference service")
         if snapshot.stale: raise RuntimeError("market snapshot is stale")
         if perp.stale: raise RuntimeError("perpetual context is stale")
         evidence=self._native(snapshot,perp)
@@ -99,6 +101,8 @@ class ReferenceService:
                 ProviderId.KRAKEN.value:self.kraken.snapshot(),
                 ProviderId.COINGECKO.value:self.coingecko.snapshot(),
             })
+        if any(item.is_generalized_paper for item in evidence.values()):
+            raise ValueError("generalized PAPER references cannot enter the reference service")
         core=(evidence[ProviderId.REDSTONE.value].version,evidence[ProviderId.KRAKEN.value].version,evidence[ProviderId.COINGECKO.value].version,evidence[ProviderId.HYPERLIQUID_ORACLE.value].version,evidence[ProviderId.HYPERLIQUID_MID.value].version,evidence[ProviderId.HYPERLIQUID_MARK.value].version)
         fp=(core,tuple((k,str(v.price),v.status.value,v.stale,v.transport,v.transport_quality) for k,v in sorted(evidence.items())))
         if fp!=self._fingerprint:self._version+=1;self._fingerprint=fp
