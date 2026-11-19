@@ -41,7 +41,9 @@ class FinalQuoteAuthorization(BaseModel):
     reasons:list[str]
     created_at:datetime=Field(default_factory=utcnow)
 
-def authorize(quotes,refs,decision:RiskDecision,agent=None,accounting=None):
+def authorize(quotes,refs,decision:RiskDecision,agent=None,accounting=None,*,generalized_paper=False):
+    if refs.is_generalized_paper != generalized_paper:
+        raise ValueError("reference provenance does not match the authorization context")
     qf=fingerprint(quotes);ef=fingerprint(refs);rf=fingerprint(decision)
     agent_version=agent.version if agent is not None else 0
     agent_fingerprint=agent.fingerprint if agent is not None else fingerprint({"phase9":"not-bound"})

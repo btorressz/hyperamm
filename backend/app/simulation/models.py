@@ -47,16 +47,32 @@ class SimulationReferencePrices(BaseModel):
         return self
 
 
+class GeneralizedSimulationReferencePrices(SimulationReferencePrices):
+    model_config = ConfigDict(extra="forbid")
+    provenance: Literal["phase182g-v1:synthetic-scenario"]
+
+
 class SimulationFrame(BaseModel):
     model_config=ConfigDict(frozen=True)
     sequence:int=Field(ge=0)
     timestamp:datetime
     market:MarketSnapshot
     perp_context:PerpMarketContext
-    reference_prices:SimulationReferencePrices
+    reference_prices:GeneralizedSimulationReferencePrices | SimulationReferencePrices
+
+    @field_validator("reference_prices", mode="before")
+    @classmethod
+    def validate_reference_provenance(cls, value):
+        if isinstance(value, dict) and "provenance" in value:
+            return GeneralizedSimulationReferencePrices.model_validate(value)
+        return value
 
     @model_validator(mode="after")
     def validate_frame(self):
+        generalized = isinstance(self.reference_prices, GeneralizedSimulationReferencePrices)
+        if (generalized != (self.perp_context.source == "GENERALIZED_PAPER")
+                or (generalized and not (self.market.simulated and self.perp_context.simulated))):
+            raise ValueError("simulation reference and perpetual provenance disagree")
         if self.market.market!=self.perp_context.market:
             raise ValueError("simulation market/perp market mismatch")
         if self.market.book is None or self.market.mid_price is None or self.market.best_bid is None or self.market.best_ask is None:

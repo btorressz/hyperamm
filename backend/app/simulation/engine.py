@@ -24,7 +24,7 @@ from app.research.ml.shadow_evaluation import ShadowEvaluationAccumulator
 
 from .config import SimulationConfig
 from .metrics import MetricsAccumulator
-from .models import SimulationDataset,SimulationResult,SimulationTracePoint,stable_fingerprint
+from .models import GeneralizedSimulationReferencePrices, SimulationDataset,SimulationResult,SimulationTracePoint,stable_fingerprint
 from .references import build_simulated_references
 from .replay import bounded_frames
 from . import version
@@ -84,7 +84,11 @@ class SimulationEngine:
                 or not market_profile.research_supported or strategy.size_precision != market_profile.sz_decimals):
             raise ValueError("research profile must match dataset and strategy precision")
 
-        if generalized_profile is not None and (market_profile is not None
+        generalized_paper = generalized_profile is not None
+        if any(isinstance(frame.reference_prices, GeneralizedSimulationReferencePrices) != generalized_paper
+               for frame in frames):
+            raise ValueError("scenario reference provenance must match the simulation profile")
+        if generalized_paper and (market_profile is not None
                 or generalized_profile.market != dataset.market or not dataset.simulated
                 or strategy.size_precision != generalized_profile.sz_decimals):
             raise ValueError("generalized profile must match synthetic dataset and strategy precision")
@@ -103,7 +107,7 @@ class SimulationEngine:
             telemetry.register_horizons((float(predictive_model.provenance.markout_horizon_seconds),))
         shadow_evaluation=ShadowEvaluationAccumulator()
         active_prediction=None
-        firewall=RiskFirewall(risk)
+        firewall=RiskFirewall(risk,generalized_paper=generalized_paper)
         quote_engine=QuoteEngine()
         risk_status=(RiskStatus(max_order_size=strategy.total_liquidity)
                      if generalized_profile is not None else RiskStatus())
@@ -257,7 +261,7 @@ class SimulationEngine:
             validate_quotes(authorized,frame.market,risk_status)
             accounting.reserve(authorized,existing)
             vault=accounting.snapshot()
-            authorization=authorize(authorized,refs,risk_decision,agent_decision,vault)
+            authorization=authorize(authorized,refs,risk_decision,agent_decision,vault,generalized_paper=generalized_paper)
 
             current_authorization=authorization
             current_agent=agent_decision

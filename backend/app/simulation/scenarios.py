@@ -7,7 +7,8 @@ from enum import StrEnum
 from app.amm.numeric import quantize_size
 from app.market_data.models import MarketConnectionState,MarketDataMode,MarketLevel,MarketSnapshot,OrderBookSnapshot
 from app.market_data.perp_context import build_perp_market_context
-from .models import SimulationDataset,SimulationFrame,SimulationReferencePrices
+from app.references.models import GENERALIZED_REFERENCE_SOURCE
+from .models import GeneralizedSimulationReferencePrices, SimulationDataset, SimulationFrame, SimulationReferencePrices
 from .market_profiles import GeneralizedPrecisionError, normalize_price, price_quantum, round_level
 
 
@@ -124,7 +125,7 @@ def _funding(scenario:ScenarioName,i:int)->Decimal:
     return Decimal((i%5)-2)*Decimal("0.000005")
 
 
-def _reference_prices(scenario:ScenarioName,mid:Decimal,i:int)->SimulationReferencePrices:
+def _reference_prices(scenario:ScenarioName,mid:Decimal,i:int,*,generalized=False)->SimulationReferencePrices:
     redstone=mid*(Decimal("1")+Decimal((i%3)-1)*Decimal("0.00002"))
     kraken=mid*(Decimal("1")+Decimal((i%5)-2)*Decimal("0.00001"))
     coingecko=mid*(Decimal("1")+Decimal((i%7)-3)*Decimal("0.00001"))
@@ -132,7 +133,10 @@ def _reference_prices(scenario:ScenarioName,mid:Decimal,i:int)->SimulationRefere
         redstone=mid*Decimal("1.015")
     if scenario==ScenarioName.REFERENCE_DEGRADATION:
         redstone=None
-    return SimulationReferencePrices(redstone=redstone,kraken=kraken,coingecko=coingecko)
+    prices = dict(redstone=redstone, kraken=kraken, coingecko=coingecko)
+    if generalized:
+        return GeneralizedSimulationReferencePrices(provenance=GENERALIZED_REFERENCE_SOURCE, **prices)
+    return SimulationReferencePrices(**prices)
 
 
 def generate_scenario(
@@ -213,11 +217,12 @@ def generate_scenario(
         perp=build_perp_market_context(
             market=market,market_mid=mid,provider_mid_price=mid,mark_price=mark,oracle_price=oracle,
             funding_rate=funding,open_interest_base=oi,premium=(mark-oracle)/oracle,
-            updated_at=ts,source="DEMO",simulated=True,version=sequence,
+            updated_at=ts,source="GENERALIZED_PAPER" if generalized_profile is not None else "DEMO",
+            simulated=True,version=sequence,
         )
         result.append(SimulationFrame(
             sequence=sequence,timestamp=ts,market=snapshot,perp_context=perp,
-            reference_prices=_reference_prices(scenario,mid,i),
+            reference_prices=_reference_prices(scenario,mid,i,generalized=generalized_profile is not None),
         ))
     source = f"scenario:{scenario.value}"
     source_profile = generalized_profile if generalized_profile is not None else market_profile

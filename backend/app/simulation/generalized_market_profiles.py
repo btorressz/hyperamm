@@ -17,6 +17,7 @@ from app.market_data.market_universe_contracts import (
     DiscoveryEligibility, MarketInstrumentIdentity, MarketUniverseMetadata, Network, UtcDatetime, _strict_bool,
     evaluate_discovery,
 )
+from app.references.models import GENERALIZED_REFERENCE_SOURCE, SYNTHETIC_AGREEMENT
 from app.risk.firewall import RiskFirewallConfig
 from app.risk.limits import validate_quotes
 from app.risk.models import RiskStatus
@@ -57,7 +58,7 @@ Reason = Literal[
     "IDENTITY_MISMATCH", "PROFILE_UNSUPPORTED", "PRICE_UNREPRESENTABLE",
     "SIZE_UNREPRESENTABLE", "SCENARIO_INFEASIBLE", "FUNDING_MODEL_UNSUPPORTED",
     "CONFIGURATION_INVALID", "PROFILE_FINGERPRINT_MISMATCH", "METADATA_FINGERPRINT_MISMATCH",
-    "CONFIGURATION_FINGERPRINT_MISMATCH",
+    "CONFIGURATION_FINGERPRINT_MISMATCH", "CATALOG_FINGERPRINT_MISMATCH",
 ]
 REASONS = {
     "ADMITTED": ("admission", "The captured scenario is eligible for local hypothetical PAPER research."),
@@ -74,6 +75,7 @@ REASONS = {
     "CONFIGURATION_INVALID": ("request", "Check canonical identity, bounds and the required hypothetical assumptions."),
     "PROFILE_FINGERPRINT_MISMATCH": ("profile_fingerprint", "The profile changed or failed verification. Check eligibility again."),
     "METADATA_FINGERPRINT_MISMATCH": ("metadata_fingerprint", "The metadata observation changed. Check eligibility again."),
+    "CATALOG_FINGERPRINT_MISMATCH": ("catalog_fingerprint", "The discovery catalog changed. Check eligibility again."),
     "CONFIGURATION_FINGERPRINT_MISMATCH": ("configuration_fingerprint", "The scenario or economic assumptions changed. Check eligibility again."),
 }
 UNAVAILABLE_REASONS = {"METADATA_UNAVAILABLE", "METADATA_STALE"}
@@ -90,6 +92,23 @@ class HypotheticalEconomics(Evidence):
     maker_fee_bps: ResearchDecimal = Field(default=Decimal("0"), ge=0, le=100)
     taker_fee_bps: ResearchDecimal = Field(default=Decimal("0"), ge=0, le=100)
     funding_interval_seconds: StrictInt | None = Field(default=None, ge=1, le=120)
+
+
+class PaperEvidenceBoundary(Evidence):
+    model_config = ConfigDict(revalidate_instances="always", validate_default=True)
+    version: Literal["phase182g-v1"] = "phase182g-v1"
+    references: Literal["phase182g-v1:synthetic-scenario"] = GENERALIZED_REFERENCE_SOURCE
+    reference_clock: Literal["SIMULATION_FRAME_TIME"] = "SIMULATION_FRAME_TIME"
+    order_book: Literal["SYNTHETIC_DEPTH"] = "SYNTHETIC_DEPTH"
+    accounting_units: Literal["HYPOTHETICAL_QUOTE"] = "HYPOTHETICAL_QUOTE"
+    capital_reservation: Literal["SIMULATED_FULL_NOTIONAL"] = "SIMULATED_FULL_NOTIONAL"
+    fees: Literal["HYPOTHETICAL_MAKER_TAKER"] = "HYPOTHETICAL_MAKER_TAKER"
+    funding: Literal["HYPOTHETICAL_SCHEDULED"] = "HYPOTHETICAL_SCHEDULED"
+    exchange_economics: Literal["UNVERIFIED"] = "UNVERIFIED"
+    risk_readiness: Literal["SINGLE_MARKET_RESEARCH_ONLY"] = "SINGLE_MARKET_RESEARCH_ONLY"
+
+
+PAPER_EVIDENCE = PaperEvidenceBoundary()
 
 
 class PaperProposal(PaperContract):
@@ -109,6 +128,7 @@ class PaperFingerprintBinding(Evidence):
     metadata_fingerprint: Fingerprint
     profile_fingerprint: Fingerprint
     configuration_fingerprint: Fingerprint
+    catalog_fingerprint: Fingerprint | None = None
 
 
 class PaperRunRequest(PaperProposal):
@@ -122,6 +142,7 @@ def _profile_fingerprint(metadata, reference, depth, economics):
         "simulated_reference_price": reference,
         "synthetic_top_depth_quote": depth,
         "reference_source": "USER_SUPPLIED_SYNTHETIC",
+        "evidence_boundary": PAPER_EVIDENCE,
         "economics": economics,
     })
 
@@ -138,6 +159,7 @@ class GeneralizedMarketProfile(PaperContract):
     economics: HypotheticalEconomics
     reference_source: Literal["USER_SUPPLIED_SYNTHETIC"] = "USER_SUPPLIED_SYNTHETIC"
     model_compatibility: Literal["HYPOTHETICAL_LINEAR_ONLY"] = "HYPOTHETICAL_LINEAR_ONLY"
+    evidence_boundary: PaperEvidenceBoundary
     paper_eligibility: Literal["REQUIRES_ADMISSION"] = "REQUIRES_ADMISSION"
     limitations: tuple[str, ...] = Field(default=LIMITATIONS, max_length=len(LIMITATIONS))
     authority: Literal["NONE"] = "NONE"
@@ -199,6 +221,7 @@ def candidate(metadata: MarketUniverseMetadata, discovery: DiscoveryEligibility,
         stable_key=metadata.identity.stable_key, exchange_coin=metadata.identity.exchange_coin,
         metadata_fingerprint=metadata.fingerprint(), simulated_reference_price=proposal.simulated_reference_price,
         synthetic_top_depth_quote=proposal.synthetic_top_depth_quote, economics=proposal.economics,
+        evidence_boundary=PAPER_EVIDENCE,
         profile_fingerprint=_profile_fingerprint(metadata, proposal.simulated_reference_price,
                                                  proposal.synthetic_top_depth_quote, proposal.economics),
     )
@@ -237,7 +260,7 @@ class PaperAdmission(PaperContract):
                     or self.profile.metadata.metadata_status != "EXCHANGE_VERIFIED"
                     or self.profile.metadata.listed is not True
                     or self.profile.metadata.observed_at is None
-                    or not self.profile.metadata.observed_at <= self.evaluated_at <= self.valid_until
+                    or not self.profile.metadata.observed_at <= self.evaluated_at < self.valid_until
                     <= self.profile.metadata.observed_at + timedelta(days=1)
                     or self.binding.metadata_fingerprint != self.profile.metadata_fingerprint
                     or self.binding.profile_fingerprint != self.profile.profile_fingerprint):
@@ -321,7 +344,8 @@ def _preflight(prepared, profile):
 
 def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
            network: Network, evaluated_at: datetime, max_age_seconds: int,
-           metadata_current: bool = True, expected: PaperFingerprintBinding | None = None):
+           metadata_current: bool = True, expected: PaperFingerprintBinding | None = None,
+           catalog_fingerprint: str | None = None, catalog_valid_until: datetime | None = None):
     """Use a server-owned observation and clock. Client input contains assumptions only."""
     from . import version
 
@@ -346,10 +370,17 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
     if not discovery.discovery_eligible or not metadata_current:
         return reject("METADATA_STALE" if discovery.reason in
                       {"FUTURE_TIMESTAMP", "STALE_METADATA", "DISCOVERABLE"} else "METADATA_UNAVAILABLE")
+    valid_until = metadata.observed_at + timedelta(seconds=max_age_seconds)
+    if catalog_valid_until is not None:
+        valid_until = min(valid_until, catalog_valid_until)
+    if evaluated_at >= valid_until:
+        return reject("METADATA_STALE")
     if expected is not None:
         expected = PaperFingerprintBinding.model_validate(expected)
         if expected.metadata_fingerprint != profile.metadata_fingerprint:
             return reject("METADATA_FINGERPRINT_MISMATCH")
+        if expected.catalog_fingerprint != catalog_fingerprint:
+            return reject("CATALOG_FINGERPRINT_MISMATCH")
         if expected.profile_fingerprint != profile.profile_fingerprint:
             return reject("PROFILE_FINGERPRINT_MISMATCH")
     if proposal.scenario in FUNDING_SCENARIOS:
@@ -370,8 +401,10 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
             prepared = _build_scenario(proposal, profile)
             binding = PaperFingerprintBinding(
                 metadata_fingerprint=profile.metadata_fingerprint, profile_fingerprint=profile.profile_fingerprint,
+                catalog_fingerprint=catalog_fingerprint,
                 configuration_fingerprint=stable_fingerprint({
                     "profile_fingerprint": profile.profile_fingerprint, "proposal": proposal,
+                    "catalog_fingerprint": catalog_fingerprint,
                     "engine_version": version.SIMULATION_ENGINE_VERSION, "dataset": prepared.dataset.fingerprint,
                     "strategy": prepared.strategy, "agents": prepared.agents, "risk": prepared.risk,
                     "simulation": prepared.simulation,
@@ -385,7 +418,7 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
         except (ArithmeticError, ValueError):
             return reject("SCENARIO_INFEASIBLE")
     return decision(identity, evaluated_at, "ADMITTED", profile=profile, binding=binding,
-                    valid_until=metadata.observed_at + timedelta(seconds=max_age_seconds)), prepared
+                    valid_until=valid_until), prepared
 
 
 class PaperRejected(ValueError):
@@ -399,6 +432,7 @@ class GeneralizedPaperResult(PaperContract):
     proposal: PaperProposal
     result: SimulationResult
     result_fingerprint: Fingerprint
+    started_at: UtcDatetime
     execution_mode: Literal["PAPER"] = "PAPER"
     simulated: Literal[True] = True
     _simulation_flag = field_validator("simulated", mode="before")(_strict_bool)
@@ -408,6 +442,7 @@ class GeneralizedPaperResult(PaperContract):
         profile = self.admission.profile
         result = self.result
         if (self.admission.status != "ELIGIBLE" or profile is None
+                or not self.admission.evaluated_at <= self.started_at < self.admission.valid_until
                 or self.proposal.identity != self.admission.identity
                 or self.proposal.simulated_reference_price != profile.simulated_reference_price
                 or self.proposal.synthetic_top_depth_quote != profile.synthetic_top_depth_quote
@@ -417,20 +452,33 @@ class GeneralizedPaperResult(PaperContract):
                 or result.market_profile_fingerprint != profile.profile_fingerprint
                 or result.scenario != self.proposal.scenario or result.metrics.frame_count != self.proposal.frames
                 or len(result.trace) > self.proposal.trace_max_points or result.vault is None
+                or any(point.reference_confidence not in {SYNTHETIC_AGREEMENT, "DEGRADED", "CONFLICTED", "INSUFFICIENT"}
+                       for point in result.trace)
                 or result.vault.market != profile.stable_key or result.vault.mode != "PAPER"
                 or result.vault.simulated is not True
+                or any(fill.get("execution_mode", "PAPER") != "PAPER"
+                       or fill.get("source") != "SIMULATED PAPER FILL" or fill.get("market") != profile.stable_key
+                       for fill in result.fills)
+                or any(entry.simulated is not True or entry.market != profile.stable_key
+                       for entry in result.accounting_ledger)
                 or self.result_fingerprint != stable_fingerprint((self.admission.binding.configuration_fingerprint, self.proposal, result))):
             raise ValueError("generalized PAPER result evidence mismatch")
         return self
 
 
-async def execute_paper(engine, *, proposal, metadata, network, max_age_seconds, expected):
+async def execute_paper(engine, *, proposal, metadata, network, max_age_seconds, expected,
+                        catalog_valid_until=None, catalog_guard=None):
+    expected = PaperFingerprintBinding.model_validate(expected)
+    if expected.catalog_fingerprint is not None and (catalog_guard is None or catalog_valid_until is None):
+        raise ValueError("catalog-bound PAPER worker requires captured server generation")
     admission, prepared = assess(proposal, metadata, network=network, evaluated_at=datetime.now(timezone.utc),
-                                 max_age_seconds=max_age_seconds, expected=expected)
+                                 max_age_seconds=max_age_seconds, expected=expected,
+                                 catalog_fingerprint=expected.catalog_fingerprint, catalog_valid_until=catalog_valid_until)
     if prepared is None:
         raise PaperRejected(admission)
-    if datetime.now(timezone.utc) > admission.valid_until:
-        raise PaperRejected(decision(proposal.identity, datetime.now(timezone.utc),
+    started_at = datetime.now(timezone.utc)
+    if started_at >= admission.valid_until or (catalog_guard is not None and not catalog_guard()):
+        raise PaperRejected(decision(proposal.identity, started_at,
                                      "METADATA_STALE", profile=admission.profile))
     with localcontext(DECIMAL_CONTEXT):
         result = await engine.run(
@@ -440,5 +488,6 @@ async def execute_paper(engine, *, proposal, metadata, network, max_age_seconds,
         )
     return GeneralizedPaperResult(
         admission=admission, proposal=proposal, result=result,
+        started_at=started_at,
         result_fingerprint=stable_fingerprint((admission.binding.configuration_fingerprint, proposal, result)),
     )

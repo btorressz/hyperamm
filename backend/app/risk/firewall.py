@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, model_validator
 from app.amm.discretizer import normalize_price, normalize_size
 from app.amm.models import QuoteLevel
 from app.market_data.models import utcnow
-from app.references.models import ReferenceSnapshot
+from app.references.models import ReferenceSnapshot, SYNTHETIC_AGREEMENT
 
 
 class RiskState(StrEnum):
@@ -180,8 +180,9 @@ def paper_pnl(fills,market,mark)->PnlDrawdown:
 
 
 class RiskFirewall:
-    def __init__(self,config:RiskFirewallConfig):
+    def __init__(self,config:RiskFirewallConfig,*,generalized_paper=False):
         self.config=config;self.state=RiskState.NORMAL;self.version=0;self.confirmations=0;self.changed_at=utcnow();self.events=deque(maxlen=250)
+        self.generalized_paper = generalized_paper
     def _candidate(self,refs:ReferenceSnapshot,exposure:ExposureMetrics,liq:LiquidationEvidence,pnl:PnlDrawdown,venue_uncertain:bool):
         c=self.config;reasons=[];severity=0
         if refs.consensus.confidence_state in {"INSUFFICIENT","CONFLICTED"}:severity=3;reasons.append(f"reference confidence {refs.consensus.confidence_state}")
@@ -207,6 +208,8 @@ class RiskFirewall:
         if venue_uncertain:severity=3;reasons.append("venue exposure is uncertain")
         return [RiskState.NORMAL,RiskState.WIDEN,RiskState.REDUCE,RiskState.HALT][severity],reasons,maxdev
     def evaluate(self,*,refs,quotes,current_position,mark,liquidation,pnl,market_version,inventory_version,perp_version,venue_uncertain=False,existing_orders=None,capital=None,max_capital_utilization=Decimal("1")):
+        if refs.is_generalized_paper != self.generalized_paper:
+            raise ValueError("reference provenance does not match the firewall context")
         c=self.config;price=refs.consensus.consensus_price or mark;exp=exposure_metrics(quotes,current_position,price,max(c.max_projected_long_base,c.max_projected_short_base),existing_orders);liq=liquidation_evidence(current_position,mark,liquidation)
         if not c.enabled:
             candidate,reasons,maxdev=RiskState.NORMAL,["reference firewall disabled"],Decimal("0")
@@ -231,7 +234,8 @@ class RiskFirewall:
                 RiskState.HALT:c.reference_halt_deviation_bps*c.recovery_ratio,
                 RiskState.NORMAL:Decimal("0"),
             }[self.state]
-            recovery_ok=maxdev<recovery_threshold and refs.consensus.confidence_state in {"VERIFIED","DEGRADED"}
+            agreement = SYNTHETIC_AGREEMENT if self.generalized_paper else "VERIFIED"
+            recovery_ok=maxdev<recovery_threshold and refs.consensus.confidence_state in {agreement,"DEGRADED"}
             if recovery_ok:self.confirmations+=1
             else:self.confirmations=0
             effective=candidate if self.confirmations>=c.risk_recovery_confirmations else self.state

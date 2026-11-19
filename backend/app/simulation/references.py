@@ -4,13 +4,26 @@ from decimal import Decimal
 
 from app.references.consensus import ReferenceConsensusPolicy
 from app.references.models import (
+    GENERALIZED_REFERENCE_SOURCE,
     PriceEvidence,ProviderId,ProviderStatus,ReferenceSnapshot,ReferenceTransport,SourceType,TransportQuality,
     deviation_bps,
 )
 
+from .models import GeneralizedSimulationReferencePrices
+
+SCENARIO_PROVIDERS = {
+    ProviderId.REDSTONE: ProviderId.SCENARIO_PRIMARY,
+    ProviderId.HYPERLIQUID_ORACLE: ProviderId.SCENARIO_ORACLE,
+    ProviderId.KRAKEN: ProviderId.SCENARIO_SECONDARY,
+    ProviderId.COINGECKO: ProviderId.SCENARIO_TERTIARY,
+    ProviderId.HYPERLIQUID_MID: ProviderId.SCENARIO_MID,
+    ProviderId.HYPERLIQUID_MARK: ProviderId.SCENARIO_MARK,
+}
+
 
 def build_simulated_references(frame,*,agreement_bps:Decimal,outlier_bps:Decimal,version:int)->ReferenceSnapshot:
     market=frame.market.market;ts=frame.timestamp;mid=frame.market.mid_price;perp=frame.perp_context
+    generalized = isinstance(frame.reference_prices, GeneralizedSimulationReferencePrices)
     prices={
         ProviderId.REDSTONE:frame.reference_prices.redstone,
         ProviderId.HYPERLIQUID_ORACLE:perp.oracle_price,
@@ -33,21 +46,26 @@ def build_simulated_references(frame,*,agreement_bps:Decimal,outlier_bps:Decimal
         ProviderId.HYPERLIQUID_MID:"simulation:hl-mid",ProviderId.HYPERLIQUID_MARK:"simulation:hl-mark",
     }
     evidence={}
-    for provider,price in prices.items():
+    for slot,price in prices.items():
+        provider = SCENARIO_PROVIDERS[slot] if generalized else slot
         healthy=price is not None
         evidence[provider.value]=PriceEvidence(
-            market=market,provider=provider,source_type=types[provider],price=price,observed_at=ts,
-            source_timestamp=ts if healthy else None,age_ms=0,healthy=healthy,stale=False,
-            status=ProviderStatus.HEALTHY if healthy else ProviderStatus.ERROR,source_id=source_ids[provider],
+            market=market,provider=provider,
+            source_type=SourceType.SYNTHETIC_SCENARIO if generalized else types[slot],price=price,observed_at=ts,
+            source_timestamp=ts if healthy and not generalized else None,age_ms=0,healthy=healthy,stale=False,
+            status=ProviderStatus.HEALTHY if healthy else ProviderStatus.ERROR,
+            source_id=GENERALIZED_REFERENCE_SOURCE if generalized else source_ids[slot],
             transport=ReferenceTransport.DEMO,transport_quality=TransportQuality.SIMULATED,
             simulated=True,version=version,error=None if healthy else "simulation source unavailable",
         )
-    consensus=ReferenceConsensusPolicy().evaluate(
+    policy = ReferenceConsensusPolicy()
+    evaluate = policy.evaluate_scenario if generalized else policy.evaluate
+    consensus=evaluate(
         market,evidence,agreement_bps=agreement_bps,outlier_bps=outlier_bps,version=version
     ).model_copy(update={"updated_at":ts})
     ref=consensus.consensus_price
     def dev(provider):
-        item=evidence[provider.value]
+        item=evidence[(SCENARIO_PROVIDERS[provider] if generalized else provider).value]
         return deviation_bps(item.price,ref) if ref is not None and item.price is not None else None
     deviations={
         "hl_mid_consensus":dev(ProviderId.HYPERLIQUID_MID),
@@ -68,7 +86,7 @@ def build_simulated_references(frame,*,agreement_bps:Decimal,outlier_bps:Decimal
         ("hl_mid_hl_oracle",ProviderId.HYPERLIQUID_MID,ProviderId.HYPERLIQUID_ORACLE),
     ]
     for name,a,b in pairs:
-        av=evidence[a.value].price;bv=evidence[b.value].price
+        av=prices[a];bv=prices[b]
         deviations[name]=deviation_bps(av,bv) if av is not None and bv is not None else None
     return ReferenceSnapshot(
         market=market,evidence=evidence,consensus=consensus,deviations_bps=deviations,
