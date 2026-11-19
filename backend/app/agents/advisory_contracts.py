@@ -120,6 +120,7 @@ class AdvisoryContext(AdvisoryEvidence):
         if self.metadata_fingerprint != self.metadata.fingerprint():
             raise ValueError("advisory metadata fingerprint mismatch")
         seen: set[tuple[str, str, str]] = set()
+        fingerprints: set[str] = set()
         for source in self.sources:
             if source.identity != self.metadata.identity or source.captured_at > self.evaluated_at:
                 raise ValueError("advisory source does not belong to captured market/generation")
@@ -129,6 +130,12 @@ class AdvisoryContext(AdvisoryEvidence):
             if key in seen:
                 raise ValueError("duplicate advisory source identity")
             seen.add(key)
+            if source.source_fingerprint is not None:
+                if source.source_fingerprint in fingerprints:
+                    raise ValueError("advisory source fingerprint ambiguity")
+                fingerprints.add(source.source_fingerprint)
+        if self.valid_until is not None and self.valid_until <= self.evaluated_at:
+            raise ValueError("expired advisory context")
         return self
 
     @property
@@ -300,7 +307,7 @@ class AdvisorySnapshot(AdvisoryEvidence):
             if result.status == "READY" and (
                 context.metadata.metadata_status != "EXCHANGE_VERIFIED"
                 or context.metadata.listed is not True
-                or (context.valid_until is not None and context.evaluated_at >= context.valid_until)
+                or context.valid_until is None
             ):
                 raise ValueError("stale or unsupported market cannot produce ready advice")
             if isinstance(result, FundingBasisAdvisory):
