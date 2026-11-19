@@ -1,4 +1,5 @@
 import type { MarketUniverseEligibility, MarketUniverseIdentity, MarketUniverseMetadata } from './marketUniverse';
+import type { FinancialObservation, FinancialSourceStatus, PaperRiskResult, ResearchRiskModel, ResearchRiskSettings } from './marketRisk';
 
 export const paperProfileVersion = 'phase182-v1';
 
@@ -19,6 +20,7 @@ export interface PaperProposal {
   frames: number;
   trace_max_points: number;
   economics: HypotheticalEconomics;
+  research_risk?: ResearchRiskSettings;
 }
 
 export interface PaperBinding {
@@ -26,6 +28,7 @@ export interface PaperBinding {
   metadata_fingerprint: string;
   profile_fingerprint: string;
   configuration_fingerprint: string;
+  research_risk_fingerprint?: string;
 }
 
 export const paperEvidenceBoundary = {
@@ -78,6 +81,15 @@ export const paperReasons = {
   METADATA_FINGERPRINT_MISMATCH: 'metadata_fingerprint',
   CATALOG_FINGERPRINT_MISMATCH: 'catalog_fingerprint',
   CONFIGURATION_FINGERPRINT_MISMATCH: 'configuration_fingerprint',
+  RISK_FINGERPRINT_MISMATCH: 'research_risk_fingerprint',
+  RISK_SOURCE_UNAVAILABLE: 'financial_source',
+  RISK_SOURCE_STALE: 'financial_source',
+  RISK_SOURCE_UNSUPPORTED: 'financial_source',
+  RISK_UNIT_MISMATCH: 'risk_valuation',
+  RISK_MARGIN_MODE_UNSUPPORTED: 'margin_mode',
+  RISK_LEVERAGE_UNSUPPORTED: 'research_leverage',
+  RISK_CAPITAL_INSUFFICIENT: 'research_capital',
+  RISK_EXPOSURE_INVALID: 'research_exposure',
 } as const;
 export type PaperReason = keyof typeof paperReasons;
 
@@ -91,13 +103,14 @@ interface PaperDecisionEvidence {
   authority: 'NONE';
   execution_eligible: false;
   limitations: string[];
+  risk_source_status?: FinancialSourceStatus;
 }
 
 export type PaperAdmission = PaperDecisionEvidence & (
   | { status: 'ELIGIBLE'; reason: 'ADMITTED'; binding: PaperBinding;
-      profile: GeneralizedMarketProfile; valid_until: string }
+      profile: GeneralizedMarketProfile; valid_until: string; risk_model?: ResearchRiskModel }
   | { status: 'REJECTED' | 'UNAVAILABLE'; reason: Exclude<PaperReason, 'ADMITTED'>; binding: null;
-      profile: GeneralizedMarketProfile | null; valid_until: null }
+      profile: GeneralizedMarketProfile | null; valid_until: null; risk_source?: FinancialObservation }
 );
 
 export interface GeneralizedPaperResult {
@@ -107,6 +120,7 @@ export interface GeneralizedPaperResult {
   execution_mode: 'PAPER';
   simulated: true;
   result_fingerprint: string;
+  research_risk?: PaperRiskResult;
   started_at: string;
   result: {
     engine_version: string;

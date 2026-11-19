@@ -147,11 +147,42 @@ calculations as hypothetical and preserve PAPER-only authorization.
   and the existing ledger retains full-notional reservation. The
   `phase183d-v1` result includes only local research control and margin evidence.
   The runtime and guarded TESTNET adapter retain their existing authorization.
-- Phase 18.3E owns the risk API and UI expansion. Phase 18.3F owns extended
-  financial and cross-market verification.
-
 See the [implementation acceptance report](PHASE18_3BCD_RISK_IMPLEMENTATION_ACCEPTANCE.md)
 for provider details, formulas, test evidence, and unsupported cases.
+
+## 18.3E financial evidence and Simulation
+
+`GET /api/v1/market-universe/risk-evidence` exposes a bounded `phase183e-v1`
+view of one market from the existing discovery owner. The request supplies
+network, instrument class, DEX namespace, unqualified instrument name and
+catalog fingerprint. The response binds identity, metadata and financial-source
+fingerprints and carries separate collateral, margin and whole-observation
+status, source receipt times, a deadline and source-constrained mode options.
+Public policy availability and supported research configuration are independent.
+
+Generalized PAPER defaults to the original path. Optional hypothetical research
+uses explicit capital and margin fractions in PAPER quote units. Source-constrained
+research uses resolved collateral and a supported observed policy, integer
+research leverage and a declared fixed hypothetical valuation. The same
+eligibility and run endpoints bind all assumptions. The existing worker checks
+the generation and expiry before engine start. Completed risk results expose
+the captured source sample, exact modeled requirements, exposure, stress
+outcomes and the actual decisions of the Risk Firewall.
+
+The React client checks the evidence scope, versions, identity, units,
+fingerprints, bounds and freshness. Changes to market, captured evidence or
+financial assumptions retire the previous eligibility and result in the UI.
+Each running scenario owns its start-time observations. Exposure in PAPER quote
+units and margin in collateral units stay separate throughout presentation.
+
+## 18.3F independent acceptance
+
+The final acceptance records Decimal tier and stress checks, public-provider
+observations, refreshed-generation and signer isolation, Chromium workflows,
+and before/after native and Generalized PAPER financial evidence. Phase 18.4
+consumes advisory-only data through the established authority chain. Account
+margin, private balances, cross-market netting and verified liquidation require
+separate evidence and remain outside the research model. [Final acceptance](PHASE18_3_FINAL_ACCEPTANCE.md)
 
 ## Focused verification
 
@@ -166,12 +197,8 @@ for provider details, formulas, test evidence, and unsupported cases.
 - Stable fingerprints, nested mutated-copy revalidation and unchanged legacy
   three-market research admission.
 
-### Independent acceptance required
+### Phase 18.3A handoff
 
-The new files are authored through the GitHub connector. **Full repository
-pytest, typechecking, npm, browser and live SDK validation have not been
-executed in this PR.** Phase 18.3A must receive an independent native
-contract test run and relevant backend regression before merge; Codex may
-repair demonstrated contract defects in a small acceptance follow-up.
-
-No new financial arithmetic or runtime integration is claimed.
+PR #90 introduced the foundation contracts. The independent contract,
+repository, Chromium and public SDK checks are recorded in the later
+acceptance reports. [18.3B–D acceptance](PHASE18_3BCD_RISK_IMPLEMENTATION_ACCEPTANCE.md) · [Final acceptance](PHASE18_3_FINAL_ACCEPTANCE.md)

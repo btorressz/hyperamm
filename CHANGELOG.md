@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.3E–F collateral and margin research
+
+- Add a versioned read-only lookup for one selected market's collateral, margin tiers, source freshness and supported PAPER configurations.
+- Extend Generalized PAPER in Simulation with optional hypothetical and source-constrained settings, stress scenarios, modeled exposure and headroom, and per-frame Risk Firewall decisions.
+- Reject stale or mismatched evidence, bound browser financial responses and keep the PAPER accounting unit distinct from observed collateral. [Phase 18.3 final acceptance](docs/PHASE18_3_FINAL_ACCEPTANCE.md)
+
 ## Unreleased — Phase 18.3B–D market-specific PAPER risk
 
 - Resolve Core and HIP-3 collateral through public, network-qualified token metadata and capture market restrictions, margin tiers, source times, and fingerprints.
