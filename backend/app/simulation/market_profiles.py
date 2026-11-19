@@ -1,6 +1,6 @@
 """Immutable single-native-perp research inputs; never execution eligibility."""
 from datetime import datetime
-from decimal import Decimal, ROUND_DOWN, ROUND_UP
+from decimal import Decimal, ROUND_DOWN, ROUND_UP, localcontext
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
@@ -116,3 +116,21 @@ def normalize_quotes(quotes, selected: ResearchPerpMarketProfile):
         if size > 0:
             normalized.append(quote.model_copy(update={"price": price, "size": size}))
     return normalized
+
+
+def round_level(price: Decimal, size: Decimal, precision: int, *, up: bool) -> tuple[Decimal, Decimal]:
+    """Round outward and floor size against both its original size and notional."""
+    rounded = normalize_price(price, precision, up=up)
+    # Compute the ceiling with directed division. Nearest rounding at a lot
+    # boundary could otherwise admit one lot too many.
+    with localcontext() as context:
+        context.prec = 80
+        context.rounding = ROUND_DOWN
+        ceiling = min(size, price * size / rounded)
+    return rounded, quantize_size(ceiling, precision)
+
+
+class GeneralizedPrecisionError(ValueError):
+    def __init__(self, reason: str):
+        self.reason = reason
+        super().__init__(reason)

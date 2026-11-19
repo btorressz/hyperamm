@@ -22,6 +22,8 @@ import type { ScenarioHistoricalRequest, ScenarioHistoricalResponse } from '../t
 import { checkedComparisonResponse } from '../utils/scenarioReplayComparison';
 import type { MarketUniverseResponse } from '../types/marketUniverse';
 import { checkedMarketUniverse, marketUniverseByteLimit, marketUniverseHttpStatus } from '../utils/marketUniverse';
+import type { GeneralizedPaperResult, PaperAdmission, PaperBinding, PaperProposal } from '../types/generalizedPaper';
+import { checkedPaperAdmission, checkedPaperResult, paperAdmissionHttpStatus, paperResponseByteLimit } from '../utils/generalizedPaper';
 const API = "/api/v1";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${API}${path}`, {
@@ -138,7 +140,37 @@ async function portfolioRequest<T>(path:string,body:unknown,signal?:AbortSignal)
   }
   return await readHistoricalJson(response,200000) as T;
 }
+async function generalizedPaperRequest(
+  proposal: PaperProposal, expected?: PaperBinding, signal?: AbortSignal,
+): Promise<PaperAdmission | GeneralizedPaperResult> {
+  const path = expected ? 'run' : 'eligibility';
+  const response = await fetch(API + '/generalized-paper/' + path, {
+    method: 'POST', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(expected ? { ...proposal, expected } : proposal),
+  });
+  if (![200, 409, 422, 503].includes(response.status)) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error(response.status === 429 ? 'The shared PAPER worker is busy. Try again after the current run.' :
+      response.status === 413 ? 'The PAPER request exceeds its size limit.' : 'The local PAPER request failed.');
+  }
+  const wire = await readHistoricalJson(response, paperResponseByteLimit);
+  if (expected && response.ok) return checkedPaperResult(wire, proposal, expected);
+  if (response.status === 503 && typeof wire === 'object' && wire !== null && 'detail' in wire) {
+    throw new Error('The shared PAPER worker is unavailable.');
+  }
+  const admission = checkedPaperAdmission(wire, proposal);
+  if (response.status !== paperAdmissionHttpStatus(admission)) throw new Error('PAPER decision disagrees with its HTTP status.');
+  return admission;
+}
+
 export const api = {
+  paperEligibility: async (proposal: PaperProposal, signal?: AbortSignal): Promise<PaperAdmission> => {
+    const evidence = await generalizedPaperRequest(proposal, undefined, signal);
+    if (!('status' in evidence)) throw new Error('PAPER eligibility evidence is missing.');
+    return evidence;
+  },
+  runGeneralizedPaper: (proposal: PaperProposal, expected: PaperBinding, signal?: AbortSignal) =>
+    generalizedPaperRequest(proposal, expected, signal),
   portfolioPreview:(body:PortfolioDraft,signal?:AbortSignal)=>portfolioRequest<Preview>('preview',body,signal),
   portfolioTerminal:(body:TerminalRequest,signal?:AbortSignal)=>portfolioRequest<TerminalResult>('terminal',body,signal),
   scenarioHistoricalComparison: async(body:ScenarioHistoricalRequest,signal?:AbortSignal):Promise<ScenarioHistoricalResponse> =>

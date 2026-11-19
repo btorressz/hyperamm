@@ -27,7 +27,7 @@ function malformed(): never {
   throw new Error('Invalid or unsupported market universe response.');
 }
 
-function timestamp(x: unknown): bigint {
+export function marketUniverseTimestamp(x: unknown): bigint {
   if (typeof x !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{6})?Z$/.test(x)) malformed();
   const milliseconds = Date.parse(x);
   if (!Number.isFinite(milliseconds) || !x.endsWith('Z') || x.startsWith('0000') ||
@@ -39,7 +39,7 @@ export function marketUniverseKey(identity: MarketUniverseIdentity): string {
   return `${identity.venue}:${identity.network}:${identity.instrument_type}:${identity.dex}:${identity.instrument_name}`;
 }
 
-function checkedIdentity(value: unknown, network: MarketUniverseResponse['network']): MarketUniverseIdentity {
+export function checkedMarketUniverseIdentity(value: unknown, network: MarketUniverseResponse['network']): MarketUniverseIdentity {
   if (!versioned(value) || value.venue !== 'HYPERLIQUID' || value.network !== network ||
       !namespacePart(value.instrument_name, 64)) malformed();
   if (value.instrument_type === 'CORE_PERP' ? value.dex !== '' :
@@ -51,7 +51,7 @@ function checkResult(value: unknown, allowedToSkip: boolean): asserts value is R
   if (!versioned(value)) malformed();
   if (value.status === 'REFRESHED') {
     if (value.error !== null) malformed();
-    timestamp(value.observed_at);
+    marketUniverseTimestamp(value.observed_at);
   } else if ((value.status !== 'FAILED' && !(allowedToSkip && value.status === 'SKIPPED')) ||
       value.observed_at !== null || !failure(value.error)) malformed();
 }
@@ -68,7 +68,7 @@ export function checkedMarketUniverse(value: unknown): MarketUniverseResponse {
       !Array.isArray(value.eligibility) || value.eligibility.length > maxRecords ||
       !Array.isArray(value.namespaces) || value.namespaces.length > maxNamespaces) malformed();
 
-  const evaluatedAt = timestamp(value.evaluated_at);
+  const evaluatedAt = marketUniverseTimestamp(value.evaluated_at);
   const budget = BigInt(value.max_age_seconds) * 1_000_000n;
   const observations = new Map<string, unknown>();
   if (value.inventory !== null) checkResult(value.inventory, false);
@@ -106,7 +106,7 @@ export function checkedMarketUniverse(value: unknown): MarketUniverseResponse {
   let previousKey = '';
   for (const [position, metadata] of value.catalog.records.entries()) {
     if (!versioned(metadata)) malformed();
-    const identity = checkedIdentity(metadata.identity, value.network);
+    const identity = checkedMarketUniverseIdentity(metadata.identity, value.network);
     const key = marketUniverseKey(identity);
     const core = identity.instrument_type === 'CORE_PERP';
     const { dex, instrument_name } = identity;
@@ -123,13 +123,13 @@ export function checkedMarketUniverse(value: unknown): MarketUniverseResponse {
     dexIndices.add(metadata.universe_index);
     indices.set(dex, dexIndices);
 
-    const age = evaluatedAt - timestamp(metadata.observed_at);
+    const age = evaluatedAt - marketUniverseTimestamp(metadata.observed_at);
     if (value.availability === 'AVAILABLE' && (age < 0n || age > budget)) malformed();
     const reason = !metadata.listed ? 'NOT_LISTED' : age < 0n ? 'FUTURE_TIMESTAMP' :
       metadata.metadata_status === 'STALE' || age > budget ? 'STALE_METADATA' : 'DISCOVERABLE';
     const decision: unknown = value.eligibility[position];
     if (!versioned(decision) || !hasNoTradeAuthority(decision) || !digest(decision.metadata_fingerprint) ||
-        marketUniverseKey(checkedIdentity(decision.identity, value.network)) !== key ||
+        marketUniverseKey(checkedMarketUniverseIdentity(decision.identity, value.network)) !== key ||
         decision.evaluated_at !== value.evaluated_at || decision.reason !== reason ||
         decision.discovery_eligible !== (reason === 'DISCOVERABLE')) malformed();
   }

@@ -11,7 +11,7 @@ from typing import Any
 from .service import SimulationService
 
 logger = logging.getLogger(__name__)
-RESEARCH_OPERATIONS = frozenset({"run_scenario", "optimize", "compare_research_configs",
+RESEARCH_OPERATIONS = frozenset({"run_scenario", "run_generalized_paper", "optimize", "compare_research_configs",
                                  "historical_catalog", "historical_summaries", "historical_provenance", "replay_history",
                                  "compare_scenario_historical", "run_portfolio_research", "analyze_portfolio_research", "stress_portfolio_research", "terminal_portfolio_research"})
 

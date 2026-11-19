@@ -30,6 +30,10 @@ class SimulationService:
     def scenarios(self):
         return scenario_catalog()
 
+    async def run_generalized_paper(self, **inputs):
+        from .generalized_market_profiles import execute_paper
+        return await execute_paper(self.engine, **inputs)
+
     async def historical_catalog(self, *, storage_root):
         from app.research_replay.runner import catalog
         return catalog(storage_root)

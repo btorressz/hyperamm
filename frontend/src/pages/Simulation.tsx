@@ -29,8 +29,9 @@ import "../phase1332.css";
 import "../phase14.css";
 import { HistoricalReplayWorkspace } from "../components/replay/HistoricalReplayWorkspace";
 import { ScenarioReplayComparisonWorkspace } from "../components/scenario-replay-comparison/ScenarioReplayComparisonWorkspace";
+import { GeneralizedPaper } from "../components/simulation/GeneralizedPaper";
 export function Simulation() {
-  const [researchView, setResearchView] = useState<"scenario" | "replay" | "comparison">("scenario");
+  const [researchView, setResearchView] = useState<"scenario" | "replay" | "comparison" | "generalized">("scenario");
   const researchState = useResearchVaultStore();
   const marketState = useResearchMarketStore();
   const marketReady = marketState.catalog?.markets.find(p => p.market === marketState.selectedResearchMarket)?.research_supported;
@@ -179,7 +180,11 @@ export function Simulation() {
         <button type="button" aria-pressed={researchView==="comparison"} onClick={()=>setResearchView("comparison")}>
           Scenario vs historical
         </button>
+        <button type="button" aria-pressed={researchView==="generalized"} onClick={()=>setResearchView("generalized")}>
+          Generalized PAPER
+        </button>
       </nav>
+      {researchView==="generalized" && <GeneralizedPaper scenarios={scenarios.data?.scenarios ?? []} />}
       {researchView==="replay" && <HistoricalReplayWorkspace />}
       {researchView==="comparison" && <ScenarioReplayComparisonWorkspace />}
       {researchView==="scenario" && <>

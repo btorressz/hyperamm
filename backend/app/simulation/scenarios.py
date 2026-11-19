@@ -8,6 +8,7 @@ from app.amm.numeric import quantize_size
 from app.market_data.models import MarketConnectionState,MarketDataMode,MarketLevel,MarketSnapshot,OrderBookSnapshot
 from app.market_data.perp_context import build_perp_market_context
 from .models import SimulationDataset,SimulationFrame,SimulationReferencePrices
+from .market_profiles import GeneralizedPrecisionError, normalize_price, price_quantum, round_level
 
 
 BPS=Decimal("10000")
@@ -98,6 +99,25 @@ def scenario_book_sizes(scenario: ScenarioName, frame: int, market_profile=None)
     return tuple(sizes(bids)), tuple(sizes(asks))
 
 
+def _generalized_book(mid, spread, spacing, sizes, precision):
+    sides = []
+    for quantities, direction in zip(sizes, (-1, 1), strict=True):
+        levels = []
+        for level, quantity in enumerate(quantities):
+            raw = mid + direction * (spread / 2 + level * spacing)
+            try:
+                price, size = round_level(raw, quantity, precision, up=direction > 0)
+            except ValueError:
+                raise GeneralizedPrecisionError("PRICE_UNREPRESENTABLE") from None
+            if size <= 0:
+                raise GeneralizedPrecisionError("SIZE_UNREPRESENTABLE")
+            if levels and direction * (price - levels[-1].price) <= 0:
+                raise GeneralizedPrecisionError("PRICE_UNREPRESENTABLE")
+            levels.append(MarketLevel(price=price, size=size, order_count=1))
+        sides.append(levels)
+    return sides
+
+
 def _funding(scenario:ScenarioName,i:int)->Decimal:
     if scenario==ScenarioName.POSITIVE_FUNDING_STRESS:return Decimal("0.00045")
     if scenario==ScenarioName.NEGATIVE_FUNDING_STRESS:return Decimal("-0.00045")
@@ -124,7 +144,12 @@ def generate_scenario(
     start_time:datetime=DEFAULT_START,
     interval_seconds:int=1,
     market_profile=None,
+    generalized_profile=None,
 )->SimulationDataset:
+    if generalized_profile is not None:
+        if market_profile is not None or market != generalized_profile.market:
+            raise ValueError("generalized scenario identity mismatch")
+        start_price = generalized_profile.simulated_reference_price
     if market_profile is not None:
         if market != market_profile.market or not market_profile.research_supported:
             raise ValueError("scenario/profile market mismatch or unavailable profile")
@@ -136,28 +161,38 @@ def generate_scenario(
     if not start_price.is_finite() or start_price<=0:raise ValueError("scenario start price must be finite and positive")
     if start_time.tzinfo is None:raise ValueError("scenario start time must be timezone-aware")
     result=[]
+    scaled = market_profile is not None or generalized_profile is not None
     for i in range(frames):
         sequence=i+1
         ts=start_time.astimezone(timezone.utc)+timedelta(seconds=i*interval_seconds)
         mid=(_price_for(scenario,i,Decimal("3000"),frames) * start_price / Decimal("3000")
-             if market_profile is not None else _price_for(scenario,i,start_price,frames))
+             if scaled else _price_for(scenario,i,start_price,frames))
         if not mid.is_finite() or mid<=0:raise ValueError("scenario generated invalid mid price")
-        spread=max(Decimal(".2") * (start_price / Decimal("3000") if market_profile is not None else 1),mid*Decimal("0.0001"))
+        spread=max(Decimal(".2") * (start_price / Decimal("3000") if scaled else 1),mid*Decimal("0.0001"))
         best_bid=mid-spread/Decimal("2");best_ask=mid+spread/Decimal("2")
-        bid_sizes,ask_sizes=scenario_book_sizes(scenario,i,market_profile)
-        bids=[];asks=[]
-        for level in range(5):
-            offset=spread/Decimal("2")+Decimal(level)*max(Decimal(".1") * (start_price / Decimal("3000") if market_profile is not None else 1),spread/Decimal("2"))
-            bids.append(MarketLevel(price=mid-offset,size=bid_sizes[level],order_count=1))
-            asks.append(MarketLevel(price=mid+offset,size=ask_sizes[level],order_count=1))
-        if market_profile is not None:
-            from .market_profiles import normalize_price
-            precision = market_profile.sz_decimals
-            for levels, up in ((bids, False), (asks, True)):
-                for item in levels:
-                    item.price = normalize_price(item.price, precision, up=up)
+        if generalized_profile is not None:
+            precision = generalized_profile.sz_decimals
+            spacing = max(spread / 2, price_quantum(mid * Decimal("1.01"), precision))
+            size_scale = generalized_profile.synthetic_top_depth_quote / (start_price * 6)
+            sizes = tuple(tuple(depth * size_scale / level for level in range(1, 6))
+                          for depth in _depths(scenario, i))
+            bids, asks = _generalized_book(mid, spread, spacing, sizes, precision)
             best_bid, best_ask = bids[0].price, asks[0].price
             mid = (best_bid + best_ask) / 2
+        else:
+            bid_sizes,ask_sizes=scenario_book_sizes(scenario,i,market_profile)
+            bids=[];asks=[]
+            for level in range(5):
+                offset=spread/Decimal("2")+Decimal(level)*max(Decimal(".1") * (start_price / Decimal("3000") if market_profile is not None else 1),spread/Decimal("2"))
+                bids.append(MarketLevel(price=mid-offset,size=bid_sizes[level],order_count=1))
+                asks.append(MarketLevel(price=mid+offset,size=ask_sizes[level],order_count=1))
+            if market_profile is not None:
+                precision = market_profile.sz_decimals
+                for levels, up in ((bids, False), (asks, True)):
+                    for item in levels:
+                        item.price = normalize_price(item.price, precision, up=up)
+                best_bid, best_ask = bids[0].price, asks[0].price
+                mid = (best_bid + best_ask) / 2
         book=OrderBookSnapshot(market=market,bids=bids,asks=asks,timestamp=ts,sequence=sequence)
         snapshot=MarketSnapshot(
             market=market,best_bid=best_bid,best_ask=best_ask,mid_price=mid,book=book,
@@ -166,11 +201,15 @@ def generate_scenario(
         )
         oracle=mid*(Decimal("1")+Decimal((i%3)-1)*Decimal("0.00001"))
         mark=mid*(Decimal("1")+Decimal((i%5)-2)*Decimal("0.000015"))
-        if market_profile is not None:
+        if scaled:
             oracle = normalize_price(oracle, precision)
             mark = normalize_price(mark, precision)
         funding=_funding(scenario,i)
+        if generalized_profile is not None and generalized_profile.economics.funding_interval_seconds is None:
+            funding = Decimal(0)
         oi=Decimal("250000")+Decimal(i*10)
+        if generalized_profile is not None:
+            oi = quantize_size(oi * Decimal("3000") / start_price, precision)
         perp=build_perp_market_context(
             market=market,market_mid=mid,provider_mid_price=mid,mark_price=mark,oracle_price=oracle,
             funding_rate=funding,open_interest_base=oi,premium=(mark-oracle)/oracle,
@@ -181,6 +220,7 @@ def generate_scenario(
             reference_prices=_reference_prices(scenario,mid,i),
         ))
     source = f"scenario:{scenario.value}"
-    if market_profile is not None:
-        source += f":{market_profile.profile_version}:{market_profile.profile_fingerprint}"
+    source_profile = generalized_profile if generalized_profile is not None else market_profile
+    if source_profile is not None:
+        source += f":{source_profile.profile_version}:{source_profile.profile_fingerprint}"
     return SimulationDataset(market=market,frames=result,source=source,simulated=True)
