@@ -138,6 +138,8 @@ def _validate_json_depth(value, depth=1):
 class OfficialMetadataClient:
     """Use SDK Info methods with a size-limited, public-only HTTP transport."""
 
+    _operations = frozenset({"perpDexs", "meta", "spotMeta"})
+
     def __init__(self, network: Network, *, endpoint: str | None = None):
         from hyperliquid.utils.constants import MAINNET_API_URL, TESTNET_API_URL
 
@@ -147,6 +149,19 @@ class OfficialMetadataClient:
         self.endpoint = official
 
     def __call__(self, method: Literal["perpDexs", "meta", "spotMeta"], dex: str, deadline: float):
+        return self._public_request(deadline, lambda info: self._metadata(info, method, dex))
+
+    @staticmethod
+    def _metadata(info, method, dex):
+        if method == "perpDexs":
+            return info.perp_dexs()
+        if method == "meta":
+            return info.meta(dex=dex)
+        if method == "spotMeta" and dex == "":
+            return info.spot_meta()
+        raise DiscoveryFailure("UNSUPPORTED_METADATA")
+
+    def _public_request(self, deadline, operation):
         from hyperliquid.info import Info
 
         info = Info.__new__(Info)
@@ -156,13 +171,7 @@ class OfficialMetadataClient:
                           meta={"universe": []}, spot_meta={"universe": [], "tokens": []})
             # Keep the SDK's public /info methods and payload definitions.
             info.post = lambda path, payload: self._post(info.session, path, payload, deadline)
-            if method == "perpDexs":
-                return info.perp_dexs()
-            if method == "meta":
-                return info.meta(dex=dex)
-            if method == "spotMeta" and dex == "":
-                return info.spot_meta()
-            raise DiscoveryFailure("UNSUPPORTED_METADATA")
+            return operation(info)
         finally:
             session = getattr(info, "session", None)
             if session is not None:
@@ -173,7 +182,7 @@ class OfficialMetadataClient:
                     raise DiscoveryFailure("CLEANUP_ERROR") from None
 
     def _post(self, session, path, payload, deadline):
-        if path != "/info" or payload.get("type") not in {"perpDexs", "meta", "spotMeta"}:
+        if path != "/info" or payload.get("type") not in self._operations:
             raise DiscoveryFailure("UNSUPPORTED_METADATA")
         remaining = deadline - monotonic()
         if remaining <= 0:

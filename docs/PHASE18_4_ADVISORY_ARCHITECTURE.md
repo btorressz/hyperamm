@@ -1,5 +1,9 @@
 # Phase 18.4 — Advisory Agents Architecture and Handoff
 
+**Phase 18.4B–D status**
+
+The three evaluators are available as independently invoked backend components. The public observation adapter supports selected Core and HIP-3 markets on its configured network. Phase 18.4E owns runtime and API integration. [Phase 18.4B–D implementation and acceptance](PHASE18_4BCD_AGENTS_ACCEPTANCE.md)
+
 **Phase 18.4A status:** isolated, immutable contract foundation; no running new agent,
 provider call, API route, React component, quote transformation, trading authorization
 or simulator change. Baseline: Phase 18.3 final acceptance, merged PR #92
@@ -52,11 +56,10 @@ An observation *claim* bound to the canonical market/network/DEX, category,
 provenance, capture clock and optional financial unit/source fingerprint.
 
 Distinct provenance:
-- **EXCHANGE_OBSERVED:** requires an observed timestamp no later than capture,
-  an independent source fingerprint, and no scenario timestamp or synthetic
-  source ID. The Pydantic schema by itself **does not authenticate** the
-  claimed source. The 18.4C adapter must prove it came from the official
-  read-only provider and bind the response to the exact market.
+- **EXCHANGE_OBSERVED:** binds a provider event timestamp no later than capture
+  or explicitly identifies a local-receipt-only field when the provider supplies
+  no event time. The official read-only adapter owns acquisition and exact
+  market binding. The source fingerprint identifies the captured content.
 - **SCENARIO_SYNTHETIC:** requires scenario time and scenario/PAPER source
   namespace, and cannot declare official metadata, collateral or margin.
 - **HYPOTHETICAL_ASSUMPTION:** explicit assumption namespace and fingerprint,
@@ -111,6 +114,19 @@ fingerprints, evidence provenance and agent-specific data binding. It is a
 
 No direct public or privileged endpoint consumes these contracts in 18.4A.
 
+## Implemented advisory entry points
+
+Each evaluator accepts a server-created `AdvisoryContext`, its applicable capture and a current `as_of` time. The recommendations retain `phase184a-v1` and identify their additive fields as `phase184bcd-v1`. Existing v1 payloads keep their representation. Later publication uses `AdvisorySnapshot.validate_at(as_of=…)` to revalidate the nested evidence and reject expired READY inputs.
+
+| Entry point | Capture and scope |
+| --- | --- |
+| `MarketEligibilityAgent.evaluate` | Verified discovery and a `PaperEligibilityCapture` obtained through the existing server assessor, or the applicable funding or quote evidence. |
+| `AdvisoryMarketObservations.observe` | On-demand official SDK acquisition for the exact network, DEX and observed market. The later application owner closes the adapter. |
+| `FundingBasisAgent.evaluate` | The official adapter capture or a `PaperFundingObservation` from a completed Generalized PAPER run. Only one mode contributes to a recommendation. |
+| `QuoteEconomicsAgent.evaluate` | A `QuoteEconomicsObservation` for one retained PAPER quote cohort with specific hold, exit, slippage and inventory assumptions. |
+
+Use `capture_context` to bind the selected metadata, source evidence, evaluation clock and applicable catalog, risk and PAPER fingerprints. Each source digest includes its value and capture envelope. The worker and discovery continue to own the actual evidence. Phase 18.4E must resolve the current generation server-side when publishing any READY recommendation.
+
 ## Codex handoff
 
 | Phase | Owner | Implementation |
@@ -131,9 +147,8 @@ risk-disabled native or generalized PAPER runs.
 
 ## Source, profitability and capability limitations
 
-- Core/HIP-3 *metadata* is live-observed; generalized scenario pricing is
-  still synthetic. There is no general validated read-only HIP-3 live
-  mark/oracle/funding feed supplied by 18.4A.
+- Core/HIP-3 discovery metadata and selected public funding and price fields use
+  separate observations. Generalized PAPER uses synthetic scenario pricing.
 - The existing Phase 18.3 risk evidence supports single-market PAPER and
   selected public collateral/margin policies. It does not verify an account's
   collateral balance, cross-margin, portfolio netting or liquidation.
@@ -155,8 +170,8 @@ ambiguities; missing evidence; authority escalation; confidence and status
 invariants; market eligibility suitability; funding/basis input binding;
 quote-economics modeled-only state; and unchanged existing supervisor models.
 
-**Not yet validated by native pytest:** GitHub content APIs can commit source
-but do not provide the repository's Python environment. Codex must run:
+The Phase 18.4B–D implementation ran this original foundation suite before
+editing and again with the finished evaluators. Reproduce it with:
 
 ```bash
 cd backend
@@ -164,9 +179,8 @@ python -m pytest -q tests/test_phase184a_advisory_contracts.py
 python -m pytest -q -rs --tb=short
 ```
 
-and relevant frontend compatibility checks. Record exact results, repair any
-demonstrated contract/test inconsistencies and leave the financial/authority
-scope unchanged. Do not claim an execution result from authored test code.
+The acceptance report records the focused, backend and frontend compatibility
+results. [Phase 18.4B–D acceptance](PHASE18_4BCD_AGENTS_ACCEPTANCE.md#compatibility-and-regression)
 
 **Exit:** Phase 18.4A contracts are independently validated, have no operational
 consumers, and provide a safe source-bound foundation for 18.4B–F. Subsequent
