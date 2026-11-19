@@ -24,6 +24,8 @@ import type { MarketUniverseResponse } from '../types/marketUniverse';
 import { checkedMarketUniverse, marketUniverseByteLimit, marketUniverseHttpStatus } from '../utils/marketUniverse';
 import type { GeneralizedPaperResult, PaperAdmission, PaperBinding, PaperProposal } from '../types/generalizedPaper';
 import { checkedPaperAdmission, checkedPaperResult, paperAdmissionHttpStatus, paperResponseByteLimit } from '../utils/generalizedPaper';
+import type { FinancialEvidenceSelection } from '../types/marketRisk';
+import { checkedFinancialEvidence } from '../utils/marketRisk';
 const API = "/api/v1";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${API}${path}`, {
@@ -171,6 +173,19 @@ export const api = {
   },
   runGeneralizedPaper: (proposal: PaperProposal, expected: PaperBinding, signal?: AbortSignal) =>
     generalizedPaperRequest(proposal, expected, signal),
+  marketRiskEvidence: async (selection: FinancialEvidenceSelection, signal?: AbortSignal) => {
+    const { network, instrument_type, dex, instrument_name } = selection.metadata.identity;
+    const query = new URLSearchParams({ network, instrument_type, dex, instrument_name,
+      catalog_fingerprint: selection.catalog_fingerprint });
+    const response = await fetch(API + '/market-universe/risk-evidence?' + query, { cache: 'no-store', signal });
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => {});
+      throw new Error(response.status === 409
+        ? 'The discovery generation changed. Refresh discovery to inspect current financial evidence.'
+        : 'Public collateral and margin evidence is unavailable.');
+    }
+    return checkedFinancialEvidence(await readHistoricalJson(response, 16_384), selection);
+  },
   portfolioPreview:(body:PortfolioDraft,signal?:AbortSignal)=>portfolioRequest<Preview>('preview',body,signal),
   portfolioTerminal:(body:TerminalRequest,signal?:AbortSignal)=>portfolioRequest<TerminalResult>('terminal',body,signal),
   scenarioHistoricalComparison: async(body:ScenarioHistoricalRequest,signal?:AbortSignal):Promise<ScenarioHistoricalResponse> =>

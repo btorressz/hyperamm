@@ -8,7 +8,7 @@ from pydantic import BeforeValidator, ConfigDict, Field, field_validator, model_
 
 from app.accounting.config import bounded_exact_decimal
 from app.market_data.live_models import Evidence
-from app.market_data.market_risk_metadata import MarketFinancialObservation
+from app.market_data.market_risk_metadata import MarketFinancialObservation, SourceStatus
 from app.market_data.market_universe_contracts import MarketInstrumentIdentity, MarketUniverseMetadata, UtcDatetime, _strict_bool
 from app.risk.market_risk_contracts import (
     MarketCollateralIdentity, MarketMarginPolicy, MarketRiskReadiness, RiskFinancialUnit, RiskFingerprint,
@@ -136,12 +136,34 @@ class ResearchRiskModel(ResearchEvidence):
         return self.declaration.financial_units.instrument
 
 
+def source_policy_rejection(source: MarketFinancialObservation | None, status: SourceStatus) -> RiskReason | None:
+    """Check whether the captured public policy can support the documented formula."""
+    if status == "STALE":
+        return "RISK_SOURCE_STALE"
+    if source is None or source.collateral_status == "UNAVAILABLE":
+        return "RISK_SOURCE_UNAVAILABLE"
+    if source.margin.mode in {"UNKNOWN", "ISOLATED_UNSPECIFIED"}:
+        return "RISK_MARGIN_MODE_UNSUPPORTED"
+    if status != "SOURCE_OBSERVED" or source.collateral is None:
+        return "RISK_SOURCE_UNAVAILABLE" if status == "UNAVAILABLE" else "RISK_SOURCE_UNSUPPORTED"
+    return None
+
+
+def supported_tier_denomination(source: MarketFinancialObservation) -> bool:
+    # The published multi-tier Core schedules specify USDC thresholds.
+    # A HIP-3 multi-tier denomination cannot be inferred from collateral alone.
+    return len(source.margin.tiers) <= 1 or (
+        source.identity.instrument_type == "CORE_PERP" and source.collateral.is_canonical_usdc
+    )
+
+
 def bind_research_model(settings: ResearchRiskSettings, metadata: MarketUniverseMetadata, *,
                         source: MarketFinancialObservation | None, evaluated_at: datetime,
                         max_age_seconds: int) -> ResearchRiskModel:
     settings = ResearchRiskSettings.model_validate(settings)
     if settings.margin_mode == "CROSS":
         raise ResearchRiskError("RISK_MARGIN_MODE_UNSUPPORTED")
+    status = "UNAVAILABLE"
     if source is not None:
         source = MarketFinancialObservation.model_validate(source)
         if source.metadata != metadata:
@@ -162,22 +184,13 @@ def bind_research_model(settings: ResearchRiskSettings, metadata: MarketUniverse
     collateral_unit = source.collateral.financial_unit() if source and source.collateral else None
     formula = "HYPOTHETICAL_LINEAR"
     if settings.mode == "SOURCE_CONSTRAINED":
-        if source is None or source.collateral_status == "UNAVAILABLE":
-            raise ResearchRiskError("RISK_SOURCE_UNAVAILABLE")
-        if source.margin.mode in {"UNKNOWN", "ISOLATED_UNSPECIFIED"}:
-            raise ResearchRiskError("RISK_MARGIN_MODE_UNSUPPORTED")
-        if status != "SOURCE_OBSERVED":
-            raise ResearchRiskError("RISK_SOURCE_UNAVAILABLE" if status == "UNAVAILABLE" else "RISK_SOURCE_UNSUPPORTED")
+        if reason := source_policy_rejection(source, status):
+            raise ResearchRiskError(reason)
         if settings.margin_mode != "ISOLATED" and settings.margin_mode != source.margin.mode:
             raise ResearchRiskError("RISK_MARGIN_MODE_UNSUPPORTED")
         if settings.valuation is None or settings.valuation.collateral_unit != collateral_unit:
             raise ResearchRiskError("RISK_UNIT_MISMATCH")
-        # The published multi-tier Core schedules specify USDC thresholds.
-        # A HIP-3 multi-tier denomination cannot be inferred from collateral alone.
-        if len(source.margin.tiers) > 1 and (
-            metadata.identity.instrument_type != "CORE_PERP"
-            or not source.collateral.is_canonical_usdc
-        ):
+        if not supported_tier_denomination(source):
             raise ResearchRiskError("RISK_SOURCE_UNSUPPORTED")
         formula = "DOCUMENTED_HYPERLIQUID_TIERS"
 

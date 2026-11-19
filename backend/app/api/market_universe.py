@@ -1,12 +1,19 @@
 """Public perpetual metadata evidence and local PAPER research admission."""
 from datetime import datetime, timezone
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
+from pydantic import Field, ValidationError
 
 from app.infrastructure.research import ResearchUnavailableError
-from app.market_data.market_universe_contracts import CONTRACT_VERSION, MarketInstrumentIdentity
+from app.market_data.market_risk_metadata import MarketFinancialObservation, SourceEvidence, SourceStatus
+from app.market_data.market_universe_contracts import (
+    CONTRACT_VERSION, InstrumentType, MarketInstrumentIdentity, Network, UtcDatetime,
+)
+from app.risk.market_risk_contracts import RiskFingerprint
+from app.risk.market_risk_engine import MODEL_VERSION, RiskReason, source_policy_rejection, supported_tier_denomination
 from app.simulation.executor import ResearchBusyError
 from app.simulation.generalized_market_profiles import (
     GeneralizedPaperResult, MAX_RESPONSE_BYTES, PROFILE_VERSION, PaperAdmission, PaperProposal,
@@ -36,6 +43,75 @@ async def market_universe(request: Request, response: Response):
     else:
         response.status_code = 503
     return result
+
+
+class FinancialEvidenceSelection(SourceEvidence):
+    network: Network
+    instrument_type: InstrumentType
+    dex: str = Field(max_length=32)
+    instrument_name: str = Field(min_length=1, max_length=64)
+    catalog_fingerprint: RiskFingerprint
+
+
+class FinancialEvidenceResponse(SourceEvidence):
+    schema_version: Literal["phase183e-v1"] = "phase183e-v1"
+    model_version: Literal["phase183c-v1"] = MODEL_VERSION
+    identity: MarketInstrumentIdentity
+    catalog_fingerprint: RiskFingerprint
+    metadata_fingerprint: RiskFingerprint
+    evaluated_at: UtcDatetime
+    valid_until: UtcDatetime
+    status: SourceStatus
+    observation: MarketFinancialObservation | None
+    source_fingerprint: RiskFingerprint | None
+    source_constraint_reason: RiskReason | None
+    source_margin_modes: tuple[Literal["ISOLATED", "STRICT_ISOLATED", "NO_CROSS"], ...] = Field(max_length=2)
+    scope: Literal["LOCAL_PAPER_ONLY"] = "LOCAL_PAPER_ONLY"
+    read_only: Literal[True] = True
+    execution_eligible: Literal[False] = False
+    authority: Literal["NONE"] = "NONE"
+
+
+@router.get("/market-universe/risk-evidence", response_model=FinancialEvidenceResponse)
+async def financial_evidence(selection: Annotated[FinancialEvidenceSelection, Query()], request: Request, response: Response):
+    headers = {"Cache-Control": "no-store"}
+    response.headers.update(headers)
+    try:
+        identity = MarketInstrumentIdentity.model_validate(selection.model_dump(exclude={"catalog_fingerprint"}))
+    except ValidationError:
+        raise HTTPException(422, "Invalid canonical market identity", headers=headers) from None
+    discovery = request.app.state.market_universe_discovery
+    catalog = await discovery.catalog()
+    if identity.network != catalog.network or selection.catalog_fingerprint != catalog.catalog_fingerprint:
+        raise HTTPException(409, "Discovery generation changed", headers=headers)
+    generation = discovery.paper_generation(selection.catalog_fingerprint)
+    if (catalog.availability != "AVAILABLE" or catalog.catalog is None
+            or generation is None or catalog.evaluated_at >= generation[0]):
+        raise HTTPException(409, "Discovery generation expired", headers=headers)
+    metadata = next((record for record in catalog.catalog.records if record.identity == identity), None)
+    if metadata is None:
+        raise HTTPException(404, "Market missing from the selected catalog", headers=headers)
+    observed = discovery.financial_observation(selection.catalog_fingerprint, identity)
+    status = observed.status_at(catalog.evaluated_at, catalog.max_age_seconds) if observed else "UNAVAILABLE"
+    deadline = min(generation[0], observed.valid_until(catalog.max_age_seconds)) if observed else generation[0]
+    if not metadata.listed:
+        status, reason = "UNSUPPORTED", "RISK_SOURCE_UNSUPPORTED"
+    else:
+        reason = source_policy_rejection(observed, status)
+    modes = ()
+    if reason is None:
+        if not supported_tier_denomination(observed):
+            reason = "RISK_SOURCE_UNSUPPORTED"
+        else:
+            modes = (("ISOLATED", observed.margin.mode) if observed.margin.mode in {"STRICT_ISOLATED", "NO_CROSS"}
+                     else ("ISOLATED",))
+    return FinancialEvidenceResponse(
+        identity=identity, catalog_fingerprint=selection.catalog_fingerprint,
+        metadata_fingerprint=metadata.fingerprint(), evaluated_at=catalog.evaluated_at,
+        valid_until=deadline, status=status, observation=observed,
+        source_fingerprint=observed.fingerprint() if observed else None,
+        source_constraint_reason=reason, source_margin_modes=modes,
+    )
 
 
 # PAPER routes share discovery's server-owned catalog and the application's

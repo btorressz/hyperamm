@@ -39,6 +39,13 @@ class SpotCollateral(SourceEvidence):
     observed_at: UtcDatetime
     canonical: bool | None = None
 
+    @field_validator("symbol")
+    @classmethod
+    def reject_reserved_paper_unit(cls, value):
+        if value == "HYPOTHETICAL_QUOTE":
+            raise ValueError("spot collateral cannot use the PAPER accounting unit")
+        return value
+
     @field_validator("canonical", mode="before")
     @classmethod
     def exact_flag(cls, value):
