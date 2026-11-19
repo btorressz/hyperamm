@@ -7,6 +7,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from pydantic import Field, ValidationError
 
+from app.agents.advisory_coordinator import (
+    MAX_ADVISORY_BYTES, RECEIPT_HEADER, AdvisoryRequest, AdvisoryResponse, AdvisoryUnavailable,
+)
+from app.agents.advisory_evidence import AdvisoryBindingError
 from app.infrastructure.research import ResearchUnavailableError
 from app.market_data.market_risk_metadata import MarketFinancialObservation, SourceEvidence, SourceStatus
 from app.market_data.market_universe_contracts import (
@@ -217,6 +221,29 @@ async def paper_run(body: PaperRunRequest, request: Request):
     if len(response.body) > MAX_RESPONSE_BYTES:
         raise HTTPException(500, "Local PAPER result exceeded its transport bound",
                             headers={"Cache-Control": "no-store"})
+    coordinator = getattr(request.app.state, "advisory_coordinator", None)
+    if coordinator is not None:
+        response.headers[RECEIPT_HEADER] = coordinator.retain(result, response.body)
+    return response
+
+
+@router.post("/market-universe/advisory", response_model=AdvisoryResponse)
+async def advisory(body: AdvisoryRequest, request: Request):
+    headers = {"Cache-Control": "no-store"}
+    try:
+        coordinator = getattr(request.app.state, "advisory_coordinator", None)
+        if coordinator is None:
+            raise AdvisoryUnavailable("RESEARCH_WORKER_UNAVAILABLE", 503, "Advisory research is unavailable.")
+        evidence = await coordinator.evaluate(body)
+    except AdvisoryUnavailable as exc:
+        raise HTTPException(exc.status, {"code": exc.code, "message": exc.message}, headers=headers) from None
+    except AdvisoryBindingError as exc:
+        raise HTTPException(500, {"code": "EVIDENCE_BINDING_FAILURE", "message": "Advisory evidence failed validation."},
+                            headers=headers) from exc
+    response = _paper_response(evidence)
+    if len(response.body) > MAX_ADVISORY_BYTES:
+        raise HTTPException(500, {"code": "RESPONSE_TOO_LARGE", "message": "Advisory evidence exceeded its size bound."},
+                            headers=headers)
     return response
 
 

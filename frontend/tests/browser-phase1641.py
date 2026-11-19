@@ -37,10 +37,12 @@ async def main(args):
         ctx=await browser.new_context(viewport={'width':1440,'height':900},timezone_id='America/Los_Angeles')
         page=await ctx.new_page();page.set_default_timeout(15000)
         # Observe actual fetch bodies inside Chromium; no response interception.
-        await page.add_init_script("""window.__replayReceipts=[];const originalFetch=window.fetch;
+        await page.add_init_script("""window.__replayReceipts=[];window.__replayRejections=[];const originalFetch=window.fetch;
           window.fetch=async(...args)=>{const r=await originalFetch(...args);
-            if(String(args[0]).endsWith('/historical-replay/run')&&r.ok)
-              r.clone().json().then(v=>window.__replayReceipts.push(v));
+            if(String(args[0]).endsWith('/historical-replay/run')){
+              if(r.ok) r.clone().json().then(v=>window.__replayReceipts.push(v));
+              if(r.status===422) r.clone().json().then(v=>window.__replayRejections.push(v));
+            }
             return r;};""")
         page.on('pageerror',lambda e:report['page_errors'].append(str(e)))
         page.on('console',lambda m:report['console_errors'].append(m.text) if m.type=='error' else None)
@@ -173,11 +175,14 @@ async def main(args):
         passed('Explicit test-configured reference firewall permits actual modeled partial PAPER fills and backend Decimal comparison without changing seeded operational state')
 
         await select('BTC','missing')
+        rejection_count=await page.evaluate('window.__replayRejections.length')
         async with page.expect_response(lambda r:r.url.endswith('/historical-replay/run') and r.request.method=='POST') as pending:
             await studio.get_by_role('button',name='Run Historical PAPER Replay',exact=True).click()
         rejected = await pending.value
         assert rejected.status == 422
-        assert any(issue['code']=='NO_VIABLE_FRAMES' for issue in (await rejected.json())['detail']['issues'])
+        await page.wait_for_function('count=>window.__replayRejections.length>count', arg=rejection_count)
+        wire=await page.evaluate('window.__replayRejections.at(-1)')
+        assert any(issue['code']=='NO_VIABLE_FRAMES' for issue in wire['detail']['issues'])
         await studio.get_by_role('alert',name='Research diagnostics').filter(has_text='Research evidence or settings were rejected').wait_for()
         await shot('fixture-missing-economics-422.png')
         passed('Actual structured 422 missing-economics/zero-viable rejection is visible')

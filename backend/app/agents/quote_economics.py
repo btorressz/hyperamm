@@ -251,7 +251,7 @@ def _economics(paper, trace, options, interval, unit):
 
     reference_notional = defaultdict(Decimal)
     capture = defaultdict(Decimal)
-    fees = adverse = residual_base = total_base = ZERO
+    entry_fees = exit_fee = adverse = residual_base = total_base = ZERO
     for fill in fills:
         key = AgentTelemetryStore.fill_identity(fill)
         reference = observations[key].reference_price
@@ -260,7 +260,7 @@ def _economics(paper, trace, options, interval, unit):
         fill_capture = sign * (reference - fill.price) * fill.size
         reference_notional[fill.side] += exposure
         capture[fill.side] += fill_capture
-        fees += paper_fee(fill, key, prepared.simulation.accounting).fee_quote
+        entry_fees += paper_fee(fill, key, prepared.simulation.accounting).fee_quote
         markout = markouts[key]
         # Charge the adverse move from fill-time reference. Spread capture already
         # includes the fill-to-reference move, so the two components disjointly sum.
@@ -294,7 +294,7 @@ def _economics(paper, trace, options, interval, unit):
             client_order_id="hypothetical-residual-close", market=carry_frame.market.market,
             side=side, price=price, size=abs(residual_base), timestamp=end, liquidity=options.closing_liquidity,
         )
-        fees += paper_fee(exit_fill, exit_fill.client_order_id, prepared.simulation.accounting).fee_quote
+        exit_fee = paper_fee(exit_fill, exit_fill.client_order_id, prepared.simulation.accounting).fee_quote
     utilization = bounded_exact_decimal(paper.result.metrics.max_inventory_utilization)
     if utilization < 0:
         raise AdvisoryBindingError("invalid reported PAPER inventory utilization")
@@ -308,7 +308,8 @@ def _economics(paper, trace, options, interval, unit):
     denominator = sum(reference_notional.values())
     gross = (ask - bid) * BPS / quote_reference
     captured = _bps(sum(capture.values()), denominator)
-    components = tuple(_bps(amount, denominator, cost=True) for amount in (fees, funding, inventory, adverse, slippage))
+    costs = (entry_fees + exit_fee, funding, inventory, adverse, slippage)
+    components = tuple(_bps(amount, denominator, cost=True) for amount in costs)
     fee_bps, funding_bps, inventory_bps, adverse_bps, slippage_bps = components
     break_even = sum(components)
     edge = captured - break_even
@@ -327,6 +328,8 @@ def _economics(paper, trace, options, interval, unit):
         fill_coverage="BOTH_SIDES" if len(side_capture) == 2 else "ONE_SIDED",
         bid_capture_bps=side_capture.get("BID"), ask_capture_bps=side_capture.get("ASK"),
         residual_base=residual_base, filled_base=total_base, inventory_expansion_base=inventory_expansion,
+        submitted_bid=bid, submitted_ask=ask, entry_fees_quote=entry_fees, exit_fees_quote=exit_fee,
+        attributed_fill_count=len(fills), matured_markout_count=len(markouts),
         **risk_fields,
     ), len(fills)
 

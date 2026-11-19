@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.4E–F advisory research and acceptance
+
+- Integrate Market Eligibility, Funding/Basis and Quote Economics with the existing Simulation workspace and the selected Core or HIP-3 market.
+- Add a bounded research snapshot endpoint and transient receipts for completed PAPER quote and synthetic funding evidence. Separate public acquisition, event and scenario clocks and retain the existing financial results and quote-authority boundaries.
+- Reconcile quote economics independently, test lifecycle and provenance failures, and compare native and Generalized PAPER evidence against PRs #92 and #94. [Phase 18.4 final acceptance](docs/PHASE18_4_FINAL_ACCEPTANCE.md)
+
 ## Unreleased — Phase 18.4B–D research advisory agents
 
 - Add independently callable Market Eligibility, Funding/Basis and Quote Economics evaluators with deterministic source binding and research-only recommendations.

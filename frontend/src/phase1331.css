@@ -15,3 +15,15 @@
 .paperRiskResults{min-width:0;overflow-wrap:anywhere}
 .paperRiskStress,.paperRiskFrames>li{border-top:1px solid var(--border-subtle);padding:8px 0}
 .paperRiskFrames{padding-inline-start:1.2rem;list-style:none}
+
+.paperAdvisory{min-width:0;overflow-wrap:anywhere}
+.paperAdvisory>section,.paperAdvisory>section>section{margin-top:12px;padding:12px;border:1px solid var(--border-subtle);border-radius:6px;min-width:0}
+.paperAdvisory h2,.paperAdvisory h3,.paperAdvisory h4{margin:0 0 8px}
+.paperAdvisory .researchFilters{padding-inline:0}
+.paperAdvisory .researchFilters label{min-width:0;max-width:100%}
+.paperAdvisory button{min-height:34px;white-space:normal}
+.paperAdvisoryMetrics{width:100%;table-layout:fixed;border-collapse:collapse;margin-top:10px}
+.paperAdvisoryMetrics caption{padding:8px 0;text-align:left;font-weight:600}
+.paperAdvisoryMetrics th,.paperAdvisoryMetrics td{padding:6px;text-align:left;vertical-align:top;overflow-wrap:anywhere;white-space:normal;border-top:1px solid var(--border-subtle)}
+.paperAdvisoryMetrics th{width:48%;font-weight:500}
+.paperAdvisoryMetrics td{font-variant-numeric:tabular-nums}

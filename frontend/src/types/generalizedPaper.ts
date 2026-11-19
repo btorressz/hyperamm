@@ -120,6 +120,7 @@ export interface GeneralizedPaperResult {
   execution_mode: 'PAPER';
   simulated: true;
   result_fingerprint: string;
+  advisory_receipt?: string;
   research_risk?: PaperRiskResult;
   started_at: string;
   result: {

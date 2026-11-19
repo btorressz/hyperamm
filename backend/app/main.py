@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
 from app.market_data.hyperliquid_metadata import HyperliquidMetadataCatalog
+from app.agents.advisory_coordinator import RECEIPT_HEADER, AdvisoryCoordinator
 from app.market_data.market_universe_discovery import MarketUniverseDiscovery
 from app.market_data.live_observations import LiveMarketObservationService
 from app.market_data.live_streams import LiveMarketStreamService
@@ -48,6 +49,7 @@ async def lifespan(app: FastAPI):
         allow_demo=settings.market_data_mode == MarketDataMode.DEMO and settings.execution_mode == ExecutionMode.PAPER)
     app.state.market_universe_discovery = MarketUniverseDiscovery(
         enabled=settings.market_universe_enabled, network=settings.market_universe_network)
+    app.state.advisory_coordinator = AdvisoryCoordinator(app.state.market_universe_discovery)
     app.state.terminal_relay = None
     app.state.redis_infrastructure = None
     infrastructure = None
@@ -81,7 +83,10 @@ async def lifespan(app: FastAPI):
                     try:
                         await app.state.research_market_catalog.close()
                     finally:
-                        await app.state.market_universe_discovery.close()
+                        try:
+                            await app.state.advisory_coordinator.close()
+                        finally:
+                            await app.state.market_universe_discovery.close()
             finally:
                 try:
                     await app.state.runtime.stop_services()
@@ -95,7 +100,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="HyperAMM API", version="0.12.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"], expose_headers=[RECEIPT_HEADER])
 app.add_middleware(ResearchBodyLimit)
 # Reject unauthorized peers/origins before reading even a partial request body.
 app.add_middleware(LocalOnlyBoundary, allowed_origins=settings.cors_origin_list)
