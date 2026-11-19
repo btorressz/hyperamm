@@ -69,6 +69,7 @@ class SimulationEngine:
         predictive_model:LogisticModelArtifact|None=None,
         market_profile=None,
         execution_evidence_keys=None,
+        generalized_profile=None,
     )->SimulationResult:
         simulation_config=SimulationConfig.model_validate_json(simulation_config.model_dump_json())
         frames=bounded_frames(dataset,simulation_config.max_frames)
@@ -82,6 +83,12 @@ class SimulationEngine:
         if market_profile is not None and (market_profile.market != dataset.market
                 or not market_profile.research_supported or strategy.size_precision != market_profile.sz_decimals):
             raise ValueError("research profile must match dataset and strategy precision")
+
+        if generalized_profile is not None and (market_profile is not None
+                or generalized_profile.market != dataset.market or not dataset.simulated
+                or strategy.size_precision != generalized_profile.sz_decimals):
+            raise ValueError("generalized profile must match synthetic dataset and strategy precision")
+        profile = generalized_profile if generalized_profile is not None else market_profile
 
         clock=SimulationClock(frames[0].timestamp)
         accounting_payload=simulation_config.accounting.model_dump()
@@ -98,7 +105,8 @@ class SimulationEngine:
         active_prediction=None
         firewall=RiskFirewall(risk)
         quote_engine=QuoteEngine()
-        risk_status=RiskStatus()
+        risk_status=(RiskStatus(max_order_size=strategy.total_liquidity)
+                     if generalized_profile is not None else RiskStatus())
         metrics=MetricsAccumulator(simulation_config.initial_equity_quote)
         trace=deque(maxlen=simulation_config.trace_max_points or None) if simulation_config.record_trace and simulation_config.trace_max_points>0 else None
         fill_refs=None
@@ -162,7 +170,7 @@ class SimulationEngine:
         orders=OrderManager(paper,authority=simulation_authority)
         strategy_fingerprint=stable_fingerprint(strategy)
         run_fingerprint=stable_fingerprint({
-            **({"research_market_profile": market_profile.evidence()} if market_profile is not None else {}),
+            **({"research_market_profile": profile.evidence()} if profile is not None else {}),
             **({"execution_assumptions_fingerprint": simulation_config.execution.fingerprint,
                 "execution_evidence_keys": execution_evidence_keys} if simulation_config.execution.modeled else {}),
             "engine_version":version.SIMULATION_ENGINE_VERSION,
@@ -219,7 +227,9 @@ class SimulationEngine:
                 proposed,agent_decision,center=inventory_decision.reservation_price,
                 tick_size=strategy.tick_size,size_precision=strategy.size_precision,
             )
-            if market_profile is not None:
+            if generalized_profile is not None:
+                agent_quotes = generalized_profile.normalize_quotes(agent_quotes, inventory_decision.reservation_price)
+            elif market_profile is not None:
                 agent_quotes = normalize_quotes(agent_quotes, market_profile)
 
             accounting.observe_funding(frame.perp_context)
@@ -240,7 +250,9 @@ class SimulationEngine:
                 tick_size=strategy.tick_size,size_precision=strategy.size_precision,
                 base_order_size=strategy.base_order_size,
             )
-            if market_profile is not None:
+            if generalized_profile is not None:
+                authorized = generalized_profile.normalize_quotes(authorized, inventory_decision.reservation_price)
+            elif market_profile is not None:
                 authorized = normalize_quotes(authorized, market_profile)
             validate_quotes(authorized,frame.market,risk_status)
             accounting.reserve(authorized,existing)
@@ -308,7 +320,7 @@ class SimulationEngine:
         from app.research_comparison.assumptions import capture_assumptions
         return SimulationResult(
             research_assumptions=capture_assumptions(dataset, frames, scenario, market_profile),
-            **(market_profile.evidence() if market_profile is not None else {}),
+            **(profile.evidence() if profile is not None else {}),
             engine_version=version.SIMULATION_ENGINE_VERSION,
             run_fingerprint=run_fingerprint,scenario=scenario or dataset.source,
             dataset_fingerprint=dataset.fingerprint,strategy_fingerprint=strategy_fingerprint,
