@@ -29,9 +29,17 @@ import "../phase1332.css";
 import "../phase14.css";
 import { HistoricalReplayWorkspace } from "../components/replay/HistoricalReplayWorkspace";
 import { ScenarioReplayComparisonWorkspace } from "../components/scenario-replay-comparison/ScenarioReplayComparisonWorkspace";
+import { pageHref, workspaceHref, type Workspace } from "../utils/navigation";
+import { useDisplayStore } from "../stores/display";
 import { GeneralizedPaper } from "../components/simulation/GeneralizedPaper";
-export function Simulation() {
-  const [researchView, setResearchView] = useState<"scenario" | "replay" | "comparison" | "generalized">("scenario");
+export function Simulation({ workspace, active }: { workspace?: Workspace; active: boolean }) {
+  const starter = useDisplayStore(state => state.experienceMode) === "Starter";
+  const researchView = workspace === "paper" || workspace === "results" ? "generalized" :
+    workspace === "replay" ? "replay" : workspace === "scenarioComparison" ? "comparison" : "scenario";
+  const [paperVisited, setPaperVisited] = useState(false);
+  useEffect(() => {
+    if (researchView === "generalized") setPaperVisited(true);
+  }, [researchView]);
   const researchState = useResearchVaultStore();
   const marketState = useResearchMarketStore();
   const marketReady = marketState.catalog?.markets.find(p => p.market === marketState.selectedResearchMarket)?.research_supported;
@@ -57,6 +65,18 @@ export function Simulation() {
     [error, setError] = useState("");
   const gate = useRef(new ResearchRunGate());
   useEffect(() => () => gate.current.retire(), []);
+  useEffect(() => {
+    if (active) return;
+    gate.current.retire();
+    setScenario("QUIET");
+    setFrames("120");
+    setPreset("Balanced");
+    setResult(null);
+    setOpt(null);
+    setComparison(null);
+    setBusy(null);
+    setError("");
+  }, [active]);
   const selected = scenarios.data?.scenarios.find((s) => s.name === scenario),
     validation = frameError(frames);
   const catalogSupportsGrid = [
@@ -158,36 +178,43 @@ export function Simulation() {
       if (gate.current.finish(token)) setBusy(null);
     }
   };
+  const guided = starter && researchView === "generalized";
   return (
     <div className="researchWorkspace simulationPage stack">
       <div className="researchPageTitle">
         <div>
-          <h1>Simulation & Optimization</h1>
-          <p className="muted">
+          <h1>{guided ? "PAPER research" : "Simulation & Optimization"}</h1>
+          {!guided && <p className="muted">
             Configure → run isolated PAPER research → inspect metrics → explore
             trace → compare outcomes
-          </p>
+          </p>}
         </div>
         <Badge tone="blue">SIMULATED · PAPER · OFFLINE</Badge>
       </div>
-      <nav className="researchViewTabs" aria-label="Simulation research workspaces">
-        <button type="button" aria-pressed={researchView==="scenario"} onClick={()=>setResearchView("scenario")}>
+      <nav className="researchViewTabs" aria-label="Simulation research workspaces" hidden={guided}>
+        <button type="button" aria-pressed={researchView==="scenario"} onClick={() => { window.location.hash = pageHref("Simulation & Optimization"); }}>
           Scenario & optimization
         </button>
-        <button type="button" aria-pressed={researchView==="replay"} onClick={()=>setResearchView("replay")}>
+        <button type="button" aria-pressed={researchView==="replay"} onClick={() => { window.location.hash = workspaceHref("replay"); }}>
           Historical replay
         </button>
-        <button type="button" aria-pressed={researchView==="comparison"} onClick={()=>setResearchView("comparison")}>
+        <button type="button" aria-pressed={researchView==="comparison"} onClick={() => { window.location.hash = workspaceHref("scenarioComparison"); }}>
           Scenario vs historical
         </button>
-        <button type="button" aria-pressed={researchView==="generalized"} onClick={()=>setResearchView("generalized")}>
-          Generalized PAPER
+        <button type="button" aria-pressed={researchView==="generalized"} onClick={() => { window.location.hash = workspaceHref("paper"); }}>
+          {starter ? 'Guided Research' : 'Generalized PAPER'}
         </button>
       </nav>
-      {researchView==="generalized" && <GeneralizedPaper scenarios={scenarios.data?.scenarios ?? []} />}
-      {researchView==="replay" && <HistoricalReplayWorkspace />}
-      {researchView==="comparison" && <ScenarioReplayComparisonWorkspace />}
-      {researchView==="scenario" && <>
+      {(paperVisited || researchView === "generalized") && <div hidden={researchView !== "generalized"}>
+        {scenarios.isPending && <p role="status">Loading scenario catalog…</p>}
+        {scenarios.isError && <StatusBanner tone="bad">Scenario catalog unavailable.{" "}
+          <button type="button" onClick={() => void scenarios.refetch()}>Retry catalog</button>
+        </StatusBanner>}
+        <GeneralizedPaper scenarios={scenarios.data?.scenarios ?? []} resultsOnly={workspace === "results"} />
+      </div>}
+      {active && researchView==="replay" && <HistoricalReplayWorkspace />}
+      {active && researchView==="comparison" && <ScenarioReplayComparisonWorkspace />}
+      {active && researchView==="scenario" && <>
       <Panel
         title="Configure isolated research"
         meta="DETERMINISTIC CROSSING FILLS"

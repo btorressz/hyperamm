@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
 import type { TerminalState } from "../types";
 import { useDisplayStore } from "../stores/display";
-import { pageHref, terminalPages, type PageName } from "../utils/navigation";
+import { navigationGroups, pageHref, terminalPages, workspaceHref, type PageName, type Workspace } from "../utils/navigation";
 import { NavIcon } from "./NavIcon";
 
 export function Sidebar({
   page,
+  workspace,
   t,
   ws,
   mobile,
@@ -13,12 +14,14 @@ export function Sidebar({
   onClose,
 }: {
   page: PageName;
+  workspace?: Workspace;
   t: TerminalState | null;
   ws: string;
   mobile: boolean;
   open: boolean;
   onClose: () => void;
 }) {
+  const mode = useDisplayStore((d) => d.experienceMode);
   const collapsed = useDisplayStore((d) => d.sidebarCollapsed);
   const setCollapsed = useDisplayStore((d) => d.setSidebarCollapsed);
   const ref = useRef<HTMLElement>(null);
@@ -101,22 +104,21 @@ export function Sidebar({
           Close ×
         </button>
         <nav id="terminal-pages" aria-label="Terminal pages">
-          {terminalPages.map(({ name, icon }) => (
-            <a
-              key={name}
-              href={pageHref(name)}
-              title={name}
-              aria-label={name}
-              aria-current={page === name ? "page" : undefined}
-              onClick={onClose}
-              className={page === name ? "nav active" : "nav"}
-            >
-              <span className="navIcon">
-                <NavIcon name={icon} />
-              </span>
-              <span className="navLabel">{name}</span>
-            </a>
-          ))}
+          {navigationGroups(mode).map(group => <div className="experienceNavGroup" key={group.title}>
+            <div className="experienceNavTitle">{group.title}</div>
+            {group.items.map(item => {
+              const href = item.workspace ? workspaceHref(item.workspace) : pageHref(item.name);
+              const active = page === item.name && workspace === item.workspace;
+              const label = item.label ?? item.name;
+              const icon = terminalPages.find(entry => entry.name === item.name)!.icon;
+              return <a key={href} href={href} title={label} aria-label={label}
+                aria-current={active ? "page" : undefined} onClick={onClose}
+                className={active ? "nav active" : "nav"}>
+                <span className="navIcon"><NavIcon name={icon} /></span>
+                <span className="navLabel">{label}</span>
+              </a>;
+            })}
+          </div>)}
         </nav>
         <div className="sideFooter">
           <b>{ws.toUpperCase()}</b>

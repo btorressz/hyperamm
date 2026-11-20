@@ -20,9 +20,10 @@ import "./phase11.css";
 import "./phase12.css";
 import "./phase13.css";
 import "./phase153.css";
+import "./phase186.css";
 import { usePageNavigation } from "./hooks/usePageNavigation";
 import { useMobileNavigation } from "./hooks/useMobileNavigation";
-import type { PageName } from "./utils/navigation";
+import { pageHref, workspaceHref, type PageName } from "./utils/navigation";
 import { Loading, StatusBanner } from "./components/TerminalPrimitives";
 import { useTerminalSocket } from "./hooks/useTerminalSocket";
 import { useTerminalStore } from "./stores/terminal";
@@ -59,27 +60,52 @@ export default function App() {
   const s = useTerminalStore(),
     t = s.terminal ? displayedTerminal(s.terminal, nowMs) : null,
     dense = useDisplayStore((d) => d.dense);
-  const page = usePageNavigation();
+  const { page, workspace } = usePageNavigation();
+  const mode = useDisplayStore(d => d.experienceMode);
+  const isSimulation = page === "Simulation & Optimization";
   const mobile = useMobileNavigation();
+  const compactEntry = mobile || workspace === "home" || workspace === "paper" || workspace === "results" ||
+    page === "Markets" || (mode === "Institutional" && page === "Portfolio Research");
+  const [simulationVisited, setSimulationVisited] = useState(false);
+  useEffect(() => {
+    if (isSimulation) setSimulationVisited(true);
+  }, [isSimulation]);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const closeNavigation = useCallback(() => setNavigationOpen(false), []);
   const pageContent = useRef<HTMLDivElement>(null);
-  const previousPage = useRef(page);
+  const previousPage = useRef({ page, workspace });
   useEffect(() => {
     document.title = `${page} · HyperAMM`;
-    if (previousPage.current !== page) {
-      previousPage.current = page;
+    if (previousPage.current.page !== page || previousPage.current.workspace !== workspace) {
+      previousPage.current = { page, workspace };
       closeNavigation();
-      pageContent.current?.focus({ preventScroll: true });
-      window.scrollTo(0, 0);
+      const target = workspace === "results" ? document.getElementById("paper-results") : null;
+      (target ?? pageContent.current)?.focus({ preventScroll: true });
+      if (target) target.scrollIntoView({ block: "start" });
+      else window.scrollTo(0, 0);
     }
-  }, [page, closeNavigation]);
+  }, [page, workspace, closeNavigation]);
   useEffect(() => {
     if (!mobile) closeNavigation();
   }, [mobile, closeNavigation]);
   let content: ReactNode;
-  if (!t)
-    content = page === 'Portfolio Research' ? <PortfolioResearch /> : page === 'Markets' ? <Markets t={null} /> : page === 'Settings' ? <Settings t={null} historical /> : page === 'Simulation & Optimization' ? <Simulation /> : (
+  if (workspace === "home")
+    content = <section className="experienceHome stack">
+      <div className="experienceIntro">
+        <div>
+          <h1>Start with a market</h1>
+          <p>Explore perpetuals and test market making with hypothetical funds. You can review simulated performance and its evidence after each run.</p>
+        </div>
+      </div>
+      <div className="experienceHomeLinks">
+        <a href={pageHref("Markets")}><strong>Explore markets</strong><span>Find a listed Core or HIP-3 perpetual.</span></a>
+        <a href={workspaceHref("paper")}><strong>Run guided research</strong><span>Choose a scenario and check its PAPER eligibility.</span></a>
+        <a href={workspaceHref("results")}><strong>Review results</strong><span>See P&amp;L, costs and inventory from your current run.</span></a>
+      </div>
+      <p className="muted">Change Workspace mode to find advanced AMM controls, portfolio research and audit evidence.</p>
+    </section>;
+  else if (!t)
+    content = page === 'Portfolio Research' ? <PortfolioResearch /> : page === 'Markets' ? <Markets t={null} workspace={workspace} /> : page === 'Settings' ? <Settings t={null} historical /> : isSimulation ? null : (
       <Loading title="Connecting to HyperAMM…">
         Waiting for a valid backend terminal snapshot.
       </Loading>
@@ -90,7 +116,7 @@ export default function App() {
       !!terminalEnvelopeFailure(t.emitted_at, nowMs);
     const pages: Record<PageName, ReactNode> = {
       Dashboard: <Dashboard t={t} historical={historical} />,
-      Markets: <Markets t={t} />,
+      Markets: <Markets t={t} workspace={workspace} />,
       Strategy: <Strategy t={t} historical={historical} />,
       "AMM Settings": <AmmSettings t={t} />,
       Execution: <Execution key={t.session_id} t={t} historical={historical} />,
@@ -98,7 +124,7 @@ export default function App() {
       "Supervisory Agents": <Agents key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Analytics: <Analytics key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
-      "Simulation & Optimization": <Simulation />,
+      "Simulation & Optimization": null,
       "Portfolio Research": <PortfolioResearch />,
       Logs: <Logs key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Settings: <Settings t={t} historical={historical} />,
@@ -106,7 +132,7 @@ export default function App() {
     content = pages[page];
   }
   return (
-    <div className={`app ${dense ? "dense" : ""}`}>
+    <div className={`app ${dense ? "dense" : ""}`} data-experience={mode.toLowerCase()}>
       <a
         className="skipLink"
         href="#page-content"
@@ -119,6 +145,7 @@ export default function App() {
       </a>
       <Sidebar
         page={page}
+        workspace={workspace}
         t={t}
         ws={s.wsState}
         mobile={mobile}
@@ -164,7 +191,12 @@ export default function App() {
           <StatusBanner>Strategy notice: {t.strategy.last_error}</StatusBanner>
         )}
         <div className="content">
-          <TerminalDiagnostics nowMs={nowMs} />
+          {compactEntry ? (
+            <details className="experienceDiagnostics">
+              <summary>Terminal diagnostics</summary>
+              <TerminalDiagnostics nowMs={nowMs} />
+            </details>
+          ) : <TerminalDiagnostics nowMs={nowMs} />}
           <div
             id="page-content"
             ref={pageContent}
@@ -172,7 +204,12 @@ export default function App() {
             tabIndex={-1}
             aria-label={`${page} workspace`}
           >
-            <TerminalBoundary key={page}>{content}</TerminalBoundary>
+            {(simulationVisited || isSimulation) && (
+              <div hidden={!isSimulation}>
+                <TerminalBoundary><Simulation active={isSimulation} workspace={isSimulation ? workspace : undefined} /></TerminalBoundary>
+              </div>
+            )}
+            {!isSimulation && <TerminalBoundary key={page}>{content}</TerminalBoundary>}
           </div>
         </div>
       </main>

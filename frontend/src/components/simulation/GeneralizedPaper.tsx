@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api/client';
 import { assetPaperReasonText, paperProfileVersion } from '../../types/generalizedPaper';
 import type { AdvisoryResponse } from '../../types/advisory';
@@ -7,7 +7,11 @@ import type { AssetAmmResearchPolicy, AssetControlInputs, AssetPolicyPreviewRequ
 import type { GeneralizedPaperResult, PaperAdmission, PaperProposal } from '../../types/generalizedPaper';
 import { assetControlInput, assetMinimumNotional, assetReferenceIsValid } from '../../utils/assetAmm';
 import { paperAdmissionIsCurrent } from '../../utils/generalizedPaper';
-import { marketUniverseKey } from '../../utils/marketUniverse';
+import { generalizedDiscoveryQuery, useGeneralizedMarketSelection } from '../../stores/researchMarkets';
+import { pageHref } from '../../utils/navigation';
+import { useDisplayStore } from '../../stores/display';
+import { GuidedPaperStep, guidedPaperScenarios } from './GuidedPaperResearch';
+import { marketCatalogDeadline, marketUniverseKey, matchesMarketResearchHandoff } from '../../utils/marketUniverse';
 import { buildRiskSettings, financialEvidenceIsCurrent } from '../../utils/marketRisk';
 import { accountingValue } from '../../utils/researchEvidence';
 import { Panel } from '../TerminalPrimitives';
@@ -15,12 +19,19 @@ import { GeneralizedPaperAdvisory } from './GeneralizedPaperAdvisory';
 import { initialAssetDraft, PaperAssetConfiguration, PaperAssetEvidence } from './GeneralizedPaperAssetPolicy';
 import { initialRiskDraft, PaperFinancialEvidence, PaperRiskConfiguration, PaperRiskEvidence } from './GeneralizedPaperRisk';
 
-export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: string }[] }) {
-  const discovery = useQuery({
-    queryKey: ['generalized-paper-discovery'],
-    queryFn: ({ signal }) => api.marketUniverse(signal),
-    retry: false,
-  });
+export function GeneralizedPaper({ scenarios, resultsOnly }: {
+  scenarios: readonly { name: string; description: string }[];
+  resultsOnly: boolean;
+}) {
+  const guided = useDisplayStore(state => state.experienceMode) === 'Starter';
+  const setMode = useDisplayStore(state => state.setExperienceMode);
+  const discovery = useQuery(generalizedDiscoveryQuery);
+  const queryClient = useQueryClient();
+  const handoff = useGeneralizedMarketSelection(state => state.handoff);
+  const appliedHandoff = useRef<typeof handoff>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [handoffError, setHandoffError] = useState(false);
+  const advanced = !guided || showAdvanced;
   const [market, setMarket] = useState('');
   const [price, setPrice] = useState('');
   const [scenario, setScenario] = useState('QUIET');
@@ -54,7 +65,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     ? { metadata: record, metadata_fingerprint: discoveryDecision.metadata_fingerprint,
       catalog_fingerprint: catalogFingerprint, max_age_seconds: catalog.max_age_seconds } : null;
   const financialQuery = useQuery({
-    queryKey: ['generalized-paper-financial', market, catalogFingerprint],
+    queryKey: ['generalized-paper-financial', market, catalogFingerprint, discoveryDecision?.metadata_fingerprint],
     queryFn: ({ signal }) => {
       if (!selection) throw new Error('Select a market from the current discovery catalog.');
       return api.marketRiskEvidence(selection, signal);
@@ -68,9 +79,9 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
   const currentFinancial = financial !== undefined && !financialExpired;
   const financialGeneration = riskEnabled && financial
     ? `${financial.source_fingerprint ?? ''}:${financial.valid_until}:${financialExpired}` : '';
-  const catalogDeadline = assetEnabled && selection
-    ? Math.min(...records.map(item => Date.parse(item.observed_at))) + selection.max_age_seconds * 1000 : 0;
-  const assetSelectionCurrent = catalogDeadline > Date.now() && catalogDeadline !== expiredCatalogDeadline &&
+  const catalogDeadline = marketCatalogDeadline(catalog);
+  const catalogCurrent = catalogDeadline > Date.now() && catalogDeadline !== expiredCatalogDeadline;
+  const assetSelectionCurrent = catalogCurrent &&
     discoveryDecision?.discovery_eligible === true;
   const currentAssetAdvisory = assetEnabled && assetSelectionCurrent && assetAdvisory &&
     assetAdvisory.snapshot.context.catalog_fingerprint === catalogFingerprint &&
@@ -90,11 +101,33 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     setExpired(false);
   }
 
+  function changeMarket(key: string) {
+    reset();
+    setHandoffError(false);
+    setAssetAdvisory(null);
+    setMarket(key);
+    setRiskDraft(draft => ({ ...draft, marginMode: 'ISOLATED', rate: '' }));
+  }
+
+  useLayoutEffect(() => {
+    if (!handoff || handoff === appliedHandoff.current || isFetching) return;
+    appliedHandoff.current = handoff;
+    if (!discoveryFailed && matchesMarketResearchHandoff(catalog, handoff)) {
+      if (market !== handoff.key) {
+        if (market) setPrice('');
+        changeMarket(handoff.key);
+      }
+    } else {
+      changeMarket('');
+      setHandoffError(true);
+    }
+  }, [handoff, catalog, isFetching, discoveryFailed, market]);
+
   useEffect(() => () => pending.current?.abort(), []);
   useEffect(() => {
     reset();
     setAssetAdvisory(null);
-  }, [catalogFingerprint, catalogNetwork, availability, discoveryFailed]);
+  }, [catalogFingerprint, catalogNetwork, availability, discoveryFailed, discoveryDecision?.metadata_fingerprint]);
   useEffect(() => {
     reset();
   }, [financialGeneration]);
@@ -104,7 +137,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
       reset();
       setAssetAdvisory(null);
       setExpiredCatalogDeadline(catalogDeadline);
-      setError('Discovery evidence expired. Refresh discovery and check eligibility again.');
+      setError('Discovery and PAPER eligibility expired. Refresh discovery and check eligibility again.');
     }, Math.max(0, catalogDeadline - Date.now()));
     return () => window.clearTimeout(timer);
   }, [catalogDeadline, catalogFingerprint]);
@@ -201,7 +234,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     !riskEnabled || evidence.status !== 'ELIGIBLE' || !currentFinancial ||
     (evidence.risk_model?.source_fingerprint ?? null) === financial?.source_fingerprint;
   const catalogMatches = admission?.status === 'ELIGIBLE' && !discoveryFailed &&
-    availability === 'AVAILABLE' && admission.binding.catalog_fingerprint === catalogFingerprint &&
+    catalogCurrent && availability === 'AVAILABLE' && admission.binding.catalog_fingerprint === catalogFingerprint &&
     admission.binding.metadata_fingerprint === discoveryDecision?.metadata_fingerprint &&
     admission.identity?.network === catalogNetwork && financialMatches(admission);
   const financialPending = riskEnabled && financialQuery.isFetching;
@@ -211,6 +244,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
 
   async function submit(run: boolean) {
     if (pending.current || !baseProposal || isFetching || financialPending ||
+        (availability === 'AVAILABLE' && !catalogCurrent) ||
         (assetEnabled && (!assetRequest || !selection || !assetSelectionCurrent || (!!assetAdvisory && !currentAssetAdvisory))) ||
         (run && (!ready || !paperAdmissionIsCurrent(admission) || admission?.status !== 'ELIGIBLE'))) return;
     if (baseProposal.research_risk?.mode === 'SOURCE_CONSTRAINED' && !financialEvidenceIsCurrent(financial)) return;
@@ -236,6 +270,16 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
         ? await api.runGeneralizedPaper(submitted, admission.binding, controller.signal)
         : await api.paperEligibility(submitted, controller.signal);
       if (controller.signal.aborted) return;
+      // Recheck the shared cache before publishing a response. Explorer can refresh it
+      // while this workspace is hidden and React is still committing the update.
+      const latestQuery = queryClient.getQueryState<typeof catalog>(generalizedDiscoveryQuery.queryKey);
+      const latest = latestQuery?.data;
+      const latestDecision = latest?.eligibility.find(item => marketUniverseKey(item.identity) === market);
+      if (latestQuery?.status === 'error' || latest?.catalog_fingerprint !== catalogFingerprint ||
+          latest?.network !== catalogNetwork || latest?.availability !== availability ||
+          latestDecision?.metadata_fingerprint !== discoveryDecision?.metadata_fingerprint ||
+          (availability === 'AVAILABLE' && Date.now() >= marketCatalogDeadline(latest)))
+        throw new Error('Discovery changed while the request was in progress. Check eligibility again.');
       const decision = 'status' in evidence ? evidence : evidence.admission;
       if (decision.status === 'ELIGIBLE' && (decision.binding.catalog_fingerprint !== catalogFingerprint ||
           decision.binding.metadata_fingerprint !== discoveryDecision?.metadata_fingerprint || !financialMatches(decision)))
@@ -270,116 +314,154 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     (!expired && paperAdmissionIsCurrent(admission) && (!assetEnabled || assetSelectionCurrent)))
     ? result : null;
 
-  return <Panel title="Generalized PAPER research">
-    <div className="researchInset stack">
-      <p>Supply a hypothetical reference price for one discovered Core or HIP-3 perpetual. This local simulation uses synthetic prices and liquidity, with zero modeled fees. Venue fees, funding, account balances and actual margin requirements are unverified. Discovery and PAPER admission grant no trading authority.</p>
-      <div className="researchFilters">
-        <label>Discovered perpetual
-          <select value={record ? market : ''} disabled={busy || records.length === 0}
-            onChange={e => {
-              reset();
-              setAssetAdvisory(null);
-              setMarket(e.target.value);
-              setRiskDraft(draft => ({ ...draft, marginMode: 'ISOLATED', rate: '' }));
-            }}>
-            <option value="">Select a perpetual</option>
-            {records.map(item => <option key={marketUniverseKey(item.identity)} value={marketUniverseKey(item.identity)}>
-              {item.source_coin} · {item.identity.instrument_type === 'HIP3_PERP' ? 'HIP-3' : 'Core'}
-              {item.listed ? '' : ' · Delisted'}
-            </option>)}
-          </select>
-        </label>
-        <button type="button" disabled={busy || isFetching} onClick={() => {
-          reset();
-          void discovery.refetch().then(next => {
-            if (selection && next.data?.catalog_fingerprint === selection.catalog_fingerprint && next.data.availability === 'AVAILABLE')
-              void financialQuery.refetch();
-          });
-        }}>
-          Refresh discovery
-        </button>
-      </div>
-      <p role={discoveryFailed ? 'alert' : 'status'}>{isFetching ? 'Loading read-only discovery metadata…' : discoveryFailed ?
-        'Discovery could not be loaded.' : availability === 'AVAILABLE' ?
-        `${catalogNetwork} metadata available. Check PAPER eligibility for your scenario.` :
-        `Discovery ${availability?.toLowerCase() ?? 'unavailable'}.`}</p>
-      {record && <dl className="researchDetails">
-        <div><dt>Canonical market</dt><dd><code>{marketUniverseKey(record.identity)}</code></dd></div>
-        <div><dt>Instrument</dt><dd>{record.source_coin} · {record.identity.instrument_type === 'HIP3_PERP' ? 'HIP-3' : 'Core'}</dd></div>
-        <div><dt>Network and DEX</dt><dd>{record.identity.network} · {record.identity.dex || 'Core (default namespace)'}</dd></div>
-        <div><dt>Discovery status</dt><dd>{discoveryDecision?.reason.replaceAll('_', ' ') ?? 'Unavailable'}</dd></div>
-        <div><dt>Research profile version</dt><dd>{paperProfileVersion}</dd></div>
-        <div><dt>Exchange metadata observed at</dt><dd><time dateTime={record.observed_at}>{record.observed_at}</time></dd></div>
-        <div><dt>Metadata freshness</dt><dd>{record.metadata_status === 'STALE' || availability !== 'AVAILABLE' || discoveryFailed
-          ? 'Stale or unavailable' : 'Available at last discovery'}</dd></div>
-      </dl>}
-      {record && <PaperFinancialEvidence evidence={financial} current={currentFinancial}
-        loading={selection !== null && financialQuery.isFetching} error={financialQuery.error?.message} />}
-      <div className="researchFilters">
-        <label>Synthetic reference price
-          <input value={price} inputMode="decimal" maxLength={24} disabled={busy}
-            onChange={e => { setPrice(e.target.value); reset(); }} />
-        </label>
-        <label>PAPER scenario
-          <select value={scenario} disabled={busy} onChange={e => { setScenario(e.target.value); reset(); }}>
-            {scenarios.map(item => <option key={item.name} value={item.name}>{item.name.replaceAll('_', ' ')}</option>)}
-          </select>
-        </label>
-        <label><input type="checkbox" checked={funding} disabled={busy} onChange={e => { setFunding(e.target.checked); reset(); }} />
-          Apply hypothetical funding at each one-second interval
-        </label>
-        <label>PAPER research mode
-          <select value={assetEnabled ? 'asset' : 'standard'} onChange={e => {
-            reset();
-            setAssetAdvisory(null);
-            setAssetDraft(initialAssetDraft);
-            setAssetEnabled(e.target.value === 'asset');
-          }}>
-            <option value="standard">Standard PAPER</option>
-            <option value="asset">Asset-aware PAPER</option>
-          </select>
-        </label>
-      </div>
-      {assetEnabled && <PaperAssetConfiguration draft={assetDraft} record={record}
-        defaults={defaults.data?.policy.controls} loading={defaults.isFetching}
-        error={assetError || defaults.error?.message || ''} advisory={currentAssetAdvisory?.snapshot_fingerprint}
-        onChange={next => { reset(); setAssetDraft(next); }}
-        onRemoveAdvisory={() => { reset(); setAssetAdvisory(null); }} />}
-      <PaperRiskConfiguration draft={riskDraft} evidence={financial} current={currentFinancial}
-        error={riskError} onChange={next => { reset(); setRiskDraft(next); }} />
-      <div className="researchFilters">
-        <button type="button" disabled={!baseProposal || (assetEnabled && (!assetRequest || !assetSelectionCurrent)) ||
-          busy || isFetching || financialPending || discoveryFailed} onClick={() => void submit(false)}>Check PAPER eligibility</button>
-        <button type="button" disabled={!proposal || !ready || busy} onClick={() => void submit(true)}>Run local PAPER</button>
-      </div>
-      {working && <p role="status">{working === 'running' ? 'Running local PAPER simulation…' : 'Checking PAPER eligibility…'}</p>}
-      {error && <p role="alert">{error}</p>}
-      {admission && <div role="status">
-        {admission.status === 'ELIGIBLE' ? <>
-          <p>{!catalogMatches ? 'Discovery evidence changed. Refresh discovery and check eligibility again.' :
-            expired || !paperAdmissionIsCurrent(admission)
-              ? 'PAPER eligibility expired. Check eligibility again.' : admission.explanation}</p>
-          {ready && <p>Eligibility valid until <time dateTime={admission.valid_until}>{admission.valid_until}</time></p>}
-          {assetRunStarted && !expired && <p>Check eligibility again to start another asset-aware run.</p>}
-        </> : <p>{assetPaperReasonText[admission.reason] ?? admission.explanation}</p>}
-        {admission.status !== 'ELIGIBLE' && <p><code>{admission.reason}</code> · {admission.checks.join(', ').replaceAll('_', ' ')}</p>}
+  const availableScenarios = guided && !advanced
+    ? scenarios.filter(item => guidedPaperScenarios.includes(item.name) || item.name === scenario)
+    : scenarios;
+  const scenarioDescription = scenarios.find(item => item.name === scenario)?.description;
+
+  return <Panel title={guided ? 'Guided PAPER research' : 'Generalized PAPER research'}>
+    <div className={guided ? 'stack guidedPaper' : 'researchInset stack'}>
+      {guided && <div className="guidedPaperIntro">
+        <p>Test market making in a hypothetical simulation using synthetic prices and liquidity. Trade outcomes, balances and venue costs are unverified.</p>
+        <button type="button" onClick={() => {
+          setMode('Pro');
+          document.getElementById('workspace-mode')?.focus();
+        }}>Switch to Pro</button>
       </div>}
-      {visibleResult && <PaperResult result={visibleResult} />}
-      {selection && !isFetching && !busy && <GeneralizedPaperAdvisory
-        key={JSON.stringify([market, catalogFingerprint, financialGeneration, advisoryEpoch, visibleResult?.advisory_receipt])}
-        selection={selection} proposal={proposal} paperRun={visibleResult}
-        onAttachAdvisory={assetEnabled && assetSelectionCurrent ? snapshot => {
-          reset();
-          setAssetAdvisory(snapshot);
-        } : undefined} />}
+      {!guided &&
+      <p>Supply a hypothetical reference price for one discovered Core or HIP-3 perpetual. This local simulation uses synthetic prices and liquidity, with zero modeled fees. Venue fees, funding, account balances and actual margin requirements are unverified. Discovery and PAPER admission grant no trading authority.</p>}
+      <GuidedPaperStep guided={guided} step={1} title="Choose a market">
+        <div className="researchFilters">
+          <label>Discovered perpetual
+            <select value={record ? market : ''} disabled={busy || records.length === 0}
+              onChange={e => changeMarket(e.target.value)}>
+              <option value="">Select a perpetual</option>
+              {records.map(item => <option key={marketUniverseKey(item.identity)} value={marketUniverseKey(item.identity)}>
+                {item.source_coin} · {item.identity.instrument_type === 'HIP3_PERP' ? 'HIP-3' : 'Core'}
+                {item.listed ? '' : ' · Delisted'}
+              </option>)}
+            </select>
+          </label>
+          {guided && <a className="workspaceLink" href={pageHref('Markets')}>Browse Market Explorer</a>}
+          <button type="button" disabled={busy || isFetching} onClick={() => {
+            reset();
+            void discovery.refetch().then(next => {
+              if (selection && next.data?.catalog_fingerprint === selection.catalog_fingerprint && next.data.availability === 'AVAILABLE')
+                void financialQuery.refetch();
+            });
+          }}>
+            Refresh discovery
+          </button>
+        </div>
+        <p role={discoveryFailed ? 'alert' : 'status'}>{isFetching ? 'Loading read-only discovery metadata…' : discoveryFailed ?
+          'Discovery could not be loaded.' : availability === 'AVAILABLE' ?
+          catalogCurrent ? `${catalogNetwork} metadata available. Check PAPER eligibility for your scenario.` :
+            'Discovery metadata expired. Refresh to check PAPER eligibility.' :
+          `Discovery ${availability?.toLowerCase() ?? 'unavailable'}.`}</p>
+        {guided && record && <p><strong>{record.source_coin}</strong> · {record.identity.network} · {record.identity.dex || 'Core'} · {catalogCurrent ? 'Current metadata' : 'Metadata unavailable or stale'}</p>}
+        <div hidden={!advanced}>
+          {record && <dl className="researchDetails">
+            <div><dt>Canonical market</dt><dd><code>{marketUniverseKey(record.identity)}</code></dd></div>
+            <div><dt>Instrument</dt><dd>{record.source_coin} · {record.identity.instrument_type === 'HIP3_PERP' ? 'HIP-3' : 'Core'}</dd></div>
+            <div><dt>Network and DEX</dt><dd>{record.identity.network} · {record.identity.dex || 'Core (default namespace)'}</dd></div>
+            <div><dt>Discovery status</dt><dd>{discoveryDecision?.reason.replaceAll('_', ' ') ?? 'Unavailable'}</dd></div>
+            <div><dt>Research profile version</dt><dd>{paperProfileVersion}</dd></div>
+            <div><dt>Exchange metadata observed at</dt><dd><time dateTime={record.observed_at}>{record.observed_at}</time></dd></div>
+            <div><dt>Metadata freshness</dt><dd>{record.metadata_status === 'STALE' || availability !== 'AVAILABLE' || discoveryFailed
+              ? 'Stale or unavailable' : 'Available at last discovery'}</dd></div>
+          </dl>}
+          {record && <PaperFinancialEvidence evidence={financial} current={currentFinancial}
+            loading={selection !== null && financialQuery.isFetching} error={financialQuery.error?.message} />}
+        </div>
+      </GuidedPaperStep>
+      <GuidedPaperStep guided={guided} step={2} title="Choose a scenario">
+        <div className="researchFilters">
+          <label>Synthetic reference price
+            <input value={price} inputMode="decimal" maxLength={24} disabled={busy}
+              onChange={e => { setPrice(e.target.value); reset(); }} />
+          </label>
+          <label>PAPER scenario
+            <select value={scenario} disabled={busy} onChange={e => { setScenario(e.target.value); reset(); }}>
+              {availableScenarios.map(item => <option key={item.name} value={item.name}>{item.name.replaceAll('_', ' ')}</option>)}
+            </select>
+          </label>
+        </div>
+        {guided && <p>{scenarioDescription ?? 'Scenario catalog unavailable.'} Enter a hypothetical starting price in quote units per unit of the asset.</p>}
+        {guided && <button type="button" aria-expanded={showAdvanced} aria-controls="paper-advanced-controls"
+          onClick={() => setShowAdvanced(!showAdvanced)}>{showAdvanced ? 'Hide' : 'Show'} advanced controls</button>}
+        {guided && !advanced && (assetEnabled || riskEnabled || funding) &&
+          <p>Advanced settings are active from your previous configuration.</p>}
+        <div id="paper-advanced-controls" hidden={!advanced}>
+          <div className="researchFilters">
+            <label><input type="checkbox" checked={funding} disabled={busy} onChange={e => { setFunding(e.target.checked); reset(); }} />
+              Apply hypothetical funding at each one-second interval
+            </label>
+            <label>PAPER research mode
+              <select value={assetEnabled ? 'asset' : 'standard'} onChange={e => {
+                reset();
+                setAssetAdvisory(null);
+                setAssetDraft(initialAssetDraft);
+                setAssetEnabled(e.target.value === 'asset');
+              }}>
+                <option value="standard">Standard PAPER</option>
+                <option value="asset">Asset-aware PAPER</option>
+              </select>
+            </label>
+          </div>
+          {assetEnabled && <PaperAssetConfiguration draft={assetDraft} record={record}
+            defaults={defaults.data?.policy.controls} loading={defaults.isFetching}
+            error={assetError || defaults.error?.message || ''} advisory={currentAssetAdvisory?.snapshot_fingerprint}
+            onChange={next => { reset(); setAssetDraft(next); }}
+            onRemoveAdvisory={() => { reset(); setAssetAdvisory(null); }} />}
+          <PaperRiskConfiguration draft={riskDraft} evidence={financial} current={currentFinancial}
+            error={riskError} onChange={next => { reset(); setRiskDraft(next); }} />
+        </div>
+      </GuidedPaperStep>
+      <GuidedPaperStep guided={guided} step={3} title="Check eligibility and run PAPER">
+        {guided && <p>The server checks this market and scenario before enabling a simulation. A PAPER run uses hypothetical funds.</p>}
+        <div className="researchFilters">
+          <button type="button" disabled={!baseProposal || (assetEnabled && (!assetRequest || !assetSelectionCurrent)) ||
+            busy || isFetching || financialPending || discoveryFailed || (availability === 'AVAILABLE' && !catalogCurrent)} onClick={() => void submit(false)}>Check PAPER eligibility</button>
+          <button type="button" disabled={!proposal || !ready || busy} onClick={() => void submit(true)}>Run local PAPER</button>
+        </div>
+        {working && <p role="status">{working === 'running' ? 'Running local PAPER simulation…' : 'Checking PAPER eligibility…'}</p>}
+        {handoffError && <p role="alert">The market selection is out of date. Refresh discovery and choose a current market.</p>}
+        {error && <p role="alert">{error}</p>}
+        {admission && <div role="status">
+          {admission.status === 'ELIGIBLE' ? <>
+            <p>{expired || !paperAdmissionIsCurrent(admission) ?
+              'PAPER eligibility expired. Check eligibility again.' : !catalogMatches ?
+                'Discovery evidence changed. Refresh discovery and check eligibility again.' : admission.explanation}</p>
+            {ready && <p>Eligibility valid until <time dateTime={admission.valid_until}>{admission.valid_until}</time></p>}
+            {assetRunStarted && !expired && <p>Check eligibility again to start another asset-aware run.</p>}
+          </> : <p>{assetPaperReasonText[admission.reason] ?? admission.explanation}</p>}
+          {admission.status !== 'ELIGIBLE' && <p><code>{admission.reason}</code> · {admission.checks.join(', ').replaceAll('_', ' ')}</p>}
+        </div>}
+      </GuidedPaperStep>
+      <GuidedPaperStep guided={guided} step={4} title="Review results">
+        <h3 id="paper-results" tabIndex={-1} hidden={!resultsOnly}>PAPER results</h3>
+        {guided && !visibleResult && <p>Complete an eligible simulation to review hypothetical P&amp;L, fees, funding, inventory and risk.</p>}
+        {visibleResult && <PaperResult result={visibleResult} guided={guided && !advanced} />}
+        {guided && visibleResult && <p>Use Market Eligibility to see the evidence behind a suitability finding. Quote Economics evaluates the costs behind a retained simulated quote.</p>}
+        {selection && catalogCurrent && !isFetching && !busy && <div hidden={guided && !advanced && !visibleResult}><GeneralizedPaperAdvisory
+          key={JSON.stringify([market, catalogFingerprint, financialGeneration, advisoryEpoch, visibleResult?.advisory_receipt])}
+          selection={selection} proposal={proposal} paperRun={visibleResult} guided={guided && !advanced}
+          onAttachAdvisory={assetEnabled && assetSelectionCurrent ? snapshot => {
+            reset();
+            setAssetAdvisory(snapshot);
+          } : undefined} /></div>}
+      </GuidedPaperStep>
     </div>
   </Panel>;
 }
 
-function PaperResult({ result }: { result: GeneralizedPaperResult }) {
+function PaperResult({ result, guided }: { result: GeneralizedPaperResult; guided: boolean }) {
   const { profile } = result.admission;
   const { economics } = profile;
   const { metrics, vault } = result.result;
+  const riskStates = Object.entries(metrics.risk_state_counts ?? {})
+    .filter(([, count]) => count > 0)
+    .map(([state, count]) => `${state.toLowerCase()} in ${count} ${count === 1 ? 'frame' : 'frames'}`);
   const fields = [
     ['Starting simulated equity', vault.initial_equity_quote],
     ['Ending simulated equity', vault.equity_quote],
@@ -402,8 +484,13 @@ function PaperResult({ result }: { result: GeneralizedPaperResult }) {
       {' '}{result.research_risk ? 'Public market observations and modeled risk are shown below.' :
         'Exchange collateral, margin, liquidation, leverage, settlement and account balances are unverified.'}</p>
     <dl className="researchDetails">
-      {fields.map(([label, amount]) => <div key={label}><dt>{label}</dt><dd>{accountingValue(amount)}</dd></div>)}
+      {(guided ? fields.filter((_, index) => [2, 5, 6, 8].includes(index)) : fields).map(([label, amount]) => <div key={label}><dt>{label}</dt><dd>{accountingValue(amount)}</dd></div>)}
     </dl>
+    {guided && <>
+      <p>Simulated Risk Firewall status · {riskStates.join(', ') || 'Unavailable'}</p>
+      {!result.research_risk && <p>Market-specific margin assessment unavailable for this run.</p>}
+    </>}
+    {guided && <p>Simulated P&amp;L describes this scenario only. Actual returns are unknown.</p>}
     {result.research_risk && result.admission.risk_model && result.admission.risk_source_status &&
       <PaperRiskEvidence risk={result.research_risk} model={result.admission.risk_model}
         sourceStatus={result.admission.risk_source_status} />}

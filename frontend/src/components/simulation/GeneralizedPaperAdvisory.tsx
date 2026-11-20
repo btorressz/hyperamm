@@ -324,7 +324,8 @@ function QuotePanel({ selection, paperRun, onQuote }: {
   </section>;
 }
 
-export function GeneralizedPaperAdvisory({ selection, proposal, paperRun, onAttachAdvisory }: {
+export function GeneralizedPaperAdvisory({ selection, proposal, paperRun, onAttachAdvisory, guided }: {
+  guided: boolean;
   selection: AdvisorySelection; proposal: PaperProposal | null; paperRun: GeneralizedPaperResult | null;
   onAttachAdvisory?: (snapshot: AdvisoryResponse) => void;
 }) {
@@ -333,7 +334,7 @@ export function GeneralizedPaperAdvisory({ selection, proposal, paperRun, onAtta
     <h2 id="paper-advisory">Research advisories</h2>
     <EligibilityPanel key={JSON.stringify(quote ?? null)} selection={selection} proposal={proposal}
       paperRun={paperRun} quote={quote} onAttachAdvisory={onAttachAdvisory} />
-    <section aria-labelledby="paper-advisory-funding">
+    <section aria-labelledby="paper-advisory-funding" hidden={guided}>
       <h3 id="paper-advisory-funding">Funding/Basis</h3>
       <FundingEvidence mode="OBSERVED" selection={selection} paperRun={null} />
       <FundingEvidence mode="PAPER" selection={selection} paperRun={paperRun} />

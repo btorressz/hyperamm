@@ -3,7 +3,7 @@ const test = require('node:test');
 const path = require('node:path');
 const load = name => require(path.join(process.env.TERMINAL_TEST_BUILD, name));
 const { api } = load('api/client.js');
-const { checkedMarketUniverse, marketUniverseKey } = load('utils/marketUniverse.js');
+const { checkedMarketUniverse, marketUniverseKey, marketCatalogDeadline, marketResearchAvailability, matchesMarketResearchHandoff } = load('utils/marketUniverse.js');
 const { researchMarketIds } = load('utils/researchMarkets.js');
 
 const contract_version = 'phase180b-v2';
@@ -143,4 +143,24 @@ test('Phase 18.1 API client applies its byte limit to declared and chunked respo
     },
   })));
   await assert.rejects(api.marketUniverse(), /evidence budget/);
+});
+
+test('Explorer handoff keeps same-symbol Core and HIP-3 records and networks distinct', () => {
+  const catalog = available();
+  catalog.eligibility[2].metadata_fingerprint = 'b'.repeat(64);
+  const target = catalog.eligibility[2];
+  const handoff = {
+    key: marketUniverseKey(target.identity),
+    catalogFingerprint: catalog.catalog_fingerprint,
+    metadataFingerprint: target.metadata_fingerprint,
+  };
+  const now = Date.parse(catalog.evaluated_at) - 100;
+  assert.equal(matchesMarketResearchHandoff(catalog, handoff, now), true);
+  assert.equal(matchesMarketResearchHandoff(catalog, { ...handoff, key: marketUniverseKey(catalog.eligibility[0].identity) }, now), false);
+  assert.equal(matchesMarketResearchHandoff(available('TESTNET'), handoff, now), false);
+  assert.equal(matchesMarketResearchHandoff({ ...catalog, catalog_fingerprint: 'c'.repeat(64) }, handoff, now), false);
+  assert.equal(matchesMarketResearchHandoff(catalog, handoff, marketCatalogDeadline(catalog)), false);
+  assert.equal(marketResearchAvailability(catalog, -1, true), 'unsupported');
+  assert.equal(marketResearchAvailability(catalog, 1, true), 'unsupported');
+  assert.equal(marketResearchAvailability(catalog, 2, false), 'unavailable');
 });

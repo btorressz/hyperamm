@@ -149,7 +149,11 @@ export interface GeneralizedPaperResult {
     market_profile_version: typeof paperProfileVersion;
     market_profile_fingerprint: string;
     simulated: true;
-    metrics: { frame_count: number; fill_count: number };
+    metrics: {
+      frame_count: number;
+      fill_count: number;
+      risk_state_counts?: Partial<Record<'NORMAL' | 'WIDEN' | 'REDUCE' | 'HALT', number>>;
+    };
     vault: { market: string; mode: 'PAPER'; simulated: true; net_pnl_quote: string;
         initial_equity_quote: string; equity_quote: string; reserved_capital_quote: string;
         realized_pnl_quote: string; unrealized_pnl_quote: string;

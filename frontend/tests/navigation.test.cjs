@@ -4,7 +4,7 @@ const path=require('node:path');
 const React=require('react');
 const {renderToStaticMarkup}=require('react-dom/server');
 const compiled=name=>require(path.join(process.env.TERMINAL_TEST_BUILD,name));
-const {terminalPages,pageFromHash,pageHref,subscribeNavigation,normalizePageHash}=compiled('utils/navigation.js');
+const {terminalPages,pageFromHash,pageHref,subscribeNavigation,normalizePageHash,workspaceHref,workspaceFromHash,navigationGroups,experienceModes}=compiled('utils/navigation.js');
 const {Sidebar}=compiled('components/Sidebar.js');
 const {Header}=compiled('components/Header.js');
 const {Panel,Empty,Loading,StatusBanner}=compiled('components/TerminalPrimitives.js');
@@ -34,7 +34,10 @@ test('route subscriptions track hash/history changes and clean up ownership',()=
  finally {global.window=original;}
 });
 test('sidebar has thirteen native links and exactly one active accessible page',()=>{
- const html=sidebar();assert.equal((html.match(/href="#\//g)||[]).length,13);
+ const html=sidebar();
+ for (const {name} of terminalPages) {
+   assert.equal((html.match(new RegExp(`href="${pageHref(name)}"`, 'g')) || []).length, 1);
+ }
  assert.equal((html.match(/aria-current="page"/g)||[]).length,1);
  assert.match(html,/href="#\/risk"[^>]*aria-label="Risk"[^>]*aria-current="page"/);
  assert.match(html,/aria-label="Terminal pages"/);assert.match(html,/aria-label="Collapse navigation"/);
@@ -81,4 +84,19 @@ test('kill latch remains disabled only once active, with immediate action label'
  const t=structuredClone(valid);t.risk.kill_switch_active=true;
  const html=render(Header,{t,ws:'connected',navigationOpen:false,onOpenNavigation:()=>{}});
  assert.match(html,/KILL ACTIVE/);assert.match(html,/aria-label="Immediately activate manual kill switch" disabled=""/);
+});
+
+test('every presentation mode links to all legacy routes and has distinct workspace links', () => {
+ for (const mode of experienceModes) {
+   const items = navigationGroups(mode).flatMap(group => group.items);
+   const canonical = items.filter(item => !item.workspace).map(item => item.name);
+   assert.deepEqual([...canonical].sort(), terminalPages.map(page => page.name).sort());
+   const hrefs = items.map(item => item.workspace ? workspaceHref(item.workspace) : pageHref(item.name));
+   assert.equal(new Set(hrefs).size, hrefs.length);
+ }
+ assert.deepEqual(navigationGroups('Starter')[0].items.map(item => item.label),
+   ['Home', 'Market Explorer', 'Guided Research', 'Results', 'Help / Settings']);
+ assert.equal(workspaceFromHash(workspaceHref('results')), 'results');
+ assert.equal(pageFromHash(workspaceHref('results')), 'Simulation & Optimization');
+ assert.equal(pageFromHash(workspaceHref('marketComparison')), 'Markets');
 });

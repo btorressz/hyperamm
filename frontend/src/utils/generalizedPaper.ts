@@ -203,6 +203,16 @@ export function checkedPaperResult(
       !integer(result.metrics.frame_count, 2, maxFrames) || result.metrics.frame_count !== proposal.frames ||
       !integer(result.metrics.fill_count, 0, maxFrames * 8) || !object(result.vault) ||
       result.vault.simulated !== true || result.vault.mode !== 'PAPER' || result.vault.market !== result.research_market) malformed();
+  const riskCounts = result.metrics.risk_state_counts;
+  if (riskCounts !== undefined) {
+    if (!object(riskCounts)) malformed();
+    let frames = 0;
+    for (const [state, count] of Object.entries(riskCounts)) {
+      if (!['NORMAL', 'WIDEN', 'REDUCE', 'HALT'].includes(state) || !integer(count, 0, proposal.frames)) malformed();
+      frames += count;
+    }
+    if (frames !== proposal.frames) malformed();
+  }
   for (const field of ['net_pnl_quote', 'fees_quote', 'funding_quote', 'position_base', 'initial_equity_quote',
     'equity_quote', 'reserved_capital_quote', 'realized_pnl_quote', 'unrealized_pnl_quote']) decimal(result.vault[field]);
   checkResearchAuthority(result);

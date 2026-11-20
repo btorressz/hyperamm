@@ -388,19 +388,21 @@ test("export omits browser storage, arbitrary response fields and unrelated diag
     /DO-NOT-EXPORT|browser_storage|api_key|private_key|internal_diagnostics/,
   );
 });
-test("display controls persist all four preferences and preserve supported saved ranges", () => {
+test("display controls persist presentation mode and the existing preferences", () => {
   display.getState().setDense(true);
+  display.getState().setExperienceMode("Institutional");
   display.getState().setSidebarCollapsed(true);
   display.getState().setHistorySize(1000);
   display.getState().setDefaultRange("1h");
   assert.deepEqual(JSON.parse(storage.get("hyperamm-display-v1")).state, {
     dense: true,
+    experienceMode: "Institutional",
     sidebarCollapsed: true,
     historySize: 1000,
     defaultRange: "1h",
   });
 });
-test("reset restores four defaults, writes owned persistence and preserves terminal, ledger, kill and strategy evidence", () => {
+test("reset restores display defaults, writes owned persistence and preserves terminal, ledger, kill and strategy evidence", () => {
   const old = terminal.getState(),
     t = frame();
   terminal.setState({ terminal: t, wsState: "connected" });
@@ -439,6 +441,7 @@ for (const corrupt of [
     sidebarCollapsed: 1,
     historySize: 999999,
     defaultRange: "10y",
+    experienceMode: "Trading",
   },
   { historySize: NaN, defaultRange: null },
 ])

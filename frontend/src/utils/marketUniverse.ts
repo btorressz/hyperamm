@@ -146,3 +146,36 @@ export function marketUniverseHttpStatus(value: MarketUniverseResponse): number 
   const codes = [value.error, value.inventory?.error, ...value.namespaces.map(namespace => namespace.error)];
   return codes.includes('RATE_LIMITED') ? 429 : codes.includes('TIMEOUT') ? 504 : 503;
 }
+
+export function marketCatalogDeadline(catalog: MarketUniverseResponse | undefined): number {
+  if (catalog?.availability !== 'AVAILABLE' || !catalog.catalog) return 0;
+  return catalog.catalog.records.reduce((oldest, record) =>
+    Math.min(oldest, Date.parse(record.observed_at) + catalog.max_age_seconds * 1000), Infinity);
+}
+
+export function marketResearchAvailability(
+  catalog: MarketUniverseResponse,
+  index: number,
+  current: boolean,
+): 'check-required' | 'unsupported' | 'unavailable' {
+  const record = catalog.catalog?.records[index];
+  const decision = catalog.eligibility[index];
+  if (!record || !decision || !record.listed) return 'unsupported';
+  return current && decision.discovery_eligible ? 'check-required' : 'unavailable';
+}
+
+export interface MarketResearchHandoff {
+  key: string;
+  catalogFingerprint: string;
+  metadataFingerprint: string;
+}
+
+export function matchesMarketResearchHandoff(
+  catalog: MarketUniverseResponse | undefined, handoff: MarketResearchHandoff, now = Date.now(),
+): boolean {
+  if (!catalog || catalog.catalog_fingerprint !== handoff.catalogFingerprint ||
+      now >= marketCatalogDeadline(catalog)) return false;
+  const index = catalog.catalog?.records.findIndex(record => marketUniverseKey(record.identity) === handoff.key) ?? -1;
+  return marketResearchAvailability(catalog, index, true) === 'check-required' &&
+    catalog.eligibility[index].metadata_fingerprint === handoff.metadataFingerprint;
+}

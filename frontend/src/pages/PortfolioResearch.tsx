@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useDisplayStore } from "../stores/display";
+import { pageHref, workspaceHref } from "../utils/navigation";
 import { usePortfolioResearch } from "../hooks/usePortfolioResearch";
 import { allocationError, decimalDisplay } from "../utils/portfolioResearch";
 import { PortfolioConfiguration } from "../components/portfolio/PortfolioConfiguration";
@@ -14,6 +16,7 @@ import {
 import "../phase14.css";
 import "../phase175.css";
 export function PortfolioResearch() {
+  const institutional = useDisplayStore(state => state.experienceMode) === "Institutional";
   const s = usePortfolioResearch(),
     [section, setSection] = useState("Configure");
   const validation = allocationError(s.draft),
@@ -38,8 +41,15 @@ export function PortfolioResearch() {
       <StatusBanner>
         HYPOTHETICAL · PAPER ONLY · Non-custodial research without operational
         trading authority. Drafts never change active strategy, orders, balances
-        or risk controls.
+        or risk controls. Portfolio research uses the supported native BTC, ETH and SOL markets.
       </StatusBanner>
+      {institutional && <nav className="institutionalEvidence" aria-label="Related institutional workspaces">
+        <a href={pageHref("Risk")}>Operational risk and exposure</a>
+        <a href={pageHref("Execution")}>Execution evidence</a>
+        <a href={pageHref("Vault")}>Vault accounting</a>
+        <a href={pageHref("Logs")}>Audit timeline</a>
+        <a href={workspaceHref("scenarioComparison")}>Historical comparison</a>
+      </nav>}
       <Panel title="Portfolio Overview" meta={`LOCAL DRAFT ${s.revision + 1}`}>
         <Metrics
           items={[

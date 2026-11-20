@@ -1,5 +1,6 @@
 import { terminalEnvelopeFailure } from "../utils/terminalIntegrity";
 import { useState } from "react";
+import { ExperienceModeSwitch } from "./ExperienceModeSwitch";
 import { Badge } from "./Badge";
 import { api } from "../api/client";
 import { price, percentage, quantity } from "../utils/format";
@@ -43,8 +44,9 @@ export function Header({
       >
         ☰ <span>Pages</span>
       </button>
+      <ExperienceModeSwitch />
       <div className="headerMarket">
-        <div className="eyebrow">PERPETUAL MARKET</div>
+        <div className="eyebrow">OPERATIONAL PERPETUAL</div>
         <div className="marketTitle">
           {t?.market.market ?? "—"}-PERP{" "}
           <span>
