@@ -42,7 +42,7 @@ export function Header({
         aria-expanded={navigationOpen}
         onClick={onOpenNavigation}
       >
-        ☰ <span>Pages</span>
+        <span aria-hidden="true">☰</span> <span>Navigation</span>
       </button>
       <ExperienceModeSwitch />
       <div className="headerMarket">

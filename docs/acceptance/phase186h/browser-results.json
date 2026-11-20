@@ -311,10 +311,13 @@
     "/api/v1/market-universe/market-summaries",
     "/api/v1/market-universe/market-summaries",
     "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
     "/api/v1/generalized-paper/eligibility",
     "/api/v1/generalized-paper/eligibility",
     "/api/v1/generalized-paper/run",
     "/api/v1/market-universe/advisory",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
     "/api/v1/market-universe/market-summaries"
   ],
   "browser": "Chrome/151.0.7922.173",

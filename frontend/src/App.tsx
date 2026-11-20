@@ -178,7 +178,7 @@ export default function App() {
         )}
         {t?.market.simulated && (
           <div className="truthBanner">
-            DEMO MARKET DATA · simulated evidence ·{" "}
+            OPERATIONAL TERMINAL · DEMO MARKET DATA · simulated evidence ·{" "}
             {t.strategy.config.execution_mode === "PAPER"
               ? "PAPER / SIMULATED"
               : "GUARDED TESTNET / PARTIAL"}
