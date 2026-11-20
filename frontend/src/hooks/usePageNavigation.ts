@@ -3,18 +3,19 @@ import {
   normalizePageHash,
   pageFromHash,
   subscribeNavigation,
+  workspaceFromHash,
 } from "../utils/navigation";
 
 export function usePageNavigation() {
-  const page = useSyncExternalStore(
+  const hash = useSyncExternalStore(
     subscribeNavigation,
-    () => pageFromHash(window.location.hash),
-    () => "Dashboard" as const,
+    () => window.location.hash,
+    () => "",
   );
   useEffect(() => {
     normalizePageHash();
     window.addEventListener("hashchange", normalizePageHash);
     return () => window.removeEventListener("hashchange", normalizePageHash);
   }, []);
-  return page;
+  return { page: pageFromHash(hash), workspace: workspaceFromHash(hash) };
 }

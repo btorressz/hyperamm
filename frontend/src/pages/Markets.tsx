@@ -1,5 +1,7 @@
 import { MarketResearchWorkspace } from '../components/research-comparison/MarketResearchWorkspace';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { MarketExplorer } from '../components/markets/MarketExplorer';
+import type { Workspace } from '../utils/navigation';
 import { LiveMarketsView } from '../components/markets/LiveMarketsView';
 import { Loading } from '../components/TerminalPrimitives';
 import type { TerminalState } from "../types";
@@ -16,16 +18,19 @@ import {
   bps,
   timestamp,
 } from "../utils/format";
-export function Markets({ t }: { t: TerminalState | null }) {
-  const [view,setView]=useState<'operational'|'live'|'comparison'>('operational');
+export function Markets({ t, workspace }: { t: TerminalState | null; workspace?: Workspace }) {
+  const defaultView = workspace === 'marketComparison' ? 'comparison' : 'explorer';
+  const [view, setView] = useState<'explorer' | 'operational' | 'live' | 'comparison'>(defaultView);
+  useEffect(() => setView(defaultView), [defaultView]);
   return <div className="stack">
-    <h1>Markets</h1>
+    {view !== 'explorer' && <h1>Markets</h1>}
     <div className="marketViews" role="group" aria-label="Market workspace view">
+      <button aria-pressed={view==='explorer'} onClick={()=>setView('explorer')}>Market Explorer</button>
       <button aria-pressed={view==='operational'} onClick={()=>setView('operational')}>Operational Market</button>
       <button aria-pressed={view==='live'} onClick={()=>setView('live')}>Live Market Intelligence</button>
       <button aria-pressed={view==='comparison'} onClick={()=>setView('comparison')}>Market vs Research</button>
     </div>
-    {view==='comparison'?<MarketResearchWorkspace/>:view==='live'?<LiveMarketsView/>:t?<OperationalMarketsView t={t}/>:<Loading title="Operational market unavailable">Waiting for a valid operational terminal snapshot. Live Market Intelligence remains accessible.</Loading>}
+    {view==='explorer'?<MarketExplorer/>:view==='comparison'?<MarketResearchWorkspace/>:view==='live'?<LiveMarketsView/>:t?<OperationalMarketsView t={t}/>:<Loading title="Operational market unavailable">Waiting for a valid operational terminal snapshot. Live Market Intelligence remains accessible.</Loading>}
   </div>;
 }
 function OperationalMarketsView({ t }: { t: TerminalState }) {

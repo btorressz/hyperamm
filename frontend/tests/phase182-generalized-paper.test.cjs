@@ -401,3 +401,12 @@ for (const [name, mutate] of [
     assert.throws(() => checkedPaperResult(wire, request, expected), /Invalid or unsupported/);
   });
 }
+
+test('guided results accept only bounded modeled Risk Firewall counts', () => {
+  for (const counts of [{ NORMAL: 38, HALT: 2 }, { NORMAL: 41 }, { NORMAL: 39 }, { APPROVED: 40 }, { NORMAL: '40' }]) {
+    const wire = result();
+    wire.result.metrics.risk_state_counts = counts;
+    if (counts.HALT) assert.equal(checkedPaperResult(wire, proposal, binding), wire);
+    else assert.throws(() => checkedPaperResult(wire, proposal, binding), /Invalid or unsupported/);
+  }
+});

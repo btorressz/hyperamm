@@ -7,6 +7,7 @@ import { Panel, Metrics, StatusBanner } from '../components/TerminalPrimitives';
 import { Badge } from '../components/Badge';
 import { number as f } from '../utils/format';
 import { evidenceTime } from '../utils/researchEvidence';
+import { workspaceHref } from '../utils/navigation';
 import '../phase1331.css';
 
 export function Agents({t, historical = false}: {t: TerminalState; historical?: boolean}) {
@@ -26,6 +27,10 @@ export function Agents({t, historical = false}: {t: TerminalState; historical?: 
       <p className="muted panelNote">Available counts indicate published outputs, not READY health. Missing outputs are distinct from reported ERROR. Recommendations do not establish executed trades.</p>
       <ul className="researchReasons">{s?.reasons.map((reason, i) => <li key={i}>{reason}</li>)}</ul>
       <details className="researchInset"><summary>Supervisor provenance</summary><code>{s?.fingerprint ?? 'Unavailable from current evidence'}</code></details>
+    </Panel>
+    <Panel title="PAPER research advisories">
+      <p className="panelNote">Market Eligibility, Funding/Basis and Quote Economics evaluate market and simulation evidence in Generalized PAPER.</p>
+      <p className="panelNote"><a href={workspaceHref('paper')}>Open research advisory agents</a></p>
     </Panel>
     <AgentAuthoritySummary t={t} historical={historical}/>
     <AgentPanel t={t} workspace historical={historical}/>

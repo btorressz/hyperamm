@@ -97,6 +97,7 @@ async def run(args, scratch, report):
             await page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
 
         await route("markets")
+        await page.get_by_role("button", name="Operational Market", exact=True).click()
         await page.get_by_role("heading", name="Market microstructure").wait_for()
         await page.get_by_role("region", name="Venue & perpetual context").wait_for()
         await route("amm-settings")

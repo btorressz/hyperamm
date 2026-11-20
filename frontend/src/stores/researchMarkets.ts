@@ -1,3 +1,5 @@
+import { api } from '../api/client';
+import type { MarketResearchHandoff } from '../utils/marketUniverse';
 import { create } from 'zustand';
 import type { ResearchMarketCatalog, ResearchMarketId, ResearchMarketProfile } from '../types';
 import { useTerminalStore } from './terminal';
@@ -43,3 +45,19 @@ export function capturedMarket(): ResearchMarketProfile | null {
   const p = s.catalog?.markets.find(p => p.market === s.selectedResearchMarket);
   return p?.research_supported ? structuredClone(p) : null;
 }
+
+// Generalized discovery is isolated from the native BTC/ETH/SOL research store.
+export const useGeneralizedMarketSelection = create<{
+  handoff: MarketResearchHandoff | null;
+  select: (handoff: MarketResearchHandoff) => void;
+}>(set => ({
+  handoff: null,
+  select: handoff => set({ handoff }),
+}));
+
+export const generalizedDiscoveryQuery = {
+  queryKey: ['generalized-paper-discovery'],
+  queryFn: ({ signal }: { signal: AbortSignal }) => api.marketUniverse(signal),
+  retry: false,
+  refetchOnMount: false as const,
+};

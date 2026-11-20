@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { experienceModes, type ExperienceMode } from "../utils/navigation";
 import type { HistoryRange } from "../types";
 export const displayDefaults = {
   dense: false,
+  experienceMode: "Pro" as ExperienceMode,
   sidebarCollapsed: false,
   historySize: 600,
   defaultRange: "session" as HistoryRange,
@@ -20,7 +22,9 @@ export function validatedDisplay(value: unknown) {
     value && typeof value === "object"
       ? (value as Record<string, unknown>)
       : {};
+  const mode = v.experienceMode as ExperienceMode;
   return {
+    experienceMode: experienceModes.includes(mode) ? mode : displayDefaults.experienceMode,
     dense: typeof v.dense === "boolean" ? v.dense : displayDefaults.dense,
     sidebarCollapsed:
       typeof v.sidebarCollapsed === "boolean"
@@ -37,6 +41,8 @@ export function validatedDisplay(value: unknown) {
   };
 }
 type Display = {
+  experienceMode: ExperienceMode;
+  setExperienceMode: (mode: ExperienceMode) => void;
   dense: boolean;
   sidebarCollapsed: boolean;
   historySize: number;
@@ -51,6 +57,7 @@ export const useDisplayStore = create<Display>()(
   persist(
     (set) => ({
       ...displayDefaults,
+      setExperienceMode: (experienceMode) => set({ experienceMode }),
       setDense: (dense) => set({ dense }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setHistorySize: (historySize) =>
@@ -61,11 +68,12 @@ export const useDisplayStore = create<Display>()(
     }),
     {
       name: "hyperamm-display-v1",
-      partialize: ({ dense, sidebarCollapsed, historySize, defaultRange }) => ({
+      partialize: ({ dense, sidebarCollapsed, historySize, defaultRange, experienceMode }) => ({
         dense,
         sidebarCollapsed,
         historySize,
         defaultRange,
+        experienceMode,
       }),
       merge: (persisted, current) => ({
         ...current,

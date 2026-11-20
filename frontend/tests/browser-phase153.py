@@ -56,6 +56,8 @@ async def main(args):
             await page.locator('.liveSelector').evaluate('(e)=>window.scrollTo(0,window.scrollY+e.getBoundingClientRect().top-105)')
             await page.screenshot(path=str(out/name))
         await page.goto(args.url+'/#/markets');await page.wait_for_selector('.headerBadges >> text=TERMINAL CONNECTED')
+        assert await page.get_by_role('button',name='Market Explorer',exact=True).get_attribute('aria-pressed')=='true'
+        await page.get_by_role('button',name='Operational Market',exact=True).click()
         assert await page.get_by_role('button',name='Operational Market',exact=True).get_attribute('aria-pressed')=='true'
         await page.get_by_role('button',name='Live Market Intelligence',exact=True).click()
         await page.get_by_text('Live market observation is disabled by the backend operator',exact=True).wait_for()
@@ -132,7 +134,8 @@ async def main(args):
         await control(terminal_unavailable=True,kind='unavailable');await ctx.close()
         independent=await browser.new_context(viewport={'width':390,'height':844});other=await independent.new_page()
         other.on('pageerror',lambda e:report['page_errors'].append(str(e)))
-        await other.goto(args.url+'/#/markets');await other.get_by_text('Operational market unavailable',exact=True).wait_for()
+        await other.goto(args.url+'/#/markets');await other.get_by_role('button',name='Operational Market',exact=True).click()
+        await other.get_by_text('Operational market unavailable',exact=True).wait_for()
         await other.get_by_role('button',name='Live Market Intelligence',exact=True).click()
         await other.get_by_text('Backend observation unavailable; retry when conditions change.',exact=False).wait_for()
         passed('Live Markets remains accessible with no operational terminal snapshot at first mount')

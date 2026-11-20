@@ -1,0 +1,140 @@
+/* Phase 18.6 uses the terminal's existing palette and layout primitives. */
+[hidden] { display: none !important; }
+
+.experienceMode {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.experienceMode select {
+  min-height: 40px;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  padding: 0 8px;
+  font-size: 0.875rem;
+}
+.experienceNavGroup { display: grid; gap: 3px; min-width: 0; }
+.experienceNavGroup + .experienceNavGroup { margin-top: 10px; }
+.experienceNavTitle {
+  padding: 5px 9px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.experienceNavGroup .navLabel { white-space: normal; }
+.sidebar.collapsed .experienceNavTitle { display: none; }
+
+.experienceIntro {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: clamp(16px, 2.5vw, 24px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-panel);
+}
+.experienceIntro h1 { font-size: clamp(1.6rem, 3vw, 2.45rem); margin: 0; }
+.experienceIntro p { max-width: 65ch; color: var(--text-muted); margin: 8px 0 0; }
+.experienceHomeLinks, .explorerCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 12px;
+}
+.experienceHomeLinks a, .explorerCard, .explorerSelection, .guidedPaperStep {
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.experienceHomeLinks a { display: grid; gap: 8px; }
+.experienceHomeLinks a span { color: var(--text-muted); }
+.explorerFilters {
+  display: grid;
+  grid-template-columns: minmax(150px, 2fr) repeat(4, minmax(110px, 1fr)) auto;
+  align-items: end;
+  gap: 10px;
+}
+.explorerFilters label { display: grid; min-width: 0; gap: 5px; color: var(--text-muted); }
+.explorerFilters input, .explorerFilters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 8px;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+}
+.explorerFilters input::placeholder { color: var(--text-muted); }
+.explorerCardHead, .explorerCardActions, .explorerPagination, .guidedPaperIntro, .institutionalEvidence {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.explorerCardHead { justify-content: space-between; }
+.explorerCardHead h3, .guidedPaperStep h3 { margin: 0 0 5px; font-size: 1.05rem; }
+.explorerCard dl { display: grid; gap: 6px; margin: 12px 0; }
+.explorerCard dl div { display: flex; justify-content: space-between; gap: 8px; }
+.explorerCard dt { color: var(--text-muted); }
+.explorerCard dd { margin: 0; text-align: end; }
+.explorerCardActions button, .explorerFilters button, .explorerPagination button,
+.experienceIntro button, .guidedPaper button { min-height: 40px; }
+.explorerPagination { justify-content: center; margin-top: 12px; }
+.explorerSelection { margin-bottom: 12px; }
+.guidedPaperIntro { justify-content: space-between; }
+.guidedPaperIntro p { flex: 1 1 24rem; }
+.guidedPaperStep > div + div { margin-top: 12px; }
+.guidedPaperStep .researchFilters { align-items: end; }
+.workspaceLink, .institutionalEvidence a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+}
+#paper-results { scroll-margin-top: 160px; }
+.experienceDiagnostics { margin-bottom: 12px; }
+.experienceDiagnostics > summary {
+  width: fit-content;
+  padding: 5px 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.experienceDiagnostics[open] > summary { margin-bottom: 8px; }
+
+@media (max-width: 1240px) {
+  .explorerFilters { grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); }
+}
+@media (max-width: 767px) {
+  .sidebar.collapsed .experienceNavTitle { display: block; }
+}
+@media (max-width: 540px) {
+  .explorerCardActions button { flex: 1 1 auto; }
+  .experienceMode select, .explorerFilters input, .explorerFilters select,
+  .explorerFilters button, .explorerCardActions button,
+  .explorerPagination button, .guidedPaper button { min-height: 44px; }
+}
+
+.marketExplorer .panel > :is(.explorerFilters, p, .explorerCards, .explorerSelection, .explorerPagination),
+.marketExplorer .panel > .alert {
+  margin-inline: 14px;
+}
+.marketExplorer .explorerFilters { margin-top: 14px; }
+.marketExplorer .explorerCards:last-child, .marketExplorer .explorerPagination { margin-bottom: 14px; }
+.guidedPaper { padding: 12px; }
+
+@media (max-width: 540px) {
+  .marketViews:has(button:nth-child(4)) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
