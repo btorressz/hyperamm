@@ -125,7 +125,7 @@ export default function App() {
       Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Analytics: <Analytics key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       "Simulation & Optimization": null,
-      "Portfolio Research": <PortfolioResearch />,
+      "Portfolio Research": <PortfolioResearch firewall={historical ? undefined : t.risk_firewall.state} />,
       Logs: <Logs key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Settings: <Settings t={t} historical={historical} />,
     };
@@ -178,7 +178,7 @@ export default function App() {
         )}
         {t?.market.simulated && (
           <div className="truthBanner">
-            DEMO MARKET DATA · simulated evidence ·{" "}
+            OPERATIONAL TERMINAL · DEMO MARKET DATA · simulated evidence ·{" "}
             {t.strategy.config.execution_mode === "PAPER"
               ? "PAPER / SIMULATED"
               : "GUARDED TESTNET / PARTIAL"}

@@ -61,7 +61,9 @@ Run the new harness with `python frontend/tests/browser-phase186.py --python /pa
 
 ## Completion decision
 
-Phase 18.6A–E is implementation-complete and passes the scoped local regression and browser acceptance above. Draft PR #99 stays open for review. [Draft PR #99](https://github.com/btorressz/hyperamm/pull/99)
+Phase 18.6A–E is implementation-complete and passes the scoped local regression and browser acceptance above. PR #99 merged as `1b9804146a8de82e7432e18493591385b0f4bb0c`. [PR #99](https://github.com/btorressz/hyperamm/pull/99)
+
+Phase 18.6A provided listing metadata. The [Phase 18.6H acceptance report](PHASE18_6_HARDENING_ACCEPTANCE.md) records the subsequent public market observation and presentation changes.
 
 ## Phase 18.7 handoff
 

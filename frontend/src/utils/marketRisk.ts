@@ -1,3 +1,4 @@
+import { compareDecimal } from './format';
 import type { MarketUniverseIdentity, MarketUniverseMetadata } from '../types/marketUniverse';
 import type {
   FinancialEvidence, FinancialEvidenceSelection, FinancialObservation, FinancialUnit, ObservedCollateral,
@@ -60,16 +61,6 @@ function decimal(value: unknown): string {
   const plain = raw.replace(/^\+/, '').replace(/^(-?)0+(?=\d)/, '$1');
   const canonical = plain.includes('.') ? plain.replace(/0+$/, '').replace(/\.$/, '') : plain;
   return canonical === '-0' ? '0' : canonical;
-}
-
-function compareDecimal(left: string, right: string): number {
-  const precision = Math.max(left.split('.')[1]?.length ?? 0, right.split('.')[1]?.length ?? 0);
-  function scale(value: string) {
-    const [whole, fraction = ''] = value.split('.');
-    return BigInt(whole + fraction.padEnd(precision, '0'));
-  }
-  const a = scale(left), b = scale(right);
-  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 export function boundedRiskInput(value: unknown, min: string, max: string, exclusiveMin = false): string {

@@ -13,6 +13,7 @@ from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
 from app.market_data.hyperliquid_metadata import HyperliquidMetadataCatalog
 from app.agents.advisory_coordinator import RECEIPT_HEADER, AdvisoryCoordinator
+from app.market_data.market_summaries import MarketSummaryObservations
 from app.market_data.market_universe_discovery import MarketUniverseDiscovery
 from app.market_data.live_observations import LiveMarketObservationService
 from app.market_data.live_streams import LiveMarketStreamService
@@ -49,6 +50,7 @@ async def lifespan(app: FastAPI):
         allow_demo=settings.market_data_mode == MarketDataMode.DEMO and settings.execution_mode == ExecutionMode.PAPER)
     app.state.market_universe_discovery = MarketUniverseDiscovery(
         enabled=settings.market_universe_enabled, network=settings.market_universe_network)
+    app.state.market_summary_observations = MarketSummaryObservations(settings.market_universe_network)
     app.state.advisory_coordinator = AdvisoryCoordinator(app.state.market_universe_discovery)
     app.state.terminal_relay = None
     app.state.redis_infrastructure = None
@@ -86,7 +88,10 @@ async def lifespan(app: FastAPI):
                         try:
                             await app.state.advisory_coordinator.close()
                         finally:
-                            await app.state.market_universe_discovery.close()
+                            try:
+                                await app.state.market_summary_observations.close()
+                            finally:
+                                await app.state.market_universe_discovery.close()
             finally:
                 try:
                     await app.state.runtime.stop_services()

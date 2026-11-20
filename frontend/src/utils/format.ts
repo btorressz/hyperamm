@@ -37,3 +37,13 @@ export function livePrice(x: string | null | undefined): string {
 export function liveSize(x: string | number | null | undefined, decimals: number | null): string {
   return finite(x) === null ? '—' : Number(x).toLocaleString(undefined,{maximumFractionDigits:Math.max(0,Math.min(6,decimals ?? 6))});
 }
+
+export function compareDecimal(left: string, right: string): number {
+  const precision = Math.max(left.split('.')[1]?.length ?? 0, right.split('.')[1]?.length ?? 0);
+  function scale(value: string) {
+    const [whole, fraction = ''] = value.split('.');
+    return BigInt(whole + fraction.padEnd(precision, '0'));
+  }
+  const a = scale(left), b = scale(right);
+  return a < b ? -1 : a > b ? 1 : 0;
+}

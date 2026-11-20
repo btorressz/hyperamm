@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react';
+import { compareDecimal } from '../../utils/format';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { generalizedDiscoveryQuery, useGeneralizedMarketSelection } from '../../stores/researchMarkets';
 import { marketCatalogDeadline, marketResearchAvailability, marketUniverseKey, matchesMarketResearchHandoff } from '../../utils/marketUniverse';
 import { workspaceHref } from '../../utils/navigation';
+import { useMarketSummaries } from '../../hooks/useMarketSummaries';
+import { observedNumber, type MarketSummary } from '../../utils/marketSummaries';
 import { Badge } from '../Badge';
 import { Panel, StatusBanner } from '../TerminalPrimitives';
 
@@ -14,6 +17,33 @@ const availabilityLabels = {
   unavailable: 'Evidence unavailable',
 };
 
+const sorts = {
+  alphabetical: 'Symbol',
+  day_notional_volume: '24h volume',
+  funding_rate: 'Hourly funding',
+  mark_price: 'Mark price',
+} as const;
+type Sort = keyof typeof sorts;
+
+const metadataSources = {
+  OFFICIAL_SDK_CORE_META: 'Hyperliquid Core metadata',
+  OFFICIAL_SDK_HIP3_META: 'Hyperliquid HIP-3 metadata',
+};
+
+function sourceStatus(row: MarketSummary | undefined, current: boolean, loading: boolean, fresh: boolean, error?: string) {
+  if (!fresh) return 'Stale catalog';
+  if (error) return error;
+  if (loading) return 'Updating';
+  if (!row) return 'Unavailable';
+  if (row.error === 'CATALOG_CHANGED') return 'Catalog changed · refresh discovery';
+  if (row.error === 'CAPACITY') return 'Unavailable · namespace budget';
+  if (row.error === 'RATE_LIMITED') return 'Provider rate limit';
+  if (row.error === 'TIMEOUT') return 'Provider timeout';
+  if (row.status === 'ERROR') return `Provider error · ${row.error?.toLowerCase().replaceAll('_', ' ')}`;
+  if (row.status === 'CURRENT') return current ? 'Current' : 'Stale';
+  return row.status[0] + row.status.slice(1).toLowerCase();
+}
+
 export function MarketExplorer() {
   const discovery = useQuery(generalizedDiscoveryQuery);
   const launch = useGeneralizedMarketSelection(state => state.select);
@@ -22,7 +52,24 @@ export function MarketExplorer() {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState('');
   const [launchError, setLaunchError] = useState(false);
-  const fresh = !discovery.isError && Date.now() < marketCatalogDeadline(catalog);
+  const [sort, setSort] = useState<Sort>('alphabetical');
+  const [, tick] = useState(0);
+  const catalogDeadline = marketCatalogDeadline(catalog);
+  const refreshDiscovery = discovery.refetch;
+  const fresh = !discovery.isError && Date.now() < catalogDeadline;
+  useEffect(() => {
+    if (!catalogDeadline || discovery.isError) return;
+    const check = () => {
+      tick(previous => previous + 1);
+      if (!document.hidden && Date.now() >= catalogDeadline) void refreshDiscovery({ cancelRefetch: false });
+    };
+    const timer = window.setTimeout(check, Math.max(0, catalogDeadline - Date.now()));
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', check);
+    };
+  }, [catalogDeadline, discovery.isError, refreshDiscovery]);
   const records = useMemo(() => {
     if (!catalog?.catalog) return [];
     return catalog.catalog.records.map((record, index) => ({
@@ -38,11 +85,29 @@ export function MarketExplorer() {
       (!filters.venue || record.identity.instrument_type === filters.venue) &&
       (!filters.listing || record.listed === (filters.listing === 'listed')) &&
       (!filters.metadata || (fresh && record.metadata_status === 'EXCHANGE_VERIFIED') === (filters.metadata === 'verified')) &&
-      (!filters.research || research === filters.research));
+      (!filters.research || research === filters.research))
+      .sort((a, b) => a.record.source_coin.localeCompare(b.record.source_coin));
   }, [records, filters, fresh]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(page, pageCount - 1);
+  const visible = filtered.slice(current * pageSize, (current + 1) * pageSize);
   const detail = records.find(row => row.key === selected);
+  const requested = detail && !visible.some(row => row.key === selected) ? [...visible, detail] : visible;
+  const observations = useMarketSummaries(catalog?.catalog_fingerprint ? {
+    catalogFingerprint: catalog.catalog_fingerprint,
+    network: catalog.network,
+    markets: requested.map(({ key, record, decision }) => ({
+      key, metadataFingerprint: decision.metadata_fingerprint, universeIndex: record.universe_index, listed: record.listed,
+    })),
+  } : null, fresh);
+  const detailSummary = observations.rows.get(selected);
+  const detailCurrent = observations.current(detailSummary);
+  const displayed = sort === 'alphabetical' ? visible : [...visible].sort((a, b) => {
+    const first = observations.current(observations.rows.get(a.key))?.[sort];
+    const second = observations.current(observations.rows.get(b.key))?.[sort];
+    if (first == null) return second == null ? 0 : 1;
+    return second == null ? -1 : compareDecimal(second, first);
+  });
   function filter(name: keyof typeof emptyFilters, value: string) {
     setFilters(previous => ({ ...previous, [name]: value }));
     setPage(0);
@@ -67,10 +132,14 @@ export function MarketExplorer() {
         <h1>Market Explorer</h1>
         <p>Browse Hyperliquid Core and HIP-3 perpetuals. Choose a market to test a hypothetical market-making scenario.</p>
       </div>
-      <button type="button" disabled={discovery.isFetching} onClick={() => {
-        setLaunchError(false);
-        void discovery.refetch();
-      }}>Refresh discovery</button>
+      <div className="explorerCardActions">
+        <button type="button" disabled={discovery.isFetching} onClick={() => {
+          setLaunchError(false);
+          void discovery.refetch();
+        }}>Refresh discovery</button>
+        <button type="button" className="primary" disabled={!fresh || !requested.length || observations.isFetching}
+          onClick={observations.refresh}>Refresh observations</button>
+      </div>
     </div>
     <Panel title="Discovered markets" meta={catalog?.network}>
       <div className="explorerFilters">
@@ -89,6 +158,9 @@ export function MarketExplorer() {
           <option value="">All research states</option>
           {Object.entries(availabilityLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
         </select></label>
+        <label>Sort by<select value={sort} onChange={event => setSort(event.target.value as Sort)}>
+          {Object.entries(sorts).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
+        </select></label>
         <button type="button" onClick={() => { setFilters(emptyFilters); setPage(0); }}>Clear filters</button>
       </div>
       <p role="status" aria-live="polite">{discovery.isFetching ? 'Refreshing discovery metadata…' :
@@ -99,14 +171,29 @@ export function MarketExplorer() {
           `Discovery is ${catalog.availability.toLowerCase()}.`} Research requires a current catalog.
       </StatusBanner>}
       {launchError && <StatusBanner tone="bad">The selection is out of date. Refresh discovery and select it again.</StatusBanner>}
-      <p className="muted">Discovery provides listing metadata. Price and funding observations are unavailable here. PAPER eligibility is checked for each proposal.</p>
+      <p className="muted">Hyperliquid public observations are informational. The 24h mark comparison uses the provider’s previous-day reference. Financial sorting covers current observations on this page, in as-reported units.</p>
       {detail && <section className="explorerSelection" aria-label="Selected market details">
         <h3>{detail.record.source_coin} details</h3>
         <dl className="researchDetails">
           <div><dt>Canonical market</dt><dd><code>{detail.key}</code></dd></div>
           <div><dt>Observed metadata</dt><dd><time dateTime={detail.record.observed_at}>{detail.record.observed_at}</time></dd></div>
-          <div><dt>Metadata source</dt><dd>{detail.record.metadata_source}</dd></div>
+          <div><dt>Metadata source</dt><dd>{metadataSources[detail.record.metadata_source] ?? 'Unavailable'}</dd></div>
           <div><dt>Catalog fingerprint</dt><dd><code>{catalog?.catalog_fingerprint}</code></dd></div>
+          <div><dt>Size precision</dt><dd>{detail.record.sz_decimals} decimals</dd></div>
+          <div><dt>Metadata status</dt><dd>{fresh ? detail.record.metadata_status : 'STALE'}</dd></div>
+          <div><dt>Metadata fingerprint</dt><dd><code>{detail.decision.metadata_fingerprint}</code></dd></div>
+          <div><dt>Observation status</dt><dd>{sourceStatus(detailSummary, !!detailCurrent, observations.isFetching, fresh, observations.error)}</dd></div>
+          <div><dt>Observation source</dt><dd>Hyperliquid public Info · metaAndAssetCtxs</dd></div>
+          {detailSummary?.observed_at && <div><dt>Server receipt time</dt><dd><time dateTime={detailSummary.observed_at}>{detailSummary.observed_at}</time></dd></div>}
+          <div><dt>Provider event time</dt><dd>Unavailable</dd></div>
+          <div><dt>Price units</dt><dd>Provider quote per base · denomination unverified</dd></div>
+          <div><dt>Volume units</dt><dd>Provider notional quote · denomination unverified</dd></div>
+          <div><dt>Funding interval</dt><dd>1 hour</dd></div>
+          <div><dt>Oracle price</dt><dd>{observedNumber(detailCurrent?.oracle_price)}</dd></div>
+          <div><dt>Previous-day reference</dt><dd>{observedNumber(detailCurrent?.previous_day_price)}</dd></div>
+          <div><dt>Mark / oracle basis</dt><dd>Unavailable · compatible denominations unverified</dd></div>
+          {detailSummary?.observation_fingerprint && <div><dt>Observation fingerprint</dt><dd><code>{detailSummary.observation_fingerprint}</code></dd></div>}
+          {!!detailSummary?.limitations.length && <div><dt>Source limitations</dt><dd>{detailSummary.limitations.join(' · ')}</dd></div>}
           <div><dt>Discovery decision</dt><dd>{detail.decision.reason.replaceAll('_', ' ').toLowerCase()}</dd></div>
         </dl>
       </section>}
@@ -114,21 +201,31 @@ export function MarketExplorer() {
         {records.length ? 'No markets match your filters.' : 'No market records are available.'}
       </p>}
       <div className="explorerCards">
-        {filtered.slice(current * pageSize, (current + 1) * pageSize).map(row => {
+        {displayed.map(row => {
           const { record, key, research } = row;
           const core = record.identity.instrument_type === 'CORE_PERP';
+          const observed = observations.rows.get(key);
+          const live = observations.current(observed);
+          const status = record.listed ? sourceStatus(observed, !!live, observations.isFetching, fresh, observations.error) : 'Unsupported';
+          const age = live?.observed_at ? Math.max(0, Math.floor((Date.now() - Date.parse(live.observed_at)) / 1000)) : null;
           return <article key={key} className="explorerCard">
             <div className="explorerCardHead">
               <h3>{record.source_coin}</h3><Badge tone={core ? 'blue' : 'neutral'}>{core ? 'Core' : 'HIP-3'}</Badge>
             </div>
-            <dl>
-              <div><dt>DEX</dt><dd>{record.identity.dex || 'Core'}</dd></div>
-              <div><dt>Listing</dt><dd>{record.listed ? 'Listed' : 'Delisted'}</dd></div>
-              <div><dt>Size precision</dt><dd>{record.sz_decimals} decimals</dd></div>
-              <div><dt>Metadata source</dt><dd>Official Hyperliquid SDK</dd></div>
-              <div><dt>Metadata freshness</dt><dd>{fresh ? 'Current' : 'Stale or unavailable'}</dd></div>
-              <div><dt>Research</dt><dd>{availabilityLabels[research]}</dd></div>
+            <p className="explorerContext">{record.identity.dex || 'Core'} · {record.identity.network === 'MAINNET' ? 'Mainnet' : 'Testnet'} · {record.listed ? 'Listed' : 'Delisted'}</p>
+            <dl className="explorerMetrics">
+              <div className="explorerMark"><dt>Mark price</dt><dd title={live?.mark_price ?? undefined}>{observedNumber(live?.mark_price)}</dd></div>
+              <div><dt>vs. previous-day ref.</dt><dd>{live?.mark_change_vs_previous_day_percent == null ? 'Unavailable' :
+                `${observedNumber(live.mark_change_vs_previous_day_percent)}%`}</dd></div>
+              <div><dt>Funding / hour</dt><dd>{observedNumber(live?.funding_rate, '%')}</dd></div>
+              <div><dt>24h notional volume</dt><dd>{observedNumber(live?.day_notional_volume, 'compact')}</dd></div>
+              <div><dt>Open interest · base</dt><dd>{observedNumber(live?.open_interest_base)}</dd></div>
             </dl>
+            <p className="explorerObservation"><Badge tone={live ? 'good' : 'neutral'}>{status}</Badge>
+              {age !== null && <span>Public Info · {age}s ago</span>}
+            </p>
+            <p className="explorerContext">{metadataSources[record.metadata_source] ?? 'Metadata unavailable'} · {fresh ? 'Current' : 'Stale'}<br />
+              {availabilityLabels[research]}</p>
             <div className="explorerCardActions">
               <button type="button" aria-label={`Details for ${record.source_coin}`} aria-pressed={selected === key}
                 onClick={() => setSelected(selected === key ? '' : key)}>Details</button>

@@ -210,7 +210,7 @@ export function Simulation({ workspace, active }: { workspace?: Workspace; activ
         {scenarios.isError && <StatusBanner tone="bad">Scenario catalog unavailable.{" "}
           <button type="button" onClick={() => void scenarios.refetch()}>Retry catalog</button>
         </StatusBanner>}
-        <GeneralizedPaper scenarios={scenarios.data?.scenarios ?? []} resultsOnly={workspace === "results"} />
+        <GeneralizedPaper scenarios={scenarios.data?.scenarios ?? []} resultsOnly={workspace === "results"} active={active && researchView === "generalized" && workspace !== "results"} />
       </div>}
       {active && researchView==="replay" && <HistoricalReplayWorkspace />}
       {active && researchView==="comparison" && <ScenarioReplayComparisonWorkspace />}

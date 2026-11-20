@@ -1,0 +1,1681 @@
+{
+  "rules": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa"
+  ],
+  "routes": [
+    {
+      "route": "risk",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "dashboard",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark",
+            ".ask.bookRow:nth-child(3) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(3) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(3) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(4) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(4) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(4) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(5) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(5) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(5) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(6) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(6) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(6) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(7) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(7) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(7) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(8) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(8) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(8) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(9) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(9) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(9) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(11) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(11) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(11) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(12) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(12) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(12) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(13) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(13) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(13) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(14) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(14) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(14) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(15) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(15) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(15) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(16) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(16) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(16) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(17) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(17) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(17) > span:nth-child(3)"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "markets",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "strategy",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "amm-settings",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "execution",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "vault",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "analytics",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "simulation",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "portfolio-research",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "logs",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "settings",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        1024,
+        768
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark",
+            ".experienceNavGroup:nth-child(3) > .experienceNavTitle",
+            "a[href$=\"#/vault\"] > .navLabel",
+            "a[href$=\"#/portfolio-research\"] > .navLabel",
+            "a[href$=\"#/logs\"] > .navLabel",
+            "a[href$=\"#/settings\"] > .navLabel"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        1024,
+        768
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark",
+            ".experienceNavGroup:nth-child(3) > .experienceNavTitle",
+            "a[href$=\"#/vault\"] > .navLabel",
+            "a[href$=\"#/portfolio-research\"] > .navLabel",
+            "a[href$=\"#/logs\"] > .navLabel",
+            "a[href$=\"#/settings\"] > .navLabel"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        768,
+        900
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark",
+            "a[href$=\"#/logs\"] > .navLabel",
+            "a[href$=\"#/settings\"] > .navLabel"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        768,
+        900
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".brandMark",
+            "a[href$=\"#/logs\"] > .navLabel",
+            "a[href$=\"#/settings\"] > .navLabel"
+          ]
+        },
+        {
+          "rule": "label-content-name-mismatch",
+          "nodes": [
+            ".collapseButton"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "dashboard",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]",
+            ".ask.bookRow:nth-child(3) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(3) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(3) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(4) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(4) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(4) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(5) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(5) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(5) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(6) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(6) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(6) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(7) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(7) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(7) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(8) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(8) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(8) > span:nth-child(3)",
+            ".ask.bookRow:nth-child(9) > span:nth-child(1)",
+            ".ask.bookRow:nth-child(9) > span:nth-child(2)",
+            ".ask.bookRow:nth-child(9) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(11) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(11) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(11) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(12) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(12) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(12) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(13) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(13) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(13) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(14) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(14) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(14) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(15) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(15) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(15) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(16) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(16) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(16) > span:nth-child(3)",
+            ".bid.bookRow:nth-child(17) > span:nth-child(1)",
+            ".bid.bookRow:nth-child(17) > span:nth-child(2)",
+            ".bid.bookRow:nth-child(17) > span:nth-child(3)"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "markets",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "strategy",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "amm-settings",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "execution",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "vault",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "analytics",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "simulation",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "portfolio-research",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "logs",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "route": "settings",
+      "viewport": [
+        390,
+        844
+      ],
+      "version": "4.14.1",
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            ".mobileNavToggle > span[aria-hidden=\"true\"]"
+          ]
+        }
+      ]
+    }
+  ],
+  "contrast": [
+    {
+      "route": "risk",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "samples": [
+        {
+          "selector": ".riskHero small",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.649778049025642
+        },
+        {
+          "selector": ".riskList p",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "11px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".riskFirewallGrid span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "10px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".referencePanel th",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "samples": [
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "10px",
+          "ratio": 7.003658988829595
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(241, 199, 109)",
+          "background": [
+            40,
+            31,
+            13
+          ],
+          "font": "9px",
+          "ratio": 10.162576905977511
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            16,
+            30,
+            44
+          ],
+          "font": "9px",
+          "ratio": 8.794361910412391
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(120, 182, 255)",
+          "background": [
+            13,
+            33,
+            61
+          ],
+          "font": "9px",
+          "ratio": 7.629406774053814
+        },
+        {
+          "selector": ".researchEventList time",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "dashboard",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "samples": [
+        {
+          "selector": ".bookHeader",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "10px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "strategy",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "samples": [
+        {
+          "selector": ".gaugeLabels",
+          "foreground": "rgb(166, 187, 206)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.367205637762886
+        },
+        {
+          "selector": ".inventoryState small",
+          "foreground": "rgb(166, 187, 206)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.367205637762886
+        },
+        {
+          "selector": ".perpPositionHead span",
+          "foreground": "rgb(166, 187, 206)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.367205637762886
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "samples": [
+        {
+          "selector": ".riskHero small",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.649778049025642
+        },
+        {
+          "selector": ".riskList p",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "11px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".riskFirewallGrid span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "10px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".referencePanel th",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "samples": [
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "10px",
+          "ratio": 7.003658988829595
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(241, 199, 109)",
+          "background": [
+            40,
+            31,
+            13
+          ],
+          "font": "9px",
+          "ratio": 10.162576905977511
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            16,
+            30,
+            44
+          ],
+          "font": "9px",
+          "ratio": 8.794361910412391
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(120, 182, 255)",
+          "background": [
+            13,
+            33,
+            61
+          ],
+          "font": "9px",
+          "ratio": 7.629406774053814
+        },
+        {
+          "selector": ".researchEventList time",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        1024,
+        768
+      ],
+      "samples": [
+        {
+          "selector": ".riskHero small",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.649778049025642
+        },
+        {
+          "selector": ".riskList p",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "11px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".riskFirewallGrid span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "10px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".referencePanel th",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        1024,
+        768
+      ],
+      "samples": [
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "10px",
+          "ratio": 7.003658988829595
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(241, 199, 109)",
+          "background": [
+            40,
+            31,
+            13
+          ],
+          "font": "9px",
+          "ratio": 10.162576905977511
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            16,
+            30,
+            44
+          ],
+          "font": "9px",
+          "ratio": 8.794361910412391
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(120, 182, 255)",
+          "background": [
+            13,
+            33,
+            61
+          ],
+          "font": "9px",
+          "ratio": 7.629406774053814
+        },
+        {
+          "selector": ".researchEventList time",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        768,
+        900
+      ],
+      "samples": [
+        {
+          "selector": ".riskHero small",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.649778049025642
+        },
+        {
+          "selector": ".riskList p",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "11px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".riskFirewallGrid span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "10px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".referencePanel th",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        768,
+        900
+      ],
+      "samples": [
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "10px",
+          "ratio": 7.003658988829595
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(241, 199, 109)",
+          "background": [
+            40,
+            31,
+            13
+          ],
+          "font": "9px",
+          "ratio": 10.162576905977511
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            16,
+            30,
+            44
+          ],
+          "font": "9px",
+          "ratio": 8.794361910412391
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(120, 182, 255)",
+          "background": [
+            13,
+            33,
+            61
+          ],
+          "font": "9px",
+          "ratio": 7.629406774053814
+        },
+        {
+          "selector": ".researchEventList time",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "dashboard",
+      "viewport": [
+        390,
+        844
+      ],
+      "samples": [
+        {
+          "selector": ".bookHeader",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "10px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "strategy",
+      "viewport": [
+        390,
+        844
+      ],
+      "samples": [
+        {
+          "selector": ".gaugeLabels",
+          "foreground": "rgb(166, 187, 206)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.367205637762886
+        },
+        {
+          "selector": ".inventoryState small",
+          "foreground": "rgb(166, 187, 206)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.367205637762886
+        },
+        {
+          "selector": ".perpPositionHead span",
+          "foreground": "rgb(166, 187, 206)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.367205637762886
+        }
+      ]
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        390,
+        844
+      ],
+      "samples": [
+        {
+          "selector": ".riskHero small",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 9.649778049025642
+        },
+        {
+          "selector": ".riskList p",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "11px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".riskFirewallGrid span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            13,
+            25,
+            37
+          ],
+          "font": "10px",
+          "ratio": 6.7132145215923495
+        },
+        {
+          "selector": ".referencePanel th",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        390,
+        844
+      ],
+      "samples": [
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "10px",
+          "ratio": 7.003658988829595
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(241, 199, 109)",
+          "background": [
+            40,
+            31,
+            13
+          ],
+          "font": "9px",
+          "ratio": 10.162576905977511
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(168, 190, 208)",
+          "background": [
+            16,
+            30,
+            44
+          ],
+          "font": "9px",
+          "ratio": 8.794361910412391
+        },
+        {
+          "selector": ".researchWorkspace .panelHead span",
+          "foreground": "rgb(120, 182, 255)",
+          "background": [
+            13,
+            33,
+            61
+          ],
+          "font": "9px",
+          "ratio": 7.629406774053814
+        },
+        {
+          "selector": ".researchEventList time",
+          "foreground": "rgb(138, 162, 184)",
+          "background": [
+            10,
+            20,
+            32
+          ],
+          "font": "11px",
+          "ratio": 7.003658988829595
+        }
+      ]
+    }
+  ],
+  "keyboard": [
+    {
+      "region": "Reference source evidence table",
+      "tabs": 3,
+      "axis": "horizontal",
+      "pixels": 1
+    },
+    {
+      "region": "Recent agent events",
+      "tabs": 12,
+      "axis": "vertical",
+      "pixels": 24
+    }
+  ],
+  "screenshots": [
+    {
+      "route": "risk",
+      "viewport": [
+        1920,
+        1080
+      ],
+      "file": "risk-1920.png"
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "file": "risk-1440.png"
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "file": "agents-1440.png"
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        1024,
+        768
+      ],
+      "file": "risk-1024.png"
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        768,
+        900
+      ],
+      "file": "risk-768.png"
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        390,
+        844
+      ],
+      "file": "risk-390.png"
+    },
+    {
+      "route": "agents",
+      "viewport": [
+        390,
+        844
+      ],
+      "file": "agents-390.png"
+    },
+    {
+      "route": "risk",
+      "viewport": [
+        720,
+        500
+      ],
+      "file": "risk-zoom-200.png",
+      "zoom": 2.0
+    }
+  ],
+  "page_errors": [],
+  "console_errors": [],
+  "browser": "Chrome/151.0.7922.173",
+  "workflows": [
+    "Current DEMO/PAPER terminal",
+    "Operational market evidence",
+    "AMM configuration PUT and restore",
+    "Retained risk and agent evidence"
+  ],
+  "zoom": {
+    "browser_factor": 2.0,
+    "before": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "after": {
+      "width": 720,
+      "height": 500,
+      "dpr": 2,
+      "scroll": 720
+    },
+    "version": "4.14.1",
+    "violations": [],
+    "manual": [
+      {
+        "rule": "color-contrast",
+        "nodes": [
+          ".mobileNavToggle > span[aria-hidden=\"true\"]"
+        ]
+      }
+    ],
+    "contrast": [
+      {
+        "selector": ".mobileNavToggle",
+        "foreground": "rgb(220, 232, 244)",
+        "background": [
+          16,
+          30,
+          44
+        ],
+        "font": "11px",
+        "ratio": 13.577651478418455
+      },
+      {
+        "selector": ".referencePanel th",
+        "foreground": "rgb(138, 162, 184)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "11px",
+        "ratio": 7.003658988829595
+      },
+      {
+        "selector": ".referencePanel th",
+        "foreground": "rgb(138, 162, 184)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "11px",
+        "ratio": 7.003658988829595
+      },
+      {
+        "selector": ".referencePanel th",
+        "foreground": "rgb(138, 162, 184)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "11px",
+        "ratio": 7.003658988829595
+      },
+      {
+        "selector": ".referencePanel th",
+        "foreground": "rgb(138, 162, 184)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "11px",
+        "ratio": 7.003658988829595
+      },
+      {
+        "selector": ".referencePanel th",
+        "foreground": "rgb(138, 162, 184)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "11px",
+        "ratio": 7.003658988829595
+      },
+      {
+        "selector": ".referencePanel th",
+        "foreground": "rgb(138, 162, 184)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "11px",
+        "ratio": 7.003658988829595
+      },
+      {
+        "selector": ".referencePanel th",
+        "foreground": "rgb(138, 162, 184)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "11px",
+        "ratio": 7.003658988829595
+      }
+    ]
+  }
+}

@@ -1,3 +1,4 @@
+import { checkedMarketSummaries, marketSummariesByteLimit, type MarketSummaryScope } from '../utils/marketSummaries';
 import type {PortfolioDraft,Preview,TerminalRequest,TerminalResult} from '../types/portfolioResearch';
 import type {
   MarketResearchComparisonRequest, MarketResearchComparisonResult,
@@ -177,6 +178,21 @@ async function generalizedPaperRequest(
 }
 
 export const api = {
+  marketSummaries: async (scope: MarketSummaryScope, refresh: boolean, signal?: AbortSignal) => {
+    const response = await fetch(API + '/market-universe/market-summaries', {
+      method: 'POST', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        network: scope.network, catalog_fingerprint: scope.catalogFingerprint,
+        market_keys: scope.markets.map(market => market.key), refresh,
+      }),
+    });
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => {});
+      if (response.status === 409) throw new Error('Catalog changed. Refresh discovery.');
+      throw new Error('Market observation request failed.');
+    }
+    return checkedMarketSummaries(await readHistoricalJson(response, marketSummariesByteLimit), scope);
+  },
   assetPolicyPreview: async (body: AssetPolicyPreviewRequest, selection: FinancialEvidenceSelection, signal?: AbortSignal) => {
     const response = await fetch(API + '/generalized-paper/asset-policy/preview', {
       method: 'POST', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' },

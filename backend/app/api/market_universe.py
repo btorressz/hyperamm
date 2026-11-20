@@ -1,4 +1,5 @@
 """Public perpetual metadata evidence and local PAPER research admission."""
+import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal, localcontext
 from typing import Annotated, Literal
@@ -34,7 +35,10 @@ from app.simulation.generalized_market_profiles import (
     DECIMAL_CONTEXT, GeneralizedPaperResult, MAX_RESPONSE_BYTES, PROFILE_VERSION, PaperAdmission, PaperProposal,
     PaperRejected, PaperRunRequest, ResearchDecimal, advisory_rejection, assess, baseline_strategy, decision,
 )
-from app.market_data.market_universe_discovery import MarketUniverseResponse, RATE_LIMIT_BACKOFF, RESPONSE_VERSION
+from app.market_data.market_summaries import MarketSummaryRequest, MarketSummaryResponse
+from app.market_data.market_universe_discovery import (
+    DiscoveryFailure, MarketUniverseResponse, RATE_LIMIT_BACKOFF, RESPONSE_VERSION,
+)
 from app.simulation.market_profiles import GeneralizedPrecisionError
 
 router = APIRouter(tags=["market-universe"])
@@ -59,6 +63,47 @@ async def market_universe(request: Request, response: Response):
     else:
         response.status_code = 503
     return result
+
+
+@router.post("/market-universe/market-summaries", response_model=MarketSummaryResponse)
+async def market_summaries(body: MarketSummaryRequest, request: Request, response: Response):
+    headers = {"Cache-Control": "no-store"}
+    response.headers.update(headers)
+
+    async def collect():
+        discovery = request.app.state.market_universe_discovery
+        catalog = await discovery.catalog()
+        generation = discovery.paper_generation(body.catalog_fingerprint)
+        if (body.network != catalog.network or body.catalog_fingerprint != catalog.catalog_fingerprint
+                or catalog.availability != "AVAILABLE" or catalog.catalog is None
+                or generation is None or catalog.evaluated_at >= generation[0]):
+            raise HTTPException(409, "Discovery generation changed or expired", headers=headers)
+        keys = {record.identity.stable_key for record in catalog.catalog.records}
+        if not keys.issuperset(body.market_keys):
+            raise HTTPException(404, "Market missing from the selected catalog", headers=headers)
+        try:
+            return await request.app.state.market_summary_observations.summarize(body, catalog, discovery, generation)
+        except DiscoveryFailure as exc:
+            if exc.code not in {"MISSING_METADATA", "NETWORK_MISMATCH"}:
+                raise
+            raise HTTPException(409, "Discovery generation changed or expired", headers=headers) from None
+
+    async def disconnected():
+        while (await request.receive())["type"] != "http.disconnect":
+            pass
+
+    work = asyncio.create_task(collect())
+    monitor = asyncio.create_task(disconnected())
+    try:
+        done, _ = await asyncio.wait((work, monitor), return_when=asyncio.FIRST_COMPLETED)
+        if work in done:
+            return work.result()
+        raise HTTPException(499, "Market summary request disconnected", headers=headers)
+    finally:
+        for task in (work, monitor):
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(work, monitor, return_exceptions=True)
 
 
 class FinancialEvidenceSelection(SourceEvidence):

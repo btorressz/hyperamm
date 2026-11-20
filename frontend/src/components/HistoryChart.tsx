@@ -303,7 +303,7 @@ export function HistoryChart({
           aria-label={`Reset ${lines.map((l) => l.label).join(", ")} chart view`}
           onClick={() => chart.current?.timeScale().fitContent()}
         >
-          Reset view
+          Reset
         </button>
       </div>
       <div

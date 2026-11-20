@@ -16,6 +16,7 @@ def fixture_app():
     from app.agents.advisory_coordinator import AdvisoryCoordinator
     from app.market_data.advisory_market_observations import _epoch_ms
     from app.market_data.market_universe_discovery import DiscoveryFailure
+    from app.market_data.market_summaries import MarketSummaryObservations
     from app.market_data.models import utcnow
     from app.market_data.market_universe_discovery import MarketUniverseDiscovery
 
@@ -50,6 +51,21 @@ def fixture_app():
         assert operation == "fundingHistory"
         return [{"coin": coin, "time": at - 200, "fundingRate": "-0.0002"}]
 
+    def summary_provider(method, dex, deadline):
+        assert method == "metaAndAssetCtxs"
+        metadata = provider("meta", dex, deadline)
+        if dex == "missing":
+            return [metadata, [None]]
+        prices = {"DOGE": "0.1234", "BTC": "65012.5", "xyz:GOLD": "2405.25", "xyz:UNKNOWN": "0.0000012"}
+        return [metadata, [{
+            "coin": row["name"], "markPx": prices.get(row["name"]),
+            "oraclePx": "2402.5" if row["name"] == "xyz:GOLD" else None,
+            "prevDayPx": "2400" if row["name"] == "xyz:GOLD" else None,
+            "funding": "-0.0001" if row["name"] == "BTC" else None,
+            "dayNtlVlm": "1200000" if row["name"] == "BTC" else None,
+            "openInterest": "130.5" if row["name"] == "BTC" else None,
+        } for row in metadata["universe"]]]
+
     original = app.router.lifespan_context
 
     @asynccontextmanager
@@ -58,6 +74,9 @@ def fixture_app():
             previous = instance.state.market_universe_discovery
             discovery = MarketUniverseDiscovery(enabled=True, network="MAINNET", client=provider)
             previous_advisory = instance.state.advisory_coordinator
+            previous_summary = instance.state.market_summary_observations
+            summaries = MarketSummaryObservations("MAINNET", client=summary_provider)
+            instance.state.market_summary_observations = summaries
             advisory = AdvisoryCoordinator(discovery)
             advisory._observations._client.request = public
             instance.state.market_universe_discovery = discovery
@@ -67,6 +86,8 @@ def fixture_app():
             finally:
                 instance.state.market_universe_discovery = previous
                 instance.state.advisory_coordinator = previous_advisory
+                instance.state.market_summary_observations = previous_summary
+                await summaries.close()
                 await advisory.close()
                 await discovery.close()
 

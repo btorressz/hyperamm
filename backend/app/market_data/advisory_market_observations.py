@@ -43,11 +43,10 @@ class _OfficialPublicClient(OfficialMetadataClient):
     _operations = frozenset({"metaAndAssetCtxs", "l2Book", "fundingHistory"})
 
     def request(self, operation: Operation, identity, deadline: float, *, start=None, end=None):
+        if operation == "metaAndAssetCtxs":
+            return self(operation, identity.dex, deadline)
+
         def call(info):
-            if operation == "metaAndAssetCtxs":
-                # The pinned SDK method omits dex. Use its same public transport
-                # with the explicitly scoped /info payload.
-                return info.post("/info", {"type": operation, "dex": identity.dex})
             info.name_to_coin[identity.exchange_coin] = identity.exchange_coin
             if operation == "l2Book":
                 return info.l2_snapshot(identity.exchange_coin)
