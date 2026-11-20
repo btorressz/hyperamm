@@ -62,7 +62,7 @@ def test_existing_constant_product_and_concentrated_controls_are_reused():
     base = controls()
     assert base.amm_model == AmmModel.CONSTANT_PRODUCT
     assert base.total_liquidity == StrategyConfig().total_liquidity
-    assert controls(amm_model="CONCENTRATED").amm_model == AmmModel.CONCENTRATED
+    assert controls(amm_model=AmmModel.CONCENTRATED).amm_model == AmmModel.CONCENTRATED
     assert base.price_precision_policy == "REUSE_GENERALIZED_PRECISION"
     assert base.size_precision_policy == "REUSE_DISCOVERED_SZ_DECIMALS"
     assert CONTRACT_VERSION == "phase185a-v1"
