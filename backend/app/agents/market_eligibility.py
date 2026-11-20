@@ -35,6 +35,7 @@ class PaperEligibilityCapture:
         catalog_fingerprint: str | None = None, catalog_valid_until: datetime | None = None,
         metadata_current: bool = True, expected: PaperFingerprintBinding | None = None,
         risk_source: MarketFinancialObservation | None = None,
+        advisory_evidence=None,
     ):
         proposal = PaperProposal.model_validate(proposal)
         metadata = MarketUniverseMetadata.model_validate(metadata)
@@ -46,7 +47,7 @@ class PaperEligibilityCapture:
             proposal, metadata, network=network, evaluated_at=_utc(evaluated_at),
             max_age_seconds=max_age_seconds, catalog_fingerprint=catalog_fingerprint,
             catalog_valid_until=catalog_valid_until, metadata_current=metadata_current,
-            expected=expected, risk_source=risk_source,
+            expected=expected, risk_source=risk_source, advisory_evidence=advisory_evidence,
         )
         captured = object.__new__(cls)
         object.__setattr__(captured, "metadata", metadata)

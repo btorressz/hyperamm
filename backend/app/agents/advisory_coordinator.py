@@ -106,6 +106,7 @@ class AdvisoryCoordinator:
         self._observations = AdvisoryMarketObservations(network=discovery.network, clock=clock)
         self._clock = clock
         self._receipts: OrderedDict[str, _Receipt] = OrderedDict()
+        self._snapshots: OrderedDict[str, tuple[AdvisorySnapshot, datetime]] = OrderedDict()
         self._requests = CapacityLimiter(8)
         self._evaluations = CapacityLimiter(3)
 
@@ -121,8 +122,13 @@ class AdvisoryCoordinator:
             self._receipts.popitem(last=False)
         return receipt
 
+    def resolve_snapshot(self, fingerprint: str) -> tuple[AdvisorySnapshot, datetime] | None:
+        """Supply previously published server evidence to PAPER admission."""
+        return self._snapshots.get(fingerprint)
+
     async def close(self):
         self._receipts.clear()
+        self._snapshots.clear()
         await self._observations.close()
 
     async def evaluate(self, request: AdvisoryRequest) -> AdvisoryResponse:
@@ -167,6 +173,9 @@ class AdvisoryCoordinator:
             raise AdvisoryUnavailable("PAPER_BINDING_MISMATCH", 409, "The PAPER receipt belongs to a different market.")
         risk_source = (self._discovery.financial_observation(request.catalog_fingerprint, identity)
                        if request.proposal is not None and request.proposal.research_risk is not None else None)
+        policy = request.proposal.asset_amm_policy if request.proposal is not None else None
+        advisory_evidence = (self.resolve_snapshot(policy.advisory_snapshot_fingerprint)
+                             if policy is not None and policy.advisory_snapshot_fingerprint is not None else None)
         funding_mode = request.funding_mode or ("OBSERVED" if request.operation == "FUNDING_BASIS" else None)
         public = await self._observations.observe(metadata) if funding_mode == "OBSERVED" else None
 
@@ -176,16 +185,20 @@ class AdvisoryCoordinator:
             now = current_time()
             response = await to_thread.run_sync(
                 self._capture, request, metadata, catalog.max_age_seconds, deadline, now,
-                risk_source, receipt, funding_mode, public, limiter=self._evaluations,
+                risk_source, receipt, funding_mode, public, advisory_evidence, limiter=self._evaluations,
             )
             published_at = current_time()
             if published_at < response.valid_until:
                 response.snapshot.validate_at(as_of=published_at)
+                self._snapshots[response.snapshot_fingerprint] = (response.snapshot, response.valid_until)
+                self._snapshots.move_to_end(response.snapshot_fingerprint)
+                if len(self._snapshots) > RECEIPT_LIMIT:
+                    self._snapshots.popitem(last=False)
                 return response
         raise AdvisoryUnavailable("EVIDENCE_EXPIRED", 409, "Advisory evidence expired during evaluation.")
 
     @staticmethod
-    def _capture(request, metadata, max_age, deadline, now, risk_source, receipt, funding_mode, public):
+    def _capture(request, metadata, max_age, deadline, now, risk_source, receipt, funding_mode, public, advisory_evidence):
         issues = []
         sources = []
         admission = None
@@ -200,7 +213,7 @@ class AdvisoryCoordinator:
             admission = PaperEligibilityCapture.from_assessment(
                 request.proposal, metadata, network=metadata.identity.network, evaluated_at=now,
                 catalog_valid_until=deadline, catalog_fingerprint=request.catalog_fingerprint,
-                max_age_seconds=max_age, risk_source=risk_source,
+                max_age_seconds=max_age, risk_source=risk_source, advisory_evidence=advisory_evidence,
             )
             sources.extend(admission.source_evidence())
         if wants_quote or funding_mode == "PAPER":

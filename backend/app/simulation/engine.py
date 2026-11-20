@@ -74,6 +74,7 @@ class SimulationEngine:
         execution_evidence_keys=None,
         generalized_profile=None,
         paper_risk_run=None,
+        minimum_order_notional:Decimal|None=None,
     )->SimulationResult:
         simulation_config=SimulationConfig.model_validate_json(simulation_config.model_dump_json())
         frames=bounded_frames(dataset,simulation_config.max_frames)
@@ -89,6 +90,12 @@ class SimulationEngine:
             raise ValueError("research profile must match dataset and strategy precision")
 
         generalized_paper = generalized_profile is not None
+        if minimum_order_notional is not None and (not generalized_paper
+                or not minimum_order_notional.is_finite() or minimum_order_notional <= 0):
+            raise ValueError("minimum order notional requires a generalized PAPER profile")
+        quote_bounds = ({} if minimum_order_notional is None else {
+            "minimum_order_notional": minimum_order_notional, "side_liquidity": strategy.total_liquidity,
+        })
         if any(isinstance(frame.reference_prices, GeneralizedSimulationReferencePrices) != generalized_paper
                for frame in frames):
             raise ValueError("scenario reference provenance must match the simulation profile")
@@ -242,7 +249,8 @@ class SimulationEngine:
                 tick_size=strategy.tick_size,size_precision=strategy.size_precision,
             )
             if generalized_profile is not None:
-                agent_quotes = generalized_profile.normalize_quotes(agent_quotes, inventory_decision.reservation_price)
+                agent_quotes = generalized_profile.normalize_quotes(
+                    agent_quotes, inventory_decision.reservation_price, **quote_bounds)
             elif market_profile is not None:
                 agent_quotes = normalize_quotes(agent_quotes, market_profile)
 
@@ -280,7 +288,8 @@ class SimulationEngine:
                 base_order_size=strategy.base_order_size,
             )
             if generalized_profile is not None:
-                authorized = generalized_profile.normalize_quotes(authorized, inventory_decision.reservation_price)
+                authorized = generalized_profile.normalize_quotes(
+                    authorized, inventory_decision.reservation_price, **quote_bounds)
             elif market_profile is not None:
                 authorized = normalize_quotes(authorized, market_profile)
             margin_retired = False
