@@ -27,7 +27,7 @@
 | 14.6 | COMPLETE / LOCAL ACCEPTANCE; LIVE METADATA GATE OPEN | Validated BTC/ETH/SOL Research Market Selection; isolated single-market PAPER runs, bounded optimizer and controlled comparisons; live SDK endpoint blocked in acceptance environment |
 | 18.4 | LOCAL PAPER ACCEPTANCE / IN REVIEW | Three read-only advisory agents integrated into Simulation, with bounded evidence and historical PAPER acceptance. See the [final acceptance record](PHASE18_4_FINAL_ACCEPTANCE.md). |
 | 18.5 | LOCAL PAPER ACCEPTANCE / IN REVIEW | Asset-aware research in Simulation with qualified discovery, both AMM models, optional Phase 18.3 risk and read-only advisory evidence. See the [final acceptance record](PHASE18_5_FINAL_ACCEPTANCE.md). |
-| 18.6 | IMPLEMENTATION REVIEW | Market Explorer and Starter, Pro and Institutional navigation over the existing research workflows. See the [implementation acceptance](PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md). |
+| 18.6 | LOCAL ACCEPTANCE / IN REVIEW | Market Explorer and Starter, Pro and Institutional navigation over the existing research workflows. See the [implementation acceptance](PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md). |
 | 18.7 | PENDING | Independent cross-market, browser and rollout acceptance. |
 
 ## Phase 6 extension points

@@ -46,7 +46,7 @@ The 13 legacy routes remain available in all modes. Their hashes are `#/dashboar
 | Backend compatibility | 122 Phase 18.5 tests passed against the existing backend. The production diff is frontend-only. |
 | Generalized, risk, advisory and asset-aware PAPER Chromium | 36 checks passed, including stale, expired, rejected and failed evidence, network replacement, both AMM models and scoped axe A/AA checks. |
 | Live Market Intelligence and Market vs Research Chromium | 13 live-market and 15 market-comparison workflows passed, including navigation between the existing views. |
-| All-route Chromium accessibility | The Audit 3 harness passed 32 route and viewport measurements with zero automated violations, including all 13 legacy routes at desktop and mobile. It also passed keyboard scroll, focus and contrast checks and the separate 200% zoom check. |
+| All-route Chromium accessibility | The Audit 3 harness passed 32 route and viewport measurements with zero automated violations, including all 13 legacy routes at desktop and mobile. It also passed keyboard scroll, focus, sampled contrast and the separate 200% zoom check. Axe requested manual contrast review for the brand mark, navigation and order-book cells. The harness measured at least 6.71:1 in the samples it covers. |
 
 Run the new harness with `python frontend/tests/browser-phase186.py --python /path/to/backend-python --axe /path/to/axe.min.js --output work/phase186-browser`. It uses the existing Phase 18.2 fixture app and launch pattern. [Browser measurements](acceptance/phase186/browser-results.json)
 
