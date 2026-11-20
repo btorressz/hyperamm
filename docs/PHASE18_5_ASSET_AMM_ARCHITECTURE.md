@@ -5,6 +5,11 @@
 runtime changes, new market-data polling, API, frontend, quote authorization,
 TESTNET order capability or new agent.
 
+**Phase 18.5B–D status.** The existing Generalized PAPER routes accept an
+optional `asset_amm_policy` using the Phase 18.5A contract. The strategy and
+worker use the same AMM, scenario, accounting and Risk Firewall components
+described below. See the [Phase 18.5B–D acceptance record](PHASE18_5BCD_ASSET_AMM_ACCEPTANCE.md).
+
 ## Engineering allocation
 
 **18.5A:** REUSE ~50% / ENHANCE ~35% / ADD ~15% architecturally; 100%
@@ -80,11 +85,9 @@ perpetual metadata has no actual settlement verification.
 All numeric inputs use the existing `bounded_exact_decimal()` (rejects
 float, boolean, NaN, infinity and unbounded exponents). Existing cross-field
 constraints cover concentration distance, inventory soft/hard limits and
-minimum theoretical liquidity. This layer **does not promise** the declared
-values can produce valid executable quotes: checking the full
+minimum theoretical liquidity. Phase 18.5B–D validates the full
 `StrategyConfig`, discovered `szDecimals`, market-specific price
-normalization, minimum notional and actual curve/quote feasibility is
-deliberately reserved for Phase 18.5B–D.
+normalization, minimum notional and actual curve and quote feasibility.
 
 These are declared research parameters, never automatic market-calibrated
 defaults. No family-specific numeric preset is represented as observed data.
@@ -131,15 +134,36 @@ imply that 18.5B asset-specific parameters are economically, precision- or
 margin-feasible. Actual PAPER admission remains governed by its existing
 server-side assessor and final Risk Firewall.
 
-## Phase 18.5B–F Codex handoff
+## Phase 18.5B–D implementation
+
+`apply_asset_research_policy()` takes a synthetic PAPER baseline for the
+qualified market and updates only the declared controls and discovered
+precision. Virtual reserves define the AMM invariant. The existing quote
+compiler recenters that pool to the synthetic reference for each frame.
+The market's `szDecimals` determines size lots and the compiler's internal
+decimal grid. The generalized normalizer rounds outward at each quote's
+price magnitude and floors size and notional. Opt-in quotes also consume a
+whole-lot per-side budget and meet the requested minimum notional.
+
+The server binds the declaration to current metadata, the active catalog
+and the proposal's synthetic reference. The configuration digest includes
+the policy, mapped strategy, scenario, capital and risk inputs. The worker
+revalidates these inputs and checks the captured catalog guard before engine
+entry. Absent policies and bindings are omitted from serialized responses
+and fingerprint inputs. The Phase 18.5A assessment keeps research-draft authority.
+
+The application can resolve a supplied advisory fingerprint against its
+bounded cache of eight published snapshots. The market, catalog, clock,
+expiry and applicable risk evidence are checked. The advisory reference
+contributes provenance. Synthetic frames continue to provide the book,
+funding and price inputs for strategy and accounting.
+
+## Phase 18.5E–F handoff
 
 | Phase | Ownership | Implementation / acceptance |
 | --- | --- | --- |
-| **18.5B** | Codex | Implement deterministic market-aware parameter mapping into the **existing** `StrategyConfig`, precision, quote compilation, curve sampler and inventory policy. Use bounded defaults only as explicit hypothetical presets, not inferred real-world asset parameters. Keep original zero-change path available. |
-| **18.5C** | Codex | Reuse existing market-adaptation and Phase 18.4 funding/basis research evidence to evaluate optional volatility/liquidity/funding research presets, with distinct observed/synthetic assumption provenance and validated time units. Advisory findings cannot authorize or autonomously modify production quote controls. |
-| **18.5D** | Codex | Add optional `phase185a-v1` policy binding into Generalized PAPER admission and deterministic simulation. Reuse existing worker, matcher, accounting, risk and six-agent supervisor. Preserve default synthetic prices and no operational trading authority. Require actual strategy/preflight validation and keep risk-disabled runs byte-compatible when disabled. |
 | **18.5E** | ChatGPT + Codex | Minimal read-only asset-policy evidence API and existing Simulation/Generalized PAPER UI. Expose explicitly hypothetical research class, controls, fingerprints, disabled/unsupported status, and modeled results; no full Market Explorer. |
-| **18.5F** | Codex | Adversarial metadata, high/low price, invalid Decimal, lot/price precision, funding interval, parameter limits, inventory, margin/risk and quote authorization tests. Reproduce PR #95 native BTC/ETH/SOL, six-agent supervisor and standard/risk-aware Generalized PAPER financial fingerprints, independent browser and full regression. |
+| **18.5F** | Codex | Expand the adversarial and asset-family scenario matrix, browser workflows, financial reconciliation and provider/metadata verification. Reproduce the legacy compatibility checks after Phase E. |
 
 No parallel AMM engine, second accounting runtime, persistent new market
 classifier, wallet connection, new operational strategy mode or API in 18.5A.
@@ -157,13 +181,6 @@ classifier, wallet connection, new operational strategy mode or API in 18.5A.
 - Stale/delisted/unavailable metadata and immutable blocked assessment.
 - Nested `model_copy(update=...)` revalidation and legacy StrategyConfig isolation.
 
-**Not executed in the repository environment.** Source is created through
-the GitHub connector, which cannot run native `pytest`. Before merging,
-run `cd backend && python -m pytest -q tests/test_phase185a_asset_amm_contracts.py`
-and the relevant AMM, strategy and Phase 18 regression suites. Correct any
-demonstrated problems without weakening these evidence or authority gates.
-Only then declare the Phase 18.5A contract foundation accepted.
-
-The backend strategy/runtime outputs and financial fingerprints are expected
-to be unaffected because 18.5A changes no existing runtime source files.
-The actual independent regression and acceptance result remains an open gate.
+The original Phase 18.5A PR authored this suite. Independent execution on its
+merge commit passed all 41 tests before B–D integration. The B–D acceptance
+record contains the subsequent regression and financial compatibility results.

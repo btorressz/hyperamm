@@ -7,9 +7,14 @@ from typing import Annotated, Literal
 from pydantic import (
     BeforeValidator, ConfigDict, Field, StrictInt, field_validator, model_serializer, model_validator,
 )
+from pydantic_core import to_json
 
 from app.accounting.config import AccountingConfig, bounded_exact_decimal
+from app.accounting.vault import reserved_capital
+from app.agents.advisory_contracts import AdvisorySnapshot
 from app.agents.config import AgentConfig
+from app.amm.asset_policy import apply_asset_research_policy
+from app.amm.asset_policy_contracts import AssetAmmResearchPolicy, assess_asset_amm_policy
 from app.amm.numeric import executable_distance, quantize_size
 from app.market_data.history import MarketPriceHistory
 from app.market_data.live_models import Evidence
@@ -66,7 +71,8 @@ Reason = Literal[
     "CONFIGURATION_FINGERPRINT_MISMATCH", "CATALOG_FINGERPRINT_MISMATCH", "RISK_FINGERPRINT_MISMATCH",
     "RISK_SOURCE_UNAVAILABLE", "RISK_SOURCE_STALE", "RISK_SOURCE_UNSUPPORTED", "RISK_UNIT_MISMATCH",
     "RISK_MARGIN_MODE_UNSUPPORTED", "RISK_LEVERAGE_UNSUPPORTED", "RISK_CAPITAL_INSUFFICIENT",
-    "RISK_EXPOSURE_INVALID",
+    "RISK_EXPOSURE_INVALID", "ASSET_POLICY_FINGERPRINT_MISMATCH", "ADVISORY_FINGERPRINT_MISMATCH",
+    "ADVISORY_UNAVAILABLE", "ADVISORY_STALE", "ORDER_NOTIONAL_TOO_SMALL",
 ]
 REASONS = {
     "ADMITTED": ("admission", "The captured scenario is eligible for local hypothetical PAPER research."),
@@ -94,8 +100,14 @@ REASONS = {
     "RISK_CAPITAL_INSUFFICIENT": ("research_capital", "The modeled capital cannot support the smallest generated opening quote."),
     "RISK_EXPOSURE_INVALID": ("research_exposure", "The modeled exposure or stress falls outside supported financial bounds."),
     "CONFIGURATION_FINGERPRINT_MISMATCH": ("configuration_fingerprint", "The scenario or economic assumptions changed. Check eligibility again."),
+    "ASSET_POLICY_FINGERPRINT_MISMATCH": ("asset_policy_fingerprint", "The asset research policy changed. Check eligibility again."),
+    "ADVISORY_FINGERPRINT_MISMATCH": ("advisory_snapshot_fingerprint", "The advisory snapshot does not match this research policy and market."),
+    "ADVISORY_UNAVAILABLE": ("advisory_snapshot_fingerprint", "The server has no retained advisory snapshot for this fingerprint."),
+    "ADVISORY_STALE": ("advisory_snapshot_fingerprint", "The advisory snapshot expired. Refresh the advisory evidence."),
+    "ORDER_NOTIONAL_TOO_SMALL": ("minimum_order_notional", "A normalized quote is below the selected minimum order notional."),
 }
-UNAVAILABLE_REASONS = {"METADATA_UNAVAILABLE", "METADATA_STALE", "RISK_SOURCE_UNAVAILABLE", "RISK_SOURCE_STALE"}
+UNAVAILABLE_REASONS = {"METADATA_UNAVAILABLE", "METADATA_STALE", "RISK_SOURCE_UNAVAILABLE", "RISK_SOURCE_STALE",
+                       "ADVISORY_UNAVAILABLE", "ADVISORY_STALE"}
 
 
 class PaperContract(Evidence):
@@ -103,9 +115,9 @@ class PaperContract(Evidence):
     profile_version: Literal["phase182-v1"] = PROFILE_VERSION
 
     @model_serializer(mode="wrap")
-    def omit_unset_risk(self, serialize):
+    def omit_unset_extensions(self, serialize):
         payload = serialize(self)
-        for name in ("research_risk", "risk_model", "risk_source", "risk_source_status"):
+        for name in ("research_risk", "risk_model", "risk_source", "risk_source_status", "asset_amm_policy"):
             if payload.get(name) is None:
                 payload.pop(name, None)
         return payload
@@ -147,6 +159,14 @@ class PaperProposal(PaperContract):
     trace_max_points: StrictInt = Field(default=40, ge=0, le=MAX_FRAMES)
     economics: HypotheticalEconomics
     research_risk: ResearchRiskSettings | None = None
+    asset_amm_policy: AssetAmmResearchPolicy | None = None
+
+    @field_validator("asset_amm_policy", mode="before")
+    @classmethod
+    def parse_asset_policy(cls, value):
+        # FastAPI decodes JSON to Python first. The strict contract accepts
+        # wire strings for enum values and timestamps in JSON mode.
+        return AssetAmmResearchPolicy.model_validate_json(to_json(value)) if isinstance(value, dict) else value
 
 
 class PaperFingerprintBinding(Evidence):
@@ -156,12 +176,14 @@ class PaperFingerprintBinding(Evidence):
     configuration_fingerprint: Fingerprint
     catalog_fingerprint: Fingerprint | None = None
     research_risk_fingerprint: Fingerprint | None = None
+    asset_policy_fingerprint: Fingerprint | None = None
 
     @model_serializer(mode="wrap")
-    def omit_unset_risk(self, serialize):
+    def omit_unset_extensions(self, serialize):
         payload = serialize(self)
-        if payload.get("research_risk_fingerprint") is None:
-            payload.pop("research_risk_fingerprint", None)
+        for name in ("research_risk_fingerprint", "asset_policy_fingerprint"):
+            if payload.get(name) is None:
+                payload.pop(name, None)
         return payload
 
 
@@ -221,17 +243,35 @@ class GeneralizedMarketProfile(PaperContract):
     def sz_decimals(self) -> int:
         return self.metadata.sz_decimals
 
-    def normalize_quotes(self, quotes, center, *, preflight=False):
+    def normalize_quotes(self, quotes, center, *, preflight=False, minimum_order_notional=None, side_liquidity=None):
         rounded = []
         used = set()
+        if side_liquidity is not None:
+            side_liquidity = quantize_size(side_liquidity, self.sz_decimals)
+        remaining = {"BID": side_liquidity, "ASK": side_liquidity}
         for quote in quotes:
-            price, size = round_level(quote.price, quote.size, self.sz_decimals, up=quote.side == "ASK")
+            size = quote.size
+            if side_liquidity is not None:
+                size = min(size, remaining[quote.side])
+                # The existing transforms can retain one lot when a reduction
+                # falls below it. Retire that lot on the asset-aware path.
+                if quote.pre_agent_size is not None and quote.agent_size_multiplier is not None:
+                    size = min(size, quote.pre_agent_size * quote.agent_size_multiplier)
+                if quote.pre_risk_size is not None and quote.risk_size_multiplier is not None:
+                    size = min(size, quote.pre_risk_size * quote.risk_size_multiplier)
+            price, size = round_level(quote.price, size, self.sz_decimals, up=quote.side == "ASK")
             key = (quote.side, price)
             if size == 0 or key in used:
                 if preflight:
                     raise GeneralizedPrecisionError("SIZE_UNREPRESENTABLE" if size == 0 else "PRICE_UNREPRESENTABLE")
                 # Later inventory and risk transforms may retire feasible levels.
                 continue
+            if minimum_order_notional is not None and price * size < minimum_order_notional:
+                if preflight:
+                    raise GeneralizedPrecisionError("ORDER_NOTIONAL_TOO_SMALL")
+                continue
+            if side_liquidity is not None:
+                remaining[quote.side] -= size
             used.add(key)
             rounded.append(quote.model_copy(update={
                 "price": price, "size": size, "distance_bps": executable_distance(price, center),
@@ -350,6 +390,18 @@ def _build_scenario(proposal, profile):
         size_tolerance=Decimal(1).scaleb(-precision) / 10,
     )
     risk = RiskFirewallConfig(max_projected_long_base=hard, max_projected_short_base=hard)
+    if proposal.asset_amm_policy is not None:
+        strategy = apply_asset_research_policy(strategy, proposal.asset_amm_policy, metadata=profile.metadata)
+        target, limit = strategy.target_inventory_base, strategy.hard_inventory_limit_base
+        # The existing absolute cap and the target-relative policy both apply.
+        with localcontext(Context(prec=80)):
+            long_limit = quantize_size(min(hard, limit, limit + target), precision)
+            short_limit = quantize_size(min(hard, limit, limit - target), precision)
+        risk = RiskFirewallConfig(
+            max_projected_long_base=long_limit, max_projected_short_base=short_limit,
+        )
+        if not -risk.max_projected_short_base < target < risk.max_projected_long_base:
+            raise ValueError("inventory target is outside the PAPER exposure limit")
     economics = profile.economics
     simulation = SimulationConfig(
         max_frames=proposal.frames, record_trace=proposal.trace_max_points > 0,
@@ -366,7 +418,7 @@ def _build_scenario(proposal, profile):
     return PreparedScenario(dataset, strategy, AgentConfig(), risk, simulation)
 
 
-def _preflight(prepared, profile, risk_model):
+def _preflight(prepared, profile, risk_model, *, minimum_order_notional=None):
     strategy = prepared.strategy
     history = MarketPriceHistory()
     engine = QuoteEngine()
@@ -374,15 +426,25 @@ def _preflight(prepared, profile, risk_model):
     for index, frame in enumerate(prepared.dataset.frames):
         history.add_snapshot(frame.market)
         flat = build_inventory_state(
-            market=profile.market, position=Decimal(0), target=Decimal(0),
+            market=profile.market, position=Decimal(0), target=strategy.target_inventory_base,
             soft_limit=strategy.soft_inventory_limit_base, source="PAPER", updated_at=frame.timestamp,
             stale=False, version=0,
         )
         _, _, quotes, inventory, _, _ = engine.generate_perp_market_adaptive(
             strategy, frame.market, flat, history, frame.perp_context,
         )
-        rounded = profile.normalize_quotes(quotes, inventory.reservation_price, preflight=True)
+        rounded = profile.normalize_quotes(
+            quotes, inventory.reservation_price, preflight=True, minimum_order_notional=minimum_order_notional,
+            side_liquidity=strategy.total_liquidity if minimum_order_notional is not None else None,
+        )
         validate_quotes(rounded, frame.market, limits)
+        if minimum_order_notional is not None and index == 0:
+            if (sum(q.size for q in rounded if q.side == "BID") > prepared.risk.max_projected_long_base
+                    or sum(q.size for q in rounded if q.side == "ASK") > prepared.risk.max_projected_short_base):
+                raise ResearchRiskError("RISK_EXPOSURE_INVALID")
+            capital = prepared.simulation.initial_equity_quote * prepared.simulation.accounting.max_capital_utilization
+            if reserved_capital(Decimal(0), frame.perp_context.mark_price, rounded) > capital:
+                raise ResearchRiskError("RISK_CAPITAL_INSUFFICIENT")
         if risk_model is not None:
             inputs = dict(mark=frame.perp_context.mark_price, position=Decimal(0),
                           position_limit=strategy.hard_inventory_limit_base, valuation_time=frame.timestamp)
@@ -401,7 +463,8 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
            network: Network, evaluated_at: datetime, max_age_seconds: int,
            metadata_current: bool = True, expected: PaperFingerprintBinding | None = None,
            catalog_fingerprint: str | None = None, catalog_valid_until: datetime | None = None,
-           risk_source: MarketFinancialObservation | None = None):
+           risk_source: MarketFinancialObservation | None = None,
+           advisory_evidence: tuple[AdvisorySnapshot, datetime] | None = None):
     """Use a server-owned observation and clock. Client input contains assumptions only."""
     from . import version
 
@@ -455,6 +518,42 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
     risk_fingerprint = risk_model.fingerprint() if risk_model is not None else None
     if expected is not None and expected.research_risk_fingerprint != risk_fingerprint:
         return reject("RISK_FINGERPRINT_MISMATCH")
+    policy = proposal.asset_amm_policy
+    policy_fingerprint = None
+    if policy is not None:
+        if policy.identity != identity:
+            return reject("NETWORK_MISMATCH" if policy.identity.network != network else "IDENTITY_MISMATCH")
+        if policy.metadata_fingerprint != profile.metadata_fingerprint:
+            return reject("METADATA_FINGERPRINT_MISMATCH")
+        if catalog_valid_until is None or catalog_fingerprint is None or policy.catalog_fingerprint != catalog_fingerprint:
+            return reject("CATALOG_FINGERPRINT_MISMATCH")
+        if policy.simulated_reference_price != proposal.simulated_reference_price or policy.declared_at > evaluated_at:
+            return reject("CONFIGURATION_INVALID")
+        draft = assess_asset_amm_policy(policy, evaluated_at=evaluated_at, max_age_seconds=max_age_seconds)
+        if draft.status != "RESEARCH_DRAFT":
+            return reject("CONFIGURATION_INVALID")
+        if policy.research_risk_fingerprint is not None and policy.research_risk_fingerprint != risk_fingerprint:
+            return reject("RISK_FINGERPRINT_MISMATCH")
+        if policy.advisory_snapshot_fingerprint is not None:
+            if advisory_evidence is None:
+                return reject("ADVISORY_UNAVAILABLE")
+            snapshot, expiry = advisory_evidence
+            context = snapshot.context
+            if (snapshot.fingerprint() != policy.advisory_snapshot_fingerprint
+                    or context.metadata != metadata or context.catalog_fingerprint != catalog_fingerprint
+                    or context.evaluated_at > policy.declared_at
+                    or context.risk_model_fingerprint not in (None, risk_fingerprint)):
+                return reject("ADVISORY_FINGERPRINT_MISMATCH")
+            if expiry <= evaluated_at:
+                return reject("ADVISORY_STALE")
+            try:
+                snapshot.validate_at(as_of=evaluated_at)
+            except ValueError:
+                return reject("ADVISORY_STALE")
+            valid_until = min(valid_until, expiry)
+        policy_fingerprint = draft.policy_fingerprint
+    if expected is not None and expected.asset_policy_fingerprint != policy_fingerprint:
+        return reject("ASSET_POLICY_FINGERPRINT_MISMATCH")
     if proposal.scenario in FUNDING_SCENARIOS:
         interval = proposal.economics.funding_interval_seconds
         if interval is None or interval >= proposal.frames:
@@ -474,6 +573,7 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
             binding = PaperFingerprintBinding(
                 metadata_fingerprint=profile.metadata_fingerprint, profile_fingerprint=profile.profile_fingerprint,
                 catalog_fingerprint=catalog_fingerprint, research_risk_fingerprint=risk_fingerprint,
+                asset_policy_fingerprint=policy_fingerprint,
                 configuration_fingerprint=stable_fingerprint({
                     "profile_fingerprint": profile.profile_fingerprint, "proposal": proposal,
                     "catalog_fingerprint": catalog_fingerprint,
@@ -481,11 +581,15 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
                     "strategy": prepared.strategy, "agents": prepared.agents, "risk": prepared.risk,
                     "simulation": prepared.simulation,
                     **({"research_risk_fingerprint": risk_fingerprint} if risk_fingerprint is not None else {}),
+                    **({"asset_policy_fingerprint": policy_fingerprint} if policy_fingerprint is not None else {}),
                 }),
             )
             if expected is not None and expected != binding:
                 return reject("CONFIGURATION_FINGERPRINT_MISMATCH")
-            _preflight(prepared, profile, risk_model)
+            if policy is None:
+                _preflight(prepared, profile, risk_model)
+            else:
+                _preflight(prepared, profile, risk_model, minimum_order_notional=proposal.minimum_order_notional)
         except ResearchRiskError as exc:
             return reject(exc.reason)
         except GeneralizedPrecisionError as exc:
@@ -521,6 +625,16 @@ class GeneralizedPaperResult(PaperContract):
         model = self.admission.risk_model
         risk_result = self.research_risk
         binding = self.admission.binding
+        policy = self.proposal.asset_amm_policy
+        if binding is not None and (binding.asset_policy_fingerprint != (policy.fingerprint() if policy else None)
+                or (policy is not None and (
+                    policy.metadata_fingerprint != binding.metadata_fingerprint
+                    or policy.catalog_fingerprint != binding.catalog_fingerprint
+                    or policy.simulated_reference_price != self.proposal.simulated_reference_price
+                    or policy.declared_at > self.admission.evaluated_at
+                    or policy.research_risk_fingerprint not in (None, binding.research_risk_fingerprint)
+                ))):
+            raise ValueError("PAPER asset policy result mismatch")
         if ((self.proposal.research_risk is None) != (model is None)
                 or (risk_result is None) != (model is None)
                 or (model is not None and (
@@ -566,21 +680,25 @@ def _result_fingerprint(binding, proposal, result, research_risk):
 
 
 async def execute_paper(engine, *, proposal, metadata, network, max_age_seconds, expected,
-                        catalog_valid_until=None, catalog_guard=None, risk_source=None):
+                        catalog_valid_until=None, catalog_guard=None, risk_source=None, advisory_evidence=None):
     expected = PaperFingerprintBinding.model_validate(expected)
     if expected.catalog_fingerprint is not None and (catalog_guard is None or catalog_valid_until is None):
         raise ValueError("catalog-bound PAPER worker requires captured server generation")
     admission, prepared = assess(proposal, metadata, network=network, evaluated_at=datetime.now(timezone.utc),
                                  max_age_seconds=max_age_seconds, expected=expected,
                                  catalog_fingerprint=expected.catalog_fingerprint, catalog_valid_until=catalog_valid_until,
-                                 risk_source=risk_source)
+                                 risk_source=risk_source, advisory_evidence=advisory_evidence)
     if prepared is None:
         raise PaperRejected(admission)
     started_at = datetime.now(timezone.utc)
     if started_at >= admission.valid_until or (catalog_guard is not None and not catalog_guard()):
+        reason = "RISK_SOURCE_STALE" if admission.risk_model and admission.risk_model.source else "METADATA_STALE"
+        if (advisory_evidence is not None and proposal.asset_amm_policy is not None
+                and proposal.asset_amm_policy.advisory_snapshot_fingerprint is not None
+                and started_at >= advisory_evidence[1]):
+            reason = "ADVISORY_STALE"
         raise PaperRejected(decision(proposal.identity, started_at,
-                                     "RISK_SOURCE_STALE" if admission.risk_model and admission.risk_model.source else "METADATA_STALE",
-                                     profile=admission.profile))
+                                     reason, profile=admission.profile))
     risk_run = PaperRiskRun(admission.risk_model) if admission.risk_model is not None else None
     with localcontext(DECIMAL_CONTEXT):
         result = await engine.run(
@@ -588,7 +706,10 @@ async def execute_paper(engine, *, proposal, metadata, network, max_age_seconds,
             risk_config=prepared.risk, simulation_config=prepared.simulation, scenario=proposal.scenario.value,
             generalized_profile=admission.profile,
             **({"paper_risk_run": risk_run} if risk_run is not None else {}),
+            **({"minimum_order_notional": proposal.minimum_order_notional} if proposal.asset_amm_policy else {}),
         )
+    if proposal.asset_amm_policy is not None and result.strategy_fingerprint != stable_fingerprint(prepared.strategy):
+        raise ValueError("PAPER worker strategy fingerprint mismatch")
     risk_result = risk_run.evidence() if risk_run is not None else None
     return GeneralizedPaperResult(
         admission=admission, proposal=proposal, result=result,

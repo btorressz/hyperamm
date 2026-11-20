@@ -171,6 +171,11 @@ async def _admit(request: Request, proposal: PaperProposal, expected=None):
     worker_inputs = (dict(catalog_valid_until=generation[0], catalog_guard=generation[1]) if generation else {})
     if generation is not None and proposal.research_risk is not None:
         worker_inputs["risk_source"] = source.financial_observation(catalog.catalog_fingerprint, proposal.identity)
+    policy = proposal.asset_amm_policy
+    if generation is not None and policy is not None and policy.advisory_snapshot_fingerprint is not None:
+        coordinator = getattr(request.app.state, "advisory_coordinator", None)
+        if coordinator is not None:
+            worker_inputs["advisory_evidence"] = coordinator.resolve_snapshot(policy.advisory_snapshot_fingerprint)
     metadata = next((record for record in catalog.catalog.records
                      if record.identity == proposal.identity), None) if catalog.catalog is not None else None
     admission, _ = assess(proposal, metadata, network=catalog.network, evaluated_at=catalog.evaluated_at,
@@ -178,7 +183,8 @@ async def _admit(request: Request, proposal: PaperProposal, expected=None):
                           metadata_current=generation is not None, expected=expected,
                           catalog_fingerprint=catalog.catalog_fingerprint,
                           catalog_valid_until=worker_inputs.get("catalog_valid_until"),
-                          risk_source=worker_inputs.get("risk_source"))
+                          risk_source=worker_inputs.get("risk_source"),
+                          advisory_evidence=worker_inputs.get("advisory_evidence"))
     return admission, dict(max_age_seconds=catalog.max_age_seconds, **worker_inputs)
 
 
@@ -194,10 +200,13 @@ async def paper_run(body: PaperRunRequest, request: Request):
     admission, worker_inputs = await _admit(request, proposal, expected=body.expected)
     if admission.status != "ELIGIBLE":
         return _decision_response(admission)
-    if admission.risk_model is not None:
+    if admission.risk_model is not None or proposal.asset_amm_policy is not None:
         now = datetime.now(timezone.utc)
         if now >= admission.valid_until or not worker_inputs["catalog_guard"]():
-            reason = "RISK_SOURCE_STALE" if admission.risk_model.source is not None else "METADATA_STALE"
+            reason = "RISK_SOURCE_STALE" if admission.risk_model and admission.risk_model.source else "METADATA_STALE"
+            advisory_evidence = worker_inputs.get("advisory_evidence")
+            if advisory_evidence is not None and now >= advisory_evidence[1]:
+                reason = "ADVISORY_STALE"
             return _decision_response(decision(admission.identity, now, reason, profile=admission.profile))
     try:
         result = await request.app.state.simulation_executor.execute(
