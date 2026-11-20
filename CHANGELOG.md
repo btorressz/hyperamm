@@ -4,7 +4,15 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
-## Unreleased — Phase 18.6A–E research experience
+## Unreleased — Phase 18.6H market research hardening
+
+- Show public Core and HIP-3 mark price, hourly funding, previous-day comparison, notional volume, open interest and source freshness in Market Explorer. Cache scoped context requests by catalog generation and DEX.
+- Add page-scoped sorting, observed context beside Starter’s synthetic PAPER inputs, a segmented workspace mode selector, and Pro and Institutional overviews.
+- Document public provider checks, market-summary authority and regression evidence. [Phase 18.6H hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md)
+
+## 2026-11-20 — Phase 18.6A–E research experience
+
+Merged in [PR #99](https://github.com/btorressz/hyperamm/pull/99) at `1b9804146a8de82e7432e18493591385b0f4bb0c`.
 
 - Add Market Explorer for validated Core and HIP-3 listing metadata, searchable and paginated with a fingerprint-bound handoff into Generalized PAPER.
 - Add Starter guidance, Pro navigation and Institutional portfolio and evidence links. Preserve the existing routes, nine agents, shared PAPER workflow and operational authority.

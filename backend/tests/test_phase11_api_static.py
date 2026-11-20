@@ -76,7 +76,9 @@ def test_read_only_accounting_routes_and_active_vault_ui():
     sidebar = (root / "frontend/src/components/Sidebar.tsx").read_text()
     navigation = (root / "frontend/src/utils/navigation.ts").read_text()
     assert '{ name: "Vault", slug: "vault"' in navigation
-    assert "terminalPages.map" in sidebar and "href={pageHref(name)}" in sidebar
+    assert "navigationGroups(mode).map" in sidebar and "pageHref(item.name)" in sidebar
+    assert "href={href}" in sidebar and 'aria-current={active ? "page" : undefined}' in sidebar
+    assert "terminalPages.filter(page => !primary.has(page.name))" in navigation
     assert 'Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />' in (root / "frontend/src/App.tsx").read_text()
     ui = "\n".join((root / path).read_text() for path in (
         "frontend/src/pages/Vault.tsx", "frontend/src/components/VaultSummary.tsx", "frontend/src/components/AccountingLedger.tsx", "frontend/src/components/vault/AccountingConsistency.tsx"))

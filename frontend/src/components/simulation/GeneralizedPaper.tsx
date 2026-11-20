@@ -1,3 +1,4 @@
+import { ObservedMarketSummary } from '../markets/ObservedMarketSummary';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api/client';
@@ -19,9 +20,10 @@ import { GeneralizedPaperAdvisory } from './GeneralizedPaperAdvisory';
 import { initialAssetDraft, PaperAssetConfiguration, PaperAssetEvidence } from './GeneralizedPaperAssetPolicy';
 import { initialRiskDraft, PaperFinancialEvidence, PaperRiskConfiguration, PaperRiskEvidence } from './GeneralizedPaperRisk';
 
-export function GeneralizedPaper({ scenarios, resultsOnly }: {
+export function GeneralizedPaper({ scenarios, resultsOnly, active }: {
   scenarios: readonly { name: string; description: string }[];
   resultsOnly: boolean;
+  active: boolean;
 }) {
   const guided = useDisplayStore(state => state.experienceMode) === 'Starter';
   const setMode = useDisplayStore(state => state.setExperienceMode);
@@ -322,10 +324,10 @@ export function GeneralizedPaper({ scenarios, resultsOnly }: {
   return <Panel title={guided ? 'Guided PAPER research' : 'Generalized PAPER research'}>
     <div className={guided ? 'stack guidedPaper' : 'researchInset stack'}>
       {guided && <div className="guidedPaperIntro">
-        <p>Test market making in a hypothetical simulation using synthetic prices and liquidity. Trade outcomes, balances and venue costs are unverified.</p>
+        <p>Choose a perpetual, enter a hypothetical price, and see how your quotes, costs and inventory respond in PAPER.</p>
         <button type="button" onClick={() => {
           setMode('Pro');
-          document.getElementById('workspace-mode')?.focus();
+          document.getElementById('workspace-mode-pro')?.focus();
         }}>Switch to Pro</button>
       </div>}
       {!guided &&
@@ -359,6 +361,13 @@ export function GeneralizedPaper({ scenarios, resultsOnly }: {
             'Discovery metadata expired. Refresh to check PAPER eligibility.' :
           `Discovery ${availability?.toLowerCase() ?? 'unavailable'}.`}</p>
         {guided && record && <p><strong>{record.source_coin}</strong> · {record.identity.network} · {record.identity.dex || 'Core'} · {catalogCurrent ? 'Current metadata' : 'Metadata unavailable or stale'}</p>}
+        {guided && active && record && discoveryDecision && catalogFingerprint && catalogNetwork && <ObservedMarketSummary
+          active={catalogCurrent && discoveryDecision.discovery_eligible}
+          scope={{ network: catalogNetwork, catalogFingerprint, markets: [{
+            key: market, metadataFingerprint: discoveryDecision.metadata_fingerprint,
+            universeIndex: record.universe_index, listed: record.listed,
+          }] }}
+        />}
         <div hidden={!advanced}>
           {record && <dl className="researchDetails">
             <div><dt>Canonical market</dt><dd><code>{marketUniverseKey(record.identity)}</code></dd></div>
@@ -386,7 +395,7 @@ export function GeneralizedPaper({ scenarios, resultsOnly }: {
             </select>
           </label>
         </div>
-        {guided && <p>{scenarioDescription ?? 'Scenario catalog unavailable.'} Enter a hypothetical starting price in quote units per unit of the asset.</p>}
+        {guided && <p>{scenarioDescription ?? 'Scenario catalog unavailable.'} Enter your own hypothetical starting price in quote units per unit of the asset. Public observations above are for research only.</p>}
         {guided && <button type="button" aria-expanded={showAdvanced} aria-controls="paper-advanced-controls"
           onClick={() => setShowAdvanced(!showAdvanced)}>{showAdvanced ? 'Hide' : 'Show'} advanced controls</button>}
         {guided && !advanced && (assetEnabled || riskEnabled || funding) &&
@@ -418,7 +427,7 @@ export function GeneralizedPaper({ scenarios, resultsOnly }: {
         </div>
       </GuidedPaperStep>
       <GuidedPaperStep guided={guided} step={3} title="Check eligibility and run PAPER">
-        {guided && <p>The server checks this market and scenario before enabling a simulation. A PAPER run uses hypothetical funds.</p>}
+        {guided && <p>The server checks the market and your inputs before enabling a simulation. The risk check can limit or stop modeled quoting when the scenario runs.</p>}
         <div className="researchFilters">
           <button type="button" disabled={!baseProposal || (assetEnabled && (!assetRequest || !assetSelectionCurrent)) ||
             busy || isFetching || financialPending || discoveryFailed || (availability === 'AVAILABLE' && !catalogCurrent)} onClick={() => void submit(false)}>Check PAPER eligibility</button>

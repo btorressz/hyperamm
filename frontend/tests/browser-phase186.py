@@ -3,6 +3,8 @@ import argparse
 import asyncio
 from contextlib import ExitStack
 from importlib import import_module
+from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -24,6 +26,12 @@ async def run(args, profile, report):
             profile, executable_path=args.chromium, headless=True, args=["--no-sandbox"],
             viewport={"width": 1440, "height": 1000},
         )
+        await context.add_init_script("""(() => document.addEventListener('DOMContentLoaded', () => {
+          const style = document.createElement('style');
+          style.textContent = 'body::after { content: "DEMO · PROVIDER FIXTURE"; position: fixed; right: 8px; bottom: 8px; z-index: 15; padding: 4px 8px; color: white; background: #18365e; font: 12px sans-serif; pointer-events: none; }';
+          document.head.append(style);
+        }))()""")
+        await context.add_init_script(path=args.axe)
         page = context.pages[0]
         page.set_default_timeout(12000)
         report["browser"] = (await (await context.new_cdp_session(page)).send("Browser.getVersion"))["product"]
@@ -33,8 +41,14 @@ async def run(args, profile, report):
                 if req.method in {"POST", "PUT", "PATCH", "DELETE"} else None)
         await paper.wait_for_fixture(page)
         await page.goto(BASE + "/#/markets")
-        await page.add_script_tag(path=args.axe)
-        modes = page.get_by_role("combobox", name="Workspace mode")
+        modes = page.get_by_role("group", name="Workspace mode")
+
+        def mode(name):
+            return modes.get_by_role("button", name=name, exact=True)
+
+        async def choose_mode(name):
+            await mode(name).click()
+            await expect(mode(name)).to_have_attribute("aria-pressed", "true")
         main = page.get_by_role("main")
         nav = page.get_by_role("navigation", name="Terminal pages")
         markets = page.get_by_role("region", name="Discovered markets")
@@ -72,7 +86,21 @@ async def run(args, profile, report):
         await expect(markets.get_by_text("6 of 6 discovered markets")).to_be_visible()
         await expect(markets.get_by_role("heading", name="BTC", exact=True)).to_be_visible()
         await expect(markets.get_by_role("heading", name="xyz:GOLD", exact=True)).to_be_visible()
-        await expect(markets.get_by_text("Price and funding observations are unavailable", exact=False)).to_be_visible()
+        btc = markets.get_by_role("article").filter(has=page.get_by_role("heading", name="BTC", exact=True))
+        await expect(btc.get_by_text("65,012.5", exact=True)).to_be_visible()
+        await expect(btc.get_by_text("Funding / hour", exact=True)).to_be_visible()
+        await expect(btc.get_by_text("-0.01%", exact=True)).to_be_visible()
+        await expect(btc.get_by_text("1.2M", exact=True)).to_be_visible()
+        await expect(btc.get_by_text("130.5", exact=True)).to_be_visible()
+        await markets.get_by_role("combobox", name="Sort by").select_option("mark_price")
+        await expect(markets.get_by_role("article").nth(0).get_by_role("heading", name="BTC", exact=True)).to_be_visible()
+        await expect(markets.get_by_role("article").nth(1).get_by_role("heading", name="xyz:GOLD", exact=True)).to_be_visible()
+        await markets.get_by_role("combobox", name="Sort by").select_option("alphabetical")
+        await markets.get_by_role("button", name="Details for xyz:GOLD").click()
+        details = markets.get_by_role("region", name="Selected market details")
+        await expect(details.get_by_text("2,402.5", exact=True)).to_be_visible()
+        await expect(details.get_by_text("Hyperliquid public Info · metaAndAssetCtxs", exact=True)).to_be_visible()
+        await markets.get_by_role("button", name="Details for xyz:GOLD").click()
         await search.fill("gold")
         await expect(markets.get_by_text("2 of 6 discovered markets")).to_be_visible()
         await search.fill("xyz")
@@ -144,12 +172,110 @@ async def run(args, profile, report):
         await refresh.click()
         await expect(markets.get_by_text("MAINNET", exact=True)).to_be_visible()
         passed("Retained stale metadata disables launch, and network refresh replaces qualified identity")
+        await expect(btc.get_by_text("65,012.5", exact=True)).to_be_visible()
+        sort = markets.get_by_role("combobox", name="Sort by")
+        await sort.select_option("mark_price")
         await capture("market-explorer", ".marketExplorer, .experienceMode")
+        await page.set_viewport_size({"width": 390, "height": 844})
+        await page.evaluate("""() => window.scrollTo(0,
+            document.querySelector('.explorerCards').getBoundingClientRect().top + scrollY - 215)""")
+        await page.screenshot(path=args.output / "market-explorer-cards-390.png")
+        report["screenshots"].append("market-explorer-cards-390.png")
+        await page.set_viewport_size({"width": 1440, "height": 1000})
+        await sort.select_option("alphabetical")
+        await search.fill("missing")
+        await expect(markets.get_by_text("1 of 6 discovered markets")).to_be_visible()
+        await expect(markets.locator(".explorerObservation").get_by_text("Unavailable", exact=True)).to_be_visible()
+        await capture("market-explorer-missing", ".marketExplorer, .experienceMode")
+        await search.fill("")
+
+        summary_url = "**/market-universe/market-summaries"
+        fields = ("mark_price", "oracle_price", "previous_day_price", "funding_rate", "day_notional_volume",
+                  "open_interest_base", "mark_change_vs_previous_day_percent")
+        refresh_observations = main.get_by_role("button", name="Refresh observations")
+
+        def timestamp(value):
+            return value.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+        async def summary_state(route, error=None, stale=False):
+            response = await route.fetch()
+            wire = await response.json()
+            now = datetime.now(timezone.utc)
+            for row in wire["results"]:
+                if row["status"] != "CURRENT":
+                    continue
+                if error or stale:
+                    row.update({field: None for field in fields})
+                    row.update(status="ERROR" if error else "STALE", error=error,
+                               observed_at=timestamp(now - timedelta(seconds=30)) if stale else None,
+                               valid_until=timestamp(now) if stale else None, observation_fingerprint=None)
+                else:
+                    row.update(observed_at=timestamp(now), valid_until=timestamp(now + timedelta(seconds=2)))
+                    capture = {k: v for k, v in row.items() if k != "observation_fingerprint"}
+                    capture["catalog_fingerprint"] = wire["catalog_fingerprint"]
+                    row["observation_fingerprint"] = sha256(
+                        json.dumps(capture, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            wire["evaluated_at"] = timestamp(now)
+            await route.fulfill(response=response, json=wire)
+
+        for error, message in (("TIMEOUT", "Provider timeout"), ("RATE_LIMITED", "Provider rate limit"),
+                               (None, "Stale")):
+            async def fulfill_status(route):
+                await summary_state(route, error, stale=error is None)
+            await page.route(summary_url, fulfill_status)
+            await refresh_observations.click()
+            await expect(btc.get_by_text(message, exact=True)).to_be_visible()
+            await expect(btc.get_by_text("65,012.5", exact=True)).to_be_hidden()
+            await page.unroute(summary_url, fulfill_status)
+        async def expiring(route):
+            await summary_state(route)
+
+        await page.route(summary_url, expiring)
+        await refresh_observations.click()
+        await expect(btc.get_by_text("65,012.5", exact=True)).to_be_visible()
+        await expect(btc.get_by_text("Stale", exact=True)).to_be_visible(timeout=5000)
+        await expect(btc.get_by_text("65,012.5", exact=True)).to_be_hidden()
+        await page.unroute(summary_url, expiring)
+
+        arrived, release, finished = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        async def old_namespace(route):
+            if route.request.post_data_json["market_keys"] == ["HYPERLIQUID:MAINNET:CORE_PERP::BTC"]:
+                arrived.set()
+                try:
+                    await release.wait()
+                    await summary_state(route, "TIMEOUT")
+                except Exception as exc:
+                    if "canceled" not in str(exc).lower() and "aborted" not in str(exc).lower():
+                        raise
+                finally:
+                    finished.set()
+            else:
+                await route.continue_()
+
+        await page.route(summary_url, old_namespace)
+        await search.fill("btc")
+        await asyncio.wait_for(arrived.wait(), 10)
+        await search.fill("xyz")
+        gold = markets.get_by_role("article").filter(has=page.get_by_role("heading", name="xyz:GOLD", exact=True))
+        await expect(gold.get_by_text("2,405.25", exact=True)).to_be_visible()
+        release.set()
+        await asyncio.wait_for(finished.wait(), 10)
+        await expect(gold.get_by_text("2,405.25", exact=True)).to_be_visible()
+        await expect(markets.get_by_text("Provider timeout", exact=True)).to_have_count(0)
+        await page.unroute(summary_url, old_namespace)
+        await search.fill("")
+        passed("Source fields, page sort, missing data, timeout, rate limit, server/client expiry and late DEX request retirement")
         passed("2,006 records remain searchable with 12 cards mounted per page and recover on refresh")
 
-        await modes.focus()
-        await page.keyboard.press("ArrowUp")
-        await expect(modes).to_have_value("Starter")
+        await mode("Starter").focus()
+        await page.keyboard.press("Tab")
+        await expect(mode("Pro")).to_be_focused()
+        await page.keyboard.press("Space")
+        await expect(mode("Pro")).to_have_attribute("aria-pressed", "true")
+        await page.keyboard.press("Shift+Tab")
+        await expect(mode("Starter")).to_be_focused()
+        await page.keyboard.press("Enter")
+        await expect(mode("Starter")).to_have_attribute("aria-pressed", "true")
         await nav.get_by_role("link", name="Home", exact=True).click()
         await expect(main.get_by_role("heading", name="Start with a market")).to_be_visible()
         await main.get_by_role("link", name="Explore markets").click()
@@ -158,6 +284,8 @@ async def run(args, profile, report):
         selector = guided.get_by_role("combobox", name="Discovered perpetual")
         await expect(selector).to_have_value("HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD")
         await expect(guided.get_by_role("heading", name="Step 4 · Review results")).to_be_visible()
+        await expect(guided.get_by_text("2,405.25 provider quote / base", exact=True)).to_be_visible()
+        await expect(guided.get_by_role("textbox", name="Synthetic reference price")).to_have_value("")
         await expect(guided.get_by_role("combobox", name="PAPER research mode")).to_be_hidden()
         check = guided.get_by_role("button", name="Check PAPER eligibility")
         run_button = guided.get_by_role("button", name="Run local PAPER")
@@ -188,12 +316,12 @@ async def run(args, profile, report):
         await page.route("**/generalized-paper/run", delay_result)
         await run_button.evaluate("e => {e.click(); e.click(); e.click()}")
         await asyncio.wait_for(arrived.wait(), 20)
-        await modes.select_option("Pro")
+        await choose_mode("Pro")
         pro = main.get_by_role("region", name="Generalized PAPER research")
         await expect(pro.get_by_text("Running local PAPER simulation…")).to_be_visible()
         await expect(pro.get_by_role("button", name="Run local PAPER")).to_be_disabled()
-        await modes.select_option("Institutional")
-        await modes.select_option("Starter")
+        await choose_mode("Institutional")
+        await choose_mode("Starter")
         release.set()
         result = main.get_by_role("region", name="PAPER result evidence")
         await expect(result.get_by_role("status")).to_contain_text("xyz:GOLD")
@@ -210,7 +338,7 @@ async def run(args, profile, report):
         assert sum(url.endswith("/generalized-paper/run") for url in writes) == 1
         passed("Starter eligibility, rejection and genuine worker outcome, with one run across three mode changes and Results")
 
-        await modes.select_option("Pro")
+        await choose_mode("Pro")
         await expect(result).to_be_visible()
         await expect(pro.get_by_role("combobox", name="PAPER research mode")).to_be_visible()
         await expect(pro.get_by_role("combobox", name="PAPER research mode").locator("option", has_text="Asset-aware PAPER")).to_have_count(1)
@@ -228,15 +356,21 @@ async def run(args, profile, report):
         await expect(main.get_by_role("button", name="Market vs Research", exact=True)).to_have_attribute("aria-pressed", "true")
         await nav.get_by_role("link", name="AMM Settings", exact=True).click()
         await expect(main.get_by_role("heading", name="AMM Settings", exact=True)).to_be_visible()
-        await capture("pro", ".experienceMode, #page-content")
+        await capture("pro-amm", ".experienceMode, #page-content")
         model = main.get_by_role("combobox", name="AMM Model")
         await expect(model.locator("option")).to_have_count(2)
         assert [text.strip() for text in await model.locator("option").all_text_contents()] == ["CONSTANT_PRODUCT", "CONCENTRATED"]
         await nav.get_by_role("link", name="Strategy", exact=True).click()
         await expect(main.get_by_role("region", name="Current virtual pool & authorization")).to_be_visible()
-        passed("Pro provides both AMMs and links to supervisory, advisory, replay, comparison and asset-aware research")
+        await nav.get_by_role("link", name="Dashboard", exact=True).click()
+        overview = main.get_by_role("region", name="Pro research overview")
+        await expect(overview.get_by_text("Operational market", exact=True)).to_be_visible()
+        await expect(overview.get_by_text("Research market", exact=True)).to_be_visible()
+        await expect(overview.get_by_text("2,405.25 provider quote / base", exact=True)).to_be_visible()
+        await capture("pro", ".experienceMode, .modeOverview")
+        passed("Pro overview and both AMMs, with supervisory, advisory, replay, comparison and asset-aware research")
 
-        await modes.select_option("Institutional")
+        await choose_mode("Institutional")
         await nav.get_by_role("link", name="Portfolio Research", exact=True).click()
         portfolio = main.get_by_role("group", name="Portfolio Research Terminal")
         await expect(portfolio.get_by_text("HYPOTHETICAL · PAPER ONLY", exact=False)).to_be_visible()
@@ -245,14 +379,15 @@ async def run(args, profile, report):
         await sections.get_by_role("button", name="Provenance", exact=True).click()
         await expect(sections.get_by_role("button", name="Provenance")).to_have_attribute("aria-pressed", "true")
         await sections.get_by_role("button", name="Configure", exact=True).click()
-        await capture("institutional", ".experienceMode, .institutionalEvidence")
+        await expect(portfolio.get_by_role("region", name="Institutional overview")).to_be_visible()
+        await capture("institutional", ".experienceMode, .modeOverview")
         for label, path in (("Risk", "risk"), ("Audit logs", "logs"), ("Vault", "vault"),
                             ("Execution evidence", "execution"), ("Analytics", "analytics")):
             await nav.get_by_role("link", name=label, exact=True).click()
             await expect(page).to_have_url(BASE + "/#/" + path)
         await route("settings", "Settings & system configuration")
         await page.reload()
-        await expect(modes).to_have_value("Institutional")
+        await expect(mode("Institutional")).to_have_attribute("aria-pressed", "true")
         await expect(page).to_have_url(BASE + "/#/settings")
         await page.go_back()
         await expect(page).to_have_url(BASE + "/#/analytics")
@@ -261,7 +396,7 @@ async def run(args, profile, report):
         await route("dashboard", "Liquidity terminal")
         passed("Institutional portfolio, stress, provenance, risk, audit and accounting routes, with legacy refresh and history")
 
-        await modes.select_option("Starter")
+        await choose_mode("Starter")
         await route("markets", "Market Explorer")
         await page.set_viewport_size({"width": 390, "height": 844})
         open_nav = page.get_by_role("button", name="Open navigation")
@@ -283,7 +418,7 @@ async def run(args, profile, report):
         assert report["zoom_200"]["document"] <= report["zoom_200"]["width"] + 1, report["zoom_200"]
         passed("Keyboard mode select, mobile drawer return focus and actual Chromium 200% browser zoom")
         assert not report["page_errors"], report["page_errors"]
-        assert all("/generalized-paper/" in url or url.endswith("/market-universe/advisory") for url in writes), writes
+        assert all("/generalized-paper/" in url or url.endswith(("/market-universe/advisory", "/market-universe/market-summaries")) for url in writes), writes
         assert not any(row["violations"] for row in report["axe"]), report["axe"]
         await context.close()
 
@@ -296,7 +431,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    report = {"status": "FAIL", "source": "Local DEMO terminal and deterministic discovery fixtures. PAPER uses the real local worker.",
+    report = {"status": "FAIL", "source": "Local DEMO terminal and deterministic discovery and market-context fixtures. PAPER uses the real local worker.",
               "workflows": [], "viewports": [], "screenshots": [], "axe": [], "page_errors": [], "writes": []}
     environment = {**os.environ, "MARKET_DATA_MODE": "DEMO", "EXECUTION_MODE": "PAPER",
                    "ENABLE_HYPERLIQUID_TESTNET_ORDERS": "false", "LIVE_OBSERVATIONS_ENABLED": "false",

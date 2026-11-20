@@ -2,20 +2,28 @@
 [hidden] { display: none !important; }
 
 .experienceMode {
-  display: grid;
-  gap: 4px;
-  color: var(--text-muted);
-  font-size: 0.78rem;
+  display: inline-grid;
+  grid-template-columns: auto auto auto;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface-panel);
   white-space: nowrap;
 }
-.experienceMode select {
-  min-height: 40px;
+.experienceMode button {
+  min-height: 36px;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+}
+.experienceMode button[aria-pressed="true"] {
   color: var(--text-primary);
+  border-color: var(--border-strong);
   background: var(--surface-raised);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-control);
-  padding: 0 8px;
-  font-size: 0.875rem;
+  font-weight: 700;
 }
 .experienceNavGroup { display: grid; gap: 3px; min-width: 0; }
 .experienceNavGroup + .experienceNavGroup { margin-top: 10px; }
@@ -57,7 +65,7 @@
 .experienceHomeLinks a span { color: var(--text-muted); }
 .explorerFilters {
   display: grid;
-  grid-template-columns: minmax(150px, 2fr) repeat(4, minmax(110px, 1fr)) auto;
+  grid-template-columns: minmax(150px, 2fr) repeat(5, minmax(110px, 1fr)) auto;
   align-items: end;
   gap: 10px;
 }
@@ -119,7 +127,7 @@
 }
 @media (max-width: 540px) {
   .explorerCardActions button { flex: 1 1 auto; }
-  .experienceMode select, .explorerFilters input, .explorerFilters select,
+  .experienceMode button, .explorerFilters input, .explorerFilters select,
   .explorerFilters button, .explorerCardActions button,
   .explorerPagination button, .guidedPaper button { min-height: 44px; }
 }
@@ -138,3 +146,60 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+.explorerContext, .explorerObservation {
+  margin: 8px 0 12px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+.explorerObservation { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.explorerObservation .badge { white-space: normal; }
+.explorerCard .explorerMark {
+  display: grid;
+  background: var(--surface-raised);
+  border-radius: 7px;
+  padding: 8px 10px;
+  gap: 2px;
+}
+.explorerCard .explorerMark dd {
+  text-align: start;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-variant-numeric: tabular-nums;
+}
+.explorerMetrics dd { font-variant-numeric: tabular-nums; min-width: 0; }
+
+@media (max-width: 540px) {
+  .topbar .experienceMode { order: 1; width: 100%; grid-template-columns: 1fr 1fr 1.35fr; }
+  .topbar .headerBadges { order: 2; }
+}
+
+.modeOverview { margin-bottom: 14px; }
+.modeOverviewGrid {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+}
+.modeOverviewGrid > section {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  overflow-wrap: anywhere;
+}
+.modeOverviewGrid h3 { margin: 0; font-size: 1rem; }
+.modeOverviewGrid .terminalMetrics { padding: 2px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 116px), 1fr)); }
+.modeOverviewGrid .terminalMetrics > div { min-width: 0; }
+.modeOverviewGrid a, .modeOverviewGrid button { justify-self: start; }
+.institutionalOverview { grid-template-columns: repeat(auto-fit, minmax(min(100%, 305px), 1fr)); }
+.overviewEvidence, .selectedMarketObservation dl { margin: 0; display: grid; gap: 5px; }
+.overviewEvidence div, .selectedMarketObservation dl div { display: flex; gap: 6px; justify-content: space-between; flex-wrap: wrap; }
+.overviewEvidence dt, .selectedMarketObservation dt { color: var(--text-muted); }
+.overviewEvidence dd, .selectedMarketObservation dd { margin: 0; }
+.selectedMarketObservation { padding: 8px; border-inline-start: 2px solid var(--border-strong); }
+.selectedMarketObservation strong + dl, .selectedMarketObservation strong + p { margin: 5px 0 0; }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { fingerprint } from "../utils/format";
 import { useDisplayStore } from "../stores/display";
 import { pageHref, workspaceHref } from "../utils/navigation";
 import { usePortfolioResearch } from "../hooks/usePortfolioResearch";
@@ -15,12 +16,13 @@ import {
 } from "../components/TerminalPrimitives";
 import "../phase14.css";
 import "../phase175.css";
-export function PortfolioResearch() {
+export function PortfolioResearch({ firewall }: { firewall?: string }) {
   const institutional = useDisplayStore(state => state.experienceMode) === "Institutional";
   const s = usePortfolioResearch(),
     [section, setSection] = useState("Configure");
   const validation = allocationError(s.draft),
     p = s.preview;
+  const result = s.result;
   return (
     <div
       className="portfolioWorkspace stack"
@@ -43,13 +45,51 @@ export function PortfolioResearch() {
         trading authority. Drafts never change active strategy, orders, balances
         or risk controls. Portfolio research uses the supported native BTC, ETH and SOL markets.
       </StatusBanner>
-      {institutional && <nav className="institutionalEvidence" aria-label="Related institutional workspaces">
-        <a href={pageHref("Risk")}>Operational risk and exposure</a>
-        <a href={pageHref("Execution")}>Execution evidence</a>
-        <a href={pageHref("Vault")}>Vault accounting</a>
-        <a href={pageHref("Logs")}>Audit timeline</a>
-        <a href={workspaceHref("scenarioComparison")}>Historical comparison</a>
-      </nav>}
+      {institutional && <Panel title="Institutional overview" className="modeOverview">
+        <div className="modeOverviewGrid institutionalOverview">
+          <section>
+            <h3>Portfolio research</h3>
+            <Metrics items={[
+              ["Supported markets", "BTC · ETH · SOL"],
+              ["Hypothetical capital", decimalDisplay(p?.config.budget.total_equity_quote, "USDC")],
+              ["Allocated capital", decimalDisplay(p?.allocated_quote, "USDC")],
+              ["Reserve", decimalDisplay(p?.reserve_quote, "USDC")],
+              ["Scenario", p ? [...new Set(p.config.scenarios.map(entry => entry.scenario))].join(" · ") : "Preview required"],
+            ]} />
+            <button type="button" onClick={() => setSection("Configure")}>Portfolio configuration</button>
+          </section>
+          <section>
+            <h3>Risk & exposure</h3>
+            <Metrics items={[
+              ["Operational Risk Firewall", firewall ?? "Unavailable"],
+              ["Modeled risk", result?.baseline.risk.decision ?? result?.baseline.risk.outcome ?? "No accepted run"],
+              ["Modeled gross exposure", decimalDisplay(result?.baseline.exposure.gross_exposure_quote, "USDC")],
+              ["Stress outcome", result?.risk_transition?.transition ?? (result?.stressed ? result.stressed.risk.outcome : "Unavailable")],
+            ]} />
+            <button type="button" onClick={() => setSection("Stress Lab")}>Stress Lab</button>
+            <a href={pageHref("Risk")}>Operational risk and exposure</a>
+          </section>
+          <section>
+            <h3>Research provenance</h3>
+            <Metrics items={[
+              ["Evidence status", result ? "Accepted for current draft" : p ? "Configuration validated" : "Preview required"],
+              ["Configuration fingerprint", <code title={p?.config_fingerprint}>{fingerprint(p?.config_fingerprint)}</code>],
+              ["Result fingerprint", <code title={result?.evidence_fingerprint}>{fingerprint(result?.evidence_fingerprint)}</code>],
+            ]} />
+            <button type="button" onClick={() => setSection("Provenance")}>Provenance and exports</button>
+            <a href={pageHref("Logs")}>Audit timeline</a>
+          </section>
+          <section>
+            <h3>Operational workspaces</h3>
+            <nav className="institutionalEvidence" aria-label="Related institutional workspaces">
+              <a href={pageHref("Execution")}>Execution evidence</a>
+              <a href={pageHref("Vault")}>Vault accounting</a>
+              <a href={pageHref("Analytics")}>Operational analytics</a>
+              <a href={workspaceHref("scenarioComparison")}>Historical comparison</a>
+            </nav>
+          </section>
+        </div>
+      </Panel>}
       <Panel title="Portfolio Overview" meta={`LOCAL DRAFT ${s.revision + 1}`}>
         <Metrics
           items={[

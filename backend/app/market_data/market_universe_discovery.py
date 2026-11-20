@@ -138,7 +138,7 @@ def _validate_json_depth(value, depth=1):
 class OfficialMetadataClient:
     """Use SDK Info methods with a size-limited, public-only HTTP transport."""
 
-    _operations = frozenset({"perpDexs", "meta", "spotMeta"})
+    _operations = frozenset({"perpDexs", "meta", "spotMeta", "metaAndAssetCtxs"})
 
     def __init__(self, network: Network, *, endpoint: str | None = None):
         from hyperliquid.utils.constants import MAINNET_API_URL, TESTNET_API_URL
@@ -148,7 +148,7 @@ class OfficialMetadataClient:
             raise DiscoveryFailure("NETWORK_MISMATCH")
         self.endpoint = official
 
-    def __call__(self, method: Literal["perpDexs", "meta", "spotMeta"], dex: str, deadline: float):
+    def __call__(self, method: Literal["perpDexs", "meta", "spotMeta", "metaAndAssetCtxs"], dex: str, deadline: float):
         return self._public_request(deadline, lambda info: self._metadata(info, method, dex))
 
     @staticmethod
@@ -157,6 +157,9 @@ class OfficialMetadataClient:
             return info.perp_dexs()
         if method == "meta":
             return info.meta(dex=dex)
+        if method == "metaAndAssetCtxs":
+            # SDK 0.24 omits dex on this method. Scope the public payload explicitly.
+            return info.post("/info", {"type": method, "dex": dex})
         if method == "spotMeta" and dex == "":
             return info.spot_meta()
         raise DiscoveryFailure("UNSUPPORTED_METADATA")
