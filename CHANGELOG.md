@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.6A–E research experience
+
+- Add Market Explorer for validated Core and HIP-3 listing metadata, searchable and paginated with a fingerprint-bound handoff into Generalized PAPER.
+- Add Starter guidance, Pro navigation and Institutional portfolio and evidence links. Preserve the existing routes, nine agents, shared PAPER workflow and operational authority.
+- Record Chromium workflows, responsive screenshots and frontend regressions in the [Phase 18.6 implementation acceptance](docs/PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md).
+
 ## Unreleased — Phase 18.5E–F asset-aware AMM research and acceptance
 
 - Add opt-in asset-aware controls and result evidence to Simulation → Generalized PAPER. Standard PAPER remains the default.

@@ -324,12 +324,20 @@ function QuotePanel({ selection, paperRun, onQuote }: {
   </section>;
 }
 
-export function GeneralizedPaperAdvisory({ selection, proposal, paperRun, onAttachAdvisory, guided }: {
+export function GeneralizedPaperAdvisory({ selection, proposal, paperRun, onAttachAdvisory, guided, catalogCurrent }: {
   guided: boolean;
+  catalogCurrent: boolean;
   selection: AdvisorySelection; proposal: PaperProposal | null; paperRun: GeneralizedPaperResult | null;
   onAttachAdvisory?: (snapshot: AdvisoryResponse) => void;
 }) {
   const [quote, setQuote] = useState<AdvisoryRequest['quote']>();
+  if (!catalogCurrent) return <section className="paperAdvisory" aria-labelledby="paper-advisory">
+    <h2 id="paper-advisory">Research advisories</h2>
+    <section aria-labelledby="paper-advisory-quote">
+      <h3 id="paper-advisory-quote">Quote Economics</h3>
+      <p role="status">Advisory evidence expired with the discovery catalog. Refresh discovery before requesting new evidence.</p>
+    </section>
+  </section>;
   return <section className="paperAdvisory" aria-labelledby="paper-advisory">
     <h2 id="paper-advisory">Research advisories</h2>
     <EligibilityPanel key={JSON.stringify(quote ?? null)} selection={selection} proposal={proposal}

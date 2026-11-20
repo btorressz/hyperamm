@@ -137,7 +137,7 @@ export function GeneralizedPaper({ scenarios, resultsOnly }: {
       reset();
       setAssetAdvisory(null);
       setExpiredCatalogDeadline(catalogDeadline);
-      setError('Discovery and PAPER eligibility expired. Refresh discovery and check eligibility again.');
+      setError('Discovery evidence expired. PAPER eligibility expired. Refresh discovery and check again.');
     }, Math.max(0, catalogDeadline - Date.now()));
     return () => window.clearTimeout(timer);
   }, [catalogDeadline, catalogFingerprint]);
@@ -443,9 +443,9 @@ export function GeneralizedPaper({ scenarios, resultsOnly }: {
         {guided && !visibleResult && <p>Complete an eligible simulation to review hypothetical P&amp;L, fees, funding, inventory and risk.</p>}
         {visibleResult && <PaperResult result={visibleResult} guided={guided && !advanced} />}
         {guided && visibleResult && <p>Use Market Eligibility to see the evidence behind a suitability finding. Quote Economics evaluates the costs behind a retained simulated quote.</p>}
-        {selection && catalogCurrent && !isFetching && !busy && <div hidden={guided && !advanced && !visibleResult}><GeneralizedPaperAdvisory
+        {selection && !isFetching && !busy && <div hidden={guided && !advanced && !visibleResult}><GeneralizedPaperAdvisory
           key={JSON.stringify([market, catalogFingerprint, financialGeneration, advisoryEpoch, visibleResult?.advisory_receipt])}
-          selection={selection} proposal={proposal} paperRun={visibleResult} guided={guided && !advanced}
+          selection={selection} proposal={proposal} paperRun={visibleResult} guided={guided && !advanced} catalogCurrent={catalogCurrent}
           onAttachAdvisory={assetEnabled && assetSelectionCurrent ? snapshot => {
             reset();
             setAssetAdvisory(snapshot);

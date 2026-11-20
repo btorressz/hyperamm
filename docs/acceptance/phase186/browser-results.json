@@ -1,0 +1,228 @@
+{
+  "status": "PASS",
+  "source": "Local DEMO terminal and deterministic discovery fixtures. PAPER uses the real local worker.",
+  "workflows": [
+    "Core, HIP-3, symbol and DEX search, filters, missing observations, delisting and qualified details",
+    "Retained stale metadata disables launch, and network refresh replaces qualified identity",
+    "2,006 records remain searchable with 12 cards mounted per page and recover on refresh",
+    "Starter eligibility, rejection and genuine worker outcome, with one run across three mode changes and Results",
+    "Pro provides both AMMs and links to supervisory, advisory, replay, comparison and asset-aware research",
+    "Institutional portfolio, stress, provenance, risk, audit and accounting routes, with legacy refresh and history",
+    "Keyboard mode select, mobile drawer return focus and actual Chromium 200% browser zoom"
+  ],
+  "viewports": [
+    {
+      "workspace": "market-explorer",
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "market-explorer",
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "market-explorer",
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "market-explorer",
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "market-explorer",
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "starter",
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "starter",
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "starter",
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "starter",
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "starter",
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "simulation-advanced",
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "simulation-advanced",
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "simulation-advanced",
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "simulation-advanced",
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "simulation-advanced",
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "pro",
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "pro",
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "pro",
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "pro",
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "pro",
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "institutional",
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "institutional",
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "institutional",
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "institutional",
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "institutional",
+      "viewport": 1920,
+      "content": 1920
+    }
+  ],
+  "screenshots": [
+    "market-explorer-390.png",
+    "market-explorer-1440.png",
+    "starter-390.png",
+    "starter-1440.png",
+    "simulation-advanced-390.png",
+    "simulation-advanced-1440.png",
+    "agents-1440.png",
+    "pro-390.png",
+    "pro-1440.png",
+    "institutional-390.png",
+    "institutional-1440.png"
+  ],
+  "axe": [
+    {
+      "workspace": "market-explorer",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "market-explorer",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "starter",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "starter",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "simulation-advanced",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "simulation-advanced",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "pro",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "pro",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "institutional",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "institutional",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    }
+  ],
+  "page_errors": [],
+  "writes": [
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/market-universe/advisory"
+  ],
+  "browser": "Chrome/151.0.7922.173",
+  "zoom_200": {
+    "width": 720,
+    "document": 720,
+    "dpr": 2
+  }
+}
