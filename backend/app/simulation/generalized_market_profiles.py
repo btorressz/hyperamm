@@ -371,17 +371,16 @@ class PreparedScenario:
     simulation: SimulationConfig
 
 
-def _build_scenario(proposal, profile):
-    precision, reference = profile.sz_decimals, profile.simulated_reference_price
-    minimum = quantize_size(proposal.minimum_order_notional / reference, precision)
-    liquidity = quantize_size(proposal.minimum_order_notional * 12 / reference, precision)
-    soft = quantize_size(proposal.minimum_order_notional * 35 / reference, precision)
-    hard = quantize_size(proposal.minimum_order_notional * 70 / reference, precision)
+def baseline_strategy(market: str, precision: int, reference: Decimal, minimum_order_notional: Decimal) -> StrategyConfig:
+    minimum = quantize_size(minimum_order_notional / reference, precision)
+    liquidity = quantize_size(minimum_order_notional * 12 / reference, precision)
+    soft = quantize_size(minimum_order_notional * 35 / reference, precision)
+    hard = quantize_size(minimum_order_notional * 70 / reference, precision)
     if minimum <= 0 or not liquidity < soft < hard:
         raise GeneralizedPrecisionError("SIZE_UNREPRESENTABLE")
     quote_reserve = Decimal("300000")
-    strategy = StrategyConfig(
-        market=profile.market, size_precision=precision, levels_per_side=4,
+    return StrategyConfig(
+        market=market, size_precision=precision, levels_per_side=4,
         # Internal transforms use the finest allowed decimal grid. Executable
         # prices are rounded using their own magnitude before risk and matching.
         tick_size=Decimal(1).scaleb(precision - 6), virtual_quote_reserve=quote_reserve,
@@ -389,6 +388,12 @@ def _build_scenario(proposal, profile):
         total_liquidity=liquidity, soft_inventory_limit_base=soft, hard_inventory_limit_base=hard,
         size_tolerance=Decimal(1).scaleb(-precision) / 10,
     )
+
+
+def _build_scenario(proposal, profile):
+    precision, reference = profile.sz_decimals, profile.simulated_reference_price
+    strategy = baseline_strategy(profile.market, precision, reference, proposal.minimum_order_notional)
+    hard = strategy.hard_inventory_limit_base
     risk = RiskFirewallConfig(max_projected_long_base=hard, max_projected_short_base=hard)
     if proposal.asset_amm_policy is not None:
         strategy = apply_asset_research_policy(strategy, proposal.asset_amm_policy, metadata=profile.metadata)
@@ -457,6 +462,25 @@ def _preflight(prepared, profile, risk_model, *, minimum_order_notional=None):
                     raise ResearchRiskError("RISK_LEVERAGE_UNSUPPORTED")
                 if not opening_feasible(margin):
                     raise ResearchRiskError("RISK_CAPITAL_INSUFFICIENT")
+
+
+def advisory_rejection(policy, metadata, catalog_fingerprint, risk_fingerprint, evaluated_at, evidence):
+    if evidence is None:
+        return "ADVISORY_UNAVAILABLE"
+    snapshot, expiry = evidence
+    context = snapshot.context
+    if (snapshot.fingerprint() != policy.advisory_snapshot_fingerprint
+            or context.metadata != metadata or context.catalog_fingerprint != catalog_fingerprint
+            or context.evaluated_at > policy.declared_at
+            or context.risk_model_fingerprint not in (None, risk_fingerprint)):
+        return "ADVISORY_FINGERPRINT_MISMATCH"
+    if expiry <= evaluated_at:
+        return "ADVISORY_STALE"
+    try:
+        snapshot.validate_at(as_of=evaluated_at)
+    except ValueError:
+        return "ADVISORY_STALE"
+    return None
 
 
 def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
@@ -535,22 +559,11 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
         if policy.research_risk_fingerprint is not None and policy.research_risk_fingerprint != risk_fingerprint:
             return reject("RISK_FINGERPRINT_MISMATCH")
         if policy.advisory_snapshot_fingerprint is not None:
-            if advisory_evidence is None:
-                return reject("ADVISORY_UNAVAILABLE")
-            snapshot, expiry = advisory_evidence
-            context = snapshot.context
-            if (snapshot.fingerprint() != policy.advisory_snapshot_fingerprint
-                    or context.metadata != metadata or context.catalog_fingerprint != catalog_fingerprint
-                    or context.evaluated_at > policy.declared_at
-                    or context.risk_model_fingerprint not in (None, risk_fingerprint)):
-                return reject("ADVISORY_FINGERPRINT_MISMATCH")
-            if expiry <= evaluated_at:
-                return reject("ADVISORY_STALE")
-            try:
-                snapshot.validate_at(as_of=evaluated_at)
-            except ValueError:
-                return reject("ADVISORY_STALE")
-            valid_until = min(valid_until, expiry)
+            reason = advisory_rejection(policy, metadata, catalog_fingerprint, risk_fingerprint, evaluated_at,
+                                        advisory_evidence)
+            if reason is not None:
+                return reject(reason)
+            valid_until = min(valid_until, advisory_evidence[1])
         policy_fingerprint = draft.policy_fingerprint
     if expected is not None and expected.asset_policy_fingerprint != policy_fingerprint:
         return reject("ASSET_POLICY_FINGERPRINT_MISMATCH")

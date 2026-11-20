@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api/client';
-import { paperProfileVersion } from '../../types/generalizedPaper';
+import { assetPaperReasonText, paperProfileVersion } from '../../types/generalizedPaper';
+import type { AdvisoryResponse } from '../../types/advisory';
+import type { AssetAmmResearchPolicy, AssetControlInputs, AssetPolicyPreviewRequest } from '../../types/assetAmm';
 import type { GeneralizedPaperResult, PaperAdmission, PaperProposal } from '../../types/generalizedPaper';
+import { assetControlInput, assetMinimumNotional, assetReferenceIsValid } from '../../utils/assetAmm';
 import { paperAdmissionIsCurrent } from '../../utils/generalizedPaper';
 import { marketUniverseKey } from '../../utils/marketUniverse';
 import { buildRiskSettings, financialEvidenceIsCurrent } from '../../utils/marketRisk';
 import { accountingValue } from '../../utils/researchEvidence';
 import { Panel } from '../TerminalPrimitives';
 import { GeneralizedPaperAdvisory } from './GeneralizedPaperAdvisory';
+import { initialAssetDraft, PaperAssetConfiguration, PaperAssetEvidence } from './GeneralizedPaperAssetPolicy';
 import { initialRiskDraft, PaperFinancialEvidence, PaperRiskConfiguration, PaperRiskEvidence } from './GeneralizedPaperRisk';
 
 export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: string }[] }) {
@@ -21,6 +25,12 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
   const [price, setPrice] = useState('');
   const [scenario, setScenario] = useState('QUIET');
   const [funding, setFunding] = useState(false);
+  const [assetEnabled, setAssetEnabled] = useState(false);
+  const [assetDraft, setAssetDraft] = useState(initialAssetDraft);
+  const [assetPolicy, setAssetPolicy] = useState<AssetAmmResearchPolicy | null>(null);
+  const [assetAdvisory, setAssetAdvisory] = useState<AdvisoryResponse | null>(null);
+  const [assetRunStarted, setAssetRunStarted] = useState(false);
+  const [expiredCatalogDeadline, setExpiredCatalogDeadline] = useState(0);
   const [riskDraft, setRiskDraft] = useState(initialRiskDraft);
   const [admission, setAdmission] = useState<PaperAdmission | null>(null);
   const [result, setResult] = useState<GeneralizedPaperResult | null>(null);
@@ -58,6 +68,14 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
   const currentFinancial = financial !== undefined && !financialExpired;
   const financialGeneration = riskEnabled && financial
     ? `${financial.source_fingerprint ?? ''}:${financial.valid_until}:${financialExpired}` : '';
+  const catalogDeadline = assetEnabled && selection
+    ? Math.min(...records.map(item => Date.parse(item.observed_at))) + selection.max_age_seconds * 1000 : 0;
+  const assetSelectionCurrent = catalogDeadline > Date.now() && catalogDeadline !== expiredCatalogDeadline &&
+    discoveryDecision?.discovery_eligible === true;
+  const currentAssetAdvisory = assetEnabled && assetSelectionCurrent && assetAdvisory &&
+    assetAdvisory.snapshot.context.catalog_fingerprint === catalogFingerprint &&
+    assetAdvisory.snapshot.context.metadata_fingerprint === discoveryDecision?.metadata_fingerprint &&
+    Date.now() < Date.parse(assetAdvisory.valid_until) ? assetAdvisory : null;
 
   function reset() {
     setAdvisoryEpoch(epoch => epoch + 1);
@@ -66,6 +84,8 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     setWorking(null);
     setAdmission(null);
     setResult(null);
+    setAssetPolicy(null);
+    setAssetRunStarted(false);
     setError('');
     setExpired(false);
   }
@@ -73,12 +93,35 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
   useEffect(() => () => pending.current?.abort(), []);
   useEffect(() => {
     reset();
-  }, [catalogFingerprint, catalogNetwork, availability, discoveryFailed, financialGeneration]);
+    setAssetAdvisory(null);
+  }, [catalogFingerprint, catalogNetwork, availability, discoveryFailed]);
+  useEffect(() => {
+    reset();
+  }, [financialGeneration]);
+  useEffect(() => {
+    if (!catalogDeadline) return;
+    const timer = window.setTimeout(() => {
+      reset();
+      setAssetAdvisory(null);
+      setExpiredCatalogDeadline(catalogDeadline);
+      setError('Discovery evidence expired. Refresh discovery and check eligibility again.');
+    }, Math.max(0, catalogDeadline - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [catalogDeadline, catalogFingerprint]);
+  useEffect(() => {
+    if (!assetAdvisory) return;
+    const timer = window.setTimeout(() => {
+      reset();
+      setAssetAdvisory(null);
+      setError('Advisory evidence expired. Check eligibility again.');
+    }, Math.max(0, Date.parse(assetAdvisory.valid_until) - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [assetAdvisory]);
   useEffect(() => {
     if (admission?.status !== 'ELIGIBLE') return;
     const timer = window.setTimeout(() => {
       setExpired(true);
-      if (admission.risk_model) {
+      if (admission.risk_model || admission.binding.asset_policy_fingerprint) {
         pending.current?.abort();
         pending.current = null;
         setWorking(null);
@@ -105,12 +148,55 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
       riskError = e instanceof Error ? e.message : 'Check the research risk settings.';
     }
   }
-  const proposal: PaperProposal | null = record && price.trim() && !riskError && scenarios.some(item => item.name === scenario) ? {
+  const baseProposal: PaperProposal | null = record && price.trim() && !riskError && scenarios.some(item => item.name === scenario) ? {
     profile_version: paperProfileVersion, identity: record.identity, simulated_reference_price: price.trim(),
     scenario, frames: 40, trace_max_points: 40,
     economics: { model: 'HYPOTHETICAL_LINEAR', funding_interval_seconds: funding ? 1 : null },
     ...(riskSettings ? { research_risk: riskSettings } : {}),
   } : null;
+  let assetError = '';
+  let defaultRequest: AssetPolicyPreviewRequest | undefined;
+  let assetRequest: AssetPolicyPreviewRequest | undefined;
+  if (assetEnabled) {
+    try {
+      const minimum = assetMinimumNotional(assetDraft.minimum.trim());
+      const reference = price.trim();
+      if (reference && !assetReferenceIsValid(reference))
+        throw new Error('Enter a positive exact synthetic reference price up to 10000000, with up to 12 decimal places.');
+      if (selection && assetSelectionCurrent && reference) {
+        defaultRequest = {
+          profile_version: paperProfileVersion, identity: selection.metadata.identity,
+          catalog_fingerprint: selection.catalog_fingerprint, simulated_reference_price: reference,
+          minimum_order_notional: minimum, family: 'UNKNOWN',
+        };
+        const controls = Object.fromEntries(Object.entries(assetDraft.overrides).map(([key, value]) =>
+          [key, assetControlInput(key as keyof AssetControlInputs, value.trim())]));
+        assetRequest = {
+          ...defaultRequest, family: assetDraft.family, controls,
+          ...(riskSettings ? { research_risk: riskSettings } : {}),
+          ...(currentAssetAdvisory ? { advisory_snapshot_fingerprint: currentAssetAdvisory.snapshot_fingerprint } : {}),
+        };
+      }
+    } catch (e) {
+      assetError = e instanceof Error ? e.message : 'Check the AMM research settings.';
+    }
+  }
+  const defaults = useQuery({
+    queryKey: ['generalized-paper-asset-defaults', defaultRequest],
+    queryFn: ({ signal }) => {
+      if (!selection || !defaultRequest) throw new Error('Select a market and enter a synthetic reference price.');
+      return api.assetPolicyPreview(defaultRequest, selection, signal);
+    },
+    enabled: defaultRequest !== undefined && !isFetching,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    gcTime: 0,
+  });
+  const proposal = !assetEnabled ? baseProposal :
+    baseProposal && assetPolicy && assetRequest ? {
+      ...baseProposal, minimum_order_notional: assetRequest.minimum_order_notional, asset_amm_policy: assetPolicy,
+    } : null;
   const financialMatches = (evidence: PaperAdmission) =>
     !riskEnabled || evidence.status !== 'ELIGIBLE' || !currentFinancial ||
     (evidence.risk_model?.source_fingerprint ?? null) === financial?.source_fingerprint;
@@ -119,35 +205,48 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     admission.binding.metadata_fingerprint === discoveryDecision?.metadata_fingerprint &&
     admission.identity?.network === catalogNetwork && financialMatches(admission);
   const financialPending = riskEnabled && financialQuery.isFetching;
-  const ready = catalogMatches && record?.listed === true &&
+  const ready = catalogMatches && record?.listed === true && (!assetEnabled ||
+    (assetSelectionCurrent && !!assetPolicy && !assetRunStarted && (!assetAdvisory || !!currentAssetAdvisory))) &&
     !isFetching && !financialPending && !expired && paperAdmissionIsCurrent(admission);
 
   async function submit(run: boolean) {
-    if (pending.current || !proposal || isFetching || financialPending ||
+    if (pending.current || !baseProposal || isFetching || financialPending ||
+        (assetEnabled && (!assetRequest || !selection || !assetSelectionCurrent || (!!assetAdvisory && !currentAssetAdvisory))) ||
         (run && (!ready || !paperAdmissionIsCurrent(admission) || admission?.status !== 'ELIGIBLE'))) return;
-    if (proposal.research_risk?.mode === 'SOURCE_CONSTRAINED' && !financialEvidenceIsCurrent(financial)) return;
+    if (baseProposal.research_risk?.mode === 'SOURCE_CONSTRAINED' && !financialEvidenceIsCurrent(financial)) return;
     if (!run) reset();
-    else setAdvisoryEpoch(epoch => epoch + 1);
+    else {
+      setAdvisoryEpoch(epoch => epoch + 1);
+      if (assetEnabled) setAssetRunStarted(true);
+    }
     const controller = new AbortController();
     pending.current = controller;
     setWorking(run ? 'running' : 'checking');
     setResult(null);
     setError('');
     try {
+      let submitted = run ? proposal : baseProposal;
+      if (!run && assetRequest && selection) {
+        const draft = await api.assetPolicyPreview(assetRequest, selection, controller.signal);
+        if (controller.signal.aborted) return;
+        submitted = { ...baseProposal, minimum_order_notional: assetRequest.minimum_order_notional, asset_amm_policy: draft.policy };
+      }
+      if (!submitted) return;
       const evidence = run && admission?.status === 'ELIGIBLE'
-        ? await api.runGeneralizedPaper(proposal, admission.binding, controller.signal)
-        : await api.paperEligibility(proposal, controller.signal);
+        ? await api.runGeneralizedPaper(submitted, admission.binding, controller.signal)
+        : await api.paperEligibility(submitted, controller.signal);
       if (controller.signal.aborted) return;
       const decision = 'status' in evidence ? evidence : evidence.admission;
       if (decision.status === 'ELIGIBLE' && (decision.binding.catalog_fingerprint !== catalogFingerprint ||
           decision.binding.metadata_fingerprint !== discoveryDecision?.metadata_fingerprint || !financialMatches(decision)))
         throw new Error('Discovery or financial evidence changed. Refresh discovery and check eligibility again.');
-      if (riskEnabled && !('status' in evidence) && !paperAdmissionIsCurrent(decision)) {
+      if ((riskEnabled || assetEnabled) && !('status' in evidence) && !paperAdmissionIsCurrent(decision)) {
         setExpired(true);
         return;
       }
       if ('status' in evidence) {
         setAdmission(evidence);
+        setAssetPolicy(evidence.status === 'ELIGIBLE' ? submitted.asset_amm_policy ?? null : null);
         setResult(null);
       } else {
         setResult(evidence);
@@ -155,6 +254,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     } catch (e) {
       if (!controller.signal.aborted) {
         setAdmission(null);
+        setAssetPolicy(null);
         setResult(null);
         setError(e instanceof Error ? e.message : 'The local PAPER request failed.');
       }
@@ -166,7 +266,8 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
     }
   }
 
-  const visibleResult = result && catalogMatches && (!riskEnabled || (!expired && paperAdmissionIsCurrent(admission)))
+  const visibleResult = result && catalogMatches && ((!riskEnabled && !assetEnabled) ||
+    (!expired && paperAdmissionIsCurrent(admission) && (!assetEnabled || assetSelectionCurrent)))
     ? result : null;
 
   return <Panel title="Generalized PAPER research">
@@ -177,6 +278,7 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
           <select value={record ? market : ''} disabled={busy || records.length === 0}
             onChange={e => {
               reset();
+              setAssetAdvisory(null);
               setMarket(e.target.value);
               setRiskDraft(draft => ({ ...draft, marginMode: 'ISOLATED', rate: '' }));
             }}>
@@ -226,11 +328,28 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
         <label><input type="checkbox" checked={funding} disabled={busy} onChange={e => { setFunding(e.target.checked); reset(); }} />
           Apply hypothetical funding at each one-second interval
         </label>
+        <label>PAPER research mode
+          <select value={assetEnabled ? 'asset' : 'standard'} onChange={e => {
+            reset();
+            setAssetAdvisory(null);
+            setAssetDraft(initialAssetDraft);
+            setAssetEnabled(e.target.value === 'asset');
+          }}>
+            <option value="standard">Standard PAPER</option>
+            <option value="asset">Asset-aware PAPER</option>
+          </select>
+        </label>
       </div>
+      {assetEnabled && <PaperAssetConfiguration draft={assetDraft} record={record}
+        defaults={defaults.data?.policy.controls} loading={defaults.isFetching}
+        error={assetError || defaults.error?.message || ''} advisory={currentAssetAdvisory?.snapshot_fingerprint}
+        onChange={next => { reset(); setAssetDraft(next); }}
+        onRemoveAdvisory={() => { reset(); setAssetAdvisory(null); }} />}
       <PaperRiskConfiguration draft={riskDraft} evidence={financial} current={currentFinancial}
         error={riskError} onChange={next => { reset(); setRiskDraft(next); }} />
       <div className="researchFilters">
-        <button type="button" disabled={!proposal || busy || isFetching || financialPending || discoveryFailed} onClick={() => void submit(false)}>Check PAPER eligibility</button>
+        <button type="button" disabled={!baseProposal || (assetEnabled && (!assetRequest || !assetSelectionCurrent)) ||
+          busy || isFetching || financialPending || discoveryFailed} onClick={() => void submit(false)}>Check PAPER eligibility</button>
         <button type="button" disabled={!proposal || !ready || busy} onClick={() => void submit(true)}>Run local PAPER</button>
       </div>
       {working && <p role="status">{working === 'running' ? 'Running local PAPER simulation…' : 'Checking PAPER eligibility…'}</p>}
@@ -241,13 +360,18 @@ export function GeneralizedPaper({ scenarios }: { scenarios: readonly { name: st
             expired || !paperAdmissionIsCurrent(admission)
               ? 'PAPER eligibility expired. Check eligibility again.' : admission.explanation}</p>
           {ready && <p>Eligibility valid until <time dateTime={admission.valid_until}>{admission.valid_until}</time></p>}
-        </> : <p>{admission.explanation}</p>}
+          {assetRunStarted && !expired && <p>Check eligibility again to start another asset-aware run.</p>}
+        </> : <p>{assetPaperReasonText[admission.reason] ?? admission.explanation}</p>}
         {admission.status !== 'ELIGIBLE' && <p><code>{admission.reason}</code> · {admission.checks.join(', ').replaceAll('_', ' ')}</p>}
       </div>}
       {visibleResult && <PaperResult result={visibleResult} />}
       {selection && !isFetching && !busy && <GeneralizedPaperAdvisory
         key={JSON.stringify([market, catalogFingerprint, financialGeneration, advisoryEpoch, visibleResult?.advisory_receipt])}
-        selection={selection} proposal={proposal} paperRun={visibleResult} />}
+        selection={selection} proposal={proposal} paperRun={visibleResult}
+        onAttachAdvisory={assetEnabled && assetSelectionCurrent ? snapshot => {
+          reset();
+          setAssetAdvisory(snapshot);
+        } : undefined} />}
     </div>
   </Panel>;
 }
@@ -269,6 +393,7 @@ function PaperResult({ result }: { result: GeneralizedPaperResult }) {
   ];
   return <section aria-label="PAPER result evidence">
     <p role="status">Simulated PAPER result for {profile.exchange_coin} · {metrics.frame_count} frames · {metrics.fill_count} fills</p>
+    <p>{result.proposal.asset_amm_policy ? 'Asset-aware PAPER' : 'Standard PAPER'} · {result.proposal.scenario.replaceAll('_', ' ')}</p>
     <p>Synthetic reference input {accountingValue(profile.simulated_reference_price)} · Synthetic top depth {accountingValue(profile.synthetic_top_depth_quote)} hypothetical quote units.</p>
     <p>Modeled maker fee {accountingValue(economics.maker_fee_bps)} bps · Modeled taker fee {accountingValue(economics.taker_fee_bps)} bps.
       {' '}{economics.funding_interval_seconds === null ? 'Hypothetical funding disabled.' :
@@ -282,6 +407,7 @@ function PaperResult({ result }: { result: GeneralizedPaperResult }) {
     {result.research_risk && result.admission.risk_model && result.admission.risk_source_status &&
       <PaperRiskEvidence risk={result.research_risk} model={result.admission.risk_model}
         sourceStatus={result.admission.risk_source_status} />}
+    <PaperAssetEvidence result={result} />
     <details>
       <summary>Result fingerprint and provenance</summary>
       <p>Simulation started at <time dateTime={result.started_at}>{result.started_at}</time> with current exchange metadata.

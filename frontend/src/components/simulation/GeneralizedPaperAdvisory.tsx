@@ -108,9 +108,10 @@ function Metrics({ title, rows }: { title: string; rows: readonly [string, React
   </table>;
 }
 
-function EligibilityPanel({ selection, proposal, paperRun, quote }: {
+function EligibilityPanel({ selection, proposal, paperRun, quote, onAttachAdvisory }: {
   selection: AdvisorySelection; proposal: PaperProposal | null; paperRun: GeneralizedPaperResult | null;
   quote?: AdvisoryRequest['quote'];
+  onAttachAdvisory?: (snapshot: AdvisoryResponse) => void;
 }) {
   const [operation, setOperation] = useState<AdvisoryOperation>('DISCOVERY');
   const query = useAdvisory(selection, 'eligibility', paperRun ? {
@@ -143,6 +144,10 @@ function EligibilityPanel({ selection, proposal, paperRun, quote }: {
       <p>{operationNames[finding.operation]} suitability · <strong>{label(finding.suitability)}</strong></p>
       <Evidence result={finding} snapshot={query.data} />
       <Issues snapshot={query.data} />
+      {onAttachAdvisory && finding.operation === 'DISCOVERY' && finding.status === 'READY' && <button
+        type="button" onClick={() => {
+          if (query.data && Date.now() < Date.parse(query.data.valid_until)) onAttachAdvisory(query.data);
+        }}>Attach discovery advisory to asset research</button>}
     </>}
   </section>;
 }
@@ -319,14 +324,15 @@ function QuotePanel({ selection, paperRun, onQuote }: {
   </section>;
 }
 
-export function GeneralizedPaperAdvisory({ selection, proposal, paperRun }: {
+export function GeneralizedPaperAdvisory({ selection, proposal, paperRun, onAttachAdvisory }: {
   selection: AdvisorySelection; proposal: PaperProposal | null; paperRun: GeneralizedPaperResult | null;
+  onAttachAdvisory?: (snapshot: AdvisoryResponse) => void;
 }) {
   const [quote, setQuote] = useState<AdvisoryRequest['quote']>();
   return <section className="paperAdvisory" aria-labelledby="paper-advisory">
     <h2 id="paper-advisory">Research advisories</h2>
     <EligibilityPanel key={JSON.stringify(quote ?? null)} selection={selection} proposal={proposal}
-      paperRun={paperRun} quote={quote} />
+      paperRun={paperRun} quote={quote} onAttachAdvisory={onAttachAdvisory} />
     <section aria-labelledby="paper-advisory-funding">
       <h3 id="paper-advisory-funding">Funding/Basis</h3>
       <FundingEvidence mode="OBSERVED" selection={selection} paperRun={null} />

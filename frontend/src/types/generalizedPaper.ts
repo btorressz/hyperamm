@@ -1,5 +1,6 @@
 import type { MarketUniverseEligibility, MarketUniverseIdentity, MarketUniverseMetadata } from './marketUniverse';
 import type { FinancialObservation, FinancialSourceStatus, PaperRiskResult, ResearchRiskModel, ResearchRiskSettings } from './marketRisk';
+import type { AssetAmmResearchPolicy } from './assetAmm';
 
 export const paperProfileVersion = 'phase182-v1';
 
@@ -21,6 +22,7 @@ export interface PaperProposal {
   trace_max_points: number;
   economics: HypotheticalEconomics;
   research_risk?: ResearchRiskSettings;
+  asset_amm_policy?: AssetAmmResearchPolicy;
 }
 
 export interface PaperBinding {
@@ -29,6 +31,7 @@ export interface PaperBinding {
   profile_fingerprint: string;
   configuration_fingerprint: string;
   research_risk_fingerprint?: string;
+  asset_policy_fingerprint?: string;
 }
 
 export const paperEvidenceBoundary = {
@@ -90,8 +93,21 @@ export const paperReasons = {
   RISK_LEVERAGE_UNSUPPORTED: 'research_leverage',
   RISK_CAPITAL_INSUFFICIENT: 'research_capital',
   RISK_EXPOSURE_INVALID: 'research_exposure',
+  ASSET_POLICY_FINGERPRINT_MISMATCH: 'asset_policy_fingerprint',
+  ADVISORY_FINGERPRINT_MISMATCH: 'advisory_snapshot_fingerprint',
+  ADVISORY_UNAVAILABLE: 'advisory_snapshot_fingerprint',
+  ADVISORY_STALE: 'advisory_snapshot_fingerprint',
+  ORDER_NOTIONAL_TOO_SMALL: 'minimum_order_notional',
 } as const;
 export type PaperReason = keyof typeof paperReasons;
+
+export const assetPaperReasonText: Partial<Record<PaperReason, string>> = {
+  ASSET_POLICY_FINGERPRINT_MISMATCH: 'The asset research policy changed. Check eligibility again.',
+  ADVISORY_FINGERPRINT_MISMATCH: 'The advisory snapshot does not match this research policy and market.',
+  ADVISORY_UNAVAILABLE: 'The server has no retained advisory snapshot for this fingerprint.',
+  ADVISORY_STALE: 'The advisory snapshot expired. Refresh the advisory evidence.',
+  ORDER_NOTIONAL_TOO_SMALL: 'A normalized quote is below the selected minimum order notional.',
+};
 
 interface PaperDecisionEvidence {
   profile_version: typeof paperProfileVersion;

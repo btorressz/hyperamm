@@ -1,7 +1,8 @@
 """Chromium against the real API and worker with read-only metadata fixtures."""
 import argparse
 import asyncio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
+from datetime import datetime, timedelta
 import os
 from pathlib import Path
 import re
@@ -73,6 +74,27 @@ def fixture_app():
     return app
 
 
+async def testnet_catalog(route):
+    response = await route.fetch()
+    wire = await response.json()
+    wire["network"] = "TESTNET"
+    wire["catalog_fingerprint"] = "9" * 64
+    for row in (*wire["catalog"]["records"], *wire["eligibility"]):
+        row["identity"]["network"] = "TESTNET"
+    await route.fulfill(response=response, json=wire)
+
+
+async def wait_for_fixture(page):
+    async with asyncio.timeout(20):
+        while True:
+            try:
+                if (await page.request.get("http://127.0.0.1:5173/api/v1/health", timeout=1000)).ok:
+                    return
+            except Exception:
+                pass
+            await asyncio.sleep(0.15)
+
+
 async def browser_check(chromium):
     from playwright.async_api import async_playwright, expect
 
@@ -84,14 +106,7 @@ async def browser_check(chromium):
             page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.on("request", lambda request: writes.append(request.url)
                     if request.method in {"POST", "PUT", "PATCH", "DELETE"} else None)
-            async with asyncio.timeout(20):
-                while True:
-                    try:
-                        if (await page.request.get("http://127.0.0.1:5173/api/v1/health", timeout=1000)).ok:
-                            break
-                    except Exception:
-                        pass
-                    await asyncio.sleep(0.15)
+            await wait_for_fixture(page)
             await page.goto("http://127.0.0.1:5173/#/simulation")
             tabs = page.get_by_role("navigation", name="Simulation research workspaces")
             native_market = page.get_by_role("combobox", name="Research Perpetual Market")
@@ -181,15 +196,6 @@ async def browser_check(chromium):
             await expect(result).to_have_count(0)
             await expect(run).to_be_disabled()
             await expect(check).to_be_enabled()
-
-            async def testnet_catalog(route):
-                response = await route.fetch()
-                wire = await response.json()
-                wire["network"] = "TESTNET"
-                wire["catalog_fingerprint"] = "9" * 64
-                for row in (*wire["catalog"]["records"], *wire["eligibility"]):
-                    row["identity"]["network"] = "TESTNET"
-                await route.fulfill(response=response, json=wire)
 
             await check.click()
             await expect(run).to_be_enabled()
@@ -624,12 +630,299 @@ async def browser_advisory_check(chromium, axe):
             await browser.close()
 
 
+async def browser_asset_check(chromium, axe):
+    from playwright.async_api import async_playwright, expect
+
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch(executable_path=chromium, args=["--no-sandbox"])
+        try:
+            page = await browser.new_page(viewport={"width": 1440, "height": 900})
+            await page.clock.install()
+            errors, writes = [], []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on("request", lambda request: writes.append(request)
+                    if request.method in {"POST", "PUT", "PATCH", "DELETE"} else None)
+            await wait_for_fixture(page)
+            await page.goto("http://127.0.0.1:5173/#/simulation")
+            await page.get_by_role("button", name="Generalized PAPER").click()
+            panel = page.get_by_role("region", name="Generalized PAPER research")
+            market = panel.get_by_role("combobox", name="Discovered perpetual")
+            price = panel.get_by_role("textbox", name="Synthetic reference price")
+            mode = panel.get_by_role("combobox", name="PAPER research mode")
+            risk = panel.get_by_role("combobox", name="Risk mode", exact=True)
+            check = panel.get_by_role("button", name="Check PAPER eligibility")
+            run = panel.get_by_role("button", name="Run local PAPER")
+            result = panel.get_by_role("region", name="PAPER result evidence")
+            config = panel.get_by_role("group", name="Asset-aware AMM configuration")
+            family = config.get_by_role("combobox", name="Research asset family")
+            model = config.get_by_role("combobox", name="AMM model")
+            spread = config.get_by_role("textbox", name="Maximum quote distance (bps)")
+            levels = config.get_by_role("textbox", name="Levels per side")
+            minimum = config.get_by_role("textbox", name="Minimum research order notional", exact=False)
+            liquidity = config.get_by_role("textbox", name="Total research liquidity", exact=False)
+            base = config.get_by_role("textbox", name="Base order size", exact=False)
+            core, hip = "HYPERLIQUID:MAINNET:CORE_PERP::BTC", "HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD"
+            eligibility = "**/generalized-paper/eligibility"
+            preview = "**/generalized-paper/asset-policy/preview"
+
+            await expect(mode).to_have_value("standard")
+            await expect(config).to_have_count(0)
+            await market.select_option(core)
+            await price.fill("100")
+            await check.click()
+            await expect(run).to_be_enabled()
+            assert len(writes) == 1 and writes[-1].url.endswith("/eligibility")
+            assert "asset_amm_policy" not in writes[-1].post_data_json
+            await mode.select_option("asset")
+            await expect(run).to_be_disabled()
+            await expect(levels).to_have_value("4")
+            await expect(model).to_have_value("CONSTANT_PRODUCT")
+            await expect(family.locator("option")).to_have_count(9)
+            await expect(family).to_have_value("UNKNOWN")
+            saved = await spread.input_value()
+            await family.select_option("EQUITY")
+            await expect(spread).to_have_value(saved)
+            await expect(config.get_by_text("operator-declared research label", exact=False)).to_be_visible()
+            await expect(config.get_by_text("szDecimals", exact=False)).to_be_visible()
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(result.get_by_text("Asset-aware PAPER", exact=False)).to_be_visible()
+            await expect(run).to_be_disabled()
+            await result.get_by_text("Asset-aware AMM configuration and provenance").click()
+            for label in ("Equity", "Constant Product", "Research policy fingerprint", "Mapped strategy fingerprint",
+                          "Ending simulated equity", "Funding in hypothetical quote units"):
+                await expect(result.get_by_text(label, exact=True)).to_be_visible()
+            await expect(result.get_by_text("guarantee of profit", exact=False)).to_be_visible()
+            print("PASS default standard payload, explicit family, Core constant product and bound result", flush=True)
+
+            await market.select_option(hip)
+            await model.select_option("CONCENTRATED")
+            await minimum.fill("20")
+            await levels.fill("2")
+            await spread.fill("120")
+            advanced = config.get_by_text("Advanced AMM Research Settings", exact=True)
+            await advanced.click()
+            await config.get_by_role("textbox", name="Target inventory", exact=False).fill("-0.01")
+            await config.get_by_role("textbox", name="Volatility spread strength", exact=False).fill("1.4")
+            await config.get_by_role("textbox", name="Maximum funding reference shift", exact=False).fill("7")
+            await check.click()
+            await expect(run).to_be_enabled()
+            await spread.fill("NaN")
+            await expect(config.get_by_role("alert")).to_contain_text("exact decimal")
+            await expect(check).to_be_disabled()
+            await expect(run).to_be_disabled()
+            await spread.fill("150")
+
+            received, release = asyncio.Event(), asyncio.Event()
+
+            async def delay_admission(route):
+                response = await route.fetch()
+                received.set()
+                await release.wait()
+                try:
+                    await route.fulfill(response=response)
+                except Exception:
+                    # Chromium may already have canceled the retired request.
+                    pass
+
+            await page.route(eligibility, delay_admission)
+            await check.click()
+            await asyncio.wait_for(received.wait(), 8)
+            await expect(panel.get_by_role("status").filter(has_text="Checking PAPER eligibility")).to_be_visible()
+            await family.select_option("COMMODITY")
+            release.set()
+            await page.unroute_all(behavior="wait")
+            await expect(run).to_be_disabled()
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(result.get_by_role("status")).to_contain_text("xyz:GOLD")
+            await result.get_by_text("Asset-aware AMM configuration and provenance").click()
+            await expect(result.get_by_text("Concentrated Liquidity", exact=True)).to_be_visible()
+            print("PASS HIP-3 concentrated and modified controls, invalid decimal and canceled delayed admission", flush=True)
+
+            await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:missing:GOLD")
+            await expect(result).to_have_count(0)
+            await expect(run).to_be_disabled()
+            await market.select_option(hip)
+            await risk.select_option("HYPOTHETICAL")
+            await panel.get_by_role("textbox", name="Research capital", exact=False).fill("10000")
+            await panel.get_by_role("textbox", name="Initial margin fraction").fill("0.2")
+            await panel.get_by_role("textbox", name="Maintenance margin fraction").fill("0.1")
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            modeled = result.get_by_role("region", name="Modeled research risk")
+            await expect(modeled.get_by_text("Hypothetical risk research", exact=False)).to_be_visible()
+            await risk.select_option("SOURCE_CONSTRAINED")
+            await panel.get_by_role("combobox", name="Research margin mode").select_option("NO_CROSS")
+            await panel.get_by_role("textbox", name="Research leverage (whole number)").fill("5")
+            await panel.get_by_role("textbox", name="Hypothetical valuation", exact=False).fill("1")
+            await check.click()
+            await expect(run).to_be_enabled()
+            await run.click()
+            await expect(modeled.get_by_text("DOCUMENTED_HYPERLIQUID_TIERS", exact=False)).to_be_visible()
+            print("PASS DEX switch and both existing modeled-risk workflows", flush=True)
+
+            await mode.select_option("standard")
+            await expect(config).to_have_count(0)
+            await expect(result).to_have_count(0)
+            await mode.select_option("asset")
+            await risk.select_option("OFF")
+            await market.select_option(core)
+            await expect(base).to_have_value(re.compile(r"^1(?:\.0+)?$"))
+            await levels.fill("1")
+            await liquidity.fill("1")
+            await check.click()
+            await expect(panel.get_by_text("ORDER_NOTIONAL_TOO_SMALL", exact=True)).to_be_visible()
+            await expect(run).to_be_disabled()
+
+            await advanced.click()
+            await config.get_by_role("button", name="Restore server AMM defaults").click()
+            observed = panel.get_by_role("region", name="Market Eligibility")
+            await expect(config.get_by_role("button", name="Remove advisory reference")).to_have_count(0)
+            await observed.get_by_role("button", name="Evaluate market eligibility").click()
+            await observed.get_by_role("button", name="Attach discovery advisory to asset research").click()
+            await expect(config.get_by_text("Attached advisory evidence", exact=False)).to_be_visible()
+            await check.click()
+            await expect(run).to_be_enabled()
+            request = next(request for request in reversed(writes) if request.url.endswith("/eligibility"))
+            assert request.post_data_json["asset_amm_policy"]["advisory_snapshot_fingerprint"]
+
+            async def evicted_advisory(route):
+                body = route.request.post_data_json
+                if "advisory_snapshot_fingerprint" in body:
+                    body["advisory_snapshot_fingerprint"] = "f" * 64
+                await route.fulfill(response=await route.fetch(post_data=body))
+
+            await page.route(preview, evicted_advisory)
+            await check.click()
+            await expect(panel.get_by_role("alert")).to_contain_text("no retained advisory snapshot")
+            await expect(run).to_be_disabled()
+            await page.unroute_all(behavior="wait")
+            await config.get_by_role("button", name="Remove advisory reference").click()
+            await expect(run).to_be_disabled()
+
+            async def shorten_advisory(route):
+                response = await route.fetch()
+                wire = await response.json()
+                expires = min(datetime.fromisoformat(wire["valid_until"]),
+                              datetime.fromisoformat(wire["evaluated_at"]) + timedelta(seconds=5))
+                wire["valid_until"] = expires.isoformat(timespec="microseconds").replace("+00:00", "Z")
+                await route.fulfill(response=response, json=wire)
+
+            await page.route("**/market-universe/advisory", shorten_advisory)
+            await observed.get_by_role("button", name="Evaluate market eligibility").click()
+            await observed.get_by_role("button", name="Attach discovery advisory to asset research").click()
+            await expect(config.get_by_text("Attached advisory evidence", exact=False)).to_be_visible()
+            await page.clock.fast_forward(6000)
+            await expect(panel.get_by_role("alert")).to_contain_text("Advisory evidence expired")
+            await expect(config.get_by_text("Attached advisory evidence", exact=False)).to_have_count(0)
+            await expect(run).to_be_disabled()
+            await page.unroute_all(behavior="wait")
+            print("PASS strict minimum notional, published advisory attachment, eviction and expiry", flush=True)
+
+            await risk.select_option("HYPOTHETICAL")
+            await panel.get_by_role("textbox", name="Research capital", exact=False).fill("650")
+            await panel.get_by_role("textbox", name="Initial margin fraction").fill("1")
+            await panel.get_by_role("textbox", name="Maintenance margin fraction").fill("1")
+            scenario = panel.get_by_role("combobox", name="PAPER scenario")
+            await scenario.select_option("HIGH_VOLATILITY")
+            await check.click()
+            await expect(run).to_be_enabled()
+            captured_frames = []
+
+            async def capture_halt(route):
+                response = await route.fetch()
+                captured_frames.extend((await response.json())["research_risk"]["frames"])
+                await route.fulfill(response=response)
+
+            await page.route("**/generalized-paper/run", capture_halt)
+            await run.click()
+            await expect(modeled.get_by_text(re.compile(r"Recorded states [^.]*HALT"))).to_be_visible()
+            halted = [frame for frame in captured_frames if frame["state"] == "HALT"]
+            assert halted and all(frame["authorized_quotes"] == 0 for frame in halted)
+            await page.unroute_all(behavior="wait")
+            await risk.select_option("OFF")
+            await scenario.select_option("QUIET")
+            print("PASS real asset-aware Risk Firewall HALT retires every affected quote", flush=True)
+
+            async def corrupt_preview(route):
+                response = await route.fetch()
+                wire = await response.json()
+                if response.ok:
+                    wire["policy"]["controls"]["amm_model"] = "MALFORMED"
+                await route.fulfill(response=response, json=wire)
+
+            await page.route(preview, corrupt_preview)
+            await check.click()
+            await expect(panel.get_by_role("alert")).to_contain_text("Invalid or unsupported asset AMM")
+            await expect(run).to_be_disabled()
+            await page.unroute_all(behavior="wait")
+            print("PASS unsupported strategy in a server draft fails closed", flush=True)
+
+            await page.set_viewport_size({"width": 390, "height": 844})
+            await mode.focus()
+            await page.keyboard.press("Tab")
+            await expect(family).to_be_focused()
+            tree = await config.aria_snapshot()
+            for label in ("Research asset family", "Maximum quote distance (bps)", "Volatility spread strength (dimensionless)"):
+                assert label in tree, tree
+            assert await config.evaluate("""el => el.scrollWidth <= el.clientWidth &&
+                [...el.querySelectorAll('input, select')].filter(item => item.offsetWidth > 0)
+                    .every(item => item.getBoundingClientRect().right <= el.getBoundingClientRect().right)""")
+            assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            assert not await panel.get_by_role("button", name=re.compile(r"Trade|Submit order|Execute live", re.I)).count()
+            if axe:
+                await page.add_script_tag(path=axe)
+                audits = await page.evaluate("""async () => {
+                    const result = await axe.run('#asset-amm-classification, fieldset:has(#asset-amm-classification)',
+                        {runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']}});
+                    return {version: axe.version, violations: result.violations, manual: result.incomplete.length};
+                }""")
+                assert not audits["violations"], audits
+                print(f"PASS asset AMM axe {audits['version']} WCAG A/AA scan, manual items {audits['manual']}", flush=True)
+            print("PASS narrow asset controls, keyboard order, status and accessible form names", flush=True)
+
+            await check.click()
+            await expect(run).to_be_enabled()
+            refresh = panel.get_by_role("button", name="Refresh discovery")
+            await page.route("**/market-universe", testnet_catalog)
+            await refresh.click()
+            await expect(panel.get_by_text("TESTNET metadata available.", exact=False)).to_be_visible()
+            await expect(market).to_have_value("")
+            await expect(result).to_have_count(0)
+            await expect(run).to_be_disabled()
+            await page.unroute_all(behavior="wait")
+            await refresh.click()
+            await expect(panel.get_by_text("MAINNET metadata available.", exact=False)).to_be_visible()
+            await market.select_option(core)
+            await check.click()
+            await expect(run).to_be_enabled()
+            print("PASS asset-aware admission retires when the configured network changes", flush=True)
+            await page.clock.fast_forward(61_000)
+            await expect(panel.get_by_text("Discovery evidence expired", exact=False)).to_be_visible()
+            await expect(run).to_be_disabled()
+            await expect(check).to_be_disabled()
+            await mode.select_option("standard")
+            await expect(config).to_have_count(0)
+            assert not errors, errors
+            assert all("/api/v1/generalized-paper/" in request.url or request.url.endswith("/market-universe/advisory")
+                       for request in writes), [request.url for request in writes]
+            print("PASS expiring discovery/admission and reset confine mutations to local research", flush=True)
+        finally:
+            await browser.close()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--python", required=True)
     parser.add_argument("--chromium", default="/usr/bin/chromium")
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--advisory-only", action="store_true")
+    checks = parser.add_mutually_exclusive_group()
+    checks.add_argument("--advisory-only", action="store_true")
+    checks.add_argument("--asset-only", action="store_true")
     parser.add_argument("--axe", type=Path)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -641,24 +934,34 @@ def main():
                            "--app-dir", str(ROOT / "frontend/tests"), "--host", "127.0.0.1", "--port", "8000"]),
         (ROOT / "frontend", ["node", "node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--strictPort"]),
     )
-    processes = []
-    try:
-        for (directory, command), name in zip(commands, ("backend", "vite"), strict=True):
-            with (args.output / f"{name}.log").open("w") as log:
-                processes.append(subprocess.Popen(command, cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT))
-        if not args.advisory_only:
-            asyncio.run(browser_check(args.chromium))
-            asyncio.run(browser_risk_check(args.chromium))
-        asyncio.run(browser_advisory_check(args.chromium, args.axe))
-    finally:
-        for process in reversed(processes):
-            if process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
+
+    @contextmanager
+    def serve_fixtures(log_prefix=""):
+        processes = []
+        try:
+            for (directory, command), name in zip(commands, ("backend", "vite"), strict=True):
+                with (args.output / f"{log_prefix}{name}.log").open("w") as log:
+                    processes.append(subprocess.Popen(command, cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT))
+            yield
+        finally:
+            for process in reversed(processes):
+                if process.poll() is None:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+
+    if not args.asset_only:
+        with serve_fixtures():
+            if not args.advisory_only:
+                asyncio.run(browser_check(args.chromium))
+                asyncio.run(browser_risk_check(args.chromium))
+            asyncio.run(browser_advisory_check(args.chromium, args.axe))
+    if not args.advisory_only:
+        with serve_fixtures("asset-" if not args.asset_only else ""):
+            asyncio.run(browser_asset_check(args.chromium, args.axe))
 
 
 if __name__ == "__main__":

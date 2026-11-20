@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.5E–F asset-aware AMM research and acceptance
+
+- Add opt-in asset-aware controls and result evidence to Simulation → Generalized PAPER. Standard PAPER remains the default.
+- Build versioned policy drafts from the active catalog and the existing Python strategy, and bind the same draft through eligibility and the local worker. Display declared family, market precision, strategy and policy fingerprints, and simulated financial outcomes.
+- Verify numerical and ledger reconciliation, authority boundaries, browser accessibility, public metadata and historical compatibility. [Phase 18.5 final acceptance](docs/PHASE18_5_FINAL_ACCEPTANCE.md)
+
 ## Unreleased — Phase 18.5B–D asset-aware Generalized PAPER
 
 - Map explicit research controls into the existing constant-product and concentrated strategies using qualified market precision and the existing inventory, volatility, book imbalance and perpetual-context policies.

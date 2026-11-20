@@ -1,29 +1,41 @@
 """Public perpetual metadata evidence and local PAPER research admission."""
 from datetime import datetime, timezone
+from decimal import Decimal, localcontext
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
-from pydantic import Field, ValidationError
+from pydantic import Field, StrictInt, StrictStr, ValidationError
+from pydantic_core import to_json
 
 from app.agents.advisory_coordinator import (
     MAX_ADVISORY_BYTES, RECEIPT_HEADER, AdvisoryRequest, AdvisoryResponse, AdvisoryUnavailable,
 )
 from app.agents.advisory_evidence import AdvisoryBindingError
+from app.amm.asset_policy import CONTROL_FIELDS
+from app.amm.asset_policy_contracts import (
+    AssetAmmPolicyAssessment, AssetAmmResearchControls, AssetAmmResearchPolicy,
+    AssetFamily, AssetResearchClassification, assess_asset_amm_policy,
+)
 from app.infrastructure.research import ResearchUnavailableError
+from app.market_data.live_models import Evidence
 from app.market_data.market_risk_metadata import MarketFinancialObservation, SourceEvidence, SourceStatus
 from app.market_data.market_universe_contracts import (
     CONTRACT_VERSION, InstrumentType, MarketInstrumentIdentity, Network, UtcDatetime,
 )
-from app.risk.market_risk_contracts import RiskFingerprint
-from app.risk.market_risk_engine import MODEL_VERSION, RiskReason, source_policy_rejection, supported_tier_denomination
+from app.risk.market_risk_contracts import RiskFinancialUnit, RiskFingerprint
+from app.risk.market_risk_engine import (
+    MODEL_VERSION, ResearchRiskError, ResearchRiskSettings, RiskReason, bind_research_model,
+    source_policy_rejection, supported_tier_denomination,
+)
 from app.simulation.executor import ResearchBusyError
 from app.simulation.generalized_market_profiles import (
-    GeneralizedPaperResult, MAX_RESPONSE_BYTES, PROFILE_VERSION, PaperAdmission, PaperProposal,
-    PaperRejected, PaperRunRequest, assess, decision,
+    DECIMAL_CONTEXT, GeneralizedPaperResult, MAX_RESPONSE_BYTES, PROFILE_VERSION, PaperAdmission, PaperProposal,
+    PaperRejected, PaperRunRequest, ResearchDecimal, advisory_rejection, assess, baseline_strategy, decision,
 )
 from app.market_data.market_universe_discovery import MarketUniverseResponse, RATE_LIMIT_BACKOFF, RESPONSE_VERSION
+from app.simulation.market_profiles import GeneralizedPrecisionError
 
 router = APIRouter(tags=["market-universe"])
 
@@ -160,24 +172,118 @@ paper_router = APIRouter(prefix="/generalized-paper", tags=["generalized-paper"]
 PAPER_DECISIONS = {status: {"model": PaperAdmission} for status in (409, 422, 503)}
 
 
-async def _admit(request: Request, proposal: PaperProposal, expected=None):
+async def _paper_catalog(request: Request, identity):
     source = request.app.state.market_universe_discovery
     catalog = await source.catalog()
-    if (catalog.schema_version != RESPONSE_VERSION or catalog.contract_version != CONTRACT_VERSION
-            or (catalog.catalog is not None and catalog.catalog.contract_version != CONTRACT_VERSION)):
-        return decision(proposal.identity, datetime.now(timezone.utc), "METADATA_UNAVAILABLE"), {}
+    supported = (catalog.schema_version == RESPONSE_VERSION and catalog.contract_version == CONTRACT_VERSION
+                 and (catalog.catalog is None or catalog.catalog.contract_version == CONTRACT_VERSION))
+    if not supported:
+        return source, catalog, None, None, False
     generation = (source.paper_generation(catalog.catalog_fingerprint)
                   if catalog.availability == "AVAILABLE" and catalog.catalog_fingerprint is not None else None)
+    records = catalog.catalog.records if catalog.catalog is not None else ()
+    metadata = next((record for record in records if record.identity == identity), None)
+    return source, catalog, generation, metadata, True
+
+
+def _published_advisory(request: Request, fingerprint: str):
+    coordinator = getattr(request.app.state, "advisory_coordinator", None)
+    return coordinator.resolve_snapshot(fingerprint) if coordinator is not None else None
+
+
+class AssetPolicyPreviewRequest(Evidence):
+    profile_version: Literal["phase182-v1"]
+    identity: MarketInstrumentIdentity
+    catalog_fingerprint: RiskFingerprint
+    simulated_reference_price: ResearchDecimal = Field(gt=0, le=10_000_000)
+    minimum_order_notional: ResearchDecimal = Field(default=Decimal("100"), gt=0, le=2000)
+    family: AssetFamily
+    controls: dict[Annotated[str, Field(max_length=40)], Annotated[StrictStr, Field(max_length=80)] | StrictInt] = Field(
+        default_factory=dict, max_length=len(CONTROL_FIELDS),
+    )
+    research_risk: ResearchRiskSettings | None = None
+    advisory_snapshot_fingerprint: RiskFingerprint | None = None
+
+
+class AssetPolicyPreview(Evidence):
+    policy: AssetAmmResearchPolicy
+    assessment: AssetAmmPolicyAssessment
+
+
+@paper_router.post("/asset-policy/preview", response_model=AssetPolicyPreview, responses=PAPER_DECISIONS)
+async def asset_policy_preview(body: AssetPolicyPreviewRequest, request: Request):
+    source, catalog, generation, metadata, supported = await _paper_catalog(request, body.identity)
+    now = catalog.evaluated_at
+
+    def reject(reason):
+        return _decision_response(decision(body.identity, now, reason))
+
+    if not supported or catalog.catalog is None:
+        return reject("METADATA_UNAVAILABLE")
+    if body.identity.network != catalog.network:
+        return reject("NETWORK_MISMATCH")
+    if generation is None or now >= generation[0] or not generation[1]():
+        return reject("METADATA_STALE")
+    if body.catalog_fingerprint != catalog.catalog_fingerprint:
+        return reject("CATALOG_FINGERPRINT_MISMATCH")
+    if metadata is None:
+        return reject("IDENTITY_MISMATCH")
+    if metadata.listed is not True:
+        return reject("MARKET_DELISTED")
+    if (body.controls.keys() - set(CONTROL_FIELDS)
+            or any(type(value) is not (int if name == "levels_per_side" else str)
+                   for name, value in body.controls.items())):
+        return reject("CONFIGURATION_INVALID")
+
+    try:
+        with localcontext(DECIMAL_CONTEXT):
+            strategy = baseline_strategy(body.identity.stable_key, metadata.sz_decimals,
+                                         body.simulated_reference_price, body.minimum_order_notional)
+            values = strategy.model_dump(mode="json", include=set(CONTROL_FIELDS))
+            controls = AssetAmmResearchControls.model_validate_json(to_json(values | body.controls))
+            risk_model = None
+            if body.research_risk is not None:
+                risk_model = bind_research_model(
+                    body.research_risk, metadata, source=source.financial_observation(body.catalog_fingerprint, body.identity),
+                    evaluated_at=now, max_age_seconds=catalog.max_age_seconds,
+                )
+            risk_fingerprint = risk_model.fingerprint() if risk_model is not None else None
+            policy = AssetAmmResearchPolicy(
+                metadata=metadata, metadata_fingerprint=metadata.fingerprint(),
+                classification=AssetResearchClassification(family=body.family), controls=controls,
+                hypothetical_accounting_unit=RiskFinancialUnit(
+                    network=metadata.identity.network, kind="HYPOTHETICAL_QUOTE",
+                    symbol="HYPOTHETICAL_QUOTE", provenance="RESEARCH_ASSUMPTION",
+                ),
+                simulated_reference_price=body.simulated_reference_price, declared_at=now,
+                catalog_fingerprint=body.catalog_fingerprint, research_risk_fingerprint=risk_fingerprint,
+                advisory_snapshot_fingerprint=body.advisory_snapshot_fingerprint,
+            )
+            assessment = assess_asset_amm_policy(policy, evaluated_at=now, max_age_seconds=catalog.max_age_seconds)
+    except (ResearchRiskError, GeneralizedPrecisionError) as exc:
+        return reject(exc.reason)
+    except (ArithmeticError, ValueError, TypeError):
+        return reject("CONFIGURATION_INVALID")
+    if assessment.status == "BLOCKED":
+        return reject("METADATA_STALE")
+    if body.advisory_snapshot_fingerprint is not None:
+        reason = advisory_rejection(policy, metadata, body.catalog_fingerprint, risk_fingerprint, now,
+                                    _published_advisory(request, body.advisory_snapshot_fingerprint))
+        if reason is not None:
+            return reject(reason)
+    return _paper_response(AssetPolicyPreview(policy=policy, assessment=assessment))
+
+
+async def _admit(request: Request, proposal: PaperProposal, expected=None):
+    source, catalog, generation, metadata, supported = await _paper_catalog(request, proposal.identity)
+    if not supported:
+        return decision(proposal.identity, datetime.now(timezone.utc), "METADATA_UNAVAILABLE"), {}
     worker_inputs = (dict(catalog_valid_until=generation[0], catalog_guard=generation[1]) if generation else {})
     if generation is not None and proposal.research_risk is not None:
         worker_inputs["risk_source"] = source.financial_observation(catalog.catalog_fingerprint, proposal.identity)
     policy = proposal.asset_amm_policy
     if generation is not None and policy is not None and policy.advisory_snapshot_fingerprint is not None:
-        coordinator = getattr(request.app.state, "advisory_coordinator", None)
-        if coordinator is not None:
-            worker_inputs["advisory_evidence"] = coordinator.resolve_snapshot(policy.advisory_snapshot_fingerprint)
-    metadata = next((record for record in catalog.catalog.records
-                     if record.identity == proposal.identity), None) if catalog.catalog is not None else None
+        worker_inputs["advisory_evidence"] = _published_advisory(request, policy.advisory_snapshot_fingerprint)
     admission, _ = assess(proposal, metadata, network=catalog.network, evaluated_at=catalog.evaluated_at,
                           max_age_seconds=catalog.max_age_seconds,
                           metadata_current=generation is not None, expected=expected,

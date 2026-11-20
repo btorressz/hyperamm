@@ -6,6 +6,8 @@ const { api } = load('api/client.js');
 const { paperEvidenceBoundary } = load('types/generalizedPaper.js');
 const { checkedPaperAdmission, checkedPaperResult, paperAdmissionIsCurrent } = load('utils/generalizedPaper.js');
 const { marketUniverseKey } = load('utils/marketUniverse.js');
+const { assetControlInput, assetMinimumNotional, assetReferenceIsValid, checkedAssetPolicyPreview } = load('utils/assetAmm.js');
+const { researchFingerprint } = load('utils/researchFingerprint.js');
 
 const profile_version = 'phase182-v1';
 const contract_version = 'phase180b-v2';
@@ -56,6 +58,121 @@ function result() {
         funding_quote: '0', position_base: '1.2500', initial_equity_quote: '10000',
         equity_quote: '9987.04999', reserved_capital_quote: '1300',
         realized_pnl_quote: '0', unrealized_pnl_quote: '-12.95001' } } };
+}
+
+async function assetFixture() {
+  const dec = admission();
+  const metadata = dec.profile.metadata;
+  const fingerprint = await researchFingerprint(metadata);
+  dec.profile.metadata_fingerprint = dec.profile.discovery.metadata_fingerprint = dec.binding.metadata_fingerprint = fingerprint;
+  const selection = { metadata, metadata_fingerprint: fingerprint,
+    catalog_fingerprint: binding.catalog_fingerprint, max_age_seconds: 60 };
+  const request = { profile_version, identity, family: 'UNKNOWN', catalog_fingerprint: selection.catalog_fingerprint,
+    simulated_reference_price: '2500', minimum_order_notional: '100', controls: { levels_per_side: 2, max_distance_bps: '1e2' } };
+  const flags = { contract_version: 'phase185a-v1', authority: 'NONE', read_only: true, risk_ready: false,
+    affects_quotes: false, can_override_risk: false, execution_eligible: false };
+  const policy = { ...flags, metadata, metadata_fingerprint: fingerprint, catalog_fingerprint: selection.catalog_fingerprint,
+    classification: { contract_version: flags.contract_version, family: request.family, provenance: 'OPERATOR_DECLARED_RESEARCH',
+      exchange_class_verified: false, tradability_verified: false },
+    controls: { contract_version: flags.contract_version, provenance: 'HYPOTHETICAL_RESEARCH_SETTINGS',
+      price_precision_policy: 'REUSE_GENERALIZED_PRECISION', size_precision_policy: 'REUSE_DISCOVERED_SZ_DECIMALS',
+      amm_model: 'CONSTANT_PRODUCT', levels_per_side: 2, max_distance_bps: '100', base_order_size: '0.1',
+      total_liquidity: '0.5', virtual_base_reserve: '120', virtual_quote_reserve: '300000',
+      concentration_factor: '8', concentration_lower_bps: '10', concentration_upper_bps: '200',
+      target_inventory_base: '0', soft_inventory_limit_base: '2', hard_inventory_limit_base: '4',
+      max_inventory_price_skew_bps: '20', volatility_spread_strength: '1', volatility_size_strength: '0.5',
+      max_funding_reference_shift_bps: '5' },
+    hypothetical_accounting_unit: { contract_version: 'phase183a-v1', network: identity.network,
+      kind: 'HYPOTHETICAL_QUOTE', symbol: 'HYPOTHETICAL_QUOTE', asset_namespace: '',
+      asset_reference: null, provenance: 'RESEARCH_ASSUMPTION' },
+    simulated_reference_price: '2500', declared_at: evaluated_at, research_risk_fingerprint: null,
+    advisory_snapshot_fingerprint: null, reference_provenance: 'USER_SUPPLIED_SYNTHETIC',
+    source_provenance: 'DECLARED_HYPOTHETICAL_POLICY', research_scope: 'SINGLE_MARKET_RESEARCH_ONLY',
+    execution_mode: 'PAPER', can_authorize_paper: false };
+  const assessment = { ...flags, identity, metadata_fingerprint: fingerprint,
+    policy_fingerprint: await researchFingerprint(policy), evaluated_at, status: 'RESEARCH_DRAFT', reason: 'DISCOVERABLE',
+    eligible_for_paper: false, eligible_for_testnet: false, eligible_for_live: false };
+  dec.binding.asset_policy_fingerprint = assessment.policy_fingerprint;
+  return { request, selection, draft: structuredClone({ policy, assessment }), dec };
+}
+
+test('asset research verifies server draft then the same policy in admission and result', async () => {
+  const { draft, request, selection, dec } = await assetFixture();
+  const { policy, assessment } = await checkedAssetPolicyPreview(draft, request, selection);
+  const admitted = { ...proposal, asset_amm_policy: policy };
+  assert.equal(checkedPaperAdmission(dec, admitted, assessment.policy_fingerprint), dec);
+  const evidence = result();
+  evidence.admission = dec;
+  evidence.proposal.asset_amm_policy = structuredClone(policy);
+  assert.equal(checkedPaperResult(evidence, admitted, dec.binding, assessment.policy_fingerprint), evidence);
+  evidence.proposal.asset_amm_policy.controls.max_distance_bps = '101';
+  assert.throws(() => checkedPaperResult(evidence, admitted, dec.binding, assessment.policy_fingerprint), /Invalid or unsupported/);
+  assert.throws(() => checkedPaperAdmission(dec, proposal), /Invalid or unsupported/);
+  dec.binding.asset_policy_fingerprint = 'f'.repeat(64);
+  assert.throws(() => checkedPaperAdmission(dec, admitted, assessment.policy_fingerprint), /Invalid or unsupported/);
+});
+
+for (const [label, mutate] of [
+  ['contract version', w => { w.policy.contract_version = 'phase999'; }],
+  ['market metadata', w => { w.policy.metadata.identity.dex = 'other'; }],
+  ['network', w => { w.policy.metadata.identity.network = 'TESTNET'; }],
+  ['metadata digest', w => { w.policy.metadata_fingerprint = '0'.repeat(64); }],
+  ['catalog digest', w => { w.policy.catalog_fingerprint = '0'.repeat(64); }],
+  ['taxonomy', w => { w.policy.classification.exchange_class_verified = true; }],
+  ['family', w => { w.policy.classification.family = 'UNDECLARED'; }],
+  ['AMM model', w => { w.policy.controls.amm_model = 'MODEL'; }],
+  ['float control', w => { w.policy.controls.volatility_size_strength = 0.5; }],
+  ['oversized exponent', w => { w.policy.controls.base_order_size = '1e-61'; }],
+  ['nan', w => { w.policy.controls.max_distance_bps = 'NaN'; }],
+  ['precision-sized overrun', w => { w.policy.controls.volatility_size_strength = '1.00000000000000000001'; }],
+  ['concentration bounds', w => { w.policy.controls.concentration_upper_bps = '9'; }],
+  ['inventory limits', w => { w.policy.controls.soft_inventory_limit_base = '4'; }],
+  ['liquidity floor', w => { w.policy.controls.total_liquidity = '0.19999999999999999999'; }],
+  ['changed override', w => { w.policy.controls.max_distance_bps = '101'; }],
+  ['accounting units', w => { w.policy.hypothetical_accounting_unit.symbol = 'USDC'; }],
+  ['undeclared risk', w => { w.policy.research_risk_fingerprint = '0'.repeat(64); }],
+  ['unrequested advisory', w => { w.policy.advisory_snapshot_fingerprint = '0'.repeat(64); }],
+  ['reference', w => { w.policy.simulated_reference_price = '2501'; }],
+  ['declaration before observation', w => { w.policy.declared_at = observed_at.replace('.000001', ''); }],
+  ['elevated authority', w => { w.policy.can_authorize_paper = true; }],
+  ['unknown nested field', w => { w.policy.controls.size_multiplier = '10'; }],
+  ['draft grants PAPER admission', w => { w.assessment.eligible_for_paper = true; }],
+]) {
+  test(`asset policy validator rejects resealed ${label}`, async () => {
+    const { draft, request, selection } = await assetFixture();
+    mutate(draft);
+    draft.assessment.policy_fingerprint = await researchFingerprint(draft.policy);
+    await assert.rejects(checkedAssetPolicyPreview(draft, request, selection), /Invalid or unsupported/);
+  });
+}
+
+test('asset defaults require a cryptographic match and use exact bounded form inputs', async () => {
+  const { draft, request, selection } = await assetFixture();
+  await assert.rejects(checkedAssetPolicyPreview(draft, request, selection, Date.parse(observed_at)), /Invalid or unsupported/);
+  draft.assessment.policy_fingerprint = 'f'.repeat(64);
+  await assert.rejects(checkedAssetPolicyPreview(draft, request, selection), /Invalid or unsupported/);
+  assert.equal(assetControlInput('volatility_size_strength', '1e-60'), '1e-60');
+  assert.equal(assetControlInput('levels_per_side', '50'), 50);
+  assert.throws(() => assetControlInput('levels_per_side', '2.0'), /whole number/);
+  assert.throws(() => assetControlInput('volatility_size_strength', 'Infinity'), /exact decimal/);
+  assert.equal(assetMinimumNotional('1e-12'), '1e-12');
+  assert.throws(() => assetMinimumNotional('1e-13'), /12 decimal places/);
+  assert.equal(assetReferenceIsValid('1e-13'), false);
+});
+
+for (const [reason, check, unavailable] of [
+  ['ASSET_POLICY_FINGERPRINT_MISMATCH', 'asset_policy_fingerprint', false],
+  ['ADVISORY_FINGERPRINT_MISMATCH', 'advisory_snapshot_fingerprint', false],
+  ['ADVISORY_UNAVAILABLE', 'advisory_snapshot_fingerprint', true],
+  ['ADVISORY_STALE', 'advisory_snapshot_fingerprint', true],
+  ['ORDER_NOTIONAL_TOO_SMALL', 'minimum_order_notional', false],
+]) {
+  test(`PAPER preserves the typed ${reason} decision`, () => {
+    const evidence = rejection(reason, check, unavailable);
+    assert.equal(checkedPaperAdmission(evidence, proposal), evidence);
+    evidence.status = 'ELIGIBLE';
+    assert.throws(() => checkedPaperAdmission(evidence, proposal), /Invalid or unsupported/);
+  });
 }
 
 test('PAPER validation retains canonical evidence and retires expired admission', () => {
