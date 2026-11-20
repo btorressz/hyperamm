@@ -158,15 +158,34 @@ expiry and applicable risk evidence are checked. The advisory reference
 contributes provenance. Synthetic frames continue to provide the book,
 funding and price inputs for strategy and accounting.
 
-## Phase 18.5E–F handoff
+## Phase 18.5E–F browser workflow and acceptance
 
-| Phase | Ownership | Implementation / acceptance |
-| --- | --- | --- |
-| **18.5E** | ChatGPT + Codex | Minimal read-only asset-policy evidence API and existing Simulation/Generalized PAPER UI. Expose explicitly hypothetical research class, controls, fingerprints, disabled/unsupported status, and modeled results; no full Market Explorer. |
-| **18.5F** | Codex | Expand the adversarial and asset-family scenario matrix, browser workflows, financial reconciliation and provider/metadata verification. Reproduce the legacy compatibility checks after Phase E. |
+Simulation → Generalized PAPER starts in Standard PAPER. Asset-aware mode
+adds an explicit family selector, switches between the two existing AMM
+models and exposes the controls from `phase185a-v1`. Main settings cover
+quote levels, spread and size. Reserves, concentration, inventory and
+volatility/funding settings appear in Advanced AMM Research Settings. Family
+selection contributes provenance only. The browser displays discovered
+`szDecimals` and describes the synthetic price grid in research units.
 
-No parallel AMM engine, second accounting runtime, persistent new market
-classifier, wallet connection, new operational strategy mode or API in 18.5A.
+`POST /api/v1/generalized-paper/asset-policy/preview` derives a draft from
+the active discovery generation, synthetic reference, research minimum
+notional and existing Python strategy defaults. It applies exact bounded
+overrides, stamps the declaration, binds applicable risk settings and can
+resolve an explicitly selected discovery advisory. Its assessment reports
+`RESEARCH_DRAFT` with `eligible_for_paper=false`. Quote feasibility and
+modeled opening risk are evaluated by `/eligibility`. A valid draft can
+still fail the quote compiler, lot or notional floor, or risk checks.
+
+The browser verifies the canonical policy and metadata digests against the
+selected discovery evidence and sends the same draft through `/eligibility`
+and `/run`. Server admission and worker-start revalidation own the active
+catalog, strategy and scope. Input edits and evidence expiry retire the
+browser's admission and result. Asset-aware admission is consumed when a
+run starts. Results reuse the existing PAPER metrics and ledger-backed
+financial summary and display the returned policy and strategy digests.
+Attached discovery advisory evidence contributes provenance. The scenario
+supplies price, depth and funding. [Phase 18.5 final acceptance](PHASE18_5_FINAL_ACCEPTANCE.md)
 
 ## Focused tests and independent acceptance
 

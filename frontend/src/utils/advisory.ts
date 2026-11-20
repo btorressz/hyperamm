@@ -6,6 +6,7 @@ import type { MarketUniverseIdentity } from '../types/marketUniverse';
 import { checkedMarketUniverseIdentity, marketUniverseKey, marketUniverseTimestamp } from './marketUniverse';
 import { checkResearchAuthority } from './marketRisk';
 import { exactDecimal } from './orderView';
+import { researchFingerprint } from './researchFingerprint';
 
 type Wire = Record<string, unknown>;
 type Times = { evaluated: bigint; expiry: bigint };
@@ -112,23 +113,6 @@ function sourceEvidence(value: unknown, expected: MarketUniverseIdentity, times:
     } else if (source.provenance !== 'HYPOTHETICAL_ASSUMPTION' || !isAssumed || source.scenario_at !== null) invalid();
   }
   return source as Wire & { source_fingerprint: string; category: string; provenance: string };
-}
-
-async function digest(value: unknown): Promise<string> {
-  function canonical(item: unknown, depth: number): string {
-    if (depth > 16) invalid();
-    if (Array.isArray(item)) return '[' + item.map(entry => canonical(entry, depth + 1)).join(',') + ']';
-    if (typeof item === 'object' && item !== null) {
-      const fields = wire(item);
-      return '{' + Object.keys(fields).sort().map(key =>
-        JSON.stringify(key) + ':' + canonical(fields[key], depth + 1)).join(',') + '}';
-    }
-    return JSON.stringify(item);
-  }
-  const serialized = canonical(value, 0).replace(/[\u007f-\uffff]/g, char =>
-    '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0'));
-  const checksum = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(serialized));
-  return Array.from(new Uint8Array(checksum), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 function recommendation(value: unknown, agent: string, contextFingerprint: string, evaluatedAt: unknown,
@@ -338,7 +322,7 @@ export async function checkedAdvisoryResponse(value: unknown, request: AdvisoryR
   } else if (!hasPaper || !request.quote || response.quote_sequence !== request.quote.sequence ||
       !cohorts.includes(response.quote_sequence) || !oneOf(response.quote_risk_state, ['NORMAL', 'WIDEN', 'REDUCE', 'HALT'])) invalid();
 
-  const contextFingerprint = await digest(context);
+  const contextFingerprint = await researchFingerprint(context);
   const checked = (item: unknown, name: string) => {
     const result = recommendation(item, name, contextFingerprint, response.evaluated_at, market, sources, times);
     if (result.result.status === 'READY' && (metadata.listed !== true || metadata.metadata_status !== 'EXCHANGE_VERIFIED')) invalid();
@@ -352,6 +336,6 @@ export async function checkedAdvisoryResponse(value: unknown, request: AdvisoryR
   else if (snapshot.funding_basis !== null) invalid();
   if (quote) checkQuote(checked(snapshot.quote_economics, 'QUOTE_ECONOMICS'), market, response, request.quote);
   else if (snapshot.quote_economics !== null) invalid();
-  if (await digest(snapshot) !== response.snapshot_fingerprint) invalid();
+  if (await researchFingerprint(snapshot) !== response.snapshot_fingerprint) invalid();
   return value as AdvisoryResponse;
 }

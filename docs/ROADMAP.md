@@ -26,7 +26,7 @@
 | 14 | IMPLEMENTED / LOCAL ACCEPTANCE | Custom research assumptions, Python presets/preview, Vault studio, isolated PAPER runs/optimizer and controlled comparison; external gates remain |
 | 14.6 | COMPLETE / LOCAL ACCEPTANCE; LIVE METADATA GATE OPEN | Validated BTC/ETH/SOL Research Market Selection; isolated single-market PAPER runs, bounded optimizer and controlled comparisons; live SDK endpoint blocked in acceptance environment |
 | 18.4 | LOCAL PAPER ACCEPTANCE / IN REVIEW | Three read-only advisory agents integrated into Simulation, with bounded evidence and historical PAPER acceptance. See the [final acceptance record](PHASE18_4_FINAL_ACCEPTANCE.md). |
-| 18.5 | PLANNED | Asset-aware AMM research. Use qualified discovery, Phase 18.3 risk and the advisory evidence contract for research inputs. Preserve separate execution authorization and explicit PAPER assumptions. |
+| 18.5 | LOCAL PAPER ACCEPTANCE / IN REVIEW | Asset-aware research in Simulation with qualified discovery, both AMM models, optional Phase 18.3 risk and read-only advisory evidence. See the [final acceptance record](PHASE18_5_FINAL_ACCEPTANCE.md). |
 
 ## Phase 6 extension points
 

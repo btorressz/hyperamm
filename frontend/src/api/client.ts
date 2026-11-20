@@ -26,6 +26,10 @@ import type { MarketUniverseResponse } from '../types/marketUniverse';
 import { checkedMarketUniverse, marketUniverseByteLimit, marketUniverseHttpStatus } from '../utils/marketUniverse';
 import type { GeneralizedPaperResult, PaperAdmission, PaperBinding, PaperProposal } from '../types/generalizedPaper';
 import { checkedPaperAdmission, checkedPaperResult, paperAdmissionHttpStatus, paperResponseByteLimit } from '../utils/generalizedPaper';
+import { assetPaperReasonText } from '../types/generalizedPaper';
+import type { AssetPolicyPreviewRequest } from '../types/assetAmm';
+import { assetPreviewByteLimit, checkedAssetPolicyPreview } from '../utils/assetAmm';
+import { researchFingerprint } from '../utils/researchFingerprint';
 import type { FinancialEvidenceSelection } from '../types/marketRisk';
 import { checkedFinancialEvidence } from '../utils/marketRisk';
 const API = "/api/v1";
@@ -158,20 +162,39 @@ async function generalizedPaperRequest(
       response.status === 413 ? 'The PAPER request exceeds its size limit.' : 'The local PAPER request failed.');
   }
   const wire = await readHistoricalJson(response, paperResponseByteLimit);
+  const policyFingerprint = proposal.asset_amm_policy ? await researchFingerprint(proposal.asset_amm_policy) : undefined;
   if (expected && response.ok) {
-    const result = checkedPaperResult(wire, proposal, expected);
+    const result = checkedPaperResult(wire, proposal, expected, policyFingerprint);
     const receipt = response.headers.get('X-Paper-Advisory-Receipt');
     return { ...result, advisory_receipt: advisoryFingerprint(receipt) ? receipt : undefined };
   }
   if (response.status === 503 && typeof wire === 'object' && wire !== null && 'detail' in wire) {
     throw new Error('The shared PAPER worker is unavailable.');
   }
-  const admission = checkedPaperAdmission(wire, proposal);
+  const admission = checkedPaperAdmission(wire, proposal, policyFingerprint);
   if (response.status !== paperAdmissionHttpStatus(admission)) throw new Error('PAPER decision disagrees with its HTTP status.');
   return admission;
 }
 
 export const api = {
+  assetPolicyPreview: async (body: AssetPolicyPreviewRequest, selection: FinancialEvidenceSelection, signal?: AbortSignal) => {
+    const response = await fetch(API + '/generalized-paper/asset-policy/preview', {
+      method: 'POST', cache: 'no-store', signal, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const wire = await readHistoricalJson(response, assetPreviewByteLimit);
+    if (response.status === 200) return checkedAssetPolicyPreview(wire, body, selection);
+    if ([409, 422, 503].includes(response.status)) {
+      const decision = checkedPaperAdmission(wire, {
+        ...body, scenario: 'QUIET', frames: 40, trace_max_points: 40,
+        economics: { model: 'HYPOTHETICAL_LINEAR' },
+      });
+      if (decision.status !== 'ELIGIBLE' && decision.profile === null &&
+          paperAdmissionHttpStatus(decision) === response.status)
+        throw new Error(assetPaperReasonText[decision.reason] ?? decision.explanation);
+    }
+    throw new Error('The asset AMM research draft could not be prepared.');
+  },
   paperEligibility: async (proposal: PaperProposal, signal?: AbortSignal): Promise<PaperAdmission> => {
     const evidence = await generalizedPaperRequest(proposal, undefined, signal);
     if (!('status' in evidence)) throw new Error('PAPER eligibility evidence is missing.');

@@ -2,6 +2,7 @@ import type { GeneralizedPaperResult, PaperAdmission, PaperBinding, PaperProposa
 import { paperEvidenceBoundary, paperProfileVersion, paperReasons } from '../types/generalizedPaper';
 import { checkedMarketUniverseIdentity, marketUniverseKey, marketUniverseTimestamp } from './marketUniverse';
 import { exactDecimal } from './orderView';
+import { canonicalResearchJson } from './researchFingerprint';
 import {
   checkedFinancialObservation, checkedPaperRiskResult, checkedResearchModel, checkResearchAuthority,
   checkRiskSettings, checkSourceStatus,
@@ -49,7 +50,7 @@ function matchesResearchBoundary(value: unknown) {
     Object.entries(paperEvidenceBoundary).every(([key, expected]) => value[key] === expected);
 }
 
-export function checkedPaperAdmission(value: unknown, proposal: PaperProposal): PaperAdmission {
+export function checkedPaperAdmission(value: unknown, proposal: PaperProposal, policyFingerprint?: string): PaperAdmission {
   if (!object(value) || value.profile_version !== paperProfileVersion || value.scope !== 'LOCAL_PAPER_ONLY' ||
       value.authority !== 'NONE' || value.execution_eligible !== false || typeof value.reason !== 'string' ||
       !Object.hasOwn(paperReasons, value.reason) || typeof value.explanation !== 'string' ||
@@ -61,7 +62,8 @@ export function checkedPaperAdmission(value: unknown, proposal: PaperProposal): 
   const reason = value.reason as PaperReason;
   const eligible = reason === 'ADMITTED';
   const status = eligible ? 'ELIGIBLE' :
-    ['METADATA_STALE', 'METADATA_UNAVAILABLE', 'RISK_SOURCE_STALE', 'RISK_SOURCE_UNAVAILABLE'].includes(reason)
+    ['METADATA_STALE', 'METADATA_UNAVAILABLE', 'RISK_SOURCE_STALE', 'RISK_SOURCE_UNAVAILABLE',
+      'ADVISORY_STALE', 'ADVISORY_UNAVAILABLE'].includes(reason)
       ? 'UNAVAILABLE' : 'REJECTED';
   if (value.status !== status || value.checks.length !== (eligible ? 0 : 1) ||
       (!eligible && value.checks[0] !== paperReasons[reason]) ||
@@ -110,6 +112,14 @@ export function checkedPaperAdmission(value: unknown, proposal: PaperProposal): 
           binding.profile_fingerprint !== profile.profile_fingerprint || !digest(binding.configuration_fingerprint) ||
           !digest(binding.catalog_fingerprint)) malformed();
       checkResearchAuthority(binding);
+      const policy = proposal.asset_amm_policy;
+      if (policy ? !digest(policyFingerprint) || binding.asset_policy_fingerprint !== policyFingerprint ||
+          binding.catalog_fingerprint !== policy.catalog_fingerprint ||
+          binding.metadata_fingerprint !== policy.metadata_fingerprint ||
+          canonicalResearchJson(metadata) !== canonicalResearchJson(policy.metadata) ||
+          evaluated < marketUniverseTimestamp(policy.declared_at) ||
+          (binding.research_risk_fingerprint ?? null) !== policy.research_risk_fingerprint :
+        binding.asset_policy_fingerprint !== undefined) malformed();
       if (value.risk_source !== undefined) malformed();
       if (proposal.research_risk) {
         if (!digest(binding.research_risk_fingerprint) || typeof value.evaluated_at !== 'string' ||
@@ -153,14 +163,17 @@ export function paperAdmissionIsCurrent(admission: PaperAdmission | null, now = 
     now >= Date.parse(admission.evaluated_at) && now < Date.parse(admission.valid_until);
 }
 
-export function checkedPaperResult(value: unknown, proposal: PaperProposal, expected: PaperBinding): GeneralizedPaperResult {
+export function checkedPaperResult(
+  value: unknown, proposal: PaperProposal, expected: PaperBinding, policyFingerprint?: string,
+): GeneralizedPaperResult {
   if (!object(value) || value.profile_version !== paperProfileVersion || value.execution_mode !== 'PAPER' ||
       value.simulated !== true || !digest(value.result_fingerprint) || !object(value.proposal)) malformed();
   checkResearchAuthority(value);
-  const admission = checkedPaperAdmission(value.admission, proposal);
+  const admission = checkedPaperAdmission(value.admission, proposal, policyFingerprint);
   if (admission.status !== 'ELIGIBLE' || admission.binding.profile_fingerprint !== expected.profile_fingerprint ||
       admission.binding.metadata_fingerprint !== expected.metadata_fingerprint ||
       admission.binding.catalog_fingerprint !== expected.catalog_fingerprint ||
+      admission.binding.asset_policy_fingerprint !== expected.asset_policy_fingerprint ||
       admission.binding.research_risk_fingerprint !== expected.research_risk_fingerprint ||
       admission.binding.configuration_fingerprint !== expected.configuration_fingerprint) malformed();
   const started = marketUniverseTimestamp(value.started_at);
@@ -175,6 +188,9 @@ export function checkedPaperResult(value: unknown, proposal: PaperProposal, expe
       !sameDecimal(captured.synthetic_top_depth_quote, proposal.synthetic_top_depth_quote ?? '18000') ||
       !sameEconomics(captured.economics, proposal.economics)) malformed();
   checkResearchAuthority(captured);
+  if (proposal.asset_amm_policy ? !object(captured.asset_amm_policy) ||
+      canonicalResearchJson(captured.asset_amm_policy) !== canonicalResearchJson(proposal.asset_amm_policy) :
+    captured.asset_amm_policy !== undefined) malformed();
   if (proposal.research_risk) checkRiskSettings(captured.research_risk, proposal.research_risk);
   else if (captured.research_risk !== undefined || value.research_risk !== undefined) malformed();
 
