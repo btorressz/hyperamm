@@ -1,275 +1,1332 @@
 {
-  "point_check": {
-    "started_utc": "2026-11-21T07:59:39.508534+00:00",
-    "requested_seconds": 0,
-    "mainnet_cycles": [
-      {
-        "elapsed_seconds": 0.001,
-        "discovery_http": 200,
-        "availability": "AVAILABLE",
-        "error": null,
-        "discovery_seconds": 5.991,
-        "generation_changed": true,
-        "keys": [
-          "HYPERLIQUID:MAINNET:CORE_PERP::BTC",
-          "HYPERLIQUID:MAINNET:CORE_PERP::ETH",
-          "HYPERLIQUID:MAINNET:CORE_PERP::SOL",
-          "HYPERLIQUID:MAINNET:CORE_PERP::DOGE",
-          "HYPERLIQUID:MAINNET:HIP3_PERP:xyz:AAOI",
-          "HYPERLIQUID:MAINNET:HIP3_PERP:io:AAPL"
-        ],
-        "required_coverage": true,
-        "namespaces": 11,
-        "records": 568,
-        "summary_http": 200,
-        "summary_seconds": 1.568,
-        "statuses": [
-          "CURRENT",
-          "CURRENT",
-          "CURRENT",
-          "CURRENT",
-          "CURRENT",
-          "CURRENT"
-        ],
-        "current_mark_funding": 6,
-        "cache_reuse_False": true,
-        "cache_reuse_True": true
-      }
-    ],
-    "resource_samples": [
-      {
-        "elapsed_seconds": 0,
-        "rss_kib": 63448,
-        "threads": 1,
-        "asyncio_tasks": 1,
-        "discovery_threads": 0,
-        "summary_tasks": 0,
-        "summary_captures": 0
-      },
-      {
-        "elapsed_seconds": 8.122,
-        "rss_kib": 84508,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 3
-      }
-    ],
-    "authority": "NONE",
-    "mainnet_elapsed_seconds": 8.122,
-    "after_owner_shutdown": {
-      "rss_kib": 83652,
-      "threads": 4,
-      "asyncio_tasks": 1,
-      "discovery_threads": 0,
-      "summary_tasks": 0,
-      "summary_captures": 0
-    },
-    "retired_on_close": true,
-    "testnet_catalog": {
-      "availability": "UNAVAILABLE",
-      "error": null,
-      "inventory_error": "CATALOG_CAPACITY",
-      "inventory_count": 288,
-      "published": false
-    },
-    "testnet_core": {
-      "SOL": true,
-      "BTC": true,
-      "ETH": true,
-      "DOGE": true
-    },
-    "call_counts": [
-      {
-        "network": "MAINNET",
-        "operation": "meta",
-        "result": "OK",
-        "count": 11
-      },
-      {
-        "network": "MAINNET",
-        "operation": "metaAndAssetCtxs",
-        "result": "OK",
-        "count": 3
-      },
+  "baseline_commit": "dd9e1488e027061a42cffd77e0761f8461de7226",
+  "public_preflight": {
+    "started_at": "2026-11-21T08:55:47.704652+00:00",
+    "source": "Official public /info via existing SDK transport and application lifespan",
+    "requests": [
       {
         "network": "MAINNET",
         "operation": "perpDexs",
-        "result": "OK",
-        "count": 1
+        "dex": "",
+        "status": "SUCCESS",
+        "inventory_entries": 11,
+        "seconds": 1.5303
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "cash",
+        "status": "SUCCESS",
+        "seconds": 1.3286
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "abcd",
+        "status": "SUCCESS",
+        "seconds": 1.4402
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "",
+        "status": "SUCCESS",
+        "seconds": 2.0552
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "flx",
+        "status": "SUCCESS",
+        "seconds": 1.5747
       },
       {
         "network": "MAINNET",
         "operation": "spotMeta",
-        "result": "OK",
-        "count": 1
+        "dex": "",
+        "status": "SUCCESS",
+        "seconds": 1.8747
       },
       {
-        "network": "TESTNET",
-        "operation": "metaAndAssetCtxs",
-        "result": "OK",
-        "count": 1
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "hyna",
+        "status": "SUCCESS",
+        "seconds": 1.5631
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "io",
+        "status": "SUCCESS",
+        "seconds": 0.814
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "km",
+        "status": "SUCCESS",
+        "seconds": 1.4572
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "mkts",
+        "status": "SUCCESS",
+        "seconds": 1.5984
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "para",
+        "status": "SUCCESS",
+        "seconds": 1.5845
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "xyz",
+        "status": "SUCCESS",
+        "seconds": 0.7451
+      },
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "dex": "vntl",
+        "status": "SUCCESS",
+        "seconds": 1.207
       },
       {
         "network": "TESTNET",
         "operation": "perpDexs",
-        "result": "OK",
-        "count": 1
+        "dex": "",
+        "status": "SUCCESS",
+        "inventory_entries": 288,
+        "seconds": 1.991
+      },
+      {
+        "network": "TESTNET",
+        "operation": "metaAndAssetCtxs",
+        "dex": "",
+        "status": "SUCCESS",
+        "seconds": 1.8675
       }
     ],
-    "total_calls": 18,
-    "weight_20_per_call_upper_bound": 360,
-    "max_rolling_minute_weight_upper_bound": 360,
-    "max_provider_call_seconds": 1.958,
-    "process_peak_rss_kib": 84188,
-    "rss_peak_increment_kib": 21060,
-    "threads_after_loop_close": 1
+    "MAINNET": {
+      "http": 200,
+      "availability": "AVAILABLE",
+      "catalog_records": 568,
+      "catalog_error": null,
+      "inventory": {
+        "contract_version": "phase180b-v2",
+        "status": "REFRESHED",
+        "observed_at": "2026-11-21T08:55:49.275310Z",
+        "error": null
+      }
+    },
+    "TESTNET": {
+      "http": 503,
+      "availability": "UNAVAILABLE",
+      "catalog_records": 0,
+      "catalog_error": null,
+      "inventory": {
+        "contract_version": "phase180b-v2",
+        "status": "FAILED",
+        "observed_at": null,
+        "error": "CATALOG_CAPACITY"
+      }
+    },
+    "testnet_core_context": {
+      "status": "PASS",
+      "native": {
+        "BTC": {
+          "mark": "57972.0",
+          "oracle": "58006.0",
+          "funding": "0.0000125"
+        },
+        "ETH": {
+          "mark": "1632.1",
+          "oracle": "1632.8",
+          "funding": "0.0000125"
+        },
+        "SOL": {
+          "mark": "66.799",
+          "oracle": "67.51",
+          "funding": "-0.0004273781"
+        }
+      }
+    },
+    "preflight_duration_seconds": 33.3363
   },
-  "sustained_catalog_and_summary": {
-    "started_utc": "2026-11-21T07:51:06.196650+00:00",
-    "requested_seconds": 1800,
+  "public_native_point": {
+    "classification": "PASS",
+    "started_at": "2026-11-21T08:55:59.233329+00:00",
+    "duration_seconds": 21.807,
+    "checks": {
+      "sdk_import": "PASS",
+      "native_metadata": "PASS",
+      "BTC_l2_rest": "PASS",
+      "ETH_l2_rest": "PASS",
+      "SOL_l2_rest": "PASS",
+      "perpetual_context_rest": "PASS",
+      "BTC_validated_ws_delivery": "PASS",
+      "ETH_validated_ws_delivery": "PASS",
+      "SOL_validated_ws_delivery": "PASS",
+      "controlled_reconnect": "PASS",
+      "sdk_cleanup": "PASS"
+    },
+    "initial_generation": 1,
+    "subscriptions": [
+      {
+        "connection": 1,
+        "market": "BTC",
+        "channel": "l2Book"
+      },
+      {
+        "connection": 1,
+        "market": "BTC",
+        "channel": "activeAssetCtx"
+      },
+      {
+        "connection": 1,
+        "market": "ETH",
+        "channel": "l2Book"
+      },
+      {
+        "connection": 1,
+        "market": "ETH",
+        "channel": "activeAssetCtx"
+      },
+      {
+        "connection": 1,
+        "market": "SOL",
+        "channel": "l2Book"
+      },
+      {
+        "connection": 1,
+        "market": "SOL",
+        "channel": "activeAssetCtx"
+      },
+      {
+        "connection": 2,
+        "market": "BTC",
+        "channel": "l2Book"
+      },
+      {
+        "connection": 2,
+        "market": "BTC",
+        "channel": "activeAssetCtx"
+      },
+      {
+        "connection": 2,
+        "market": "ETH",
+        "channel": "l2Book"
+      },
+      {
+        "connection": 2,
+        "market": "ETH",
+        "channel": "activeAssetCtx"
+      },
+      {
+        "connection": 2,
+        "market": "SOL",
+        "channel": "l2Book"
+      },
+      {
+        "connection": 2,
+        "market": "SOL",
+        "channel": "activeAssetCtx"
+      }
+    ],
+    "remaining_owned_threads": 0,
+    "remaining_owned_tasks": 0,
+    "subscriber_count_after_shutdown": 0
+  },
+  "sustained_mainnet": {
+    "classification": "PASS",
+    "evidence": "ACTUAL PUBLIC MAINNET, LOCAL DEMO/PAPER",
+    "started_at": "2026-11-21T08:59:11.568470+00:00",
+    "target_seconds": 1800,
+    "poll_seconds": 20,
     "resource_samples": [
       {
-        "elapsed_seconds": 0,
-        "rss_kib": 62844,
-        "threads": 1,
-        "asyncio_tasks": 1,
-        "discovery_threads": 0,
-        "summary_tasks": 0,
-        "summary_captures": 0
+        "elapsed_seconds": 0.0,
+        "rss_kib": 77392,
+        "os_threads": 1,
+        "process_peak_rss_kib": 77392,
+        "python_threads": 1
       },
       {
-        "elapsed_seconds": 281.729,
-        "rss_kib": 91296,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 15
+        "elapsed_seconds": 20.0,
+        "rss_kib": 105920,
+        "os_threads": 10,
+        "process_peak_rss_kib": 105492,
+        "python_threads": 10,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 3
       },
       {
-        "elapsed_seconds": 582.94,
-        "rss_kib": 91556,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 24
+        "elapsed_seconds": 64.56,
+        "rss_kib": 111856,
+        "os_threads": 11,
+        "process_peak_rss_kib": 111380,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 3
       },
       {
-        "elapsed_seconds": 882.286,
-        "rss_kib": 93460,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 24
+        "elapsed_seconds": 121.26,
+        "rss_kib": 113444,
+        "os_threads": 11,
+        "process_peak_rss_kib": 113044,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 6
       },
       {
-        "elapsed_seconds": 1182.315,
-        "rss_kib": 94084,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 24
+        "elapsed_seconds": 182.31,
+        "rss_kib": 113732,
+        "os_threads": 11,
+        "process_peak_rss_kib": 113940,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 9
       },
       {
-        "elapsed_seconds": 1483.001,
-        "rss_kib": 94192,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 24
+        "elapsed_seconds": 241.82,
+        "rss_kib": 115064,
+        "os_threads": 11,
+        "process_peak_rss_kib": 114568,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 12
       },
       {
-        "elapsed_seconds": 1783.537,
-        "rss_kib": 93900,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 24
+        "elapsed_seconds": 300.18,
+        "rss_kib": 115568,
+        "os_threads": 11,
+        "process_peak_rss_kib": 115336,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 15
       },
       {
-        "elapsed_seconds": 1801.006,
-        "rss_kib": 94380,
-        "threads": 7,
-        "asyncio_tasks": 1,
-        "discovery_threads": 3,
-        "summary_tasks": 0,
-        "summary_captures": 24
+        "elapsed_seconds": 361.61,
+        "rss_kib": 117052,
+        "os_threads": 9,
+        "process_peak_rss_kib": 116548,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 18
+      },
+      {
+        "elapsed_seconds": 422.11,
+        "rss_kib": 116400,
+        "os_threads": 9,
+        "process_peak_rss_kib": 116548,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 21
+      },
+      {
+        "elapsed_seconds": 488.41,
+        "rss_kib": 117724,
+        "os_threads": 9,
+        "process_peak_rss_kib": 117408,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 547.04,
+        "rss_kib": 117748,
+        "os_threads": 11,
+        "process_peak_rss_kib": 118056,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 605.39,
+        "rss_kib": 119648,
+        "os_threads": 11,
+        "process_peak_rss_kib": 119144,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 661.61,
+        "rss_kib": 119688,
+        "os_threads": 11,
+        "process_peak_rss_kib": 119144,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 721.87,
+        "rss_kib": 118720,
+        "os_threads": 9,
+        "process_peak_rss_kib": 119912,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 781.4,
+        "rss_kib": 121216,
+        "os_threads": 9,
+        "process_peak_rss_kib": 120816,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 840.22,
+        "rss_kib": 121732,
+        "os_threads": 11,
+        "process_peak_rss_kib": 121968,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 901.0,
+        "rss_kib": 121304,
+        "os_threads": 11,
+        "process_peak_rss_kib": 121968,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 961.84,
+        "rss_kib": 120772,
+        "os_threads": 11,
+        "process_peak_rss_kib": 121968,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1027.78,
+        "rss_kib": 120104,
+        "os_threads": 9,
+        "process_peak_rss_kib": 121968,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1085.39,
+        "rss_kib": 121612,
+        "os_threads": 9,
+        "process_peak_rss_kib": 121968,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1145.19,
+        "rss_kib": 122380,
+        "os_threads": 9,
+        "process_peak_rss_kib": 122384,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1201.01,
+        "rss_kib": 122876,
+        "os_threads": 11,
+        "process_peak_rss_kib": 122384,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1261.43,
+        "rss_kib": 122932,
+        "os_threads": 11,
+        "process_peak_rss_kib": 123068,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1322.08,
+        "rss_kib": 122676,
+        "os_threads": 9,
+        "process_peak_rss_kib": 123908,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1381.4,
+        "rss_kib": 124236,
+        "os_threads": 9,
+        "process_peak_rss_kib": 123908,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1440.1,
+        "rss_kib": 124260,
+        "os_threads": 9,
+        "process_peak_rss_kib": 124564,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1500.09,
+        "rss_kib": 124268,
+        "os_threads": 11,
+        "process_peak_rss_kib": 124584,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1560.15,
+        "rss_kib": 124792,
+        "os_threads": 11,
+        "process_peak_rss_kib": 125008,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1621.89,
+        "rss_kib": 125484,
+        "os_threads": 11,
+        "process_peak_rss_kib": 125008,
+        "python_threads": 11,
+        "async_tasks": 5,
+        "sdk_subscriptions": 6,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1687.3,
+        "rss_kib": 125480,
+        "os_threads": 9,
+        "process_peak_rss_kib": 125632,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1747.41,
+        "rss_kib": 125512,
+        "os_threads": 9,
+        "process_peak_rss_kib": 125884,
+        "python_threads": 9,
+        "async_tasks": 5,
+        "sdk_subscriptions": 0,
+        "local_subscribers": 0,
+        "summary_cache": 24
+      },
+      {
+        "elapsed_seconds": 1801.81,
+        "rss_kib": 120684,
+        "os_threads": 1,
+        "process_peak_rss_kib": 125884,
+        "python_threads": 1
       }
     ],
-    "authority": "NONE",
+    "observations": [
+      {
+        "coin": "BTC",
+        "mark": "57777.8",
+        "oracle": "57809.0",
+        "funding": "-0.0000055907",
+        "observed_at": "2026-11-21T08:59:20.722094+00:00",
+        "valid_until": "2026-11-21T08:59:50.722094+00:00",
+        "metadata_fingerprint": "62a7638409efaee37664787e86a0fa25752444b165627522cdea78b96a908b32"
+      },
+      {
+        "coin": "ETH",
+        "mark": "1627.89",
+        "oracle": "1628.7",
+        "funding": "0.0000038517",
+        "observed_at": "2026-11-21T08:59:20.722094+00:00",
+        "valid_until": "2026-11-21T08:59:50.722094+00:00",
+        "metadata_fingerprint": "80c03758a9ab29e0f4de984b39c3e9ee8640576c36df15352ff2806844d3af99"
+      },
+      {
+        "coin": "SOL",
+        "mark": "67.275",
+        "oracle": "67.335",
+        "funding": "-0.0000457661",
+        "observed_at": "2026-11-21T08:59:20.722094+00:00",
+        "valid_until": "2026-11-21T08:59:50.722094+00:00",
+        "metadata_fingerprint": "19a5f97389f180f156e615c73fba76d7b1e5ee05af9c4885822e7983e42b452c"
+      },
+      {
+        "coin": "DOGE",
+        "mark": "0.052746",
+        "oracle": "0.052775",
+        "funding": "0.0000043552",
+        "observed_at": "2026-11-21T08:59:20.722094+00:00",
+        "valid_until": "2026-11-21T08:59:50.722094+00:00",
+        "metadata_fingerprint": "53b92b7d6683b8367da194ab9caffd00ecae177759e3633612c614e0f34a1be5"
+      },
+      {
+        "coin": "xyz:AAOI",
+        "mark": "33.443",
+        "oracle": "33.472",
+        "funding": "-0.0000199774",
+        "observed_at": "2026-11-21T08:59:20.322797+00:00",
+        "valid_until": "2026-11-21T08:59:50.322797+00:00",
+        "metadata_fingerprint": "83d8b0699e4c76eda08e089d9f2f248fc0f7b3c4d3957f43a119106569826735"
+      },
+      {
+        "coin": "io:AAPL",
+        "mark": "344.83",
+        "oracle": "344.83",
+        "funding": "0.0000015625",
+        "observed_at": "2026-11-21T08:59:20.589330+00:00",
+        "valid_until": "2026-11-21T08:59:50.589330+00:00",
+        "metadata_fingerprint": "cf8e7eeb9e95432b2bcf16954e8285ff4dfddd9161d327697d7fcc4338c54e94"
+      }
+    ],
+    "complete_summary_polls": 77,
+    "native_current_polls": 36,
+    "cache_reuse": true,
+    "advisory": {
+      "coin": "io:AAPL",
+      "status": "AVAILABLE",
+      "categories": [
+        "FUNDING",
+        "FUNDING_HISTORY",
+        "MARK_PRICE",
+        "MID_PRICE",
+        "OPEN_INTEREST",
+        "ORACLE_PRICE"
+      ]
+    },
+    "native_rest": {
+      "BTC": "AVAILABLE",
+      "ETH": "AVAILABLE",
+      "SOL": "AVAILABLE"
+    },
+    "controlled_disconnect_generation": 1,
+    "request_metrics": {
+      "starts": 687,
+      "weight": 12211,
+      "peak_rolling_60s_weight_upper_bound": 779,
+      "guard_triggered": false,
+      "peak_active": {
+        "native_sdk": 1,
+        "discovery": 3,
+        "summaries": 3,
+        "advisory": 1
+      },
+      "owners": {
+        "native_sdk": {
+          "starts": 144,
+          "weight": 1368,
+          "operations": {
+            "meta": 30,
+            "l2Book": 84,
+            "metaAndAssetCtxs": 30
+          },
+          "statuses": {
+            "SUCCESS": 144
+          },
+          "max_seconds": 1.69
+        },
+        "discovery": {
+          "starts": 351,
+          "weight": 7020,
+          "operations": {
+            "perpDexs": 27,
+            "meta": 297,
+            "spotMeta": 27
+          },
+          "statuses": {
+            "SUCCESS": 351
+          },
+          "max_seconds": 2.252
+        },
+        "summaries": {
+          "starts": 189,
+          "weight": 3780,
+          "operations": {
+            "metaAndAssetCtxs": 189
+          },
+          "statuses": {
+            "SUCCESS": 189
+          },
+          "max_seconds": 2.2211
+        },
+        "advisory": {
+          "starts": 3,
+          "weight": 43,
+          "operations": {
+            "metaAndAssetCtxs": 1,
+            "l2Book": 1,
+            "fundingHistory": 1
+          },
+          "statuses": {
+            "SUCCESS": 3
+          },
+          "max_seconds": 0.7179
+        }
+      }
+    },
+    "controlled_reconnect_generation": 2,
+    "workload_seconds": 1800.0,
+    "cleanup": {
+      "native_sdk_client_starts": 27,
+      "native_sdk_sessions_or_handles_remaining": 0,
+      "native_local_subscribers_remaining": 0,
+      "native_owned_threads_remaining": 0,
+      "native_owned_tasks_remaining": 0,
+      "native_fresh_components_remaining": 0,
+      "discovery_threads_remaining": 0,
+      "summary_captures_remaining": 0,
+      "summary_tasks_remaining": 0
+    },
+    "distinct_catalog_generations": 27,
+    "interrupted": false,
+    "elapsed_seconds": 1801.81,
+    "poll_count": 90,
+    "discovery_availability": {
+      "AVAILABLE": 90
+    },
+    "summary_http_counts": {
+      "200": 77,
+      "409": 13
+    },
+    "summary_errors": {},
+    "summary_row_statuses": {
+      "CURRENT": 462
+    },
+    "native_sampled_current_fraction": 0.4,
+    "native_generations_sampled": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27
+    ],
+    "sampled_max_rss_kib": 125512,
+    "sampled_max_rss_delta_kib": 48120,
+    "reported_process_peak_rss_kib": 125884,
+    "http_latency_seconds": {
+      "discovery_seconds": {
+        "min": 0.037,
+        "median": 0.0945,
+        "max": 7.699
+      },
+      "summary_seconds": {
+        "min": 0.024,
+        "median": 1.4885000000000002,
+        "max": 6.548
+      }
+    },
+    "acceptance": "CONDITIONAL",
+    "native_sampled_health": [
+      {
+        "at_seconds": 0.01,
+        "generation": 1,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 20.01,
+        "generation": 1,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 40.02,
+        "generation": 2,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 60.02,
+        "generation": 3,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 80.02,
+        "generation": 3,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 100.02,
+        "generation": 3,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 120.02,
+        "generation": 4,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 140.02,
+        "generation": 4,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 160.02,
+        "generation": 5,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 180.02,
+        "generation": 5,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 200.02,
+        "generation": 5,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 220.02,
+        "generation": 6,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 240.02,
+        "generation": 6,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 260.02,
+        "generation": 6,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 280.02,
+        "generation": 6,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 300.02,
+        "generation": 7,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 320.02,
+        "generation": 7,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 340.01,
+        "generation": 7,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 360.02,
+        "generation": 7,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 380.02,
+        "generation": 8,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 400.02,
+        "generation": 8,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 420.02,
+        "generation": 8,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 440.02,
+        "generation": 9,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 460.01,
+        "generation": 9,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 480.01,
+        "generation": 9,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 500.01,
+        "generation": 9,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 520.02,
+        "generation": 10,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 540.02,
+        "generation": 10,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 560.02,
+        "generation": 10,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 580.02,
+        "generation": 10,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 600.02,
+        "generation": 11,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 620.02,
+        "generation": 11,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 640.02,
+        "generation": 11,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 660.02,
+        "generation": 12,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 680.02,
+        "generation": 12,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 700.01,
+        "generation": 12,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 720.02,
+        "generation": 12,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 740.02,
+        "generation": 13,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 760.02,
+        "generation": 13,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 780.02,
+        "generation": 13,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 800.02,
+        "generation": 13,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 820.02,
+        "generation": 14,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 840.02,
+        "generation": 14,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 860.02,
+        "generation": 14,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 880.02,
+        "generation": 15,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 900.02,
+        "generation": 15,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 920.02,
+        "generation": 15,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 940.02,
+        "generation": 15,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 960.02,
+        "generation": 16,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 980.01,
+        "generation": 16,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1000.01,
+        "generation": 16,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1020.02,
+        "generation": 17,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1040.01,
+        "generation": 17,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1060.02,
+        "generation": 17,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1080.02,
+        "generation": 17,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1100.02,
+        "generation": 18,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1120.02,
+        "generation": 18,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1140.02,
+        "generation": 18,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1160.02,
+        "generation": 18,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1180.02,
+        "generation": 19,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1200.01,
+        "generation": 19,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1220.02,
+        "generation": 19,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1240.02,
+        "generation": 19,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1260.01,
+        "generation": 20,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1280.01,
+        "generation": 20,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1300.02,
+        "generation": 20,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1320.02,
+        "generation": 20,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1340.02,
+        "generation": 21,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1360.02,
+        "generation": 21,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1380.01,
+        "generation": 21,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1400.02,
+        "generation": 22,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1420.02,
+        "generation": 22,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1440.02,
+        "generation": 22,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1460.02,
+        "generation": 22,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1480.02,
+        "generation": 23,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1500.02,
+        "generation": 23,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1520.02,
+        "generation": 23,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1540.02,
+        "generation": 24,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1560.02,
+        "generation": 24,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1580.02,
+        "generation": 24,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1600.02,
+        "generation": 24,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1620.01,
+        "generation": 25,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1640.01,
+        "generation": 25,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1660.02,
+        "generation": 25,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1680.02,
+        "generation": 25,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1700.02,
+        "generation": 26,
+        "all_fresh": true
+      },
+      {
+        "at_seconds": 1720.01,
+        "generation": 26,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1740.02,
+        "generation": 26,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1760.02,
+        "generation": 26,
+        "all_fresh": false
+      },
+      {
+        "at_seconds": 1780.02,
+        "generation": 27,
+        "all_fresh": true
+      }
+    ]
+  },
+  "deterministic_offline_soak": {
+    "classification": "PASS",
+    "evidence": "OFFLINE FAKE SDK \u2014 NOT VENUE DELIVERY",
+    "requested_seconds": 30.0,
+    "max_cycles": 1000,
+    "cycles_completed": 284,
+    "maximum_observed_queue_size": 8,
+    "dropped_events": 2556,
+    "rejected_events": 7668,
+    "retired_callback_attempts": 852,
+    "history_retained": {
+      "BTC": 32,
+      "ETH": 32,
+      "SOL": 32
+    },
+    "history_gaps": {
+      "BTC": 568,
+      "ETH": 568,
+      "SOL": 568
+    },
+    "duration_seconds": 30.2374,
+    "subscriber_count_after_shutdown": 0,
+    "remaining_owned_threads": 0,
+    "remaining_owned_tasks": 0,
+    "leaked_or_uncertain_sdk_resources": 0,
+    "sdk_connections_created": 285
+  },
+  "rate_scope": {
+    "documented_ip_weight_per_minute": 1200,
+    "probe_voluntary_ceiling": 900,
+    "included_owners": [
+      "discovery",
+      "summaries",
+      "advisories",
+      "native observation SDK REST calls"
+    ],
+    "unmetered": [
+      "external IP traffic",
+      "separate Phase 17.6 official profile lookup",
+      "WebSocket wire frames"
+    ],
+    "all_owner_shared_limiter": false,
+    "max_namespace_calls_without_other_owners": 66,
+    "max_namespace_call_weight_without_other_owners": 1320
+  },
+  "deterministic_bounds": {
+    "key_min": 1,
+    "key_max": 13,
+    "active_namespace_max": 3,
+    "retained_captures_max": 24,
+    "reuse_seconds": 15,
+    "age_seconds": 30,
+    "manual_gap_seconds": 5,
+    "acquisitions_per_rolling_minute": 24,
+    "request_seconds": 6,
+    "429_backoff_seconds": 30,
+    "discovery_namespaces": 64,
+    "catalog_records": 4096,
+    "visible_explorer_refresh_seconds": 20
+  },
+  "earlier_catalog_summary_run": {
+    "commit": "78b68b4b1fbe7b232a6ca55364128e28e847c1e8",
     "mainnet_elapsed_seconds": 1801.006,
-    "after_owner_shutdown": {
-      "rss_kib": 93188,
-      "threads": 4,
-      "asyncio_tasks": 1,
-      "discovery_threads": 0,
-      "summary_tasks": 0,
-      "summary_captures": 0
-    },
-    "retired_on_close": true,
-    "testnet_catalog": {
-      "availability": "UNAVAILABLE",
-      "error": null,
-      "published": false
-    },
-    "testnet_core": {
-      "SOL": true,
-      "BTC": true,
-      "ETH": true,
-      "DOGE": true
-    },
-    "call_counts": [
-      {
-        "network": "MAINNET",
-        "operation": "meta",
-        "result": "OK",
-        "count": 330
-      },
-      {
-        "network": "MAINNET",
-        "operation": "metaAndAssetCtxs",
-        "result": "OK",
-        "count": 184
-      },
-      {
-        "network": "MAINNET",
-        "operation": "perpDexs",
-        "result": "OK",
-        "count": 30
-      },
-      {
-        "network": "MAINNET",
-        "operation": "spotMeta",
-        "result": "OK",
-        "count": 30
-      },
-      {
-        "network": "TESTNET",
-        "operation": "metaAndAssetCtxs",
-        "result": "OK",
-        "count": 1
-      },
-      {
-        "network": "TESTNET",
-        "operation": "perpDexs",
-        "result": "OK",
-        "count": 1
-      }
-    ],
-    "total_calls": 576,
-    "weight_20_per_call_upper_bound": 11520,
-    "max_rolling_minute_weight_upper_bound": 520,
-    "max_provider_call_seconds": 2.177,
-    "process_peak_rss_kib": 94832,
-    "rss_peak_increment_kib": 31536,
-    "threads_after_loop_close": 1,
+    "all_network_calls": 576,
+    "peak_rolling_minute_weight_upper_bound": 520,
     "summary": {
       "measured_catalog_summary_workload": "PASS",
       "cycle_count": 91,
@@ -292,158 +1349,45 @@
       "namespace_acquisitions": 184,
       "namespace_capture_reuses_during_scheduled_cycles": 89
     },
-    "representative_cycles": [
-      {
-        "elapsed_seconds": 0.001,
-        "discovery_http": 200,
-        "availability": "AVAILABLE",
-        "error": null,
-        "discovery_seconds": 6.593,
-        "generation_changed": true,
-        "keys": [
-          "HYPERLIQUID:MAINNET:CORE_PERP::BTC",
-          "HYPERLIQUID:MAINNET:CORE_PERP::ETH",
-          "HYPERLIQUID:MAINNET:CORE_PERP::SOL",
-          "HYPERLIQUID:MAINNET:CORE_PERP::DOGE",
-          "HYPERLIQUID:MAINNET:HIP3_PERP:xyz:AAOI",
-          "HYPERLIQUID:MAINNET:HIP3_PERP:io:AAPL"
-        ],
-        "required_coverage": true,
-        "namespaces": 11,
-        "records": 568,
-        "summary_http": 200,
-        "summary_seconds": 1.291,
-        "current_mark_funding": 6,
-        "cache_reuse_False": true,
-        "cache_reuse_True": true,
-        "status_counts": {
-          "CURRENT": 6
-        }
-      },
-      {
-        "elapsed_seconds": 60.072,
-        "discovery_http": 200,
-        "availability": "AVAILABLE",
-        "error": null,
-        "discovery_seconds": 5.619,
-        "generation_changed": true,
-        "required_coverage": true,
-        "namespaces": 11,
-        "records": 568,
-        "retired_generation_http": 409,
-        "summary_http": 200,
-        "summary_seconds": 1.028,
-        "current_mark_funding": 6,
-        "status_counts": {
-          "CURRENT": 6
-        }
-      },
-      {
-        "elapsed_seconds": 1800.018,
-        "discovery_http": 200,
-        "availability": "AVAILABLE",
-        "error": null,
-        "discovery_seconds": 0.035,
-        "generation_changed": false,
-        "required_coverage": true,
-        "namespaces": 11,
-        "records": 568,
-        "summary_http": 200,
-        "summary_seconds": 0.931,
-        "current_mark_funding": 6,
-        "status_counts": {
-          "CURRENT": 6
-        }
-      }
-    ],
-    "exception_cycles": []
-  },
-  "native_live_read_only_streams": {
-    "classification": "PASS",
-    "duration_seconds": 24.271,
-    "started_at": "2026-11-21T07:50:05.298253+00:00",
-    "python": "3.12.14",
-    "sdk_version": "0.24.0",
-    "checks": {
-      "sdk_import": "PASS",
-      "native_metadata": "PASS",
-      "BTC_l2_rest": "PASS",
-      "ETH_l2_rest": "PASS",
-      "SOL_l2_rest": "PASS",
-      "perpetual_context_rest": "PASS",
-      "BTC_validated_ws_delivery": "PASS",
-      "ETH_validated_ws_delivery": "PASS",
-      "SOL_validated_ws_delivery": "PASS",
-      "controlled_reconnect": "PASS",
-      "sdk_cleanup": "PASS"
+    "owner_shutdown": {
+      "rss_kib": 93188,
+      "threads": 4,
+      "asyncio_tasks": 1,
+      "discovery_threads": 0,
+      "summary_tasks": 0,
+      "summary_captures": 0
     },
-    "remaining_owned_threads": 0,
-    "remaining_owned_tasks": 0,
-    "subscriber_count_after_shutdown": 0,
-    "subscriptions_created": 12,
-    "post_shutdown": {
-      "BTC": {
-        "connection_state": "STOPPED",
-        "subscription_state": "RETIRED",
-        "reconnect_count": 1
-      },
-      "ETH": {
-        "connection_state": "STOPPED",
-        "subscription_state": "RETIRED",
-        "reconnect_count": 1
-      },
-      "SOL": {
-        "connection_state": "STOPPED",
-        "subscription_state": "RETIRED",
-        "reconnect_count": 1
+    "older_resource_series": "https://github.com/btorressz/hyperamm/blob/78b68b4b1fbe7b232a6ca55364128e28e847c1e8/docs/acceptance/phase187f/provider-soak.json"
+  },
+  "combined_probe_entry_point_check": {
+    "mixed": {
+      "classification": "PASS",
+      "workload_seconds": 85.001,
+      "complete_summary_polls": 5,
+      "controlled_reconnect_generation": 2,
+      "distinct_catalog_generations": 2,
+      "cleanup": {
+        "native_sdk_client_starts": 3,
+        "native_sdk_sessions_or_handles_remaining": 0,
+        "native_local_subscribers_remaining": 0,
+        "native_owned_threads_remaining": 0,
+        "native_owned_tasks_remaining": 0,
+        "native_fresh_components_remaining": 0,
+        "discovery_threads_remaining": 0,
+        "summary_captures_remaining": 0,
+        "summary_tasks_remaining": 0
       }
     },
-    "max_subscriptions_per_connection": 6
-  },
-  "offline_native_fixture": {
-    "classification": "PASS",
-    "evidence": "OFFLINE FAKE SDK — NOT VENUE DELIVERY",
-    "requested_seconds": 30.0,
-    "max_cycles": 100,
-    "cycles_completed": 100,
-    "maximum_observed_queue_size": 8,
-    "dropped_events": 900,
-    "rejected_events": 2700,
-    "retired_callback_attempts": 300,
-    "history_retained": {
-      "BTC": 32,
-      "ETH": 32,
-      "SOL": 32
+    "catalog_point": {
+      "mainnet_current_rows": 6,
+      "testnet": {
+        "availability": "UNAVAILABLE",
+        "error": null,
+        "inventory_error": "CATALOG_CAPACITY",
+        "inventory_count": 288,
+        "published": false
+      }
     },
-    "history_gaps": {
-      "BTC": 200,
-      "ETH": 200,
-      "SOL": 200
-    },
-    "duration_seconds": 10.2816,
-    "subscriber_count_after_shutdown": 0,
-    "remaining_owned_threads": 0,
-    "remaining_owned_tasks": 0,
-    "leaked_or_uncertain_sdk_resources": 0,
-    "sdk_connections_created": 101
-  },
-  "existing_summary_resilience_fixture": {
-    "rolling_budget": "24 starts, 2 blocked calls, 2 recovered starts, 24 retained entries",
-    "request_timeout_seconds": "6.011",
-    "provider_soak": {
-      "cache_hits": 40,
-      "cache_misses": 40,
-      "elapsed_seconds": 0.458,
-      "errors": {},
-      "peak_response_bytes": 12832,
-      "peak_rss_kib": 106920,
-      "requests": 80,
-      "retained_after_close": 0,
-      "retained_before_close": 7,
-      "threads_after_close": 2,
-      "threads_at_end": 5,
-      "threads_before": 4,
-      "virtual_seconds": 400
-    }
+    "weight_guard_fixture": "PASS. A second recorded owner was prevented from calling the transport once the fixture budget was full."
   }
 }

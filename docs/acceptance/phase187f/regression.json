@@ -1,52 +1,51 @@
 {
-  "fixture_notice": "Backend and frontend suite cases use repository fixtures unless an external check is reported separately.",
-  "backend_full": {
-    "tests": 3976,
-    "errors": 0,
-    "failures": 0,
-    "skipped": 0,
+  "baseline_commit": "dd9e1488e027061a42cffd77e0761f8461de7226",
+  "backend_merged_baseline": {
     "passed": 3976,
-    "duration_seconds": 658.52,
-    "warnings": 6,
-    "warning_summary": [
-      "2 Starlette/httpx deprecations",
-      "3 Pydantic instance model_fields deprecations",
-      "1 existing negative serializer fixture warning"
-    ],
-    "status": "PASS",
-    "pytest_summary_seconds": 658.55
-  },
-  "backend_focused_overlaps_full": {
-    "tests": 2062,
-    "errors": 0,
-    "failures": 0,
+    "failed": 0,
     "skipped": 0,
-    "passed": 2062,
-    "duration_seconds": 593.87,
-    "warnings": 6,
-    "warning_summary": [
-      "2 Starlette/httpx deprecations",
-      "3 Pydantic instance model_fields deprecations",
-      "1 existing negative serializer fixture warning"
-    ],
-    "status": "PASS",
-    "pytest_summary_seconds": 593.88
-  },
-  "existing_financial_authority_provider_group_overlaps_full": {
-    "tests": 155,
+    "warnings": 5,
     "errors": 0,
-    "failures": 0,
+    "suite_seconds": 921.89,
+    "wall_seconds": 926.268
+  },
+  "backend_candidate": {
+    "passed": 3976,
+    "failed": 0,
     "skipped": 0,
-    "passed": 155,
-    "duration_seconds": 55.935,
-    "warnings": 4,
-    "warning_summary": [
-      "Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.",
-      "record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')",
-      "record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')",
-      "record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')"
-    ],
-    "status": "PASS"
+    "warnings": 5,
+    "errors": 0,
+    "suite_seconds": 774.01,
+    "wall_seconds": 776.1
+  },
+  "backend_focused": {
+    "passed": 2049,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 5,
+    "errors": 0,
+    "suite_seconds": 582.59,
+    "wall_seconds": 584.404,
+    "phase17": 786,
+    "phase18": 599,
+    "oracle_cases": {
+      "test_phase187d_authority_acceptance": 1,
+      "test_phase187d_financial_invariants": 6,
+      "test_phase176_acceptance.test_independent_native_economic_oracle": 7
+    },
+    "overlap": "Included in candidate full suite, except separate public, Redis and browser acceptance."
+  },
+  "diagnostic_trials": {
+    "pytest_9_2_trial": {
+      "passed": 2420,
+      "failed": 1,
+      "skipped": 0,
+      "warnings": 1,
+      "errors": 5,
+      "suite_seconds": 399.08,
+      "wall_seconds": 402.509
+    },
+    "disposition": "Diagnostic run stopped after reproducing fixture teardown incompatibility. Verified compatible candidate below."
   },
   "frontend": {
     "passed": 949,
@@ -54,30 +53,81 @@
     "skipped": 0,
     "cancelled": 0,
     "todo": 0,
-    "duration_seconds": 59.738340526,
-    "typecheck": "PASS",
-    "build": "PASS",
-    "build_warnings": {
-      "tanstack_directive_count": 15,
-      "bundle_size_warning": true
+    "suite_seconds": 31.487465462,
+    "wall_seconds": 41.835,
+    "npm_ci_wall_seconds": 3.993,
+    "typecheck_wall_seconds": 14.59,
+    "build_wall_seconds": 17.707,
+    "vite_warnings": {
+      "ignored_tanstack_client_directives": 15,
+      "chunk_size_notices": 1
     },
-    "vite_bundle_seconds": 5.31,
-    "node_test_warning_summary": [
-      "One Zustand persist warning for unavailable storage in the Node fixture"
-    ]
+    "npm_production_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "npm_full_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "picomatch": {
+      "resolved": "4.0.7",
+      "advisory": "GHSA-fc5q-39xc-vjpf",
+      "disposition": "WITHDRAWN_UPSTREAM",
+      "advisory_url": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
+    }
   },
-  "initial_environment_retries": [
-    "Backend interrupted after 50 passes without loopback capability. Rerun permitted loopback.",
-    "Frontend original cache was unusable. Locked install rerun with writable cache.",
-    "Frontend test initial launch lacked listen permission. Original command rerun with loopback.",
-    "Offline SDK soak stopped at shutdown in the first sandbox. The identical workload passed with loopback permitted and used only the fake SDK.",
-    "The standalone provider fixture selection was interrupted in the first sandbox and passed unchanged with loopback permitted."
+  "python_audit": {
+    "tool": "pip-audit 2.10.1",
+    "service": "PyPI",
+    "baseline_findings": [
+      {
+        "package": "pip",
+        "version": "25.0.1",
+        "reported_entries": 12,
+        "unique_ids": [
+          "PYSEC-2026-1795",
+          "PYSEC-2026-1796",
+          "PYSEC-2026-196",
+          "PYSEC-2026-2875",
+          "PYSEC-2026-2876",
+          "PYSEC-2026-3721"
+        ]
+      },
+      {
+        "package": "pytest",
+        "version": "8.4.2",
+        "reported_entries": 2,
+        "unique_ids": [
+          "PYSEC-2026-1845"
+        ]
+      }
+    ],
+    "candidate_findings": [],
+    "candidate_not_indexed": [
+      "hyperamm"
+    ],
+    "candidate_audited_packages": 80
+  },
+  "commands": [
+    "backend: python -m pytest -q -rs --tb=short",
+    "backend focused: python -m pytest -q -rs --tb=short tests/test_phase18[0-7]*.py tests/test_phase17*.py tests/test_phase15[125]*.py tests/test_audit3*.py tests/test_audit_read_observations.py tests/test_phase8_authorization.py tests/test_phase122_amm_hardening.py",
+    "frontend: npm ci && npm run typecheck && npm test && npm run build",
+    "frontend: npm audit --json && npm audit --omit=dev --json",
+    "pip-audit --path <candidate-venv>/lib/python3.12/site-packages --format json"
   ],
-  "summary_resilience_overlap": {
-    "passed": 44,
-    "failed": 0,
-    "skipped": 0,
-    "warnings": 0,
-    "seconds": 8.0
-  }
+  "backend_warning_sources": [
+    "Starlette TestClient httpx deprecation",
+    "existing Pydantic malformed-value serializer fixture",
+    "Pydantic deprecated field access in fixture",
+    "pytest-asyncio startup fixture loop-scope notice"
+  ]
 }

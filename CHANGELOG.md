@@ -6,11 +6,13 @@ The original changelog includes the first 60 merged PRs and historical milestone
 
 ## Unreleased — Phase 18.7F release acceptance
 
-- Reproduce controlled standard and asset-aware PAPER parity and the exact native BTC/ETH/SOL reference. Preserve the original PR #100 hash limitation.
-- Run the existing local regression, browser, SDK and physical Redis paths. Add opt-in bounded public discovery and summary soak evidence using the existing source owners.
-- Record the bounded release decision, separately gated signed TESTNET and recovery, and the retained Testnet catalog restriction. [Final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
+- Reproduce the 56 controlled PAPER pairs and the published native financial digest. Preserve the exact PR #100 aggregate hash attestation gap.
+- Verify the loopback release candidate, official Mainnet observations, native read-only reconnect, physical Redis and the Linux Chromium workflow with individual external rollout gates.
+- Add one opt-in sustained read-only acceptance probe, a release runbook and compact evidence. Move the test extra to a patched compatible pytest/pytest-asyncio range. [Final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
 
-## Unreleased — Phase 18.7D–E acceptance
+## 2026-11-21 — Phase 18.7D–E acceptance
+
+Merged in [PR #103](https://github.com/btorressz/hyperamm/pull/103) at `dd9e1488e027061a42cffd77e0761f8461de7226`.
 
 - Reconcile qualified PAPER execution through quotes, fills, fees, funding, ledger and marked equity across both AMMs and all three risk paths. Cover every native BTC/ETH/SOL portfolio selection and mixed results across advisory and operational authority.
 - Extend the fixture browser suite for the 13 routes in all three modes, results across navigation, responsive layouts, keyboard access, provider and worker failures, Replay and portfolio provenance.
