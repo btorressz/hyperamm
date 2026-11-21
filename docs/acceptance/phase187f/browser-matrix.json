@@ -1,0 +1,247 @@
+{
+  "baseline_commit": "dd9e1488e027061a42cffd77e0761f8461de7226",
+  "platforms": {
+    "Linux Chromium": {
+      "status": "PASS",
+      "browser": "Chrome/151.0.7922.173",
+      "driver": "Playwright 1.62.0",
+      "duration_seconds": 115.298,
+      "workflows": [
+        "Core, HIP-3, symbol and DEX search, filters, missing observations, delisting and qualified details",
+        "Retained stale metadata disables launch, and network refresh replaces qualified identity",
+        "Source fields, page sort, missing data, timeout, rate limit, server/client expiry and late DEX request retirement",
+        "2,006 records remain searchable with 12 cards mounted per page and recover on refresh",
+        "Starter eligibility, rejection and genuine worker outcome, with one run across three mode changes and Results",
+        "Pro overview and both AMMs, with supervisory, advisory, replay, comparison and asset-aware research",
+        "Institutional portfolio, stress, provenance, risk, audit and accounting routes, with legacy refresh and history",
+        "Keyboard mode selection and mobile drawer return focus",
+        "Narrow financial table keyboard scrolling, drawer focus containment and focus return",
+        "Qualified HIP-3 concentrated PAPER completes across page and mode changes with a single admission",
+        "Generated Historical Replay and real native portfolio analytics and source receipts on six layouts",
+        "Actual 422 and injected 429, 500, 503, 504 and network interruption retire admission and allow manual recovery",
+        "Terminal WebSocket loss preserves read-only Explorer and reconnect restores current risk evidence",
+        "All 13 routes load and refresh in every mode, with active links, back/forward, focus and scroll"
+      ],
+      "routes": {
+        "Starter": [
+          "dashboard",
+          "markets",
+          "strategy",
+          "amm-settings",
+          "execution",
+          "risk",
+          "agents",
+          "vault",
+          "analytics",
+          "simulation",
+          "portfolio-research",
+          "logs",
+          "settings"
+        ],
+        "Pro": [
+          "dashboard",
+          "markets",
+          "strategy",
+          "amm-settings",
+          "execution",
+          "risk",
+          "agents",
+          "vault",
+          "analytics",
+          "simulation",
+          "portfolio-research",
+          "logs",
+          "settings"
+        ],
+        "Institutional": [
+          "dashboard",
+          "markets",
+          "strategy",
+          "amm-settings",
+          "execution",
+          "risk",
+          "agents",
+          "vault",
+          "analytics",
+          "simulation",
+          "portfolio-research",
+          "logs",
+          "settings"
+        ]
+      },
+      "viewport_measurements": 71,
+      "page_errors": 0,
+      "generated_screenshots": 28,
+      "axe": {
+        "version": "4.11.1",
+        "scans": 26,
+        "violations": 0,
+        "manual_review": {
+          "color-contrast": 7,
+          "th-has-data-cells": 2
+        },
+        "min_sampled_text_contrast": 8.445671932425569
+      },
+      "zoom_200": {
+        "width": 720,
+        "document": 720,
+        "dpr": 2
+      },
+      "keyboard": [
+        {
+          "region": "Reference source evidence table",
+          "tabs": 3,
+          "axis": "horizontal",
+          "pixels": 1
+        }
+      ]
+    },
+    "Linux Firefox": {
+      "status": "BLOCKED",
+      "driver": "Playwright 1.65.2",
+      "requested_version": "159.0",
+      "reason": "Approved browser CDN returned HTTP 403. Required executable absent."
+    },
+    "Linux WebKit": {
+      "status": "BLOCKED",
+      "driver": "Playwright 1.65.2",
+      "requested_version": "27.2",
+      "reason": "Approved browser CDN returned HTTP 403. Required executable absent."
+    },
+    "macOS Safari": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "macOS Chromium": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "macOS Firefox": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "Windows Edge": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "Windows Chrome": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "Windows Firefox": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "iOS Safari on device": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "Android Chrome on device": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "macOS VoiceOver": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "iOS VoiceOver": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    },
+    "Windows NVDA": {
+      "status": "NOT RUN",
+      "reason": "Native environment or device unavailable on this Linux host."
+    }
+  },
+  "evidence": "Linux browser fixtures and locally executed PAPER workers",
+  "audit3": {
+    "status": "PASS",
+    "scans_before_zoom": 32,
+    "zoom_scans": 1,
+    "violations": 0,
+    "manual_review_entries": 33,
+    "min_sampled_text_contrast": 6.7132145215923495,
+    "keyboard": [
+      {
+        "region": "Reference source evidence table",
+        "tabs": 3,
+        "axis": "horizontal",
+        "pixels": 2
+      },
+      {
+        "region": "Recent agent events",
+        "tabs": 12,
+        "axis": "vertical",
+        "pixels": 3
+      }
+    ],
+    "duration_seconds": 34.465
+  },
+  "legacy_checks": {
+    "phase18.6": {
+      "status": "PASS",
+      "workflows": 8,
+      "wall_seconds": 31
+    },
+    "phase18.2": {
+      "status": "PASS",
+      "checks": 36,
+      "wall_seconds": 53
+    },
+    "phase17.6": {
+      "status": "PASS",
+      "workflows": 22,
+      "wall_seconds": 106,
+      "source": "Official native profile lookup, generated PAPER scenarios, loopback browser"
+    },
+    "phase16.5C.2": {
+      "status": "PASS",
+      "workflows": 15,
+      "wall_seconds": 46
+    },
+    "phase16.4.1": {
+      "status": "PASS",
+      "workflows": 16,
+      "wall_seconds": 45.303,
+      "diagnostic_rerun": "PASS"
+    }
+  },
+  "initial_attempts": [
+    {
+      "suite": "phase18.7",
+      "driver": "1.65.2",
+      "workflows": 10,
+      "wall_seconds": 36,
+      "failure": "Replay run button remained disabled until timeout."
+    },
+    {
+      "suite": "phase18.7",
+      "driver": "1.65.2",
+      "workflows": 13,
+      "wall_seconds": 63,
+      "failure": "After reload, no active navigation link appeared within the assertion budget.",
+      "route_checks_completed": 14
+    },
+    {
+      "suite": "Audit 3.0 accessibility",
+      "driver": "1.62.0",
+      "failure": "Dashboard startup timed out in first attempt with concurrent frontend reinstall."
+    },
+    {
+      "suite": "phase16.4.1",
+      "drivers": [
+        "1.65.2",
+        "1.62.0"
+      ],
+      "workflows": 16,
+      "failure": "Unexpected WebSocket close before handshake appeared in console during runs exercising actual restart."
+    }
+  ],
+  "manual_review": [
+    "Replay row-group and column semantics",
+    "named keyboard-scrollable financial tables",
+    "sampled text contrast",
+    "chart series captions and textual selected-frame prices",
+    "drawer focus return and live status regions. Screen reader delivery remains open."
+  ]
+}

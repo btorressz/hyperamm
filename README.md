@@ -5,22 +5,25 @@
 
 > **Open source · active development · local/single-operator architecture.** This repository is an engineering and research project, **not** a production-ready trading service, investment product, custody system or verified profitable strategy. PAPER/DEMO is the default; TESTNET signing is separately guarded. No mainnet trading, withdrawal, transfer or bridging path is implemented.
 
-## Current project status — November 12, 2026
+## Current project status — Phase 18.7F release candidate
+
+Phase 18.7F records **PASS** for bounded loopback DEMO/PAPER research. The candidate verifies the 13-route terminal, both AMMs, nine agents, native portfolio, Core/HIP-3 Explorer and the separately labeled public observations. Signed TESTNET, wider browser/platform coverage and durable recovery have individual gates. [Final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
 
 | Workstream | Merged implementation | Acceptance / boundary |
 | --- | --- | --- |
 | Core AMM, inventory, perp context, reference risk, supervisory agents and Vault (Phases 1–12) | Operational pipeline, deterministic PAPER simulation, guarded optional TESTNET, terminal workspaces | Historical local/fixture acceptance; external, platform and production gates remain |
 | Institutional UX and research (Phases 13–14.6) | Analytics, Execution/Markets UX, Research Vault presets/comparisons, BTC/ETH/SOL isolated PAPER market selection | Local/browser acceptance does not establish venue performance |
-| Read-only native market intelligence (Phases 15.1–15.5B, PRs #50–#55) | Official SDK REST/WS observation, L2/perp contexts, stream freshness, bounded history, provider health, observer lifecycle hardening | **Combined Phase 15 not closed:** genuine permitted venue connectivity, long soak and independent macOS acceptance outstanding |
+| Read-only native market intelligence (Phases 15.1–15.5B, PRs #50–#55) | Official SDK REST/WS observation, L2/perp contexts, stream freshness, bounded history, provider health, observer lifecycle hardening | Local and sampled public read-only delivery verified. Sustained and native-platform limits are recorded in Phase 18.7F. |
 | Historical research contracts and importer (Phases 16.1A/B, PRs #56–#57) | Immutable provenance, bounded secure local JSON admission, owner-only POSIX evidence vault | Source/permission labels are user assertions; no authenticated historical-feed or license proof |
 | Deterministic replay and modeled PAPER execution (Phases 16.2–16.3, PRs #58–#59) | Receipt-ordered replay, explicit segment resets, missing-economics rejection, optional latency/slippage/depth/partial-fill sensitivity | No verified real fills, queue priority, market completeness or production forecast |
 | Historical Replay Studio (Phases 16.4–16.4.1) | React dataset/frame navigation, original traces and independent segment accounting | Native/frontend/Chromium evidence recorded in the later acceptance phase |
 | Scenario/historical comparison (Phases 16.5A–C.2, PRs #62–#66) | Same-job capture, descriptive metrics, bounded API and React Comparison Studio | Independent final security/regression findings and local gates: [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md) |
 | Local research acceptance (Phases 16.6A/C/D) | Native, browser, security and resource acceptance | Durable lifecycle/recovery (16.6B) remains deferred |
 | Portfolio research (Phases 17.1A–17.5) | Exact configuration, PAPER execution/accounting/risk, six modeled stress scenarios and integrated responsive Portfolio Research terminal | [Phase 17.5 acceptance](docs/PHASE175_ACCEPTANCE.md); bounded native charts and provenance, no trading authority |
-| Next (Phase 17.6) | Independent final security, regression and end-to-end acceptance | Deferred |
+| Phase 17.6 | Native portfolio final financial, security and terminal acceptance | [Phase 17.6 evidence](docs/PHASE176_FINAL_ACCEPTANCE.md) |
+| Phases 18.0–18.7 | Mainnet Core/HIP-3 discovery and Explorer, Generalized and asset-aware PAPER, three observational advisory agents, source-constrained risk and three presentation modes | [Phase 18.7F release gates](docs/PHASE18_7_FINAL_ACCEPTANCE.md#f6--readiness-matrix-and-rollout-decision) |
 
-The current **research and independent live-observation universe** is **BTC-PERP, ETH-PERP and SOL-PERP**. That does not expand the operational strategy market or permit switching live execution through the research UI. Operational market data, independent read-only observation and the historical PAPER replay vault are **three separate evidence paths**.
+Native portfolio research and the independent native stream cover BTC, ETH and SOL. Explorer and qualified single-market PAPER can use supported Core and HIP-3 catalog identities. Full Testnet discovery remains restricted by the 64-namespace policy. Operational feeds, public observations, synthetic PAPER inputs and the historical vault retain independent provenance and authority.
 
 Details and actual milestone tests: [CHANGELOG.md](CHANGELOG.md), [CODEBASE.md](CODEBASE.md), [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), and the [Phase 15.5B](docs/PHASE155B_ACCEPTANCE.md) / [Phase 16.4](docs/PHASE164_ACCEPTANCE.md) acceptance documents.
 
@@ -94,7 +97,7 @@ No Docker, Kubernetes or GitHub Actions infrastructure is required. PostgreSQL-b
 
 ## Quick start — native local development
 
-Requirements: Python **3.12+**, Node.js/npm, and a supported loopback desktop environment. Run the backend and frontend in **separate terminals**. These commands assume you start at the repository root (`hyperamm/`).
+Use Python **3.12+**, a Vite-supported Node release and a loopback desktop environment. Run the backend and frontend in **separate terminals** from the repository root. The runbook lists the exercised versions and the exact configuration for Explorer and signing-disabled PAPER. [Phase 18 release runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
 
 Create a local config file from the tracked example (do not commit credentials):
 
@@ -109,8 +112,8 @@ cd backend
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[test]'
-python -m pytest tests -q
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python -m pytest -q -rs --tb=short
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1 --no-proxy-headers
 ```
 
 API: `http://127.0.0.1:8000` · interactive local OpenAPI: `http://127.0.0.1:8000/docs`.
@@ -121,11 +124,11 @@ From a **second terminal** at the repository root:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run typecheck
 npm run build
 npm test
-npm run dev
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 Terminal: `http://127.0.0.1:5173`. Vite proxies `/api` and `/ws` to the local backend. These are instructions to reproduce validation, not claims that the latest full suite is green. See [tests and acceptance](#tests-and-acceptance).
@@ -149,7 +152,7 @@ LIVE_OBSERVATIONS_ENABLED=true
 LIVE_STREAMS_ENABLED=true
 ```
 
-`LIVE_STREAMS_ENABLED` requires `LIVE_OBSERVATIONS_ENABLED`. The Markets page shows native order books, mark/oracle/funding/OI, source and receipt times, provider health, reconnects and explicit gaps. These observation endpoints cannot sign orders or change the active operational market. Genuine permitted Hyperliquid delivery and independent macOS acceptance remain open after Phase 15.5B.
+`LIVE_STREAMS_ENABLED` requires `LIVE_OBSERVATIONS_ENABLED`. The Markets page shows native order books, mark/oracle/funding/OI, source and receipt times, provider health, reconnects and explicit gaps. These observation endpoints cannot sign orders or change the active operational market. Phase 18.7F records current public delivery, reconnect and resource measurements. Native macOS acceptance remains open. [Provider gates](docs/PHASE18_7_FINAL_ACCEPTANCE.md#f2--public-provider-and-resource-acceptance)
 
 ## PAPER and optional TESTNET execution
 
@@ -219,7 +222,7 @@ Phase 16.4.1 and 16.5C.2 subsequently recorded native Python/Node, TypeScript/bu
 
 ## Limitations and outstanding acceptance
 
-Research-mode software is **not** production authorization. Phase 15's independent public-stream observer was hardened with meaningful offline SDK, fixture and Chromium tests, but genuine live delivery and independent macOS verification remain open. Phase 16 can process **bounded locally admitted** recorded-native or explicitly synthetic histories; data rights, external authenticity and market coverage remain user assertions. Historical simulations intentionally reset all PAPER state on gaps and model unobserved execution effects only as separately labeled hypotheses.
+The release scope is local research. Public read-only native delivery and deterministic resilience have separate evidence. Sustained provider and independent macOS gates remain scoped in the [final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md). Phase 16 can process **bounded locally admitted** recorded-native or explicitly synthetic histories; data rights, external authenticity and market coverage remain user assertions. Historical simulations intentionally reset all PAPER state on gaps and model unobserved execution effects only as separately labeled hypotheses.
 
 Live operating/reference data and TESTNET signing remain governed by the existing runtime and final risk authority; neither the historical Replay Studio nor the market-comparison UI can deploy a candidate. Optional Redis does not enable distributed execution, and accounting is a non-custodial in-memory operational/PAPER session ledger. The local historical evidence vault is **separate owner-only file storage**, not durable operational accounting.
 
@@ -236,7 +239,8 @@ Phase 16.5A–C.2 is merged through [PR #66](https://github.com/btorressz/hypera
 
 | Guide | Purpose |
 | --- | --- |
-| [CHANGELOG.md](CHANGELOG.md) | Merged PR history through Phase 16.4 and limitations |
+| [CHANGELOG.md](CHANGELOG.md) | Merged changes, historical evidence and release candidate notes |
+| [Phase 18.7F acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md) | Verified local scope, exact evidence and independent rollout gates |
 | [CODEBASE.md](CODEBASE.md) | Repository structure and architecture/authority inventory |
 | [Architecture](docs/ARCHITECTURE.md) · [AMM math](docs/AMM_MATH.md) | Core runtime pipeline, curve and sizing math |
 | [Hyperliquid integration](docs/HYPERLIQUID_INTEGRATION.md) | Operational feed, SDK and guarded TESTNET boundaries |
@@ -251,9 +255,9 @@ Phase 16.5A–C.2 is merged through [PR #66](https://github.com/btorressz/hypera
 
 **Implemented/merged:** Phases 1–12 (core trading/research/terminal), 13–14.6 (institutional UX and customizable PAPER research), 15.1–15.5B (read-only native market intelligence and hardening), 16.1A–16.5C.2 (historical replay and scenario comparison).
 
-**Acceptance still required:** combined Phase 15 permitted live/macOS checks and independent exchange-source authenticity/licensing. Local Phase 16.5 gates are recorded in the D-phase report.
+**Acceptance still required:** independent native-platform lifecycle, verified historical source authenticity and usage rights, and signed venue reconciliation. [Phase 18.7F gates](docs/PHASE18_7_FINAL_ACCEPTANCE.md#f6--readiness-matrix-and-rollout-decision)
 
-**Research acceptance:** Phase 17 shared-capital BTC/ETH/SOL portfolio research is documented in [final Phase 17 acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md). Phase 16.6B durable lifecycle/recovery and physical Redis remain separately tracked. See [CHANGELOG.md](CHANGELOG.md) and [final local acceptance](docs/PHASE165D_ACCEPTANCE.md).
+**Research acceptance:** Phase 17 shared-capital BTC/ETH/SOL portfolio research is documented in [final Phase 17 acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md). Phase 16.6B durable lifecycle/recovery remains open. Phase 18.7F exercised physical Redis on loopback. See [CHANGELOG.md](CHANGELOG.md) and [final local acceptance](docs/PHASE165D_ACCEPTANCE.md).
 
 The detailed historical Phase 4–12 descriptions below document how the existing operational engine was built; they are preserved for technical context.
 

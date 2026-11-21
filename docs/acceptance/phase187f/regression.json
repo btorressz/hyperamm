@@ -1,0 +1,133 @@
+{
+  "baseline_commit": "dd9e1488e027061a42cffd77e0761f8461de7226",
+  "backend_merged_baseline": {
+    "passed": 3976,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 5,
+    "errors": 0,
+    "suite_seconds": 921.89,
+    "wall_seconds": 926.268
+  },
+  "backend_candidate": {
+    "passed": 3976,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 5,
+    "errors": 0,
+    "suite_seconds": 774.01,
+    "wall_seconds": 776.1
+  },
+  "backend_focused": {
+    "passed": 2049,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 5,
+    "errors": 0,
+    "suite_seconds": 582.59,
+    "wall_seconds": 584.404,
+    "phase17": 786,
+    "phase18": 599,
+    "oracle_cases": {
+      "test_phase187d_authority_acceptance": 1,
+      "test_phase187d_financial_invariants": 6,
+      "test_phase176_acceptance.test_independent_native_economic_oracle": 7
+    },
+    "overlap": "Included in candidate full suite, except separate public, Redis and browser acceptance."
+  },
+  "diagnostic_trials": {
+    "pytest_9_2_trial": {
+      "passed": 2420,
+      "failed": 1,
+      "skipped": 0,
+      "warnings": 1,
+      "errors": 5,
+      "suite_seconds": 399.08,
+      "wall_seconds": 402.509
+    },
+    "disposition": "Diagnostic run stopped after reproducing fixture teardown incompatibility. Verified compatible candidate below."
+  },
+  "frontend": {
+    "passed": 949,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "suite_seconds": 31.487465462,
+    "wall_seconds": 41.835,
+    "npm_ci_wall_seconds": 3.993,
+    "typecheck_wall_seconds": 14.59,
+    "build_wall_seconds": 17.707,
+    "vite_warnings": {
+      "ignored_tanstack_client_directives": 15,
+      "chunk_size_notices": 1
+    },
+    "npm_production_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "npm_full_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "picomatch": {
+      "resolved": "4.0.7",
+      "advisory": "GHSA-fc5q-39xc-vjpf",
+      "disposition": "WITHDRAWN_UPSTREAM",
+      "advisory_url": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
+    }
+  },
+  "python_audit": {
+    "tool": "pip-audit 2.10.1",
+    "service": "PyPI",
+    "baseline_findings": [
+      {
+        "package": "pip",
+        "version": "25.0.1",
+        "reported_entries": 12,
+        "unique_ids": [
+          "PYSEC-2026-1795",
+          "PYSEC-2026-1796",
+          "PYSEC-2026-196",
+          "PYSEC-2026-2875",
+          "PYSEC-2026-2876",
+          "PYSEC-2026-3721"
+        ]
+      },
+      {
+        "package": "pytest",
+        "version": "8.4.2",
+        "reported_entries": 2,
+        "unique_ids": [
+          "PYSEC-2026-1845"
+        ]
+      }
+    ],
+    "candidate_findings": [],
+    "candidate_not_indexed": [
+      "hyperamm"
+    ],
+    "candidate_audited_packages": 80
+  },
+  "commands": [
+    "backend: python -m pytest -q -rs --tb=short",
+    "backend focused: python -m pytest -q -rs --tb=short tests/test_phase18[0-7]*.py tests/test_phase17*.py tests/test_phase15[125]*.py tests/test_audit3*.py tests/test_audit_read_observations.py tests/test_phase8_authorization.py tests/test_phase122_amm_hardening.py",
+    "frontend: npm ci && npm run typecheck && npm test && npm run build",
+    "frontend: npm audit --json && npm audit --omit=dev --json",
+    "pip-audit --path <candidate-venv>/lib/python3.12/site-packages --format json"
+  ],
+  "backend_warning_sources": [
+    "Starlette TestClient httpx deprecation",
+    "existing Pydantic malformed-value serializer fixture",
+    "Pydantic deprecated field access in fixture",
+    "pytest-asyncio startup fixture loop-scope notice"
+  ]
+}

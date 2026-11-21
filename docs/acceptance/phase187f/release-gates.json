@@ -1,0 +1,284 @@
+{
+  "baseline_commit": "dd9e1488e027061a42cffd77e0761f8461de7226",
+  "release_decision": "PASS",
+  "review_required": true,
+  "workstreams": {
+    "F1": "CONDITIONAL",
+    "F2": "CONDITIONAL",
+    "F3": "CONDITIONAL",
+    "F4": "PASS",
+    "F5": "PASS",
+    "F6": "PASS"
+  },
+  "readiness": [
+    {
+      "gate": "Local DEMO/PAPER terminal",
+      "disposition": "PASS",
+      "scope": "Single operator, one worker, loopback Linux and isolated release smoke."
+    },
+    {
+      "gate": "Core/HIP-3 read-only discovery",
+      "disposition": "PASS",
+      "scope": "Fresh actual Mainnet application catalog. Separate Testnet cap."
+    },
+    {
+      "gate": "Actual mark/funding summaries",
+      "disposition": "PASS",
+      "scope": "Fresh local-receipt Core and HIP-3 mark/funding observations."
+    },
+    {
+      "gate": "Sustained provider operation",
+      "disposition": "CONDITIONAL",
+      "scope": "30-minute target exercised. See reconnect gaps and shared IP scope."
+    },
+    {
+      "gate": "Generalized single-market PAPER",
+      "disposition": "PASS",
+      "scope": "38 controlled pairs plus qualified admission, precision and local workflow."
+    },
+    {
+      "gate": "Asset-aware PAPER",
+      "disposition": "PASS",
+      "scope": "18 controlled pairs plus asset policy, source-constrained risk and browser receipt."
+    },
+    {
+      "gate": "Constant Product and Concentrated Liquidity",
+      "disposition": "PASS",
+      "scope": "Real local PAPER smoke and independent financial oracles."
+    },
+    {
+      "gate": "All nine agents",
+      "disposition": "PASS",
+      "scope": "Six supervisory including SHADOW and three observational advisory agents."
+    },
+    {
+      "gate": "Risk Firewall and final authorization",
+      "disposition": "PASS",
+      "scope": "Decimal, actual local fail-closed checks and concrete no-signing authority."
+    },
+    {
+      "gate": "Native BTC/ETH/SOL portfolio",
+      "disposition": "PASS",
+      "scope": "Published digest, 39 fingerprinted datasets, seven subsets and modeled stress."
+    },
+    {
+      "gate": "Historical Replay",
+      "disposition": "PASS",
+      "scope": "Generated admitted fixtures and content provenance. Source authenticity/licensing remain open."
+    },
+    {
+      "gate": "Starter/Pro/Institutional",
+      "disposition": "PASS",
+      "scope": "All 13 routes in each presentation mode."
+    },
+    {
+      "gate": "Chromium on Linux",
+      "disposition": "PASS",
+      "scope": "Executed workflows, responsive checks and actual CDP zoom."
+    },
+    {
+      "gate": "Playwright Firefox on Linux",
+      "disposition": "BLOCKED",
+      "scope": "Supported binary download was denied."
+    },
+    {
+      "gate": "Playwright WebKit on Linux",
+      "disposition": "BLOCKED",
+      "scope": "Supported binary download was denied."
+    },
+    {
+      "gate": "Native macOS/Safari, Windows browsers and physical mobile browsers",
+      "disposition": "NOT RUN",
+      "scope": "See per-platform outcomes in browser evidence."
+    },
+    {
+      "gate": "Manual accessibility with assistive technology",
+      "disposition": "NOT RUN",
+      "scope": "Local semantics, contrast and keyboard checked. VoiceOver and NVDA remain open."
+    },
+    {
+      "gate": "Physical Redis",
+      "disposition": "PASS",
+      "scope": "Loopback Redis 8.0.2, ephemeral coordination and recovery."
+    },
+    {
+      "gate": "Signed TESTNET",
+      "disposition": "NOT RUN",
+      "scope": "Operator-controlled authorization and actual venue reconciliation are separate."
+    },
+    {
+      "gate": "Full Testnet catalog",
+      "disposition": "BLOCKED",
+      "scope": "288 namespace entries exceed the enforced cap of 64."
+    },
+    {
+      "gate": "Durable recovery",
+      "disposition": "BLOCKED",
+      "scope": "Requires a separately designed persistence and recovery protocol."
+    },
+    {
+      "gate": "HIP-3 signed execution",
+      "disposition": "OUT OF SCOPE",
+      "scope": "No expanded trading authority."
+    },
+    {
+      "gate": "Mainnet execution",
+      "disposition": "OUT OF SCOPE",
+      "scope": "Public Mainnet evidence is read-only."
+    },
+    {
+      "gate": "Remote multi-user production",
+      "disposition": "OUT OF SCOPE",
+      "scope": "Local peer and Origin/Host boundary. Remote admission and security require separate design."
+    }
+  ],
+  "loopback_socket_smoke": {
+    "configuration": {
+      "MARKET_DATA_MODE": "DEMO",
+      "EXECUTION_MODE": "PAPER",
+      "ENABLE_HYPERLIQUID_TESTNET_ORDERS": "false",
+      "MARKET_UNIVERSE_ENABLED": "true",
+      "MARKET_UNIVERSE_NETWORK": "MAINNET",
+      "LIVE_OBSERVATIONS_ENABLED": "false",
+      "LIVE_STREAMS_ENABLED": "false",
+      "REDIS_ENABLED": "false"
+    },
+    "bind": "127.0.0.1",
+    "workers": 1,
+    "cycles": [
+      {
+        "health_ready_seconds": 2.643,
+        "terminal_handshake": 101,
+        "foreign_host": 403,
+        "foreign_origin": 403,
+        "forwarded": 403,
+        "x_forwarded": 403,
+        "foreign_websocket_origin": 403,
+        "body_limit": 413,
+        "sanitized_validation": 422,
+        "GET risk": 200,
+        "GET risk/authorization": 200,
+        "GET vault": 200,
+        "GET terminal/events": 200,
+        "GET agents": 200,
+        "GET orders": 200,
+        "GET strategy": 200,
+        "PAPER CONSTANT_PRODUCT": {
+          "http": 200,
+          "dataset_fingerprint": "b6c0db72a67b8c26ca3d9e115968945d4c3645819fa56a3ec242d32f4c2c9fbd"
+        },
+        "PAPER CONCENTRATED": {
+          "http": 200,
+          "dataset_fingerprint": "b6c0db72a67b8c26ca3d9e115968945d4c3645819fa56a3ec242d32f4c2c9fbd"
+        },
+        "terminal_closed_on_shutdown": 1012,
+        "uvicorn_exit_status": -15,
+        "elapsed_seconds": 4.247
+      },
+      {
+        "health_ready_seconds": 1.887,
+        "terminal_handshake": 101,
+        "foreign_host": 403,
+        "foreign_origin": 403,
+        "forwarded": 403,
+        "x_forwarded": 403,
+        "foreign_websocket_origin": 403,
+        "body_limit": 413,
+        "sanitized_validation": 422,
+        "GET risk": 200,
+        "GET risk/authorization": 200,
+        "GET vault": 200,
+        "GET terminal/events": 200,
+        "GET agents": 200,
+        "GET orders": 200,
+        "GET strategy": 200,
+        "terminal_closed_on_shutdown": 1012,
+        "uvicorn_exit_status": -15,
+        "elapsed_seconds": 2.59
+      }
+    ],
+    "status": "PASS",
+    "backend_restart_new_process_and_session": true,
+    "synthetic_secret_absent": true
+  },
+  "physical_redis": {
+    "classification": "PASS",
+    "checks": [
+      "Actual Redis startup, PING and application health CONNECTED",
+      "Two actual Pub/Sub terminal sockets share identity and release all clients",
+      "Coordinated actual PAPER worker preserves operational configuration",
+      "Actual TTL cache, Lua capacity rejection/release and expiring worker heartbeat",
+      "Actual Redis outage rejects research, reports DEGRADED and preserves manual kill",
+      "Actual Redis recovery cannot clear kill or change strategy",
+      "Application, relay and research lifespan shutdown completes"
+    ],
+    "fixture_notice": "Actual local Redis; DEMO/PAPER only; no venue requests",
+    "redis_version": "8.0.2",
+    "elapsed_seconds": 0.47
+  },
+  "operational_scope": {
+    "signed_testnet": "NOT RUN",
+    "real_exchange_submissions": 0,
+    "single_worker": true,
+    "durable_recovery": "BLOCKED",
+    "deployment": "loopback only"
+  },
+  "verified_redis_rerun": {
+    "classification": "PASS",
+    "checks": [
+      "Actual Redis startup, PING and application health CONNECTED",
+      "Two actual Pub/Sub terminal sockets share identity and release all clients",
+      "Coordinated actual PAPER worker preserves operational configuration",
+      "Actual TTL cache, Lua capacity rejection/release and expiring worker heartbeat",
+      "Actual Redis outage rejects research, reports DEGRADED and preserves manual kill",
+      "Actual Redis recovery cannot clear kill or change strategy",
+      "Application, relay and research lifespan shutdown completes"
+    ],
+    "fixture_notice": "Actual local Redis; DEMO/PAPER only; no venue requests",
+    "redis_version": "8.0.2",
+    "elapsed_seconds": 0.46
+  },
+  "production_browser_preview": {
+    "evidence": "Production Vite assets via loopback preview and actual DEMO/PAPER backend",
+    "status": "PASS",
+    "page_errors": [],
+    "workspaces": [
+      "Starter",
+      "Pro",
+      "Institutional"
+    ],
+    "production_asset_loaded": true,
+    "terminal_risk_vault_logs": "PASS",
+    "paper_run": {
+      "status": 200,
+      "simulated": true
+    },
+    "elapsed_seconds": 5.449
+  },
+  "prior_pr104_unmodified_browser_smoke": {
+    "result": "PASS",
+    "market": "HYPERLIQUID:MAINNET:CORE_PERP::BTC",
+    "browser": "151.0.7922.173",
+    "observed": [
+      "mark",
+      "funding"
+    ],
+    "status": "CURRENT",
+    "page_errors": 0,
+    "duration_seconds": 10.583
+  },
+  "prior_pr104_native_observation_app_smoke": {
+    "result": "PASS",
+    "market_universe": "DISABLED",
+    "BTC_public_rest": {
+      "http": 200,
+      "state": "AVAILABLE"
+    },
+    "BTC_public_websocket": {
+      "state": "AVAILABLE",
+      "subscribed": "OBSERVED"
+    },
+    "duration_seconds": 5.665,
+    "shutdown_completed": true
+  }
+}

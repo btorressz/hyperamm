@@ -4,25 +4,26 @@
 
 ---
 
-## Current project status — November 11, 2026
+## Current project status — Phase 18.7F release candidate
 
-**HyperAMM includes merged implementations through Phase 16.5C.2 ([PR #66](https://github.com/btorressz/hyperamm/pull/66))**. Phase 16.5D's independent acceptance is recorded in [the final report](docs/PHASE165D_ACCEPTANCE.md). It remains a local, single-operator research system with default DEMO/PAPER, separately guarded TESTNET, and no production mainnet, custody or money movement.
+**HyperAMM includes merged implementations through Phase 18.7D–E.** The Phase 18.7F candidate records **PASS** for bounded local DEMO/PAPER and individual rollout decisions for provider, browser, Redis, signed TESTNET and durable recovery. [Final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
 
 | Scope | Merged implementation | Acceptance boundary |
 | --- | --- | --- |
 | Phases 1–12 | Virtual AMM, quote reconciliation, inventory/perpetual adaptation, risk firewall, supervisory agents, accounting, simulation, 12-page React terminal | Historical fixture/local acceptance, not production |
 | Phases 13–14.6 | Institutional operator UX, Research Vault, independent BTC/ETH/SOL PAPER market selection | No browser-controlled operational market switching |
-| Phases 15.1–15.5B | Read-only BTC/ETH/SOL official SDK REST/WebSocket observation, source/freshness/health diagnostics, comparison and hardening | Genuine permitted venue delivery, independent macOS and long-run acceptance remain open |
+| Phases 15.1–15.5B | Read-only BTC/ETH/SOL official SDK REST/WebSocket observation, source/freshness/health diagnostics, comparison and hardening | Actual public read-only delivery and separate deterministic resilience. See current provider and native platform gates. |
 | Phases 16.1A–16.1B | Strict historical provenance and source/gap contracts, bounded JSON import, private owner-only POSIX vault | Native-recording and permission claims are user assertions, not verified licenses |
 | Phase 16.2 | Deterministic receipt-ordered historical replay, segment resets, explicit missing-economics rejection | No inferred complete market history |
 | Phase 16.3 | Opt-in hypothetical crossing latency, slippage, retained-depth/participation and partial fills | No proof of actual exchange fills, queue priority or network latency |
 | Phases 16.4–16.4.1 | Historical Replay Studio with bounded provenance, independent segments and acceptance hardening | Native/frontend/Chromium evidence recorded after the original feature merge |
 | Phases 16.5A–16.5C.2 | Same-job scenario capture, descriptive quantitative receipts, bounded comparison API and React Studio | Merged; independent final hardening and gate statuses in the Phase 16.5D report |
-| Phases 16.6 and 17 | Further adversarial acceptance and shared-capital multi-market research | Planned; not merged |
+| Phases 16.6 and 17 | Local hardening and BTC/ETH/SOL shared-capital PAPER portfolio, accounting and stress | [Phase 17.6 acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md). Durable recovery remains separately gated. |
+| Phases 18.0–18.7 | Core/HIP-3 discovery and observed summaries, Generalized and asset-aware PAPER, research risk, observational advisories, Starter/Pro/Institutional and 13 routes | Public context keeps its own provenance. Native portfolio stays BTC/ETH/SOL. [Current acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) |
 
 **Architecture separation:** Operational market feeds → AMM/strategy → agents → RiskFirewall → FinalQuoteAuthorization → PAPER/guarded TESTNET is authoritative. Phase 15 independent native observations are **read-only**. Phase 16 uses only explicitly admitted **local research evidence** and the existing one-slot `SimulationExecutor` for hypothetical PAPER analysis; it never submits exchange orders, grants signing authority or changes operational strategy. Operational terminal history remains bounded and in-memory, while Phase 16's *separate* historical vault holds selected validated local datasets.
 
-**Source and test truth:** Native-recorded labels, timestamps, rights and SHA-256 identifiers do not establish authenticated exchange history, licensed use, continuous coverage or real execution. Historical Phase 15/16 test counts and external limitations remain in their original reports. Current independently executed counts, static-failure disposition and remaining gates are recorded in [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md).
+**Source and test truth:** Native-recorded labels, timestamps, rights and SHA-256 identifiers do not establish authenticated exchange history, licensed use, continuous coverage or real execution. Historical Phase 15/16 test counts and external limitations remain in their original reports. Current counts and separate external gates appear in [Phase 18.7F acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md).
 
 See [README.md](README.md), [CODEBASE.md](CODEBASE.md), [CHANGELOG.md](CHANGELOG.md), [15.5B acceptance](docs/PHASE155B_ACCEPTANCE.md), and [16.4 acceptance](docs/PHASE164_ACCEPTANCE.md). The original detailed Phase 1–12 discussion below is retained as a historical engineering narrative, not the current feature cutoff.
 
