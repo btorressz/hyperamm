@@ -17,24 +17,29 @@ paper = import_module("browser-phase182")
 audit = import_module("browser-audit3-accessibility")
 ROOT = paper.ROOT
 BASE = "http://127.0.0.1:5173"
-WIDTHS = (390, 768, 1024, 1440, 1920)
+VIEWPORTS = ((390, 844), (768, 900), (1024, 768), (1440, 1000), (1920, 1080))
+RESEARCH_WRITES = ("/market-universe/advisory", "/market-universe/market-summaries")
 
 
-async def run(args, profile, report):
+async def run(args, profile, report, extension=None, extra_writes=()):
+    engine = getattr(args, "engine", "chromium")
     async with async_playwright() as playwright:
-        context = await playwright.chromium.launch_persistent_context(
-            profile, executable_path=args.chromium, headless=True, args=["--no-sandbox"],
-            viewport={"width": 1440, "height": 1000},
-        )
+        launch = {"headless": True, "viewport": {"width": 1440, "height": 1000}}
+        if engine == "chromium":
+            launch.update(executable_path=args.chromium, args=["--no-sandbox"])
+        context = await getattr(playwright, engine).launch_persistent_context(profile, **launch)
         await context.add_init_script("""(() => document.addEventListener('DOMContentLoaded', () => {
           const style = document.createElement('style');
           style.textContent = 'body::after { content: "DEMO · PROVIDER FIXTURE"; position: fixed; right: 8px; bottom: 8px; z-index: 15; padding: 4px 8px; color: white; background: #18365e; font: 12px sans-serif; pointer-events: none; }';
           document.head.append(style);
         }))()""")
         await context.add_init_script(path=args.axe)
-        page = context.pages[0]
+        page = context.pages[0] if context.pages else await context.new_page()
         page.set_default_timeout(12000)
-        report["browser"] = (await (await context.new_cdp_session(page)).send("Browser.getVersion"))["product"]
+        if engine == "chromium":
+            report["browser"] = (await (await context.new_cdp_session(page)).send("Browser.getVersion"))["product"]
+        else:
+            report["browser"] = await page.evaluate("navigator.userAgent")
         writes = report["writes"]
         page.on("pageerror", lambda err: report["page_errors"].append(str(err)))
         page.on("request", lambda req: writes.append(req.url.removeprefix(BASE))
@@ -62,15 +67,20 @@ async def run(args, profile, report):
             await page.evaluate("path => { location.hash = path }", "#/" + path)
             await expect(main.get_by_role("heading", name=heading, exact=True)).to_be_visible()
 
-        async def capture(name, css):
-            for width in WIDTHS:
-                await page.set_viewport_size({"width": width, "height": 1000 if width > 390 else 844})
+        async def capture(name, css, *, anchor=None, viewports=VIEWPORTS):
+            for width, height in viewports:
+                await page.set_viewport_size({"width": width, "height": height})
                 await page.evaluate("window.scrollTo(0, 0)")
                 await page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
                 dimensions = await page.evaluate("({viewport: innerWidth, content: document.documentElement.scrollWidth})")
                 assert dimensions["content"] <= dimensions["viewport"] + 1, (name, dimensions)
-                report["viewports"].append({"workspace": name, **dimensions})
+                report["viewports"].append({"workspace": name, "height": height, **dimensions})
                 if width in (390, 1440):
+                    if anchor is not None:
+                        await anchor.evaluate("""e => {
+                          e.scrollIntoView({block: 'start', behavior: 'instant'});
+                          window.scrollBy(0, -document.querySelector('.topbar').offsetHeight - 12);
+                        }""")
                     screenshot = f"{name}-{width}.png"
                     await page.screenshot(path=args.output / screenshot)
                     report["screenshots"].append(screenshot)
@@ -406,30 +416,41 @@ async def run(args, profile, report):
         await page.keyboard.press("Escape")
         await expect(open_nav).to_be_focused()
         await page.set_viewport_size({"width": 1440, "height": 1000})
-        base = await page.evaluate("({width: innerWidth, dpr: devicePixelRatio})")
-        settings = await context.new_page()
-        await settings.goto("chrome://settings/appearance")
-        await settings.get_by_role("combobox", name="Page zoom").select_option("2")
-        await settings.close()
-        await page.bring_to_front()
-        await page.wait_for_function("dpr => devicePixelRatio === dpr * 2", arg=base["dpr"])
-        report["zoom_200"] = await page.evaluate("({width: innerWidth, document: document.documentElement.scrollWidth, dpr: devicePixelRatio})")
-        assert abs(report["zoom_200"]["width"] * 2 - base["width"]) <= 2, report["zoom_200"]
-        assert report["zoom_200"]["document"] <= report["zoom_200"]["width"] + 1, report["zoom_200"]
-        passed("Keyboard mode select, mobile drawer return focus and actual Chromium 200% browser zoom")
+        passed("Keyboard mode selection and mobile drawer return focus")
+        if extension is not None:
+            await extension(page, report, choose_mode, capture, passed)
+        if engine == "chromium":
+            base = await page.evaluate("({width: innerWidth, dpr: devicePixelRatio})")
+            settings = await context.new_page()
+            await settings.goto("chrome://settings/appearance")
+            await settings.get_by_role("combobox", name="Page zoom").select_option("2")
+            await settings.close()
+            await page.bring_to_front()
+            await page.wait_for_function("dpr => devicePixelRatio === dpr * 2", arg=base["dpr"])
+            report["zoom_200"] = await page.evaluate("({width: innerWidth, document: document.documentElement.scrollWidth, dpr: devicePixelRatio})")
+            assert abs(report["zoom_200"]["width"] * 2 - base["width"]) <= 2, report["zoom_200"]
+            assert report["zoom_200"]["document"] <= report["zoom_200"]["width"] + 1, report["zoom_200"]
+            await expect(modes).to_be_visible()
+            await open_nav.focus()
+            await page.keyboard.press("Enter")
+            await expect(page.get_by_role("dialog", name="Terminal navigation")).to_be_visible()
+            await page.keyboard.press("Escape")
+            await expect(open_nav).to_be_focused()
+            print("PASS actual Chromium 200% browser zoom", flush=True)
         assert not report["page_errors"], report["page_errors"]
-        assert all("/generalized-paper/" in url or url.endswith(("/market-universe/advisory", "/market-universe/market-summaries")) for url in writes), writes
+        assert all("/generalized-paper/" in url or url.endswith(RESEARCH_WRITES + extra_writes) for url in writes), writes
         assert not any(row["violations"] for row in report["axe"]), report["axe"]
         await context.close()
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def add_arguments(parser):
     parser.add_argument("--python", required=True)
     parser.add_argument("--chromium", default="/usr/bin/chromium")
     parser.add_argument("--axe", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args()
+
+
+def run_suite(args, extension=None, *, backend_app="browser-phase182:fixture_app", extra_writes=()):
     args.output.mkdir(parents=True, exist_ok=True)
     report = {"status": "FAIL", "source": "Local DEMO terminal and deterministic discovery and market-context fixtures. PAPER uses the real local worker.",
               "workflows": [], "viewports": [], "screenshots": [], "axe": [], "page_errors": [], "writes": []}
@@ -438,27 +459,36 @@ def main():
                    "LIVE_STREAMS_ENABLED": "false", "REDIS_ENABLED": "false"}
     processes = []
     try:
-        with TemporaryDirectory() as profile, ExitStack() as logs:
-            for directory, command in (
-                ("backend", [args.python, "-m", "uvicorn", "browser-phase182:fixture_app", "--factory",
-                             "--app-dir", str(ROOT / "frontend/tests"), "--host", "127.0.0.1", "--port", "8000"]),
-                ("frontend", ["node", "node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--strictPort"]),
-            ):
-                log = logs.enter_context((args.output / f"{directory}.log").open("w"))
-                processes.append(subprocess.Popen(command, cwd=ROOT / directory,
-                                                   env=environment, stdout=log, stderr=subprocess.STDOUT))
-            asyncio.run(run(args, profile, report))
-            report["status"] = "PASS"
+        with TemporaryDirectory() as scratch, ExitStack() as logs:
+            environment["PHASE1641_FIXTURE_ROOT"] = str(Path(scratch) / "replay")
+            try:
+                for directory, command in (
+                    ("backend", [args.python, "-m", "uvicorn", backend_app, "--factory",
+                                 "--app-dir", str(ROOT / "frontend/tests"), "--host", "127.0.0.1", "--port", "8000"]),
+                    ("frontend", ["node", "node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--strictPort"]),
+                ):
+                    log = logs.enter_context((args.output / f"{directory}.log").open("w"))
+                    processes.append(subprocess.Popen(command, cwd=ROOT / directory,
+                                                       env=environment, stdout=log, stderr=subprocess.STDOUT))
+                asyncio.run(run(args, str(Path(scratch) / "browser"), report, extension, extra_writes))
+                report["status"] = "PASS"
+            finally:
+                for process in reversed(processes):
+                    if process.poll() is None:
+                        process.terminate()
+                        try:
+                            process.wait(timeout=10)
+                        except subprocess.TimeoutExpired:
+                            process.kill()
+                            process.wait()
     finally:
-        for process in reversed(processes):
-            if process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
         (args.output / "browser-results.json").write_text(json.dumps(report, indent=2) + "\n")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    add_arguments(parser)
+    run_suite(parser.parse_args())
 
 
 if __name__ == "__main__":

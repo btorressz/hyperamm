@@ -95,6 +95,14 @@ def fixture_app():
     return app
 
 
+def phase187_fixture_app():
+    """Compose the existing qualified discovery and native Replay fixtures."""
+    from phase1641_browser_backend import mode
+
+    mode["terminal"] = True
+    return fixture_app()
+
+
 async def testnet_catalog(route):
     response = await route.fetch()
     wire = await response.json()

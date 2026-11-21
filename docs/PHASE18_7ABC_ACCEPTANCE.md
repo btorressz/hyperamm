@@ -1,6 +1,6 @@
 # Phase 18.7A–C acceptance
 
-**Review status: draft.** The bounded Mainnet public-source check and deterministic cross-market and provider-resilience regressions passed. The native financial digest reproduced. A three-tree Generalized PAPER comparison reproduced byte parity for all 56 pairs with controlled inputs. Exact reproduction of the two published PR #100 aggregate hashes remains open. Testnet-wide discovery remains outside the current catalog capacity policy.
+**Review status — merged in [PR #102](https://github.com/btorressz/hyperamm/pull/102) at `4d444b6080e65f2154c5099645b3b90bfaac1dd4`.** The bounded Mainnet public-source check and deterministic cross-market and provider-resilience regressions passed. The native financial digest reproduced. A three-tree Generalized PAPER comparison reproduced byte parity for all 56 pairs with controlled inputs. Exact reproduction of the two published PR #100 aggregate hashes remains open. Testnet-wide discovery remains outside the current catalog capacity policy.
 
 ## Baseline and scope
 

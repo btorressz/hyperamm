@@ -4,7 +4,15 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
-## Unreleased — Phase 18.7A–C verification
+## Unreleased — Phase 18.7D–E acceptance
+
+- Reconcile qualified PAPER execution through quotes, fills, fees, funding, ledger and marked equity across both AMMs and all three risk paths. Cover every native BTC/ETH/SOL portfolio selection and mixed results across advisory and operational authority.
+- Extend the fixture browser suite for the 13 routes in all three modes, results across navigation, responsive layouts, keyboard access, provider and worker failures, Replay and portfolio provenance.
+- Associate the historical L2 book's ask and bid levels with explicit row-group headers. Record the independent browser and signed TESTNET gates, and the open PR #100 aggregate hashes. [D–E acceptance](docs/PHASE18_7DE_ACCEPTANCE.md)
+
+## 2026-11-21 — Phase 18.7A–C verification
+
+Merged in [PR #102](https://github.com/btorressz/hyperamm/pull/102) at `4d444b6080e65f2154c5099645b3b90bfaac1dd4`.
 
 - Retire an in-flight market-summary observation when its provider owner begins shutting down. Drain the shared acquisition and return the existing closed state.
 - Exercise Core/HIP-3 source binding, native and Generalized PAPER compatibility, acquisition bounds, and provider failure and lifecycle behavior.

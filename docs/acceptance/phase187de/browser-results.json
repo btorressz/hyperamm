@@ -1,0 +1,1018 @@
+{
+  "status": "PASS",
+  "source": "Local DEMO terminal and deterministic discovery and market-context fixtures. PAPER uses the real local worker.",
+  "workflows": [
+    "Core, HIP-3, symbol and DEX search, filters, missing observations, delisting and qualified details",
+    "Retained stale metadata disables launch, and network refresh replaces qualified identity",
+    "Source fields, page sort, missing data, timeout, rate limit, server/client expiry and late DEX request retirement",
+    "2,006 records remain searchable with 12 cards mounted per page and recover on refresh",
+    "Starter eligibility, rejection and genuine worker outcome, with one run across three mode changes and Results",
+    "Pro overview and both AMMs, with supervisory, advisory, replay, comparison and asset-aware research",
+    "Institutional portfolio, stress, provenance, risk, audit and accounting routes, with legacy refresh and history",
+    "Keyboard mode selection and mobile drawer return focus",
+    "Narrow financial table keyboard scrolling, drawer focus containment and focus return",
+    "Qualified HIP-3 concentrated PAPER completes across page and mode changes with a single admission",
+    "Generated Historical Replay and real native portfolio analytics and source receipts on six layouts",
+    "Actual 422 and injected 429, 500, 503, 504 and network interruption retire admission and allow manual recovery",
+    "Terminal WebSocket loss preserves read-only Explorer and reconnect restores current risk evidence",
+    "All 13 routes load and refresh in every mode, with active links, back/forward, focus and scroll"
+  ],
+  "viewports": [
+    {
+      "workspace": "market-explorer",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "market-explorer",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "market-explorer",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "market-explorer",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "market-explorer",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "market-explorer-missing",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "market-explorer-missing",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "market-explorer-missing",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "market-explorer-missing",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "market-explorer-missing",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "starter",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "starter",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "starter",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "starter",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "starter",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "simulation-advanced",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "simulation-advanced",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "simulation-advanced",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "simulation-advanced",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "simulation-advanced",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "pro-amm",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "pro-amm",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "pro-amm",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "pro-amm",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "pro-amm",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "pro",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "pro",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "pro",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "pro",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "pro",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "institutional",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "institutional",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "institutional",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "institutional",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "institutional",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "risk-firewall",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "risk-firewall",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "risk-firewall",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "risk-firewall",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "risk-firewall",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "risk-firewall",
+      "height": 390,
+      "viewport": 668,
+      "content": 668
+    },
+    {
+      "workspace": "supervisory-agents",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "supervisory-agents",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "supervisory-agents",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "supervisory-agents",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "supervisory-agents",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "supervisory-agents",
+      "height": 390,
+      "viewport": 668,
+      "content": 668
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "height": 390,
+      "viewport": 668,
+      "content": 668
+    },
+    {
+      "workspace": "historical-replay",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "historical-replay",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "historical-replay",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "historical-replay",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "historical-replay",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "historical-replay",
+      "height": 390,
+      "viewport": 668,
+      "content": 668
+    },
+    {
+      "workspace": "portfolio-research",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "portfolio-research",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "portfolio-research",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "portfolio-research",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "portfolio-research",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "portfolio-research",
+      "height": 390,
+      "viewport": 668,
+      "content": 668
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "height": 844,
+      "viewport": 390,
+      "content": 390
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "height": 900,
+      "viewport": 768,
+      "content": 768
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "height": 768,
+      "viewport": 1024,
+      "content": 1024
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "height": 1000,
+      "viewport": 1440,
+      "content": 1440
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "height": 1080,
+      "viewport": 1920,
+      "content": 1920
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "height": 390,
+      "viewport": 668,
+      "content": 668
+    }
+  ],
+  "screenshots": [
+    "market-explorer-1440.png",
+    "market-explorer-cards-390.png",
+    "starter-1440.png",
+    "starter-390.png",
+    "pro-1440.png",
+    "pro-390.png",
+    "institutional-1440.png",
+    "institutional-390.png",
+    "supervisory-agents-1440.png",
+    "supervisory-agents-390.png",
+    "asset-aware-paper-1440.png",
+    "asset-aware-paper-390.png",
+    "risk-firewall-1440.png",
+    "risk-firewall-390.png",
+    "portfolio-research-1440.png",
+    "portfolio-research-390.png",
+    "historical-replay-1440.png",
+    "historical-replay-390.png",
+    "portfolio-provenance-1440.png",
+    "portfolio-provenance-390.png"
+  ],
+  "axe": [
+    {
+      "workspace": "market-explorer",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "market-explorer",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "market-explorer-missing",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "market-explorer-missing",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "starter",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "starter",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "simulation-advanced",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "simulation-advanced",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "pro-amm",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "pro-amm",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "pro",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "pro",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "institutional",
+      "width": 390,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "institutional",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "risk-firewall",
+      "width": 390,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            [
+              ".mobileNavToggle > span[aria-hidden=\"true\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "workspace": "risk-firewall",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "supervisory-agents",
+      "width": 390,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            [
+              ".mobileNavToggle > span[aria-hidden=\"true\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "workspace": "supervisory-agents",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "width": 390,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            [
+              ".mobileNavToggle > span[aria-hidden=\"true\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "workspace": "asset-aware-paper",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "historical-replay",
+      "width": 390,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            [
+              ".mobileNavToggle > span[aria-hidden=\"true\"]"
+            ]
+          ]
+        },
+        {
+          "rule": "th-has-data-cells",
+          "nodes": [
+            [
+              ".replayBook > table"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "workspace": "historical-replay",
+      "width": 1440,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "th-has-data-cells",
+          "nodes": [
+            [
+              ".replayBook > table"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "workspace": "portfolio-research",
+      "width": 390,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            [
+              ".mobileNavToggle > span[aria-hidden=\"true\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "workspace": "portfolio-research",
+      "width": 1440,
+      "violations": [],
+      "manual": []
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "width": 390,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            [
+              ".mobileNavToggle > span[aria-hidden=\"true\"]"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "workspace": "portfolio-provenance",
+      "width": 1440,
+      "violations": [],
+      "manual": [
+        {
+          "rule": "color-contrast",
+          "nodes": [
+            [
+              ".marketTitle"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "page_errors": [],
+  "writes": [
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/market-universe/advisory",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/generalized-paper/asset-policy/preview",
+    "/api/v1/generalized-paper/asset-policy/preview",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/historical-replay/run",
+    "/api/v1/portfolio-research/preview",
+    "/api/v1/portfolio-research/terminal",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/generalized-paper/eligibility",
+    "/api/v1/generalized-paper/run",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries",
+    "/api/v1/market-universe/market-summaries"
+  ],
+  "browser": "Chrome/151.0.7922.173",
+  "contrast": [
+    {
+      "selector": ".marketTitle",
+      "foreground": "rgb(220, 232, 244)",
+      "background": [
+        9,
+        19,
+        30
+      ],
+      "font": "18px",
+      "ratio": 15.035092958548736
+    },
+    {
+      "selector": ".marketTitle span",
+      "foreground": "rgb(155, 177, 197)",
+      "background": [
+        9,
+        19,
+        30
+      ],
+      "font": "18px",
+      "ratio": 8.445671932425569
+    },
+    {
+      "selector": ".riskHero strong",
+      "foreground": "rgb(71, 212, 157)",
+      "background": [
+        10,
+        20,
+        32
+      ],
+      "font": "24px",
+      "ratio": 9.853525920107973
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".riskList b",
+      "foreground": "rgb(216, 228, 239)",
+      "background": [
+        13,
+        25,
+        37
+      ],
+      "font": "11px",
+      "ratio": 13.749112337325366
+    },
+    {
+      "selector": ".mobileNavToggle > span",
+      "foreground": "rgb(220, 232, 244)",
+      "background": [
+        16,
+        30,
+        44
+      ],
+      "font": "11px",
+      "ratio": 13.577651478418455
+    },
+    {
+      "selector": ".mobileNavToggle > span",
+      "foreground": "rgb(220, 232, 244)",
+      "background": [
+        16,
+        30,
+        44
+      ],
+      "font": "11px",
+      "ratio": 13.577651478418455
+    }
+  ],
+  "keyboard": [
+    {
+      "region": "Reference source evidence table",
+      "tabs": 3,
+      "axis": "horizontal",
+      "pixels": 2
+    }
+  ],
+  "paper_failures": [
+    422,
+    429,
+    500,
+    503,
+    504
+  ],
+  "routes": {
+    "Starter": [
+      "dashboard",
+      "markets",
+      "strategy",
+      "amm-settings",
+      "execution",
+      "risk",
+      "agents",
+      "vault",
+      "analytics",
+      "simulation",
+      "portfolio-research",
+      "logs",
+      "settings"
+    ],
+    "Pro": [
+      "dashboard",
+      "markets",
+      "strategy",
+      "amm-settings",
+      "execution",
+      "risk",
+      "agents",
+      "vault",
+      "analytics",
+      "simulation",
+      "portfolio-research",
+      "logs",
+      "settings"
+    ],
+    "Institutional": [
+      "dashboard",
+      "markets",
+      "strategy",
+      "amm-settings",
+      "execution",
+      "risk",
+      "agents",
+      "vault",
+      "analytics",
+      "simulation",
+      "portfolio-research",
+      "logs",
+      "settings"
+    ]
+  },
+  "zoom_200": {
+    "width": 720,
+    "document": 720,
+    "dpr": 2
+  }
+}

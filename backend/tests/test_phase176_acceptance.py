@@ -86,7 +86,9 @@ def test_all_routes_keep_body_limit(research_client, path, chunked):
     assert client.post(URL + path, content=body).status_code == 413
 
 
-@pytest.mark.parametrize('markets', [('BTC',), ('ETH', 'SOL'), ('BTC', 'ETH', 'SOL')])
+@pytest.mark.parametrize('markets', [
+    ('BTC',), ('ETH',), ('SOL',), ('BTC', 'ETH'), ('BTC', 'SOL'), ('ETH', 'SOL'), ('BTC', 'ETH', 'SOL'),
+])
 async def test_independent_native_economic_oracle(markets):
     q = terminal_request(markets=markets)
     receipts, evidence = await execute_markets(SimulationService(), q.config, collect_accounting=True)

@@ -1,6 +1,6 @@
 # Phase 18.7 acceptance matrix
 
-The reference tree is main at `46c7dd38b53616c070155896baf3f14afe7ea40f`. PR #100 is the Phase 18.6H implementation and reported acceptance. PR #101 adds the current source map. See the [A–C evidence record](PHASE18_7ABC_ACCEPTANCE.md) for independently executed results and open gates.
+The D–E reference tree is merged `main` at `4d444b6080e65f2154c5099645b3b90bfaac1dd4`, the PR #102 merge. PR #100 implemented Phase 18.6H and PR #101 added the source map. [A–C evidence](PHASE18_7ABC_ACCEPTANCE.md) · [D–E evidence](PHASE18_7DE_ACCEPTANCE.md)
 
 | Area | Current owner and trust boundary | Historical reference | Independent evidence |
 | --- | --- | --- | --- |
@@ -48,6 +48,6 @@ All HTTP paths below are relative to `/api/v1`. Public discovery, risk, advisory
 | 18.7A | Source and contract inventory, pinned baseline and independent compatibility results. | Source inventory and controlled byte parity verified. Exact PR #100 capture digests remain open. |
 | 18.7B | Core BTC/ETH/SOL/DOGE, HIP-3 GOLD/XYZ100 and same-name DEX isolation, cross-network, listing, catalog and precision fixtures, PAPER and native portfolio compatibility. Live availability is point-in-time. | Deterministic regressions and bounded Mainnet source spot checks passed. Native digest reproduced. |
 | 18.7C | Acquisition limits, transport, refresh, latency, resource use, cancellation, shutdown and bounded official provider verification. | Deterministic resilience and bounded live checks passed. Full Testnet discovery is outside the current cap. Sustained provider checks remain with rollout. |
-| 18.7D | Independent financial and authority certification, including signed-venue gates. | Pending independent review. |
-| 18.7E | Cross-browser, assistive technology and OS-level accessibility acceptance. | Pending browser and accessibility matrix. |
+| 18.7D | Independent financial and authority certification, including signed-venue gates. | **CONDITIONAL.** Local financial, agent, authority, source binding and native portfolio checks passed. The original PR #100 hashes remain open. Signed TESTNET was not run. [D evidence](PHASE18_7DE_ACCEPTANCE.md#d--financial-and-authority-checks) |
+| 18.7E | Cross-browser, assistive technology and OS-level accessibility acceptance. | **CONDITIONAL.** See the Chromium matrix and the unavailable Firefox, WebKit, native-platform and assistive-technology checks. [E evidence](PHASE18_7DE_ACCEPTANCE.md#e--browser-workflows-and-accessibility) |
 | 18.7F | Release decision, production rollout and external provider/recovery gates. | Pending release decision. |
