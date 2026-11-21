@@ -1,14 +1,121 @@
 # HyperAMM — Codebase & Repository Guide
 
-> **Developer orientation — current status reviewed November 11, 2026, through merged PR #66 (Phase 16.5C.2).** The November 5 source map, original Phase 1–15 inventory and dated October 14 audit are retained as historical architectural context. Current comparison paths and final acceptance are linked below. Merged implementation remains distinct from cross-platform and external venue acceptance.
+> **Developer orientation — current status reviewed November 20, 2026, through merged PR #100 (Phase 18.6H).** Start with the *Current implementation map* below. The November 11 Phases 15–16 source map and the older Phase 1–15 and October audit notes are retained as dated historical context; their status snapshots are not current. Phase 18.7, production venue operation and independent cross-platform acceptance remain separate gates.
 
 **Purpose.** This is a code navigation and dependency guide: what the directories/files do, which code calls which domain, what information crosses each boundary, how to run or test it, and where changes belong. For project history see [README](README.md), [Summary](Summary.md), [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md).
 
 **System identity.** HyperAMM is a *virtual AMM quote compiler for Hyperliquid's central limit order book (CLOB)*, **not** a deployed/custodial AMM pool. The mathematical constant-product/concentrated curve proposes order-book liquidity. **PAPER** is the default; **guarded Hyperliquid TESTNET** is optional. There is **no mainnet/custody/withdrawal/bridging capability**. Supported deployment is loopback, single operator, one backend worker—not a public SaaS or remotely exposed trading service.
 
-## Current architecture additions — Phases 15–16 (2026-11-11)
+## Current implementation map — Phases 17–18.6H (2026-11-20)
 
-**Code status:** Phases 15.5A/B and 16.1A–16.5C.2 are merged through PR #66. The operational core remains one `HyperAmmRuntime` and the shared local `SimulationExecutor`. Comparison reuses same-job scenario provenance, independent replay segments and the existing quantitative engine. Phase 16.4.1/C.2 recorded native/frontend/Chromium acceptance; independent D-phase findings and actual current results are in [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md). Genuine permitted venue delivery, source licensing and independent macOS verification remain separate gates. The November 5 inventories and October audit below retain their historical context.
+**Current baseline:** merged [PR #100](https://github.com/btorressz/hyperamm/pull/100), merge commit `06a5b0f97372ae0656eef26753730f11e512f4c3`. The Phase 18.6A–E UI was merged in [PR #99](https://github.com/btorressz/hyperamm/pull/99); 18.6H subsequently added **real public Core/HIP-3 market summaries** and stronger Starter/Pro/Institutional presentation. See [Phase 18.6 implementation acceptance](docs/PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md) and [18.6H hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md). **Phase 18.7 independent cross-market, browser and rollout acceptance remains pending.**
+
+This section is the **current developer entry point**; the November 11 Phases 15–16 map and historical addenda below are preserved for code history and are not authoritative about today's latest PR, route count or phase readiness. Earlier statements of future work must be read in their dated context.
+
+### Current responsibility and authority boundaries
+
+```text
+                            Operational quote/execution path
+Feed / perp context / references → existing vAMM + StrategyConfig + QuoteEngine
+    → six supervisory agents → RiskFirewall → FinalQuoteAuthorization
+    → OrderManager → local PAPER / separately guarded optional TESTNET
+       (only the established runtime has operational decision authority)
+
+                            Research and read-only paths
+Official Hyperliquid public /info → catalog discovery (Core + HIP-3)
+    → canonical network + DEX + instrument + catalog fingerprint
+      ├── namespace-batched market summaries (mark, hourly funding,
+      │   previous-day comparison, volume, OI; source/expiry/units)
+      │   → Market Explorer / selected market observed summary
+      ├── Phase 18.3 source collateral and margin evidence
+      └── Phase 18.4 Market Eligibility / Funding-Basis / Quote Economics
+          (all three advisory-only, never quote or signing authority)
+
+Discovered market + user-supplied SYNTHETIC reference/scenario
+    → Phase 18.2 Generalized PAPER admission and existing research worker
+    → optional Phase 18.3 risk; optional Phase 18.5 asset-aware AMM policy
+    → existing AMM, six-agent quote evaluation, simulated fills,
+      accounting, RiskFirewall and typed results
+    → Guided Starter / Pro research / Institutional read-only presentation
+
+Historical replay and native BTC/ETH/SOL portfolio research remain separate
+validated research inputs/workspaces. Multi-market discovery does NOT imply
+shared collateral, all-HIP-3 portfolio accounting or multi-market live execution.
+```
+
+**Non-negotiable trust split:** official public mark/oracle/funding and size data are **observations**, not strategy/PAPER price anchors. PAPER scenario prices, books, capital, fees and funding may be **hypothetical**. A SHA-256 fingerprint proves deterministic evidence content/binding, not authenticated trade readiness. The six operational agents and three observational advisory agents have distinct authority. The browser and the advisory services have no signing, order-submission, leverage or RiskFirewall-override powers.
+
+### Phase 17: existing native portfolio research (still active)
+
+Phase 17's [final local acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md) describes a **separate, bounded native BTC/ETH/SOL** research path: versioned hypothetical capital allocations + reserve → one shared worker admission → isolated sequential native PAPER simulations → independently reconciled capital/PnL/fees/funding, exposure and risk → modeled stress and compact provenance-bound terminal results. Its source owners are [`portfolio_research/`](backend/app/portfolio_research/), [`api/portfolio_research.py`](backend/app/api/portfolio_research.py), [`pages/PortfolioResearch.tsx`](frontend/src/pages/PortfolioResearch.tsx) and [`components/portfolio/`](frontend/src/components/portfolio/).
+
+The existing `/api/v1/portfolio-research/preview`, `/run`, `/analyze`, `/stress` and `/terminal` operations reuse `SimulationEngine`, `SimulationExecutor`, accounting and risk; they do not create a durable job queue or control operational orders. Supported native market subsets and common modeled clocks are **not** empirical cross-market synchronization, authenticated market correlation, live balances or shared multi-DEX collateral. Phase 18's broader Core/HIP-3 **discovery and single-market PAPER** must not be conflated with the narrower Phase 17 portfolio research market list. The 18.6 Institutional UI reuses these portfolio results rather than introducing new financial aggregation.
+
+### Backend: Phase 18 source ownership and entry points
+
+| Code owner | Role / reuse rule |
+| --- | --- |
+| [`market_data/market_universe_contracts.py`](backend/app/market_data/market_universe_contracts.py), [`market_universe_discovery.py`](backend/app/market_data/market_universe_discovery.py) | Versioned qualified Core/HIP-3 identities, listed/size precision, bounded namespace discovery, catalog generation/freshness and source retirement. Metadata-only responses are **not** live price observations. |
+| [`market_data/advisory_market_observations.py`](backend/app/market_data/advisory_market_observations.py) | Bounded read-only per-selected-market `metaAndAssetCtxs`, `l2Book` and `fundingHistory` evidence for Phase 18.4 advisory evaluation; separate local-receipt versus provider-event clocks. Not a per-card Explorer polling loop. |
+| [`market_data/market_summaries.py`](backend/app/market_data/market_summaries.py) | Phase 18.6H namespace-batched `metaAndAssetCtxs` owner, typed `phase186h-v1` summaries, current-catalog and returned-universe binding, exact Decimal fields and bounded cache/rate/backoff/cleanup. No new WebSocket per market. |
+| [`api/market_universe.py`](backend/app/api/market_universe.py) | `GET /api/v1/market-universe`, Phase 18.3 read-only risk evidence, Phase 18.4 advisories, Phase 18.5 policy preview, existing Generalized PAPER eligibility/run, and Phase 18.6H bounded read-only market-summary route. |
+| [`market_data/market_risk_metadata.py`](backend/app/market_data/market_risk_metadata.py), [`risk/market_risk_contracts.py`](backend/app/risk/market_risk_contracts.py), [`risk/market_risk_engine.py`](backend/app/risk/market_risk_engine.py) | Phase 18.3 observed versus hypothetical collateral, margin modes/tiers, units, source-constrained limitations and research-only risk/quote retirement. No verified cross-market netting or production liquidation. |
+| [`agents/advisory_contracts.py`](backend/app/agents/advisory_contracts.py), [`market_eligibility.py`](backend/app/agents/market_eligibility.py), [`funding_basis.py`](backend/app/agents/funding_basis.py), [`quote_economics.py`](backend/app/agents/quote_economics.py) | Phase 18.4 three source-bound advisory assessments; statuses such as READY/STALE/UNSUPPORTED are **research evidence states**, never trading admission. |
+| [`agents/advisory_coordinator.py`](backend/app/agents/advisory_coordinator.py), [`agents/advisory_evidence.py`](backend/app/agents/advisory_evidence.py) | Bounded advisory snapshot orchestration, evidence fingerprints, catalog recheck, server-owned short-lived PAPER receipts, independent per-agent failures and provider lifecycle. |
+| [`amm/asset_policy_contracts.py`](backend/app/amm/asset_policy_contracts.py), [`amm/asset_policy.py`](backend/app/amm/asset_policy.py) | Phase 18.5 immutable `phase185a-v1` research declarations, operator-declared asset families, deterministic mapping into the **existing** `StrategyConfig`, precision and quote feasibility. No new curve or exchange-verified taxonomy. |
+| [`simulation/generalized_market_profiles.py`](backend/app/simulation/generalized_market_profiles.py), [`simulation/market_profiles.py`](backend/app/simulation/market_profiles.py) | Qualified, one-market-per-scenario synthetic PAPER admission, existing price/lot normalization, optional asset-aware research/risk settings, worker-start source checks, legacy-disabled fingerprints and result binding. |
+| [`main.py`](backend/app/main.py) | One FastAPI lifespan owns the operational `HyperAmmRuntime`, research executor, discovery, advisory and market-summary owners, optional live native observers and their shutdown chain. Do not create a second trading runtime. |
+
+**API guide (all paths prefixed `/api/v1`):**
+
+| Route | Source / behavior |
+| --- | --- |
+| `GET /market-universe` | Core/HIP-3 **catalog metadata only**, network-qualified and fingerprinted; retains `phase181-v1` response semantics. |
+| `POST /market-universe/market-summaries` | Phase 18.6H read-only batch of 1–13 canonical keys, active catalog fingerprint and optional manual refresh. Returns `phase186h-v1` market rows and per-field availability. |
+| `GET /market-universe/risk-evidence` | Read-only Phase 18.3 source collateral/margin evidence; source-constrained PAPER checks remain independent. |
+| `POST /market-universe/advisory` | Existing bounded read-only Phase 18.4 advisory operation, evidence provenance and result receipts. |
+| `POST /generalized-paper/asset-policy/preview` | Read-only Phase 18.5 versioned research-policy preview, not admission or execution authority. |
+| `POST /generalized-paper/eligibility` and `POST /generalized-paper/run` | Existing authoritative local PAPER admission and simulation, with optional risk and asset-aware policy; no signed exchange execution. |
+| `GET /live-markets/...`, `/ws/live-markets/...` | **Separate native BTC/ETH/SOL** observed REST/stream workspaces, not automatically generalized to HIP-3. |
+| `/historical-replay/...`, `/portfolio-research/...` | Existing bounded historical and supported native portfolio research; source-specific authority and limits remain. |
+
+**Observed price semantics:** `markPx` is a **mark**, not a last-traded price; `prevDayPx` supports a provider-reference comparison, not necessarily a trade-to-trade 24h return. The public context's hourly funding is a current reported **rate**, not future realized funding. `dayNtlVlm` is provider notional quote volume, `openInterest` is base exposure, and quote denomination is not universally verified for every HIP-3 instrument. `metaAndAssetCtxs` fields have no verified exchange event timestamp: `provider_event_at=null` with observation clock `LOCAL_RECEIPT`. Unavailable fields remain null (not zero); expired values retire rather than being advertised as current.
+
+**Summary limits implemented in PR #100:** up to **13** requested keys, **3** active namespace acquisitions, **24** namespace cache entries, **15-second** cache reuse, **30-second** maximum source age, **24** owner acquisitions per rolling minute and **6-second** request budget. Browser polling is **20 seconds** while visible; its validator caps a response at **32 KiB**. An entire page from one DEX reuses one namespace acquisition (not one call per card), with current catalog binding and rate-limit backoff. Check the implementation rather than duplicating these budgets elsewhere.
+
+### Frontend: Phase 18.6H active UX and ownership
+
+**One React app, 13 legacy routes.** `frontend/src/utils/navigation.ts` owns the same typed route registry; additive workspace hashes for PAPER, Replay, Results and comparison do not replace those routes. `frontend/src/stores/display.ts` persists a **presentation-only** Starter, Pro or Institutional mode. Switching modes never changes API permissions, underlying PAPER worker, operational market selection or strategy authorization.
+
+| Frontend area | Owner and behavior |
+| --- | --- |
+| [`pages/Markets.tsx`](frontend/src/pages/Markets.tsx), [`components/markets/MarketExplorer.tsx`](frontend/src/components/markets/MarketExplorer.tsx) | Search/filter/paginate Core and HIP-3 catalog, use observed summary cards, selected market detail and network/DEX/fingerprint-qualified handoff to existing PAPER. Cards never substitute observations for a user-supplied synthetic scenario. |
+| [`utils/marketSummaries.ts`](frontend/src/utils/marketSummaries.ts), [`hooks/useMarketSummaries.ts`](frontend/src/hooks/useMarketSummaries.ts), [`components/markets/ObservedMarketSummary.tsx`](frontend/src/components/markets/ObservedMarketSummary.tsx) | Strict `phase186h-v1` source/identity/fingerprint/units validation, visible-only bounded query, monotonic expiry and selected market summary. |
+| [`components/ExperienceModeSwitch.tsx`](frontend/src/components/ExperienceModeSwitch.tsx), [`Header.tsx`](frontend/src/components/Header.tsx), [`Sidebar.tsx`](frontend/src/components/Sidebar.tsx), [`phase186.css`](frontend/src/phase186.css) | Accessible segmented Starter/Pro/Institutional buttons and responsive shared shell; preserves current route and focus/navigation behavior. |
+| [`pages/Dashboard.tsx`](frontend/src/pages/Dashboard.tsx), [`pages/Simulation.tsx`](frontend/src/pages/Simulation.tsx) | Reused operational dashboard and Pro research overview; native status and selected research market are distinct. Guided Starter keeps one Generalized PAPER submission/admission owner. |
+| [`components/simulation/GeneralizedPaper.tsx`](frontend/src/components/simulation/GeneralizedPaper.tsx), [`GuidedPaperResearch.tsx`](frontend/src/components/simulation/GuidedPaperResearch.tsx) | The same eligibility-first PAPER worker and retained simulation state across mode switches; separate observed-public and hypothetical reference-price presentation. |
+| [`GeneralizedPaperRisk.tsx`](frontend/src/components/simulation/GeneralizedPaperRisk.tsx), [`GeneralizedPaperAdvisory.tsx`](frontend/src/components/simulation/GeneralizedPaperAdvisory.tsx), [`GeneralizedPaperAssetPolicy.tsx`](frontend/src/components/simulation/GeneralizedPaperAssetPolicy.tsx) | Existing collateral/margin, three advisory assessments and two-model asset-aware AMM settings. All are source-bound research; no new agent/runtime owner. |
+| [`pages/PortfolioResearch.tsx`](frontend/src/pages/PortfolioResearch.tsx), [`components/portfolio/`](frontend/src/components/portfolio/) | Institutional presentation of existing supported native portfolio stress, capital, modeled risk and provenance—not a live cross-DEX ledger. |
+| [`pages/Agents.tsx`](frontend/src/pages/Agents.tsx), [`components/AgentPanel.tsx`](frontend/src/components/AgentPanel.tsx) | Existing six operational supervisory agents; three **additional** observational advisories remain in Generalized PAPER. None is removed or converted into a shared trading score. |
+
+The 13 canonical destinations are Dashboard, Markets, Strategy, AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation & Optimization, Portfolio Research, Logs and Settings. Old deep links must remain reachable in every presentation mode. Charts, research panels, stream status, advanced configuration, historical replay and risk authority are **reused**, not replaced.
+
+### Current acceptance, reproducibility and outstanding gates
+
+- **Phase 18.6A–E:** merged PR #99; search, source-qualified handoff, guided Starter, Pro/Institutional navigation, all nine agent access and legacy 13-route preservation.
+- **Phase 18.6H:** merged PR #100; official public market summaries, verified Mainnet Core BTC and HIP-3 `xyz:XYZ100` at a point in time, segmented modes, overview enhancements and source-expiry UX. These are **recorded PR acceptance outcomes**, not independently rerun during this documentation update.
+- **Recorded Phase 18.6H validation:** **3,944** full backend tests and **949** frontend tests passed; **249** focused backend tests included 30 market-summary cases; eight Phase 18.6H browser workflows, 35 viewport measurements, 14 scoped axe scans and six legacy browser suites passed. Legacy compatibility compared **56** fixed-clock standard and asset-aware PAPER admission/result pairs byte-for-byte against PR #99. See [hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md) and [browser evidence](docs/acceptance/phase186h/browser-results.json).
+- **Captured browser screenshots are DEMO/provider fixtures**; the separate actual public provider receipts in the acceptance report are point-in-time observations, **not** an always-current price feed or proof of uninterrupted connectivity.
+- **Open Phase 18.7 gates:** independent multi-market and cross-browser/OS validation, screen-reader review, provider/reconnect/soak, release and rollout decisions. The full Testnet DEX inventory exceeded the existing **64-namespace discovery cap** at the recorded check; do not silently expand or claim Testnet completeness. Production signed TESTNET reconciliation and broader Audit 3.0 constraints remain **separate** gates.
+- Run from the repository root with the locally provisioned supported Python/browser toolchain. Backend: `cd backend && python -m pytest -q -rs --tb=short`. Frontend: `cd frontend && npm ci && npm run typecheck && npm test && npm run build`. Browser: `python frontend/tests/browser-phase186.py --python /path/to/backend-python --axe /path/to/axe.min.js --output work/phase186h-browser`. These commands are the documented paths; this CODEBASE-only PR does not assert a new test execution.
+
+**Where to extend next:** implement any Phase 18.7 acceptance on the existing pytest/Node/Chromium harness and source-bound APIs. Don't add a duplicate market poller, another AMM or simulation engine, a second supervisor, a new portfolio ledger or signed execution to make the Explorer seem more complete.
+
+---
+
+## Historical architecture additions — Phases 15–16 (2026-11-11 snapshot)
+
+**Historical status at the time of this source map:** Phases 15.5A/B and 16.1A–16.5C.2 were merged through PR #66. The operational core remains one `HyperAmmRuntime` and the shared local `SimulationExecutor`. Comparison reuses same-job scenario provenance, independent replay segments and the existing quantitative engine. Phase 16.4.1/C.2 recorded native/frontend/Chromium acceptance; independent D-phase findings and actual current results are in [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md). Genuine permitted venue delivery, source licensing and independent macOS verification remain separate gates. The November 5 inventories and October audit below retain their historical context.
 
 ### Three intentionally separate paths
 
@@ -67,7 +174,7 @@ Phase 16: trusted local JSON admission, no web collector
 - Phase 16 APIs: `GET /api/v1/historical-replay/datasets` (IDs), `GET /dataset-summaries` (typed bounded metadata), `GET /provenance?dataset_id=...`, and `POST /run` (isolated computational PAPER replay). All require the local deployment boundary, use no-store responses and the existing single-slot worker. Busy work returns 429, disabled admission 503, rejected/incomplete evidence 422.
 - The request binds dataset ID + fingerprint, market, receipt pairing/interval policy, available economic evidence, precision, frame/trace budgets and optional PAPER execution sensitivity. `SimulationService`, `SimulationExecutor`, `SimulationEngine` and `SimulationTrace` are reused. Cancellations do not free worker admission while a computation still owns it.
 - Results carry source/configuration/model/result provenance and independent accounting segments. A replay gap, source reset or unviable frame does **not** establish a continuous return. Baseline-versus-modeled session PnL and fill-count differences come from the backend, **not frontend financial recomputation**.
-- **Current comparison:** `POST /api/v1/research-comparison/scenario-historical` runs bounded replay and same-job scenario evidence sequentially in the shared worker, then projects descriptive metrics and independent traces. See the comparison integration source map at the end of this guide. Phase 16.6 and Phase 17 remain future work. Historical static failures and their D-phase documentation correction are recorded in the final acceptance report.
+- **Current comparison:** `POST /api/v1/research-comparison/scenario-historical` runs bounded replay and same-job scenario evidence sequentially in the shared worker, then projects descriptive metrics and independent traces. See the comparison integration source map at the end of this guide. Those phases were future work as of this November 11 snapshot; use the current map above for later implementation. Historical static failures and their D-phase documentation correction are recorded in the final acceptance report.
 
 ## 1. Fast orientation
 
@@ -82,7 +189,7 @@ Phase 16: trusted local JSON admission, no web collector
 | How does the terminal get data? | [`service.py`](backend/app/terminal/service.py) → [`websocket.py`](backend/app/api/websocket.py) → [`terminalSocket.ts`](frontend/src/utils/terminalSocket.ts) → [`terminal.ts`](frontend/src/stores/terminal.ts) |
 | How does UI invoke actions? | [`client.ts`](frontend/src/api/client.ts) → FastAPI `/api/v1/` router → `HyperAmmRuntime` method |
 | How to find a test? | `backend/tests/` (pytest), `frontend/tests/` (Node test runner and optional Chromium harness) |
-| Current acceptance gaps? | [`PHASE155B_ACCEPTANCE.md`](docs/PHASE155B_ACCEPTANCE.md), [`PHASE164_ACCEPTANCE.md`](docs/PHASE164_ACCEPTANCE.md) and [`CHANGELOG.md`](CHANGELOG.md) |
+| Current acceptance and rollout gates? | [`PHASE18_6_HARDENING_ACCEPTANCE.md`](docs/PHASE18_6_HARDENING_ACCEPTANCE.md), [`PHASE18_5_FINAL_ACCEPTANCE.md`](docs/PHASE18_5_FINAL_ACCEPTANCE.md), [`ROADMAP.md`](docs/ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md); Phase 18.7 remains pending |
 
 ## 2. Repository shape
 
@@ -109,7 +216,7 @@ hyperamm/
 │   ├── package.json / package-lock.json / vite.config.ts
 │   ├── src/
 │   │   ├── main.tsx / App.tsx
-│   │   ├── pages/                # twelve active operator screens
+│   │   ├── pages/                # thirteen active operator screens
 │   │   ├── components/           # charts, controls, tables, visual evidence
 │   │   ├── api/                  # typed REST consumer
 │   │   ├── stores/               # accepted terminal and display preferences
@@ -461,7 +568,7 @@ Thin REST/WebSocket routers that delegate into lifespan-owned runtime/research s
 
 **Bootstrap:** [`main.tsx`](frontend/src/main.tsx) mounts React StrictMode inside TanStack Query; [`App.tsx`](frontend/src/App.tsx) starts the terminal socket, reads validated Zustand state, applies the display-only freshness projection, loads health, and renders one page by the typed route registry.
 
-**Page routing:** [`navigation.ts`](frontend/src/utils/navigation.ts) defines twelve hash URLs, [`usePageNavigation.ts`](frontend/src/hooks/usePageNavigation.ts) subscribes to URL changes, and [`Sidebar.tsx`](frontend/src/components/Sidebar.tsx) uses accessible links. Refresh/back/forward preserve the active page. `Planned.tsx` is not one of the twelve live routes.
+**Page routing:** [`navigation.ts`](frontend/src/utils/navigation.ts) defines thirteen canonical hash URLs plus additive workspace routes, [`usePageNavigation.ts`](frontend/src/hooks/usePageNavigation.ts) subscribes to URL changes, and [`Sidebar.tsx`](frontend/src/components/Sidebar.tsx) uses accessible links. Refresh/back/forward preserve the active page. `Planned.tsx` is not one of the thirteen live routes.
 
 **Rendering contract:** UI receives `TerminalState` from [`index.ts`](frontend/src/types/index.ts) after the runtime JSON schema validation. It does not import Python domain implementations or recompute authorization. Financial values often arrive as Decimal strings. Chart-only conversions may use JS numbers; order evidence sorting uses exact decimal-aware logic when material precision matters.
 
@@ -476,7 +583,8 @@ Thin REST/WebSocket routers that delegate into lifespan-owned runtime/research s
 | [`Execution.tsx`](frontend/src/pages/Execution.tsx) | Active/recent order evidence, status filters/sorting, expandable rows, fills and reconciliation timeline. |
 | [`Logs.tsx`](frontend/src/pages/Logs.tsx) | Read-only structured terminal and operational event history. |
 | [`Markets.tsx`](frontend/src/pages/Markets.tsx) | Market microstructure, L2 book, price chart, perp context and references. |
-| [`Planned.tsx`](frontend/src/pages/Planned.tsx) | Legacy/planned-page placeholder component; not an active route in the 12-page navigation. |
+| [`Planned.tsx`](frontend/src/pages/Planned.tsx) | Legacy/planned-page placeholder component; not an active route in the 13-page navigation. |
+| [`PortfolioResearch.tsx`](frontend/src/pages/PortfolioResearch.tsx) | Existing native BTC/ETH/SOL portfolio research, modeled capital/stress/provenance and Institutional overview. |
 | [`Risk.tsx`](frontend/src/pages/Risk.tsx) | Manual kill, firewall/authorization status, projected exposure and risk events. |
 | [`Settings.tsx`](frontend/src/pages/Settings.tsx) | Local terminal display preferences and diagnostic settings. |
 | [`Simulation.tsx`](frontend/src/pages/Simulation.tsx) | Scenario simulation and bounded research optimization user interface. |
@@ -514,7 +622,7 @@ Thin REST/WebSocket routers that delegate into lifespan-owned runtime/research s
 | [`QuoteLadder.tsx`](frontend/src/components/QuoteLadder.tsx) | Pre-agent/post-agent/final quote tables with conservative order-evidence classification. |
 | [`RecentExecution.tsx`](frontend/src/components/RecentExecution.tsx) | OrderTable; common order rows, filtering/sorting/details and recent activity. |
 | [`RiskFirewallPanel.tsx`](frontend/src/components/RiskFirewallPanel.tsx) | Reference-source health, risk reasons and authorization/evidence display. |
-| [`Sidebar.tsx`](frontend/src/components/Sidebar.tsx) | Twelve persistent routes, collapse setting and accessible mobile drawer. |
+| [`Sidebar.tsx`](frontend/src/components/Sidebar.tsx) | Thirteen preserved routes, mode-organized navigation, collapse setting and accessible mobile drawer. |
 | [`SimulationPanel.tsx`](frontend/src/components/SimulationPanel.tsx) | Simulation output presentation helper. |
 | [`StrategyAttribution.tsx`](frontend/src/components/StrategyAttribution.tsx) | Strategy movement/attribution evidence. |
 | [`StrategyControls.tsx`](frontend/src/components/StrategyControls.tsx) | Config form, edit/dirty/reset/save/error workflows and backend validation messages. |
@@ -541,7 +649,7 @@ Thin REST/WebSocket routers that delegate into lifespan-owned runtime/research s
 
 | File | Responsibility |
 |---|---|
-| [`display.ts`](frontend/src/stores/display.ts) | Persisted local UI settings: density, history range/size and collapsed sidebar. |
+| [`display.ts`](frontend/src/stores/display.ts) | Persisted local UI settings: density, history range/size, collapsed sidebar and Starter/Pro/Institutional presentation preference. |
 | [`terminal.ts`](frontend/src/stores/terminal.ts) | Zustand validated terminal snapshot, active/retired identity, sequence, freshness, connection and rejection counters. |
 
 **Utilities**
@@ -552,7 +660,7 @@ Thin REST/WebSocket routers that delegate into lifespan-owned runtime/research s
 | [`effectiveLiquidity.ts`](frontend/src/utils/effectiveLiquidity.ts) | Aggregate normalized quotes at effective executable prices for display. |
 | [`format.ts`](frontend/src/utils/format.ts) | Financial/date/status formatting helpers. |
 | [`freshness.ts`](frontend/src/utils/freshness.ts) | Read-only aging/projection and source-price selection; never renews provider data. |
-| [`navigation.ts`](frontend/src/utils/navigation.ts) | Twelve-page typed hash-route registry. |
+| [`navigation.ts`](frontend/src/utils/navigation.ts) | Thirteen-page typed hash-route registry, additive research workspace hashes and presentation mode grouping. |
 | [`orderView.ts`](frontend/src/utils/orderView.ts) | Order status/mode evidence, exact Decimal parsing, filtering and sorting. |
 | [`quoteEvidence.ts`](frontend/src/utils/quoteEvidence.ts) | Matches proposal/authorized quotes to conservative retained-order statuses. |
 | [`terminalHistory.ts`](frontend/src/utils/terminalHistory.ts) | Bounded merge/sample utilities for chart history and session identity. |
