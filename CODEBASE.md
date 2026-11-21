@@ -45,6 +45,12 @@ shared collateral, all-HIP-3 portfolio accounting or multi-market live execution
 
 **Non-negotiable trust split:** official public mark/oracle/funding and size data are **observations**, not strategy/PAPER price anchors. PAPER scenario prices, books, capital, fees and funding may be **hypothetical**. A SHA-256 fingerprint proves deterministic evidence content/binding, not authenticated trade readiness. The six operational agents and three observational advisory agents have distinct authority. The browser and the advisory services have no signing, order-submission, leverage or RiskFirewall-override powers.
 
+### Phase 17: existing native portfolio research (still active)
+
+Phase 17's [final local acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md) describes a **separate, bounded native BTC/ETH/SOL** research path: versioned hypothetical capital allocations + reserve → one shared worker admission → isolated sequential native PAPER simulations → independently reconciled capital/PnL/fees/funding, exposure and risk → modeled stress and compact provenance-bound terminal results. Its source owners are [`portfolio_research/`](backend/app/portfolio_research/), [`api/portfolio_research.py`](backend/app/api/portfolio_research.py), [`pages/PortfolioResearch.tsx`](frontend/src/pages/PortfolioResearch.tsx) and [`components/portfolio/`](frontend/src/components/portfolio/).
+
+The existing `/api/v1/portfolio-research/preview`, `/run`, `/analyze`, `/stress` and `/terminal` operations reuse `SimulationEngine`, `SimulationExecutor`, accounting and risk; they do not create a durable job queue or control operational orders. Supported native market subsets and common modeled clocks are **not** empirical cross-market synchronization, authenticated market correlation, live balances or shared multi-DEX collateral. Phase 18's broader Core/HIP-3 **discovery and single-market PAPER** must not be conflated with the narrower Phase 17 portfolio research market list. The 18.6 Institutional UI reuses these portfolio results rather than introducing new financial aggregation.
+
 ### Backend: Phase 18 source ownership and entry points
 
 | Code owner | Role / reuse rule |
