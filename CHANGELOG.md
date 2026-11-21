@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.7A–C verification
+
+- Retire an in-flight market-summary observation when its provider owner begins shutting down. Drain the shared acquisition and return the existing closed state.
+- Exercise Core/HIP-3 source binding, native and Generalized PAPER compatibility, acquisition bounds, and provider failure and lifecycle behavior.
+- Record official Mainnet and Testnet provider results, the retained 64-namespace Testnet policy and the outstanding exact PR #100 digest reproduction gate. [Phase 18.7A–C evidence](docs/PHASE18_7ABC_ACCEPTANCE.md)
+
 ## Unreleased — Phase 18.6H market research hardening
 
 - Show public Core and HIP-3 mark price, hourly funding, previous-day comparison, notional volume, open interest and source freshness in Market Explorer. Cache scoped context requests by catalog generation and DEX.

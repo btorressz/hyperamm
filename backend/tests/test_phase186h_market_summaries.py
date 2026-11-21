@@ -70,11 +70,11 @@ class Route:
                                                  client=self.provider)
         self.owner = summaries.MarketSummaryObservations(
             network, client=self.provider, clock=lambda: clock.now, timer=lambda: clock.seconds)
-        app = FastAPI()
-        app.include_router(router)
-        app.state.market_universe_discovery = self.discovery
-        app.state.market_summary_observations = self.owner
-        self.client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
+        self.app = FastAPI()
+        self.app.include_router(router)
+        self.app.state.market_universe_discovery = self.discovery
+        self.app.state.market_summary_observations = self.owner
+        self.client = AsyncClient(transport=ASGITransport(app=self.app), base_url="http://test")
         self.catalog = await self.discovery.catalog()
         assert self.catalog.availability == "AVAILABLE", (self.catalog, self.provider.calls)
         return self
@@ -313,7 +313,9 @@ async def test_cancellation_and_shutdown_drain_shared_call(route):
         assert not shutdown.done()
     finally:
         release.set()
-    await active
+    row, = (await active)["results"]
+    assert (row["status"], row["error"], row["mark_price"]) == ("ERROR", "CLOSED", None)
+    assert row["observation_fingerprint"] is None
     await shutdown
     assert not route.owner._tasks and not route.owner._cache
 

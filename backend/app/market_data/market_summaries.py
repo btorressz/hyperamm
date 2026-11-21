@@ -305,7 +305,7 @@ class MarketSummaryObservations:
                 results.append(MarketSummary(**fields, status=status, limitations=(decision.reason,)))
                 continue
             capture = captures[identity.dex]
-            error = capture.error
+            error = "CLOSED" if self._closed else capture.error
             if error:
                 status = "UNAVAILABLE" if error in {"CAPACITY", "CATALOG_CHANGED"} else "ERROR"
                 results.append(MarketSummary(**fields, status=status, error=error))
