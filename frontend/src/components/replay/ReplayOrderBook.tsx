@@ -9,9 +9,11 @@ export function ReplayOrderBook({frame}:{frame:ReplayFrame|null}) {
   return <Panel title="Historical L2 order book" meta="RETAINED EVIDENCE · NOT LIVE">
     {!book?<Empty>No historical L2 snapshot selected.</Empty>:<>
       <div className="tableWrap replayBook" tabIndex={0} role="region" aria-label="Historical retained L2 book">
-        <table><thead><tr><th>Price (quote)</th><th>Size (base)</th><th>Orders</th></tr></thead>
-          <tbody><tr><th colSpan={3}>Asks</th></tr>{side(book.asks,true)}
-            <tr><th colSpan={3}>Bids</th></tr>{side(book.bids,false)}</tbody></table>
+        <table>
+          <thead><tr><th scope="col">Price (quote)</th><th scope="col">Size (base)</th><th scope="col">Orders</th></tr></thead>
+          <tbody><tr><th scope="rowgroup" colSpan={3}>Asks</th></tr>{side(book.asks,true)}</tbody>
+          <tbody><tr><th scope="rowgroup" colSpan={3}>Bids</th></tr>{side(book.bids,false)}</tbody>
+        </table>
       </div>
       <dl className="replayDetails">
         <div><dt>Book receipt</dt><dd>{observation?.received_at}</dd></div>

@@ -1,6 +1,6 @@
 # HyperAMM — Codebase & Repository Guide
 
-> **Developer orientation — current status reviewed November 20, 2026, through merged PR #100 (Phase 18.6H).** Start with the *Current implementation map* below. The November 11 Phases 15–16 source map and the older Phase 1–15 and October audit notes are retained as dated historical context; their status snapshots are not current. Phase 18.7, production venue operation and independent cross-platform acceptance remain separate gates.
+> **Developer orientation — current status reviewed November 20, 2026, through merged PR #102 (Phase 18.7A–C).** Start with the *Current implementation map* below. The November 11 Phases 15–16 source map and the older Phase 1–15 and October audit notes describe those earlier releases. The [Phase 18.7 acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md) tracks the remaining gates.
 
 **Purpose.** This is a code navigation and dependency guide: what the directories/files do, which code calls which domain, what information crosses each boundary, how to run or test it, and where changes belong. For project history see [README](README.md), [Summary](Summary.md), [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md).
 
@@ -8,7 +8,7 @@
 
 ## Current implementation map — Phases 17–18.6H (2026-11-20)
 
-**Current baseline:** merged [PR #100](https://github.com/btorressz/hyperamm/pull/100), merge commit `06a5b0f97372ae0656eef26753730f11e512f4c3`. The Phase 18.6A–E UI was merged in [PR #99](https://github.com/btorressz/hyperamm/pull/99); 18.6H subsequently added **real public Core/HIP-3 market summaries** and stronger Starter/Pro/Institutional presentation. See [Phase 18.6 implementation acceptance](docs/PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md) and [18.6H hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md). **Phase 18.7 independent cross-market, browser and rollout acceptance remains pending.**
+The merged baseline is `4d444b6080e65f2154c5099645b3b90bfaac1dd4`. Phase 18.6A–E introduced the research workspaces and Phase 18.6H added public Core/HIP-3 market summaries and the expanded Starter/Pro/Institutional presentation. Phase 18.7A–C verified controlled cross-market parity and bounded provider behavior. [Phase 18.6 implementation acceptance](docs/PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md) · [18.6H hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md) · [18.7A–C evidence](docs/PHASE18_7ABC_ACCEPTANCE.md)
 
 This section is the **current developer entry point**; the November 11 Phases 15–16 map and historical addenda below are preserved for code history and are not authoritative about today's latest PR, route count or phase readiness. Earlier statements of future work must be read in their dated context.
 
@@ -106,8 +106,8 @@ The 13 canonical destinations are Dashboard, Markets, Strategy, AMM Settings, Ex
 - **Phase 18.6H:** merged PR #100; official public market summaries, verified Mainnet Core BTC and HIP-3 `xyz:XYZ100` at a point in time, segmented modes, overview enhancements and source-expiry UX. These are **recorded PR acceptance outcomes**, not independently rerun during this documentation update.
 - **Recorded Phase 18.6H validation:** **3,944** full backend tests and **949** frontend tests passed; **249** focused backend tests included 30 market-summary cases; eight Phase 18.6H browser workflows, 35 viewport measurements, 14 scoped axe scans and six legacy browser suites passed. Legacy compatibility compared **56** fixed-clock standard and asset-aware PAPER admission/result pairs byte-for-byte against PR #99. See [hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md) and [browser evidence](docs/acceptance/phase186h/browser-results.json).
 - **Captured browser screenshots are DEMO/provider fixtures**; the separate actual public provider receipts in the acceptance report are point-in-time observations, **not** an always-current price feed or proof of uninterrupted connectivity.
-- **Open Phase 18.7 gates:** independent multi-market and cross-browser/OS validation, screen-reader review, provider/reconnect/soak, release and rollout decisions. The full Testnet DEX inventory exceeded the existing **64-namespace discovery cap** at the recorded check; do not silently expand or claim Testnet completeness. Production signed TESTNET reconciliation and broader Audit 3.0 constraints remain **separate** gates.
-- Run from the repository root with the locally provisioned supported Python/browser toolchain. Backend: `cd backend && python -m pytest -q -rs --tb=short`. Frontend: `cd frontend && npm ci && npm run typecheck && npm test && npm run build`. Browser: `python frontend/tests/browser-phase186.py --python /path/to/backend-python --axe /path/to/axe.min.js --output work/phase186h-browser`. These commands are the documented paths; this CODEBASE-only PR does not assert a new test execution.
+- **Phase 18.7 gates.** Track financial and browser evidence, historical aggregate hashes, independent browser and OS coverage, screen-reader review, sustained provider recovery, signed TESTNET reconciliation and rollout in the [acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md). The full Testnet DEX inventory exceeded the existing **64-namespace discovery cap** at the recorded check.
+- Reproduce the backend, frontend and browser checks using the [D–E commands](docs/PHASE18_7DE_ACCEPTANCE.md#reproduction).
 
 **Where to extend next:** implement any Phase 18.7 acceptance on the existing pytest/Node/Chromium harness and source-bound APIs. Don't add a duplicate market poller, another AMM or simulation engine, a second supervisor, a new portfolio ledger or signed execution to make the Explorer seem more complete.
 
@@ -189,7 +189,7 @@ Phase 16: trusted local JSON admission, no web collector
 | How does the terminal get data? | [`service.py`](backend/app/terminal/service.py) → [`websocket.py`](backend/app/api/websocket.py) → [`terminalSocket.ts`](frontend/src/utils/terminalSocket.ts) → [`terminal.ts`](frontend/src/stores/terminal.ts) |
 | How does UI invoke actions? | [`client.ts`](frontend/src/api/client.ts) → FastAPI `/api/v1/` router → `HyperAmmRuntime` method |
 | How to find a test? | `backend/tests/` (pytest), `frontend/tests/` (Node test runner and optional Chromium harness) |
-| Current acceptance and rollout gates? | [`PHASE18_6_HARDENING_ACCEPTANCE.md`](docs/PHASE18_6_HARDENING_ACCEPTANCE.md), [`PHASE18_5_FINAL_ACCEPTANCE.md`](docs/PHASE18_5_FINAL_ACCEPTANCE.md), [`ROADMAP.md`](docs/ROADMAP.md) and [`CHANGELOG.md`](CHANGELOG.md); Phase 18.7 remains pending |
+| Current acceptance and rollout gates? | [Phase 18.7 acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md), [roadmap](docs/ROADMAP.md) and [changelog](CHANGELOG.md) |
 
 ## 2. Repository shape
 

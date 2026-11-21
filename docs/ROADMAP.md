@@ -29,8 +29,10 @@
 | 18.5 | LOCAL PAPER ACCEPTANCE / IN REVIEW | Asset-aware research in Simulation with qualified discovery, both AMM models, optional Phase 18.3 risk and read-only advisory evidence. See the [final acceptance record](PHASE18_5_FINAL_ACCEPTANCE.md). |
 | 18.6A–E | MERGED / LOCAL ACCEPTANCE | Searchable Core and HIP-3 listing metadata, qualified PAPER handoff, and Starter, Pro and Institutional navigation. [Implementation acceptance](PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md) |
 | 18.6H | IN REVIEW | Public Core/HIP-3 market observations, namespace caching and expiry, segmented experience modes and research overviews. [Hardening acceptance](PHASE18_6_HARDENING_ACCEPTANCE.md) |
-| 18.7A–C | IN REVIEW | Baseline, cross-market and bounded provider regression evidence available. Exact PR #100 capture digests remain open. [Acceptance matrix](PHASE18_7_ACCEPTANCE_MATRIX.md) · [A–C report](PHASE18_7ABC_ACCEPTANCE.md) |
-| 18.7D–F | PENDING | Independent financial and authority certification, cross-browser and assistive technology acceptance, and release and rollout decision. |
+| 18.7A–C | MERGED | PR #102 supplies baseline, cross-market and bounded provider regression evidence. Exact PR #100 capture digests remain open. [A–C report](PHASE18_7ABC_ACCEPTANCE.md) |
+| 18.7D | CONDITIONAL | Local financial, authority and native portfolio evidence passed. Historical aggregate hash attestation and signed TESTNET remain open. [D–E report](PHASE18_7DE_ACCEPTANCE.md) |
+| 18.7E | CONDITIONAL | Chromium matrix, workflow, responsive and automated accessibility evidence. Independent engines, native platforms and manual assistive technology remain open. [D–E report](PHASE18_7DE_ACCEPTANCE.md) |
+| 18.7F | PENDING | Final release decision, sustained provider and recovery checks, unresolved external gates and rollout. [Acceptance matrix](PHASE18_7_ACCEPTANCE_MATRIX.md) |
 | 18.7 | IN PROGRESS | Overall acceptance remains open. |
 
 ## Phase 6 extension points
