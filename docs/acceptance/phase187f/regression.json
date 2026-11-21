@@ -1,0 +1,83 @@
+{
+  "fixture_notice": "Backend and frontend suite cases use repository fixtures unless an external check is reported separately.",
+  "backend_full": {
+    "tests": 3976,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "passed": 3976,
+    "duration_seconds": 658.52,
+    "warnings": 6,
+    "warning_summary": [
+      "2 Starlette/httpx deprecations",
+      "3 Pydantic instance model_fields deprecations",
+      "1 existing negative serializer fixture warning"
+    ],
+    "status": "PASS",
+    "pytest_summary_seconds": 658.55
+  },
+  "backend_focused_overlaps_full": {
+    "tests": 2062,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "passed": 2062,
+    "duration_seconds": 593.87,
+    "warnings": 6,
+    "warning_summary": [
+      "2 Starlette/httpx deprecations",
+      "3 Pydantic instance model_fields deprecations",
+      "1 existing negative serializer fixture warning"
+    ],
+    "status": "PASS",
+    "pytest_summary_seconds": 593.88
+  },
+  "existing_financial_authority_provider_group_overlaps_full": {
+    "tests": 155,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "passed": 155,
+    "duration_seconds": 55.935,
+    "warnings": 4,
+    "warning_summary": [
+      "Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.",
+      "record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')",
+      "record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')",
+      "record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')"
+    ],
+    "status": "PASS"
+  },
+  "frontend": {
+    "passed": 949,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "duration_seconds": 59.738340526,
+    "typecheck": "PASS",
+    "build": "PASS",
+    "build_warnings": {
+      "tanstack_directive_count": 15,
+      "bundle_size_warning": true
+    },
+    "vite_bundle_seconds": 5.31,
+    "node_test_warning_summary": [
+      "One Zustand persist warning for unavailable storage in the Node fixture"
+    ]
+  },
+  "initial_environment_retries": [
+    "Backend interrupted after 50 passes without loopback capability. Rerun permitted loopback.",
+    "Frontend original cache was unusable. Locked install rerun with writable cache.",
+    "Frontend test initial launch lacked listen permission. Original command rerun with loopback.",
+    "Offline SDK soak stopped at shutdown in the first sandbox. The identical workload passed with loopback permitted and used only the fake SDK.",
+    "The standalone provider fixture selection was interrupted in the first sandbox and passed unchanged with loopback permitted."
+  ],
+  "summary_resilience_overlap": {
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 0,
+    "seconds": 8.0
+  }
+}

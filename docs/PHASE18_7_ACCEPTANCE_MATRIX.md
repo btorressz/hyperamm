@@ -1,6 +1,6 @@
 # Phase 18.7 acceptance matrix
 
-The D–E reference tree is merged `main` at `4d444b6080e65f2154c5099645b3b90bfaac1dd4`, the PR #102 merge. PR #100 implemented Phase 18.6H and PR #101 added the source map. [A–C evidence](PHASE18_7ABC_ACCEPTANCE.md) · [D–E evidence](PHASE18_7DE_ACCEPTANCE.md)
+Phase 18.7F starts at merged PR #103, `dd9e1488e027061a42cffd77e0761f8461de7226`. The [final readiness matrix](PHASE18_7_FINAL_ACCEPTANCE.md#release-readiness-matrix) records the release-candidate decisions. The D–E reference tree was merged `main` at `4d444b6080e65f2154c5099645b3b90bfaac1dd4`, the PR #102 merge. PR #100 implemented Phase 18.6H and PR #101 added the source map. [A–C evidence](PHASE18_7ABC_ACCEPTANCE.md) · [D–E evidence](PHASE18_7DE_ACCEPTANCE.md)
 
 | Area | Current owner and trust boundary | Historical reference | Independent evidence |
 | --- | --- | --- | --- |
@@ -50,4 +50,4 @@ All HTTP paths below are relative to `/api/v1`. Public discovery, risk, advisory
 | 18.7C | Acquisition limits, transport, refresh, latency, resource use, cancellation, shutdown and bounded official provider verification. | Deterministic resilience and bounded live checks passed. Full Testnet discovery is outside the current cap. Sustained provider checks remain with rollout. |
 | 18.7D | Independent financial and authority certification, including signed-venue gates. | **CONDITIONAL.** Local financial, agent, authority, source binding and native portfolio checks passed. The original PR #100 hashes remain open. Signed TESTNET was not run. [D evidence](PHASE18_7DE_ACCEPTANCE.md#d--financial-and-authority-checks) |
 | 18.7E | Cross-browser, assistive technology and OS-level accessibility acceptance. | **CONDITIONAL.** See the Chromium matrix and the unavailable Firefox, WebKit, native-platform and assistive-technology checks. [E evidence](PHASE18_7DE_ACCEPTANCE.md#e--browser-workflows-and-accessibility) |
-| 18.7F | Release decision, production rollout and external provider/recovery gates. | Pending release decision. |
+| 18.7F | Final verification for the loopback DEMO/PAPER release candidate and disposition of external gates. | [Final acceptance](PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](PHASE18_RELEASE_RUNBOOK.md) |

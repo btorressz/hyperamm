@@ -25,15 +25,19 @@
 | 13.3 | IMPLEMENTED / LOCAL ACCEPTANCE | A–G research/operations frontend complete locally; schema/macOS/external gates remain |
 | 14 | IMPLEMENTED / LOCAL ACCEPTANCE | Custom research assumptions, Python presets/preview, Vault studio, isolated PAPER runs/optimizer and controlled comparison; external gates remain |
 | 14.6 | COMPLETE / LOCAL ACCEPTANCE; LIVE METADATA GATE OPEN | Validated BTC/ETH/SOL Research Market Selection; isolated single-market PAPER runs, bounded optimizer and controlled comparisons; live SDK endpoint blocked in acceptance environment |
-| 18.4 | LOCAL PAPER ACCEPTANCE / IN REVIEW | Three read-only advisory agents integrated into Simulation, with bounded evidence and historical PAPER acceptance. See the [final acceptance record](PHASE18_4_FINAL_ACCEPTANCE.md). |
-| 18.5 | LOCAL PAPER ACCEPTANCE / IN REVIEW | Asset-aware research in Simulation with qualified discovery, both AMM models, optional Phase 18.3 risk and read-only advisory evidence. See the [final acceptance record](PHASE18_5_FINAL_ACCEPTANCE.md). |
+| 17.1A–17.6 | MERGED / LOCAL ACCEPTANCE | Native BTC/ETH/SOL portfolio research, capital/risk, stress and final verification. [Phase 17.6 acceptance](PHASE176_FINAL_ACCEPTANCE.md) |
+| 18.0–18.1 | MERGED / READ-ONLY | Core and HIP-3 identity, bounded official catalog and provenance. [Discovery acceptance](PHASE18_1_DISCOVERY_ACCEPTANCE.md) |
+| 18.2A–G | MERGED / LOCAL ACCEPTANCE | Qualified Generalized PAPER with isolated simulation and provenance. [PAPER hardening](PHASE18_2G_FINAL_HARDENING_ACCEPTANCE.md) |
+| 18.3A–F | MERGED / LOCAL ACCEPTANCE | Collateral and margin evidence plus modeled risk research. [Risk acceptance](PHASE18_3_FINAL_ACCEPTANCE.md) |
+| 18.4 | MERGED / LOCAL PAPER ACCEPTANCE | Three read-only advisory agents integrated into Simulation, with bounded evidence and historical PAPER acceptance. See the [final acceptance record](PHASE18_4_FINAL_ACCEPTANCE.md). |
+| 18.5 | MERGED / LOCAL PAPER ACCEPTANCE | Asset-aware research in Simulation with qualified discovery, both AMM models, optional Phase 18.3 risk and read-only advisory evidence. See the [final acceptance record](PHASE18_5_FINAL_ACCEPTANCE.md). |
 | 18.6A–E | MERGED / LOCAL ACCEPTANCE | Searchable Core and HIP-3 listing metadata, qualified PAPER handoff, and Starter, Pro and Institutional navigation. [Implementation acceptance](PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md) |
-| 18.6H | IN REVIEW | Public Core/HIP-3 market observations, namespace caching and expiry, segmented experience modes and research overviews. [Hardening acceptance](PHASE18_6_HARDENING_ACCEPTANCE.md) |
+| 18.6H | MERGED | Public Core/HIP-3 market observations, namespace caching and expiry, segmented experience modes and research overviews. [Hardening acceptance](PHASE18_6_HARDENING_ACCEPTANCE.md) |
 | 18.7A–C | MERGED | PR #102 supplies baseline, cross-market and bounded provider regression evidence. Exact PR #100 capture digests remain open. [A–C report](PHASE18_7ABC_ACCEPTANCE.md) |
 | 18.7D | CONDITIONAL | Local financial, authority and native portfolio evidence passed. Historical aggregate hash attestation and signed TESTNET remain open. [D–E report](PHASE18_7DE_ACCEPTANCE.md) |
 | 18.7E | CONDITIONAL | Chromium matrix, workflow, responsive and automated accessibility evidence. Independent engines, native platforms and manual assistive technology remain open. [D–E report](PHASE18_7DE_ACCEPTANCE.md) |
-| 18.7F | PENDING | Final release decision, sustained provider and recovery checks, unresolved external gates and rollout. [Acceptance matrix](PHASE18_7_ACCEPTANCE_MATRIX.md) |
-| 18.7 | IN PROGRESS | Overall acceptance remains open. |
+| 18.7F | RELEASE CANDIDATE / INDEPENDENT REVIEW | Bounded release verification and outstanding operational gates. [Final decision](PHASE18_7_FINAL_ACCEPTANCE.md) · [Runbook](PHASE18_RELEASE_RUNBOOK.md) |
+| 18.7 | LOCAL RELEASE DECISION | External provider, platform, signed TESTNET and durable recovery gates retain their individual dispositions. |
 
 ## Phase 6 extension points
 

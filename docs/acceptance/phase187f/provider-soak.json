@@ -1,0 +1,449 @@
+{
+  "point_check": {
+    "started_utc": "2026-11-21T07:59:39.508534+00:00",
+    "requested_seconds": 0,
+    "mainnet_cycles": [
+      {
+        "elapsed_seconds": 0.001,
+        "discovery_http": 200,
+        "availability": "AVAILABLE",
+        "error": null,
+        "discovery_seconds": 5.991,
+        "generation_changed": true,
+        "keys": [
+          "HYPERLIQUID:MAINNET:CORE_PERP::BTC",
+          "HYPERLIQUID:MAINNET:CORE_PERP::ETH",
+          "HYPERLIQUID:MAINNET:CORE_PERP::SOL",
+          "HYPERLIQUID:MAINNET:CORE_PERP::DOGE",
+          "HYPERLIQUID:MAINNET:HIP3_PERP:xyz:AAOI",
+          "HYPERLIQUID:MAINNET:HIP3_PERP:io:AAPL"
+        ],
+        "required_coverage": true,
+        "namespaces": 11,
+        "records": 568,
+        "summary_http": 200,
+        "summary_seconds": 1.568,
+        "statuses": [
+          "CURRENT",
+          "CURRENT",
+          "CURRENT",
+          "CURRENT",
+          "CURRENT",
+          "CURRENT"
+        ],
+        "current_mark_funding": 6,
+        "cache_reuse_False": true,
+        "cache_reuse_True": true
+      }
+    ],
+    "resource_samples": [
+      {
+        "elapsed_seconds": 0,
+        "rss_kib": 63448,
+        "threads": 1,
+        "asyncio_tasks": 1,
+        "discovery_threads": 0,
+        "summary_tasks": 0,
+        "summary_captures": 0
+      },
+      {
+        "elapsed_seconds": 8.122,
+        "rss_kib": 84508,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 3
+      }
+    ],
+    "authority": "NONE",
+    "mainnet_elapsed_seconds": 8.122,
+    "after_owner_shutdown": {
+      "rss_kib": 83652,
+      "threads": 4,
+      "asyncio_tasks": 1,
+      "discovery_threads": 0,
+      "summary_tasks": 0,
+      "summary_captures": 0
+    },
+    "retired_on_close": true,
+    "testnet_catalog": {
+      "availability": "UNAVAILABLE",
+      "error": null,
+      "inventory_error": "CATALOG_CAPACITY",
+      "inventory_count": 288,
+      "published": false
+    },
+    "testnet_core": {
+      "SOL": true,
+      "BTC": true,
+      "ETH": true,
+      "DOGE": true
+    },
+    "call_counts": [
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "result": "OK",
+        "count": 11
+      },
+      {
+        "network": "MAINNET",
+        "operation": "metaAndAssetCtxs",
+        "result": "OK",
+        "count": 3
+      },
+      {
+        "network": "MAINNET",
+        "operation": "perpDexs",
+        "result": "OK",
+        "count": 1
+      },
+      {
+        "network": "MAINNET",
+        "operation": "spotMeta",
+        "result": "OK",
+        "count": 1
+      },
+      {
+        "network": "TESTNET",
+        "operation": "metaAndAssetCtxs",
+        "result": "OK",
+        "count": 1
+      },
+      {
+        "network": "TESTNET",
+        "operation": "perpDexs",
+        "result": "OK",
+        "count": 1
+      }
+    ],
+    "total_calls": 18,
+    "weight_20_per_call_upper_bound": 360,
+    "max_rolling_minute_weight_upper_bound": 360,
+    "max_provider_call_seconds": 1.958,
+    "process_peak_rss_kib": 84188,
+    "rss_peak_increment_kib": 21060,
+    "threads_after_loop_close": 1
+  },
+  "sustained_catalog_and_summary": {
+    "started_utc": "2026-11-21T07:51:06.196650+00:00",
+    "requested_seconds": 1800,
+    "resource_samples": [
+      {
+        "elapsed_seconds": 0,
+        "rss_kib": 62844,
+        "threads": 1,
+        "asyncio_tasks": 1,
+        "discovery_threads": 0,
+        "summary_tasks": 0,
+        "summary_captures": 0
+      },
+      {
+        "elapsed_seconds": 281.729,
+        "rss_kib": 91296,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 15
+      },
+      {
+        "elapsed_seconds": 582.94,
+        "rss_kib": 91556,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 24
+      },
+      {
+        "elapsed_seconds": 882.286,
+        "rss_kib": 93460,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 24
+      },
+      {
+        "elapsed_seconds": 1182.315,
+        "rss_kib": 94084,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 24
+      },
+      {
+        "elapsed_seconds": 1483.001,
+        "rss_kib": 94192,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 24
+      },
+      {
+        "elapsed_seconds": 1783.537,
+        "rss_kib": 93900,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 24
+      },
+      {
+        "elapsed_seconds": 1801.006,
+        "rss_kib": 94380,
+        "threads": 7,
+        "asyncio_tasks": 1,
+        "discovery_threads": 3,
+        "summary_tasks": 0,
+        "summary_captures": 24
+      }
+    ],
+    "authority": "NONE",
+    "mainnet_elapsed_seconds": 1801.006,
+    "after_owner_shutdown": {
+      "rss_kib": 93188,
+      "threads": 4,
+      "asyncio_tasks": 1,
+      "discovery_threads": 0,
+      "summary_tasks": 0,
+      "summary_captures": 0
+    },
+    "retired_on_close": true,
+    "testnet_catalog": {
+      "availability": "UNAVAILABLE",
+      "error": null,
+      "published": false
+    },
+    "testnet_core": {
+      "SOL": true,
+      "BTC": true,
+      "ETH": true,
+      "DOGE": true
+    },
+    "call_counts": [
+      {
+        "network": "MAINNET",
+        "operation": "meta",
+        "result": "OK",
+        "count": 330
+      },
+      {
+        "network": "MAINNET",
+        "operation": "metaAndAssetCtxs",
+        "result": "OK",
+        "count": 184
+      },
+      {
+        "network": "MAINNET",
+        "operation": "perpDexs",
+        "result": "OK",
+        "count": 30
+      },
+      {
+        "network": "MAINNET",
+        "operation": "spotMeta",
+        "result": "OK",
+        "count": 30
+      },
+      {
+        "network": "TESTNET",
+        "operation": "metaAndAssetCtxs",
+        "result": "OK",
+        "count": 1
+      },
+      {
+        "network": "TESTNET",
+        "operation": "perpDexs",
+        "result": "OK",
+        "count": 1
+      }
+    ],
+    "total_calls": 576,
+    "weight_20_per_call_upper_bound": 11520,
+    "max_rolling_minute_weight_upper_bound": 520,
+    "max_provider_call_seconds": 2.177,
+    "process_peak_rss_kib": 94832,
+    "rss_peak_increment_kib": 31536,
+    "threads_after_loop_close": 1,
+    "summary": {
+      "measured_catalog_summary_workload": "PASS",
+      "cycle_count": 91,
+      "available_catalog_responses": 91,
+      "selected_rows": 546,
+      "current_mark_funding_rows": 546,
+      "retired_generations_rejected": 29,
+      "discovery_latency_seconds_median_max": [
+        0.11,
+        7.522
+      ],
+      "summary_latency_seconds_median_max": [
+        1.255,
+        2.204
+      ],
+      "peak_threads": 7,
+      "peak_asyncio_tasks_sampled_between_cycles": 1,
+      "peak_summary_captures": 24,
+      "provider_failures": {},
+      "namespace_acquisitions": 184,
+      "namespace_capture_reuses_during_scheduled_cycles": 89
+    },
+    "representative_cycles": [
+      {
+        "elapsed_seconds": 0.001,
+        "discovery_http": 200,
+        "availability": "AVAILABLE",
+        "error": null,
+        "discovery_seconds": 6.593,
+        "generation_changed": true,
+        "keys": [
+          "HYPERLIQUID:MAINNET:CORE_PERP::BTC",
+          "HYPERLIQUID:MAINNET:CORE_PERP::ETH",
+          "HYPERLIQUID:MAINNET:CORE_PERP::SOL",
+          "HYPERLIQUID:MAINNET:CORE_PERP::DOGE",
+          "HYPERLIQUID:MAINNET:HIP3_PERP:xyz:AAOI",
+          "HYPERLIQUID:MAINNET:HIP3_PERP:io:AAPL"
+        ],
+        "required_coverage": true,
+        "namespaces": 11,
+        "records": 568,
+        "summary_http": 200,
+        "summary_seconds": 1.291,
+        "current_mark_funding": 6,
+        "cache_reuse_False": true,
+        "cache_reuse_True": true,
+        "status_counts": {
+          "CURRENT": 6
+        }
+      },
+      {
+        "elapsed_seconds": 60.072,
+        "discovery_http": 200,
+        "availability": "AVAILABLE",
+        "error": null,
+        "discovery_seconds": 5.619,
+        "generation_changed": true,
+        "required_coverage": true,
+        "namespaces": 11,
+        "records": 568,
+        "retired_generation_http": 409,
+        "summary_http": 200,
+        "summary_seconds": 1.028,
+        "current_mark_funding": 6,
+        "status_counts": {
+          "CURRENT": 6
+        }
+      },
+      {
+        "elapsed_seconds": 1800.018,
+        "discovery_http": 200,
+        "availability": "AVAILABLE",
+        "error": null,
+        "discovery_seconds": 0.035,
+        "generation_changed": false,
+        "required_coverage": true,
+        "namespaces": 11,
+        "records": 568,
+        "summary_http": 200,
+        "summary_seconds": 0.931,
+        "current_mark_funding": 6,
+        "status_counts": {
+          "CURRENT": 6
+        }
+      }
+    ],
+    "exception_cycles": []
+  },
+  "native_live_read_only_streams": {
+    "classification": "PASS",
+    "duration_seconds": 24.271,
+    "started_at": "2026-11-21T07:50:05.298253+00:00",
+    "python": "3.12.14",
+    "sdk_version": "0.24.0",
+    "checks": {
+      "sdk_import": "PASS",
+      "native_metadata": "PASS",
+      "BTC_l2_rest": "PASS",
+      "ETH_l2_rest": "PASS",
+      "SOL_l2_rest": "PASS",
+      "perpetual_context_rest": "PASS",
+      "BTC_validated_ws_delivery": "PASS",
+      "ETH_validated_ws_delivery": "PASS",
+      "SOL_validated_ws_delivery": "PASS",
+      "controlled_reconnect": "PASS",
+      "sdk_cleanup": "PASS"
+    },
+    "remaining_owned_threads": 0,
+    "remaining_owned_tasks": 0,
+    "subscriber_count_after_shutdown": 0,
+    "subscriptions_created": 12,
+    "post_shutdown": {
+      "BTC": {
+        "connection_state": "STOPPED",
+        "subscription_state": "RETIRED",
+        "reconnect_count": 1
+      },
+      "ETH": {
+        "connection_state": "STOPPED",
+        "subscription_state": "RETIRED",
+        "reconnect_count": 1
+      },
+      "SOL": {
+        "connection_state": "STOPPED",
+        "subscription_state": "RETIRED",
+        "reconnect_count": 1
+      }
+    },
+    "max_subscriptions_per_connection": 6
+  },
+  "offline_native_fixture": {
+    "classification": "PASS",
+    "evidence": "OFFLINE FAKE SDK — NOT VENUE DELIVERY",
+    "requested_seconds": 30.0,
+    "max_cycles": 100,
+    "cycles_completed": 100,
+    "maximum_observed_queue_size": 8,
+    "dropped_events": 900,
+    "rejected_events": 2700,
+    "retired_callback_attempts": 300,
+    "history_retained": {
+      "BTC": 32,
+      "ETH": 32,
+      "SOL": 32
+    },
+    "history_gaps": {
+      "BTC": 200,
+      "ETH": 200,
+      "SOL": 200
+    },
+    "duration_seconds": 10.2816,
+    "subscriber_count_after_shutdown": 0,
+    "remaining_owned_threads": 0,
+    "remaining_owned_tasks": 0,
+    "leaked_or_uncertain_sdk_resources": 0,
+    "sdk_connections_created": 101
+  },
+  "existing_summary_resilience_fixture": {
+    "rolling_budget": "24 starts, 2 blocked calls, 2 recovered starts, 24 retained entries",
+    "request_timeout_seconds": "6.011",
+    "provider_soak": {
+      "cache_hits": 40,
+      "cache_misses": 40,
+      "elapsed_seconds": 0.458,
+      "errors": {},
+      "peak_response_bytes": 12832,
+      "peak_rss_kib": 106920,
+      "requests": 80,
+      "retained_after_close": 0,
+      "retained_before_close": 7,
+      "threads_after_close": 2,
+      "threads_at_end": 5,
+      "threads_before": 4,
+      "virtual_seconds": 400
+    }
+  }
+}

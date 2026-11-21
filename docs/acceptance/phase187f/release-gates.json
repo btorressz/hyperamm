@@ -1,0 +1,128 @@
+{
+  "release_decision": "CONDITIONAL PASS",
+  "application_source_commit": "dd9e1488e027061a42cffd77e0761f8461de7226",
+  "isolated_uvicorn_smoke": [
+    {
+      "startup_seconds": 2.586,
+      "health": {
+        "status": "ok",
+        "app": "HyperAMM",
+        "market_connection": "CONNECTED",
+        "stale": false,
+        "mode": "DEMO",
+        "simulated": true,
+        "redis": {
+          "enabled": false,
+          "required": false,
+          "status": "DISABLED",
+          "research_enabled": false,
+          "last_error": null,
+          "last_success_at": null
+        }
+      },
+      "terminal_websocket": "PASS",
+      "/risk": 200,
+      "/risk/authorization": 200,
+      "/vault": 200,
+      "paper_status": 200,
+      "public_catalog": {
+        "http": 200,
+        "availability": "AVAILABLE",
+        "error": null
+      },
+      "public_btc_summary": {
+        "http": 200,
+        "statuses": [
+          "CURRENT"
+        ]
+      },
+      "shutdown_return_code": -15,
+      "shutdown_seconds": 0.18,
+      "shutdown_completed": true
+    },
+    {
+      "startup_seconds": 1.344,
+      "health": {
+        "status": "ok",
+        "app": "HyperAMM",
+        "market_connection": "CONNECTED",
+        "stale": false,
+        "mode": "DEMO",
+        "simulated": true,
+        "redis": {
+          "enabled": false,
+          "required": false,
+          "status": "DISABLED",
+          "research_enabled": false,
+          "last_error": null,
+          "last_success_at": null
+        }
+      },
+      "terminal_websocket": "PASS",
+      "/risk": 200,
+      "/risk/authorization": 200,
+      "/vault": 200,
+      "paper_status": 200,
+      "fresh_process_identity": true,
+      "shutdown_return_code": -15,
+      "shutdown_seconds": 0.132,
+      "shutdown_completed": true
+    }
+  ],
+  "physical_redis": {
+    "classification": "PASS",
+    "checks": [
+      "Actual Redis startup, PING and application health CONNECTED",
+      "Two actual Pub/Sub terminal sockets share identity and release all clients",
+      "Coordinated actual PAPER worker preserves operational configuration",
+      "Actual TTL cache, Lua capacity rejection/release and expiring worker heartbeat",
+      "Actual Redis outage rejects research, reports DEGRADED and preserves manual kill",
+      "Actual Redis recovery cannot clear kill or change strategy",
+      "Application, relay and research lifespan shutdown completes"
+    ],
+    "fixture_notice": "Actual local Redis; DEMO/PAPER only; no venue requests",
+    "redis_version": "8.0.2",
+    "elapsed_seconds": 1.23
+  },
+  "signed_testnet": "NOT RUN",
+  "full_testnet_catalog": "CAPACITY_POLICY_RESTRICTION",
+  "durable_recovery": "SEPARATELY GATED",
+  "hip3_and_mainnet_signing": "OUT OF SCOPE",
+  "remote_multiuser_production": "OUT OF SCOPE",
+  "historical_source_authentication_and_licensing": "NOT RUN",
+  "supported_deployment": "single-operator loopback Linux/Chromium DEMO/PAPER",
+  "live_browser_smoke": {
+    "result": "PASS",
+    "market": "HYPERLIQUID:MAINNET:CORE_PERP::BTC",
+    "browser": "151.0.7922.173",
+    "observed": [
+      "mark",
+      "funding"
+    ],
+    "status": "CURRENT",
+    "page_errors": 0,
+    "duration_seconds": 10.583
+  },
+  "native_observation_app_smoke": {
+    "result": "PASS",
+    "market_universe": "DISABLED",
+    "BTC_public_rest": {
+      "http": 200,
+      "state": "AVAILABLE"
+    },
+    "BTC_public_websocket": {
+      "state": "AVAILABLE",
+      "subscribed": "OBSERVED"
+    },
+    "duration_seconds": 5.665,
+    "shutdown_completed": true
+  },
+  "workstreams": {
+    "F1": "PASS for controlled/exact compatibility; original PR #100 attestation open",
+    "F2": "PASS for measured discovery and summary soak; native reconnect passed; full Testnet catalog restricted",
+    "F3": "CONDITIONAL: Linux Chromium passed; Firefox, WebKit, native platforms and assisted review NOT RUN",
+    "F4": "CONDITIONAL: local lifecycle and physical Redis passed; signed TESTNET and durable recovery separately gated",
+    "F5": "CONDITIONAL: clean install, build and startup passed; Python resolution reproducibility open",
+    "F6": "CONDITIONAL PASS for bounded local research"
+  }
+}

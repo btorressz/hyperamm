@@ -5,22 +5,25 @@
 
 > **Open source · active development · local/single-operator architecture.** This repository is an engineering and research project, **not** a production-ready trading service, investment product, custody system or verified profitable strategy. PAPER/DEMO is the default; TESTNET signing is separately guarded. No mainnet trading, withdrawal, transfer or bridging path is implemented.
 
-## Current project status — November 12, 2026
+## Current project status — Phase 18.7F release candidate
 
 | Workstream | Merged implementation | Acceptance / boundary |
 | --- | --- | --- |
 | Core AMM, inventory, perp context, reference risk, supervisory agents and Vault (Phases 1–12) | Operational pipeline, deterministic PAPER simulation, guarded optional TESTNET, terminal workspaces | Historical local/fixture acceptance; external, platform and production gates remain |
 | Institutional UX and research (Phases 13–14.6) | Analytics, Execution/Markets UX, Research Vault presets/comparisons, BTC/ETH/SOL isolated PAPER market selection | Local/browser acceptance does not establish venue performance |
-| Read-only native market intelligence (Phases 15.1–15.5B, PRs #50–#55) | Official SDK REST/WS observation, L2/perp contexts, stream freshness, bounded history, provider health, observer lifecycle hardening | **Combined Phase 15 not closed:** genuine permitted venue connectivity, long soak and independent macOS acceptance outstanding |
+| Read-only native market intelligence (Phases 15.1–15.5B, PRs #50–#55) | Official SDK REST/WebSocket, native L2/perp context, bounded history and freshness | Bounded public reconnect and cleanup measured in Phase 18.7F. Broader operational and platform acceptance remains open. |
 | Historical research contracts and importer (Phases 16.1A/B, PRs #56–#57) | Immutable provenance, bounded secure local JSON admission, owner-only POSIX evidence vault | Source/permission labels are user assertions; no authenticated historical-feed or license proof |
 | Deterministic replay and modeled PAPER execution (Phases 16.2–16.3, PRs #58–#59) | Receipt-ordered replay, explicit segment resets, missing-economics rejection, optional latency/slippage/depth/partial-fill sensitivity | No verified real fills, queue priority, market completeness or production forecast |
 | Historical Replay Studio (Phases 16.4–16.4.1) | React dataset/frame navigation, original traces and independent segment accounting | Native/frontend/Chromium evidence recorded in the later acceptance phase |
 | Scenario/historical comparison (Phases 16.5A–C.2, PRs #62–#66) | Same-job capture, descriptive metrics, bounded API and React Comparison Studio | Independent final security/regression findings and local gates: [Phase 16.5D acceptance](docs/PHASE165D_ACCEPTANCE.md) |
 | Local research acceptance (Phases 16.6A/C/D) | Native, browser, security and resource acceptance | Durable lifecycle/recovery (16.6B) remains deferred |
 | Portfolio research (Phases 17.1A–17.5) | Exact configuration, PAPER execution/accounting/risk, six modeled stress scenarios and integrated responsive Portfolio Research terminal | [Phase 17.5 acceptance](docs/PHASE175_ACCEPTANCE.md); bounded native charts and provenance, no trading authority |
-| Next (Phase 17.6) | Independent final security, regression and end-to-end acceptance | Deferred |
+| Phase 17.6, PR #80 | Final native portfolio accounting, stress, browser and security acceptance | Hypothetical BTC/ETH/SOL allocations and modeled stress. |
+| Phase 18.0–18.5, PRs #85–#98 | Core/HIP-3 discovery, qualified Generalized PAPER, modeled risk, three observational advisories and asset-aware AMM | Single-market PAPER uses existing models, bounded source evidence and synthetic prices. |
+| Phase 18.6–18.7D/E, PRs #99–#103 | Public Market Explorer, Starter/Pro/Institutional, provider hardening and local financial and browser acceptance | 13 routes, both AMMs and all nine agents. Production and independent external gates remain. |
+| Phase 18.7F candidate | Final release evidence for the loopback, single-operator DEMO/PAPER scope | [Final acceptance report](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md) |
 
-The current **research and independent live-observation universe** is **BTC-PERP, ETH-PERP and SOL-PERP**. That does not expand the operational strategy market or permit switching live execution through the research UI. Operational market data, independent read-only observation and the historical PAPER replay vault are **three separate evidence paths**.
+Native independent streams and portfolio research support BTC-PERP, ETH-PERP and SOL-PERP. Mainnet Market Explorer and qualified Generalized PAPER cover discovered Core and HIP-3 instruments within their own contracts. Full Testnet discovery remains restricted by the 64-namespace policy. Signing is disabled in the supported local release. Signed TESTNET, durable recovery, native platforms and assistive technology have separate acceptance gates.
 
 Details and actual milestone tests: [CHANGELOG.md](CHANGELOG.md), [CODEBASE.md](CODEBASE.md), [Audit 1.0](AUDIT_REPORT_1.0.md), [Audit 2.0](AUDIT_REPORT_2.0.md), and the [Phase 15.5B](docs/PHASE155B_ACCEPTANCE.md) / [Phase 16.4](docs/PHASE164_ACCEPTANCE.md) acceptance documents.
 
@@ -121,11 +124,11 @@ From a **second terminal** at the repository root:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run typecheck
 npm run build
 npm test
-npm run dev
+npm run dev -- --host 127.0.0.1 --strictPort
 ```
 
 Terminal: `http://127.0.0.1:5173`. Vite proxies `/api` and `/ws` to the local backend. These are instructions to reproduce validation, not claims that the latest full suite is green. See [tests and acceptance](#tests-and-acceptance).

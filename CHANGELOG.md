@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Phase 18.7F release acceptance
+
+- Reproduce controlled standard and asset-aware PAPER parity and the exact native BTC/ETH/SOL reference. Preserve the original PR #100 hash limitation.
+- Run the existing local regression, browser, SDK and physical Redis paths. Add opt-in bounded public discovery and summary soak evidence using the existing source owners.
+- Record the bounded release decision, separately gated signed TESTNET and recovery, and the retained Testnet catalog restriction. [Final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
+
 ## Unreleased — Phase 18.7D–E acceptance
 
 - Reconcile qualified PAPER execution through quotes, fills, fees, funding, ledger and marked equity across both AMMs and all three risk paths. Cover every native BTC/ETH/SOL portfolio selection and mixed results across advisory and operational authority.

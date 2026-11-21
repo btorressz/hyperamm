@@ -1,6 +1,6 @@
 # HyperAMM — Codebase & Repository Guide
 
-> **Developer orientation — current status reviewed November 20, 2026, through merged PR #102 (Phase 18.7A–C).** Start with the *Current implementation map* below. The November 11 Phases 15–16 source map and the older Phase 1–15 and October audit notes describe those earlier releases. The [Phase 18.7 acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md) tracks the remaining gates.
+> **Developer orientation — current implementation through merged PR #103 and Phase 18.7F release-candidate evidence.** Start with the *Current implementation map* below. The November 11 Phases 15–16 source map and the older Phase 1–15 and October audit notes describe those earlier releases. The [Phase 18.7 acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md) tracks the remaining gates.
 
 **Purpose.** This is a code navigation and dependency guide: what the directories/files do, which code calls which domain, what information crosses each boundary, how to run or test it, and where changes belong. For project history see [README](README.md), [Summary](Summary.md), [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md).
 
@@ -8,7 +8,7 @@
 
 ## Current implementation map — Phases 17–18.6H (2026-11-20)
 
-The merged baseline is `4d444b6080e65f2154c5099645b3b90bfaac1dd4`. Phase 18.6A–E introduced the research workspaces and Phase 18.6H added public Core/HIP-3 market summaries and the expanded Starter/Pro/Institutional presentation. Phase 18.7A–C verified controlled cross-market parity and bounded provider behavior. [Phase 18.6 implementation acceptance](docs/PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md) · [18.6H hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md) · [18.7A–C evidence](docs/PHASE18_7ABC_ACCEPTANCE.md)
+The merged baseline is `dd9e1488e027061a42cffd77e0761f8461de7226`. Phase 18.6A–E introduced the research workspaces and Phase 18.6H added public Core/HIP-3 market summaries and the expanded Starter/Pro/Institutional presentation. Phase 18.7A–C verified controlled cross-market parity and bounded provider behavior. [Phase 18.6 implementation acceptance](docs/PHASE18_6_IMPLEMENTATION_ACCEPTANCE.md) · [18.6H hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md) · [18.7A–C evidence](docs/PHASE18_7ABC_ACCEPTANCE.md)
 
 This section is the **current developer entry point**; the November 11 Phases 15–16 map and historical addenda below are preserved for code history and are not authoritative about today's latest PR, route count or phase readiness. Earlier statements of future work must be read in their dated context.
 
@@ -109,7 +109,7 @@ The 13 canonical destinations are Dashboard, Markets, Strategy, AMM Settings, Ex
 - **Phase 18.7 gates.** Track financial and browser evidence, historical aggregate hashes, independent browser and OS coverage, screen-reader review, sustained provider recovery, signed TESTNET reconciliation and rollout in the [acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md). The full Testnet DEX inventory exceeded the existing **64-namespace discovery cap** at the recorded check.
 - Reproduce the backend, frontend and browser checks using the [D–E commands](docs/PHASE18_7DE_ACCEPTANCE.md#reproduction).
 
-**Where to extend next:** implement any Phase 18.7 acceptance on the existing pytest/Node/Chromium harness and source-bound APIs. Don't add a duplicate market poller, another AMM or simulation engine, a second supervisor, a new portfolio ledger or signed execution to make the Explorer seem more complete.
+**Phase 18.7F release verification.** The acceptance probe wraps the existing official SDK discovery and summary owners. Existing public native, browser, Redis and financial harnesses provide independent evidence. See the [final acceptance report](docs/PHASE18_7_FINAL_ACCEPTANCE.md) and [local release runbook](docs/PHASE18_RELEASE_RUNBOOK.md).
 
 ---
 

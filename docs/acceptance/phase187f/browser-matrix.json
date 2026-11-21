@@ -1,0 +1,906 @@
+{
+  "evidence_source": "Linux Chromium with deterministic qualified fixtures and real local PAPER and Replay engines",
+  "chromium": {
+    "status": "PASS",
+    "browser": "Chrome/151.0.7922.173",
+    "workflows": [
+      "Core, HIP-3, symbol and DEX search, filters, missing observations, delisting and qualified details",
+      "Retained stale metadata disables launch, and network refresh replaces qualified identity",
+      "Source fields, page sort, missing data, timeout, rate limit, server/client expiry and late DEX request retirement",
+      "2,006 records remain searchable with 12 cards mounted per page and recover on refresh",
+      "Starter eligibility, rejection and genuine worker outcome, with one run across three mode changes and Results",
+      "Pro overview and both AMMs, with supervisory, advisory, replay, comparison and asset-aware research",
+      "Institutional portfolio, stress, provenance, risk, audit and accounting routes, with legacy refresh and history",
+      "Keyboard mode selection and mobile drawer return focus",
+      "Narrow financial table keyboard scrolling, drawer focus containment and focus return",
+      "Qualified HIP-3 concentrated PAPER completes across page and mode changes with a single admission",
+      "Generated Historical Replay and real native portfolio analytics and source receipts on six layouts",
+      "Actual 422 and injected 429, 500, 503, 504 and network interruption retire admission and allow manual recovery",
+      "Terminal WebSocket loss preserves read-only Explorer and reconnect restores current risk evidence",
+      "All 13 routes load and refresh in every mode, with active links, back/forward, focus and scroll"
+    ],
+    "routes": {
+      "Starter": [
+        "dashboard",
+        "markets",
+        "strategy",
+        "amm-settings",
+        "execution",
+        "risk",
+        "agents",
+        "vault",
+        "analytics",
+        "simulation",
+        "portfolio-research",
+        "logs",
+        "settings"
+      ],
+      "Pro": [
+        "dashboard",
+        "markets",
+        "strategy",
+        "amm-settings",
+        "execution",
+        "risk",
+        "agents",
+        "vault",
+        "analytics",
+        "simulation",
+        "portfolio-research",
+        "logs",
+        "settings"
+      ],
+      "Institutional": [
+        "dashboard",
+        "markets",
+        "strategy",
+        "amm-settings",
+        "execution",
+        "risk",
+        "agents",
+        "vault",
+        "analytics",
+        "simulation",
+        "portfolio-research",
+        "logs",
+        "settings"
+      ]
+    },
+    "viewports": [
+      {
+        "workspace": "market-explorer",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "market-explorer",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "market-explorer",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "market-explorer",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "market-explorer",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "market-explorer-missing",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "market-explorer-missing",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "market-explorer-missing",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "market-explorer-missing",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "market-explorer-missing",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "starter",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "starter",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "starter",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "starter",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "starter",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "simulation-advanced",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "simulation-advanced",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "simulation-advanced",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "simulation-advanced",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "simulation-advanced",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "pro-amm",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "pro-amm",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "pro-amm",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "pro-amm",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "pro-amm",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "pro",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "pro",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "pro",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "pro",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "pro",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "institutional",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "institutional",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "institutional",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "institutional",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "institutional",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "risk-firewall",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "risk-firewall",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "risk-firewall",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "risk-firewall",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "risk-firewall",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "risk-firewall",
+        "height": 390,
+        "viewport": 668,
+        "content": 668
+      },
+      {
+        "workspace": "supervisory-agents",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "supervisory-agents",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "supervisory-agents",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "supervisory-agents",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "supervisory-agents",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "supervisory-agents",
+        "height": 390,
+        "viewport": 668,
+        "content": 668
+      },
+      {
+        "workspace": "asset-aware-paper",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "asset-aware-paper",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "asset-aware-paper",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "asset-aware-paper",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "asset-aware-paper",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "asset-aware-paper",
+        "height": 390,
+        "viewport": 668,
+        "content": 668
+      },
+      {
+        "workspace": "historical-replay",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "historical-replay",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "historical-replay",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "historical-replay",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "historical-replay",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "historical-replay",
+        "height": 390,
+        "viewport": 668,
+        "content": 668
+      },
+      {
+        "workspace": "portfolio-research",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "portfolio-research",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "portfolio-research",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "portfolio-research",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "portfolio-research",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "portfolio-research",
+        "height": 390,
+        "viewport": 668,
+        "content": 668
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "height": 844,
+        "viewport": 390,
+        "content": 390
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "height": 900,
+        "viewport": 768,
+        "content": 768
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "height": 768,
+        "viewport": 1024,
+        "content": 1024
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "height": 1000,
+        "viewport": 1440,
+        "content": 1440
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "height": 1080,
+        "viewport": 1920,
+        "content": 1920
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "height": 390,
+        "viewport": 668,
+        "content": 668
+      }
+    ],
+    "contrast": [
+      {
+        "selector": ".marketTitle",
+        "foreground": "rgb(220, 232, 244)",
+        "background": [
+          9,
+          19,
+          30
+        ],
+        "font": "18px",
+        "ratio": 15.035092958548736
+      },
+      {
+        "selector": ".marketTitle span",
+        "foreground": "rgb(155, 177, 197)",
+        "background": [
+          9,
+          19,
+          30
+        ],
+        "font": "18px",
+        "ratio": 8.445671932425569
+      },
+      {
+        "selector": ".riskHero strong",
+        "foreground": "rgb(71, 212, 157)",
+        "background": [
+          10,
+          20,
+          32
+        ],
+        "font": "24px",
+        "ratio": 9.853525920107973
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".riskList b",
+        "foreground": "rgb(216, 228, 239)",
+        "background": [
+          13,
+          25,
+          37
+        ],
+        "font": "11px",
+        "ratio": 13.749112337325366
+      },
+      {
+        "selector": ".mobileNavToggle > span",
+        "foreground": "rgb(220, 232, 244)",
+        "background": [
+          16,
+          30,
+          44
+        ],
+        "font": "11px",
+        "ratio": 13.577651478418455
+      },
+      {
+        "selector": ".mobileNavToggle > span",
+        "foreground": "rgb(220, 232, 244)",
+        "background": [
+          16,
+          30,
+          44
+        ],
+        "font": "11px",
+        "ratio": 13.577651478418455
+      }
+    ],
+    "keyboard": [
+      {
+        "region": "Reference source evidence table",
+        "tabs": 3,
+        "axis": "horizontal",
+        "pixels": 1
+      }
+    ],
+    "zoom_200": {
+      "width": 720,
+      "document": 720,
+      "dpr": 2
+    },
+    "page_errors": []
+  },
+  "scoped_axe_core": {
+    "version": "4.11.1",
+    "scan_count": 26,
+    "violation_count": 0,
+    "manual_entries": [
+      {
+        "workspace": "risk-firewall",
+        "width": 390,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "color-contrast",
+            "nodes": [
+              [
+                ".mobileNavToggle > span[aria-hidden=\"true\"]"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "workspace": "supervisory-agents",
+        "width": 390,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "color-contrast",
+            "nodes": [
+              [
+                ".mobileNavToggle > span[aria-hidden=\"true\"]"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "workspace": "asset-aware-paper",
+        "width": 390,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "color-contrast",
+            "nodes": [
+              [
+                ".mobileNavToggle > span[aria-hidden=\"true\"]"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "workspace": "historical-replay",
+        "width": 390,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "color-contrast",
+            "nodes": [
+              [
+                ".mobileNavToggle > span[aria-hidden=\"true\"]"
+              ]
+            ]
+          },
+          {
+            "rule": "th-has-data-cells",
+            "nodes": [
+              [
+                ".replayBook > table"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "workspace": "historical-replay",
+        "width": 1440,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "th-has-data-cells",
+            "nodes": [
+              [
+                ".replayBook > table"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "workspace": "portfolio-research",
+        "width": 390,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "color-contrast",
+            "nodes": [
+              [
+                ".mobileNavToggle > span[aria-hidden=\"true\"]"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "width": 390,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "color-contrast",
+            "nodes": [
+              [
+                ".mobileNavToggle > span[aria-hidden=\"true\"]"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "workspace": "portfolio-provenance",
+        "width": 1440,
+        "violations": [],
+        "manual": [
+          {
+            "rule": "color-contrast",
+            "nodes": [
+              [
+                ".marketTitle"
+              ]
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "route_mode_checks": 39,
+  "screenshots_generated_in_scratch": 28,
+  "legacy": {
+    "186": {
+      "exit_code": 0,
+      "duration_wall_seconds": 49,
+      "workflow_groups": 8
+    },
+    "182": {
+      "exit_code": 0,
+      "duration_wall_seconds": 98,
+      "reported_pass_checks": 36
+    },
+    "176": {
+      "exit_code": 0,
+      "duration_wall_seconds": 194,
+      "workflow_groups": 22,
+      "engine_runs": 60
+    },
+    "audit3": {
+      "exit_code": 0,
+      "duration_wall_seconds": 56,
+      "route_measurements": 32,
+      "manual_rule_results": 33,
+      "automated_violations": 0,
+      "contrast_samples": 14,
+      "zoom": 2.0,
+      "keyboard": [
+        {
+          "region": "Reference source evidence table",
+          "tabs": 3,
+          "axis": "horizontal",
+          "pixels": 1
+        },
+        {
+          "region": "Recent agent events",
+          "tabs": 12,
+          "axis": "vertical",
+          "pixels": 8
+        }
+      ]
+    }
+  },
+  "firefox": {
+    "status": "NOT RUN",
+    "requested_playwright_build": "159.0 / v1572",
+    "download_http": 403
+  },
+  "webkit": {
+    "status": "NOT RUN",
+    "requested_playwright_build": "27.2 / v2388",
+    "download_http": 403
+  },
+  "macos_safari": "NOT RUN",
+  "windows_chrome_firefox": "NOT RUN",
+  "physical_mobile": "NOT RUN",
+  "voiceover_nvda_and_manual_at": "NOT RUN",
+  "chromium_elapsed_seconds_from_log_start_to_report": 142.34,
+  "live_provider_browser_smoke": {
+    "result": "PASS",
+    "market": "HYPERLIQUID:MAINNET:CORE_PERP::BTC",
+    "browser": "151.0.7922.173",
+    "observed": [
+      "mark",
+      "funding"
+    ],
+    "status": "CURRENT",
+    "page_errors": 0,
+    "duration_seconds": 10.583
+  }
+}
