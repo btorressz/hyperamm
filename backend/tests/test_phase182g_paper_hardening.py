@@ -4,7 +4,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import json
 from pathlib import Path
-from threading import Event
+from threading import Event, enumerate as threads, get_ident
+from time import perf_counter
 
 import pytest
 from eth_account import Account
@@ -28,8 +29,10 @@ from app.references.models import GENERALIZED_REFERENCE_SOURCE, SYNTHETIC_AGREEM
 from app.references.service import ReferenceService
 from app.risk.authorization import authorize, fingerprint
 from app.risk.firewall import PnlDrawdown, RiskFirewall
+from app.runtime import HyperAmmRuntime
 from app.simulation import generalized_market_profiles as paper, version
 from app.simulation.engine import SimulationEngine
+from app.simulation.executor import PAPER_PREFLIGHT_LIMIT, PAPER_PREFLIGHT_SLOTS
 from app.simulation.models import SimulationDataset
 from app.simulation.references import build_simulated_references
 from app.simulation.scenarios import generate_scenario
@@ -42,6 +45,8 @@ from test_redis_infrastructure import infrastructure
 
 @pytest.fixture(autouse=True)
 def venue_isolation(monkeypatch):
+    disabled_adapter_init = HyperliquidTestnetExecutionAdapter.__init__
+
     def forbidden(*args, **kwargs):
         pytest.fail("generalized PAPER reached a venue operation or signer")
     for target, methods in (
@@ -51,6 +56,7 @@ def venue_isolation(monkeypatch):
     ):
         for method in methods:
             monkeypatch.setattr(target, method, forbidden)
+    return disabled_adapter_init
 
 
 def test_synthetic_reference_identity_times_consensus_and_operational_fences(monkeypatch):
@@ -478,6 +484,173 @@ async def test_worker_checks_expiry_after_preflight(monkeypatch):
         await paper.execute_paper(SimulationEngine(), proposal=proposal, metadata=record,
             network="MAINNET", max_age_seconds=60, expected=admission.binding)
     assert denied.value.admission.reason == "METADATA_STALE"
+
+
+async def test_bounded_preflight_keeps_real_paper_and_terminal_responsive(api_client, monkeypatch, venue_isolation):
+    client, _, executor, _ = api_client
+    with monkeypatch.context() as setup:
+        setup.setattr(HyperliquidTestnetExecutionAdapter, "__init__", venue_isolation)
+        runtime = HyperAmmRuntime(Settings(_env_file=None, market_data_mode="DEMO", execution_mode="PAPER",
+                                          enable_hyperliquid_testnet_orders=False, hyperliquid_private_key=None,
+                                          hyperliquid_account_address=None))
+    monkeypatch.setattr(main.app.state, "runtime", runtime, raising=False)
+    started, release = Event(), Event()
+    loop_thread = get_ident()
+    preflights = []
+    original = paper._preflight
+
+    def gated_preflight(prepared, *args, **kwargs):
+        frames = len(prepared.dataset.frames)
+        started_at = perf_counter()
+        original(prepared, *args, **kwargs)
+        preflights.append((frames, get_ident(), perf_counter() - started_at))
+        if frames == paper.MAX_FRAMES:
+            started.set()
+            assert release.wait(8)
+
+    await runtime.start_services()
+    queue = runtime.subscribe_terminal()
+    tasks = []
+    try:
+        previous = json.loads(await asyncio.wait_for(queue.get(), 3))
+        payload = proposal_for(evidence(), price="2500", frames=40).model_dump(mode="json")
+        check = await client.post(URL + "/eligibility", json=payload)
+        assert check.status_code == 200, check.text
+        monkeypatch.setattr(paper, "_preflight", gated_preflight)
+        heavy = {**payload, "scenario": "HIGH_VOLATILITY", "frames": paper.MAX_FRAMES,
+                 "trace_max_points": paper.MAX_FRAMES}
+        eligibility = asyncio.create_task(client.post(URL + "/eligibility", json=heavy))
+        tasks.append(eligibility)
+        delays = []
+        async with asyncio.timeout(4):
+            while not started.is_set():
+                scheduled = perf_counter() + 0.005
+                await asyncio.sleep(0.005)
+                delays.append(max(0, perf_counter() - scheduled))
+        assert delays
+        assert not executor._busy
+        at = perf_counter()
+        health, strategy, run, frame = await asyncio.wait_for(asyncio.gather(
+            client.get("/api/v1/health"),
+            client.get("/api/v1/strategy"),
+            client.post(URL + "/run", json={**payload, "expected": check.json()["binding"]}),
+            queue.get(),
+        ), timeout=4)
+        assert not eligibility.done()
+        assert health.status_code == strategy.status_code == run.status_code == 200
+        following = json.loads(frame)
+        assert following["sequence"] > previous["sequence"]
+        assert following["process_id"] == previous["process_id"]
+        result = paper.GeneralizedPaperResult.model_validate_json(run.content)
+        assert result.admission.binding == paper.PaperAdmission.model_validate_json(check.content).binding
+        assert result.proposal.frames == 40
+        assert [row[0] for row in preflights] == [paper.MAX_FRAMES, 40]
+        assert all(thread != loop_thread for _, thread, _ in preflights)
+        print(f"parallel health/status, terminal and PAPER run completed in {perf_counter() - at:.3f}s")
+        print(f"120-frame preflight feasibility wall time {preflights[0][2]:.3f}s")
+        print(f"maximum event-loop delay during preflight {max(delays) * 1000:.1f}ms across {len(delays)} samples")
+        release.set()
+        response = await eligibility
+        assert response.status_code == 200 and response.json()["status"] == "ELIGIBLE"
+    finally:
+        release.set()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        runtime.unsubscribe_terminal(queue)
+        await runtime.stop_services()
+
+
+@pytest.mark.parametrize("invalidation", ["deadline", "generation"])
+async def test_preflight_rechecks_catalog_at_publication(api_client, monkeypatch, invalidation):
+    client, discovery, executor, _ = api_client
+    payload = proposal_for(evidence(), price="2500", frames=paper.MAX_FRAMES).model_dump(mode="json")
+    check = await client.post(URL + "/eligibility", json=payload)
+    binding = check.json()["binding"]
+    assert check.status_code == 200
+    started, release = Event(), Event()
+    original = paper._preflight
+
+    def gated_preflight(*args, **kwargs):
+        started.set()
+        assert release.wait(6)
+        original(*args, **kwargs)
+
+    async def forbidden(*args, **kwargs):
+        pytest.fail("retired preflight dispatched a worker")
+
+    monkeypatch.setattr(paper, "_preflight", gated_preflight)
+    monkeypatch.setattr(executor, "execute", forbidden)
+    run = asyncio.create_task(client.post(URL + "/run", json={**payload, "expected": binding}))
+    try:
+        assert await asyncio.to_thread(started.wait, 4)
+        if invalidation == "generation":
+            discovery._expires = 0
+            await discovery.catalog()
+            # A refresh can replace the generation with an identical fingerprint.
+            assert discovery.paper_generation(binding["catalog_fingerprint"]) is not None
+        else:
+            from app.api import market_universe
+
+            class ExpiredClock(datetime):
+                @classmethod
+                def now(cls, tz):
+                    return datetime.fromisoformat(check.json()["valid_until"])
+
+            monkeypatch.setattr(market_universe, "datetime", ExpiredClock)
+    finally:
+        release.set()
+        response = await run
+    assert response.status_code == 503 and response.json()["reason"] == "METADATA_STALE"
+
+
+async def test_preflight_limits_outstanding_work_and_drains_canceled_requests(api_client, monkeypatch):
+    client, _, executor, _ = api_client
+    started = asyncio.Queue()
+    release = Event()
+    loop = asyncio.get_running_loop()
+    original = paper._preflight
+
+    def gated_preflight(*args, **kwargs):
+        loop.call_soon_threadsafe(started.put_nowait, get_ident())
+        assert release.wait(8)
+        original(*args, **kwargs)
+
+    monkeypatch.setattr(paper, "_preflight", gated_preflight)
+    payload = proposal_for(evidence(), price="2500", frames=paper.MAX_FRAMES).model_dump(mode="json")
+    tasks = [asyncio.create_task(client.post(URL + "/eligibility", json=payload))
+             for _ in range(PAPER_PREFLIGHT_LIMIT)]
+    shutdown = None
+    try:
+        thread_ids = {await asyncio.wait_for(started.get(), 4) for _ in range(PAPER_PREFLIGHT_SLOTS)}
+        async with asyncio.timeout(4):
+            while len(executor._preflights) < PAPER_PREFLIGHT_LIMIT:
+                await asyncio.sleep(0)
+        assert len(thread_ids) == PAPER_PREFLIGHT_SLOTS and started.empty()
+        tasks[0].cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await tasks[0]
+        tasks[-1].cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await tasks[-1]
+        assert len(executor._preflights) == PAPER_PREFLIGHT_LIMIT
+        busy = await client.post(URL + "/eligibility", json=payload)
+        assert busy.status_code == 429
+        invalid = await client.post(URL + "/eligibility", json={**payload, "frames": paper.MAX_FRAMES + 1})
+        assert invalid.status_code == 422 and invalid.json()["reason"] == "CONFIGURATION_INVALID"
+        foreign = {**payload, "identity": {**payload["identity"], "network": "TESTNET"}}
+        rejected = await client.post(URL + "/eligibility", json=foreign)
+        assert rejected.status_code == 422 and rejected.json()["reason"] == "NETWORK_MISMATCH"
+        assert len(executor._preflights) == PAPER_PREFLIGHT_LIMIT and not executor._busy
+        shutdown = asyncio.create_task(executor.shutdown())
+        await asyncio.sleep(0)
+        assert not shutdown.done()
+    finally:
+        release.set()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        if shutdown is not None:
+            await shutdown
+    assert len(executor._preflights) == 0
+    assert all(thread.ident not in thread_ids for thread in threads())
+    print(f"preflight shutdown drained {PAPER_PREFLIGHT_LIMIT} outstanding slots and {PAPER_PREFLIGHT_SLOTS} threads")
 
 
 async def test_changed_proposal_and_engine_reject_old_binding(api_client, monkeypatch):

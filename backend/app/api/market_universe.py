@@ -2,6 +2,7 @@
 import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal, localcontext
+from functools import partial
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
@@ -33,7 +34,8 @@ from app.risk.market_risk_engine import (
 from app.simulation.executor import ResearchBusyError
 from app.simulation.generalized_market_profiles import (
     DECIMAL_CONTEXT, GeneralizedPaperResult, MAX_RESPONSE_BYTES, PROFILE_VERSION, PaperAdmission, PaperProposal,
-    PaperRejected, PaperRunRequest, ResearchDecimal, advisory_rejection, assess, baseline_strategy, decision,
+    PaperRejected, PaperRunRequest, ResearchDecimal, advisory_rejection, baseline_strategy, decision,
+    paper_freshness_rejection, prepare_assessment,
 )
 from app.market_data.market_summaries import MarketSummaryRequest, MarketSummaryResponse
 from app.market_data.market_universe_discovery import (
@@ -323,20 +325,60 @@ async def _admit(request: Request, proposal: PaperProposal, expected=None):
     source, catalog, generation, metadata, supported = await _paper_catalog(request, proposal.identity)
     if not supported:
         return decision(proposal.identity, datetime.now(timezone.utc), "METADATA_UNAVAILABLE"), {}
-    worker_inputs = (dict(catalog_valid_until=generation[0], catalog_guard=generation[1]) if generation else {})
-    if generation is not None and proposal.research_risk is not None:
-        worker_inputs["risk_source"] = source.financial_observation(catalog.catalog_fingerprint, proposal.identity)
     policy = proposal.asset_amm_policy
-    if generation is not None and policy is not None and policy.advisory_snapshot_fingerprint is not None:
-        worker_inputs["advisory_evidence"] = _published_advisory(request, policy.advisory_snapshot_fingerprint)
-    admission, _ = assess(proposal, metadata, network=catalog.network, evaluated_at=catalog.evaluated_at,
-                          max_age_seconds=catalog.max_age_seconds,
-                          metadata_current=generation is not None, expected=expected,
-                          catalog_fingerprint=catalog.catalog_fingerprint,
-                          catalog_valid_until=worker_inputs.get("catalog_valid_until"),
-                          risk_source=worker_inputs.get("risk_source"),
-                          advisory_evidence=worker_inputs.get("advisory_evidence"))
-    return admission, dict(max_age_seconds=catalog.max_age_seconds, **worker_inputs)
+
+    def capture_sources():
+        evidence = {}
+        if generation is not None and proposal.research_risk is not None:
+            evidence["risk_source"] = source.financial_observation(catalog.catalog_fingerprint, proposal.identity)
+        if generation is not None and policy is not None and policy.advisory_snapshot_fingerprint is not None:
+            evidence["advisory_evidence"] = _published_advisory(request, policy.advisory_snapshot_fingerprint)
+        return evidence
+
+    catalog_deadline, catalog_guard = generation if generation is not None else (None, None)
+    catalog_inputs = dict(network=catalog.network, max_age_seconds=catalog.max_age_seconds,
+                          catalog_fingerprint=catalog.catalog_fingerprint, catalog_valid_until=catalog_deadline)
+    evidence = capture_sources()
+    assessment = prepare_assessment(proposal, metadata, evaluated_at=catalog.evaluated_at,
+                                    metadata_current=generation is not None, expected=expected,
+                                    **catalog_inputs, **evidence)
+    if isinstance(assessment, PaperAdmission):
+        return assessment, {}
+
+    def clock():
+        return datetime.now(timezone.utc)
+
+    compile_scenario = partial(assessment.compile, catalog_guard, evidence.get("advisory_evidence"), clock)
+    try:
+        admission, prepared = await request.app.state.simulation_executor.preflight(compile_scenario)
+    except ResearchBusyError:
+        raise HTTPException(429, "Local PAPER preflight busy", headers={"Cache-Control": "no-store"}) from None
+    if prepared is None:
+        return admission, {}
+    if await request.is_disconnected():
+        raise HTTPException(499, "PAPER request disconnected", headers={"Cache-Control": "no-store"})
+    # The captured metadata belongs to this specific generation, including when
+    # another refresh produces the same catalog fingerprint. No refresh is needed here.
+    now = max(catalog.evaluated_at, clock())
+    rejection = paper_freshness_rejection(admission, now, catalog_guard, evidence.get("advisory_evidence"))
+    if rejection is not None:
+        return rejection, {}
+    evidence = capture_sources()
+    current = prepare_assessment(proposal, metadata, evaluated_at=now, expected=admission.binding,
+                                 **catalog_inputs, **evidence)
+    if isinstance(current, PaperAdmission):
+        return current, {}
+    # Rebind the server-prepared scenario to the current source inputs without
+    # compiling or preflighting its frames a second time.
+    current_admission, _ = current.finish(prepared)
+    if current_admission.status != "ELIGIBLE":
+        return current_admission, {}
+    rejection = paper_freshness_rejection(current_admission, max(now, clock()), catalog_guard,
+                                          evidence.get("advisory_evidence"))
+    if rejection is not None:
+        return rejection, {}
+    return current_admission, dict(max_age_seconds=catalog.max_age_seconds, catalog_valid_until=catalog_deadline,
+                                   catalog_guard=catalog_guard, preflighted=prepared, **evidence)
 
 
 @paper_router.post("/eligibility", response_model=PaperAdmission, responses=PAPER_DECISIONS)
@@ -351,14 +393,6 @@ async def paper_run(body: PaperRunRequest, request: Request):
     admission, worker_inputs = await _admit(request, proposal, expected=body.expected)
     if admission.status != "ELIGIBLE":
         return _decision_response(admission)
-    if admission.risk_model is not None or proposal.asset_amm_policy is not None:
-        now = datetime.now(timezone.utc)
-        if now >= admission.valid_until or not worker_inputs["catalog_guard"]():
-            reason = "RISK_SOURCE_STALE" if admission.risk_model and admission.risk_model.source else "METADATA_STALE"
-            advisory_evidence = worker_inputs.get("advisory_evidence")
-            if advisory_evidence is not None and now >= advisory_evidence[1]:
-                reason = "ADVISORY_STALE"
-            return _decision_response(decision(admission.identity, now, reason, profile=admission.profile))
     try:
         result = await request.app.state.simulation_executor.execute(
             "run_generalized_paper", proposal=proposal, metadata=admission.profile.metadata,

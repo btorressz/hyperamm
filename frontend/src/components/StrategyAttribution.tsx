@@ -1,13 +1,13 @@
 import type { TerminalState } from "../types";
 import { Panel, Metrics } from "./TerminalPrimitives";
 import { bps, number, percentage } from "../utils/format";
-export function StrategyAttribution({ t }: { t: TerminalState }) {
+export function StrategyAttribution({ t, historical }: { t: TerminalState; historical: boolean }) {
   const m = t.market_adaptation,
     a = t.agents.supervisor,
     r = t.risk_firewall.decision;
   const mult = (x: unknown) => number(x) + "×";
   return (
-    <Panel title="Strategy transformation" meta="Current backend factors">
+    <Panel title="Strategy transformation" meta={historical ? "Last backend factors" : "Current backend factors"}>
       <Metrics
         items={[
           ["Perp reference shift", bps(t.perp_context?.reference_shift_bps)],

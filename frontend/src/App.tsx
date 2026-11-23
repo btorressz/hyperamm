@@ -1,5 +1,4 @@
-import { terminalEnvelopeFailure } from "./utils/terminalIntegrity";
-import { displayedTerminal } from "./utils/freshness";
+import { displayedTerminal, terminalObservationIsCurrent } from "./utils/freshness";
 import { TerminalDiagnostics } from "./components/TerminalDiagnostics";
 import {
   useCallback,
@@ -60,6 +59,7 @@ export default function App() {
   const s = useTerminalStore(),
     t = s.terminal ? displayedTerminal(s.terminal, nowMs) : null,
     dense = useDisplayStore((d) => d.dense);
+  const historical = !terminalObservationIsCurrent(t, s.wsState, nowMs);
   const { page, workspace } = usePageNavigation();
   const mode = useDisplayStore(d => d.experienceMode);
   const isSimulation = page === "Simulation & Optimization";
@@ -105,22 +105,19 @@ export default function App() {
       <p className="muted">Change Workspace mode to find advanced AMM controls, portfolio research and audit evidence.</p>
     </section>;
   else if (!t)
-    content = page === 'Portfolio Research' ? <PortfolioResearch /> : page === 'Markets' ? <Markets t={null} workspace={workspace} /> : page === 'Settings' ? <Settings t={null} historical /> : isSimulation ? null : (
+    content = page === 'Portfolio Research' ? <PortfolioResearch /> : page === 'Markets' ? <Markets t={null} historical workspace={workspace} /> : page === 'Settings' ? <Settings t={null} historical /> : isSimulation ? null : (
       <Loading title="Connecting to HyperAMM…">
         Waiting for a valid backend terminal snapshot.
       </Loading>
     );
   else {
-    const historical =
-      s.wsState !== "connected" ||
-      !!terminalEnvelopeFailure(t.emitted_at, nowMs);
     const pages: Record<PageName, ReactNode> = {
       Dashboard: <Dashboard t={t} historical={historical} />,
-      Markets: <Markets t={t} workspace={workspace} />,
+      Markets: <Markets t={t} historical={historical} workspace={workspace} />,
       Strategy: <Strategy t={t} historical={historical} />,
       "AMM Settings": <AmmSettings t={t} />,
       Execution: <Execution key={t.session_id} t={t} historical={historical} />,
-      Risk: <Risk t={t} />,
+      Risk: <Risk t={t} historical={historical} />,
       "Supervisory Agents": <Agents key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Vault: <Vault key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
       Analytics: <Analytics key={`${t.process_id}:${t.session_id}`} t={t} historical={historical} />,
@@ -156,6 +153,8 @@ export default function App() {
         <Header
           t={t}
           ws={s.wsState}
+          historical={historical}
+          backendHealthFailed={health.isError}
           navigationOpen={navigationOpen}
           onOpenNavigation={() => setNavigationOpen(true)}
         />
@@ -167,9 +166,9 @@ export default function App() {
         {s.payloadError && (
           <StatusBanner tone="bad">{s.payloadError}</StatusBanner>
         )}
-        {s.wsState !== "connected" && t && (
+        {historical && t && (
           <StatusBanner>
-            TERMINAL STALE · {s.wsState.toUpperCase()} · displaying last valid
+            TERMINAL STALE · {s.wsState === "connected" ? "EXPIRED" : s.wsState.toUpperCase()} · displaying last valid
             snapshot. Reconnect attempts {s.reconnectAttempts}.
           </StatusBanner>
         )}
@@ -194,9 +193,9 @@ export default function App() {
           {compactEntry ? (
             <details className="experienceDiagnostics">
               <summary>Terminal diagnostics</summary>
-              <TerminalDiagnostics nowMs={nowMs} />
+              <TerminalDiagnostics nowMs={nowMs} historical={historical} />
             </details>
-          ) : <TerminalDiagnostics nowMs={nowMs} />}
+          ) : <TerminalDiagnostics nowMs={nowMs} historical={historical} />}
           <div
             id="page-content"
             ref={pageContent}

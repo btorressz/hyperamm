@@ -3,6 +3,7 @@ import argparse
 import asyncio
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime, timedelta
+import json
 import os
 from pathlib import Path
 import re
@@ -11,7 +12,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def fixture_app():
+def fixture_app(cache_seconds=60):
     from app.main import app
     from app.agents.advisory_coordinator import AdvisoryCoordinator
     from app.market_data.advisory_market_observations import _epoch_ms
@@ -72,7 +73,8 @@ def fixture_app():
     async def lifespan(instance):
         async with original(instance):
             previous = instance.state.market_universe_discovery
-            discovery = MarketUniverseDiscovery(enabled=True, network="MAINNET", client=provider)
+            discovery = MarketUniverseDiscovery(enabled=True, network="MAINNET", client=provider,
+                                                cache_seconds=cache_seconds)
             previous_advisory = instance.state.advisory_coordinator
             previous_summary = instance.state.market_summary_observations
             summaries = MarketSummaryObservations("MAINNET", client=summary_provider)
@@ -101,6 +103,10 @@ def phase187_fixture_app():
 
     mode["terminal"] = True
     return fixture_app()
+
+
+def audit4_fixture_app():
+    return fixture_app(cache_seconds=16)
 
 
 async def testnet_catalog(route):
@@ -189,7 +195,7 @@ async def browser_check(chromium):
             print("PASS narrow financial evidence and keyboard-accessible provenance", flush=True)
 
             await market.select_option("HYPERLIQUID:MAINNET:CORE_PERP::DOGE")
-            await expect(result).to_have_count(0)
+            await expect(result.get_by_role("status")).to_contain_text("xyz:GOLD")
             await expect(run).to_be_disabled()
             await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD")
             await panel.get_by_role("checkbox", name="Apply hypothetical funding", exact=False).check()
@@ -222,7 +228,7 @@ async def browser_check(chromium):
             await run.click()
             await expect(result).to_be_visible()
             await refresh.click()
-            await expect(result).to_have_count(0)
+            await expect(result.get_by_role("status")).to_contain_text("xyz:GOLD")
             await expect(run).to_be_disabled()
             await expect(check).to_be_enabled()
 
@@ -238,7 +244,7 @@ async def browser_check(chromium):
             await expect(panel.get_by_text("TESTNET metadata available.", exact=False)).to_be_visible()
             await expect(advisory).to_have_count(0)
             await expect(market).to_have_value("")
-            await expect(result).to_have_count(0)
+            await expect(result.get_by_text("MAINNET · xyz · HIP-3", exact=True)).to_be_visible()
             await expect(run).to_be_disabled()
             await page.unroute("**/market-universe")
             await refresh.click()
@@ -254,12 +260,12 @@ async def browser_check(chromium):
                 lambda route: route.fulfill(status=500, json={"detail": "fixture refresh failure"}))
             await page.evaluate("window.dispatchEvent(new Event('visibilitychange'))")
             await expect(panel.get_by_role("alert")).to_have_text("Discovery could not be loaded.")
-            await expect(result).to_have_count(0)
+            await expect(result.get_by_role("status")).to_contain_text("xyz:GOLD")
             await expect(run).to_be_disabled()
             await page.unroute("**/market-universe")
             await refresh.click()
             await expect(check).to_be_enabled()
-            print("PASS failed background refresh clears evidence and announces failure", flush=True)
+            print("PASS failed background refresh retires admission and keeps completed research", flush=True)
 
             await price.fill("2500.123")
             await expect(run).to_be_disabled()
@@ -342,7 +348,7 @@ async def browser_risk_check(chromium):
             print("PASS Core hypothetical risk and bounded stress settings/results", flush=True)
 
             await market.select_option(hip)
-            await expect(result).to_have_count(0)
+            await expect(panel.get_by_text("Simulated PAPER result for BTC", exact=False)).to_be_visible()
             await expect(run).to_be_disabled()
             await expect(sources.get_by_text("0x00000000000000000000000000000001", exact=False)).to_be_visible()
             await check.click()
@@ -435,7 +441,7 @@ async def browser_risk_check(chromium):
             try:
                 await asyncio.wait_for(waiting.wait(), 10)
                 await capital.fill("5000")
-                await expect(result).to_have_count(0)
+                await expect(result).to_be_visible()
             finally:
                 release.set()
             await expect(run).to_be_disabled()
@@ -478,14 +484,14 @@ async def browser_risk_check(chromium):
             await page.clock.install()
             await page.clock.fast_forward(61_000)
             await expect(run).to_be_disabled()
-            await expect(result).to_have_count(0)
+            await expect(panel.get_by_role("heading", name="Completed PAPER research · Historical result")).to_be_visible()
             await expect(source_option).to_have_js_property("disabled", True)
             await expect(sources.get_by_text("Financial evidence is stale.", exact=False)).to_be_visible()
             assert not await panel.get_by_role("button", name=re.compile(r"Trade|Submit order|Execute live", re.I)).count()
             assert not errors, errors
             assert writes and all("/api/v1/generalized-paper/" in url or url.endswith("/market-universe/advisory")
                                   for url in writes), writes
-            print("PASS provider and admission expiry retire risk actions and completed output, with PAPER-only writes", flush=True)
+            print("PASS provider and admission expiry retire risk actions and retain completed output, with PAPER-only writes", flush=True)
         finally:
             await browser.close()
 
@@ -772,7 +778,7 @@ async def browser_asset_check(chromium, axe):
             print("PASS HIP-3 concentrated and modified controls, invalid decimal and canceled delayed admission", flush=True)
 
             await market.select_option("HYPERLIQUID:MAINNET:HIP3_PERP:missing:GOLD")
-            await expect(result).to_have_count(0)
+            await expect(result.get_by_role("status")).to_contain_text("xyz:GOLD")
             await expect(run).to_be_disabled()
             await market.select_option(hip)
             await risk.select_option("HYPOTHETICAL")
@@ -796,7 +802,7 @@ async def browser_asset_check(chromium, axe):
 
             await mode.select_option("standard")
             await expect(config).to_have_count(0)
-            await expect(result).to_have_count(0)
+            await expect(result.get_by_text("Asset-aware PAPER", exact=False)).to_be_visible()
             await mode.select_option("asset")
             await risk.select_option("OFF")
             await market.select_option(core)
@@ -847,8 +853,10 @@ async def browser_asset_check(chromium, axe):
             await expect(config.get_by_text("Attached advisory evidence", exact=False)).to_be_visible()
             await page.clock.fast_forward(6000)
             await expect(panel.get_by_role("alert")).to_contain_text("Advisory evidence expired")
-            await expect(config.get_by_text("Attached advisory evidence", exact=False)).to_have_count(0)
+            await expect(config.get_by_role("button", name="Remove advisory reference")).to_be_visible()
+            await expect(check).to_be_disabled()
             await expect(run).to_be_disabled()
+            await config.get_by_role("button", name="Remove advisory reference").click()
             await page.unroute_all(behavior="wait")
             print("PASS strict minimum notional, published advisory attachment, eviction and expiry", flush=True)
 
@@ -921,7 +929,7 @@ async def browser_asset_check(chromium, axe):
             await refresh.click()
             await expect(panel.get_by_text("TESTNET metadata available.", exact=False)).to_be_visible()
             await expect(market).to_have_value("")
-            await expect(result).to_have_count(0)
+            await expect(result.get_by_text("MAINNET", exact=False).first).to_be_visible()
             await expect(run).to_be_disabled()
             await page.unroute_all(behavior="wait")
             await refresh.click()
@@ -944,6 +952,200 @@ async def browser_asset_check(chromium, axe):
             await browser.close()
 
 
+async def browser_audit4_check(chromium, set_backend):
+    from playwright.async_api import Error, async_playwright, expect
+
+    base = "http://127.0.0.1:5173"
+    gold = "HYPERLIQUID:MAINNET:HIP3_PERP:xyz:GOLD"
+    doge = "HYPERLIQUID:MAINNET:CORE_PERP::DOGE"
+    async with async_playwright() as driver:
+        browser = await driver.chromium.launch(executable_path=chromium, args=["--no-sandbox"])
+        print(f"Chromium {browser.version}", flush=True)
+        page = await browser.new_page(viewport={"width": 1440, "height": 1000})
+        sockets, writes, errors, frames = [], [], [], []
+        forward = True
+
+        async def terminal_bridge(socket):
+            server = socket.connect_to_server()
+            sockets.append(socket)
+
+            def received(message):
+                if forward:
+                    wire = json.loads(message)
+                    if not frames or frames[-1][0] != wire["process_id"]:
+                        frames.append((wire["process_id"], wire["session_id"], message))
+                    socket.send(message)
+            server.on_message(received)
+
+        async def route(path):
+            await page.goto(f"{base}/#/{path}")
+
+        header = page.locator("header")
+        last = header.get_by_role("group", name="Last snapshot status")
+        current = header.get_by_role("group", name="Current terminal status")
+        header_kill = header.get_by_role("button", name="Immediately activate manual kill switch")
+        main = page.locator("#page-content")
+        start = main.get_by_role("button", name="Start", exact=True)
+        resume = main.get_by_role("button", name="Resume", exact=True)
+        stop = main.get_by_role("button", name="Stop", exact=True)
+        result = main.get_by_role("region", name="PAPER result evidence")
+        check = main.get_by_role("button", name="Check PAPER eligibility")
+        run = main.get_by_role("button", name="Run local PAPER")
+        selector = main.get_by_role("combobox", name="Discovered perpetual")
+        price = main.get_by_role("textbox", name="Synthetic reference price")
+        run_path = "/api/v1/generalized-paper/run"
+
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        page.on("request", lambda req: writes.append(req.url.removeprefix(base)) if req.method == "POST" else None)
+        await page.route_web_socket("**/ws/terminal", terminal_bridge)
+        await wait_for_fixture(page)
+        await route("markets")
+        await expect(current).to_be_visible()
+        await main.get_by_role("button", name="Operational Market").click()
+        book = main.locator(".orderbook")
+        await expect(book.get_by_text("FRESH", exact=False)).to_be_visible()
+        await route("risk")
+        await expect(start).to_be_enabled()
+        await expect(resume).to_be_disabled()
+        await route("simulation/paper")
+        await header.get_by_role("button", name="Starter", exact=True).click()
+        await selector.select_option(gold)
+        await price.fill("3500")
+        await check.click()
+        await expect(run).to_be_enabled()
+        async with page.expect_response(lambda response: response.url.endswith(run_path)) as accepted:
+            await run.click()
+        receipt = await accepted.value
+        assert receipt.ok
+        evidence = await receipt.json()
+        assert evidence["execution_mode"] == "PAPER" and evidence["result"]["metrics"]["frame_count"] == 40
+        await expect(result.get_by_text("Simulated PAPER result for xyz:GOLD", exact=False)).to_be_visible()
+        assert writes.count(run_path) == 1
+
+        forward = False
+        await sockets[-1].close(code=1013, reason="local fixture transport interruption")
+        await expect(last).to_be_visible()
+        await route("markets")
+        await main.get_by_role("button", name="Operational Market").click()
+        await expect(book.get_by_text("STALE · LAST SNAPSHOT", exact=False)).to_be_visible()
+        await expect(book.get_by_text("FRESH", exact=False)).to_have_count(0)
+        for path, width in (("dashboard", 1440), ("strategy", 390), ("risk", 390)):
+            await page.set_viewport_size({"width": width, "height": 1000 if width == 1440 else 844})
+            await route(path)
+            await expect(start).to_be_disabled()
+            await expect(resume).to_be_disabled()
+            await expect(stop).to_be_enabled()
+            await expect(header_kill).to_be_enabled()
+        await expect(main.get_by_text("Last final authorization")).to_be_visible()
+        async with page.expect_response("**/api/v1/strategy/stop") as stop_response:
+            await stop.click()
+        assert (await stop_response.value).ok
+        await route("markets")
+        await expect(main.get_by_role("heading", name="xyz:GOLD", exact=True)).to_be_visible()
+        await route("simulation/paper")
+        await expect(main.get_by_text("Discovery metadata expired.", exact=False)).to_be_visible(timeout=20000)
+        await expect(check).to_be_disabled()
+        await expect(run).to_be_disabled()
+        for mode in ("Pro", "Institutional", "Starter"):
+            await header.get_by_role("button", name=mode, exact=True).click()
+            await expect(result.get_by_role("heading", name="Completed PAPER research · Historical result")).to_be_visible()
+        await route("simulation/paper-results")
+        await expect(main.get_by_role("heading", name="PAPER results")).to_be_visible()
+        provenance = result.get_by_text("Result fingerprint and provenance", exact=True)
+        await provenance.focus()
+        await page.keyboard.press("Enter")
+        await expect(result.get_by_text(evidence["result_fingerprint"], exact=True)).to_be_visible()
+        await expect(result.get_by_text(evidence["admission"]["binding"]["catalog_fingerprint"], exact=True)).to_be_visible()
+        assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        await page.go_back()
+        await expect(result).to_be_visible()
+        assert writes.count(run_path) == 1
+        print("PASS actual PAPER receipt survives catalog expiry during terminal loss, Results history and all modes at 1440 and 390", flush=True)
+
+        await route("risk")
+        await asyncio.to_thread(set_backend, False)
+        await header_kill.click()
+        await expect(header.get_by_role("alert")).to_be_visible()
+        await expect(header_kill).to_have_text("KILL SWITCH")
+        await asyncio.to_thread(set_backend, True)
+        await wait_for_fixture(page)
+        await expect(last).to_be_visible()
+        await expect(start).to_be_disabled()
+        await expect(resume).to_be_disabled()
+        forward = True
+        await expect(current).to_be_visible(timeout=20000)
+        assert frames[-1][:2] != frames[0][:2] and frames[-1][0] != frames[0][0]
+        forward = False
+        sockets[-1].send(frames[0][2])
+        await expect(last).to_be_visible()
+        await expect(start).to_be_disabled()
+        forward = True
+        await expect(current).to_be_visible(timeout=20000)
+        await expect(start).to_be_enabled()
+        assert "/api/v1/strategy/start" not in writes and "/api/v1/risk/resume" not in writes
+        async with page.expect_response("**/api/v1/risk/kill") as killed:
+            await header_kill.click()
+        assert (await killed.value).ok
+        await expect(header_kill).to_have_text("KILL ACTIVE")
+        await expect(start).to_be_disabled()
+        await expect(resume).to_be_enabled()
+        forward = False
+        await sockets[-1].close(code=1013, reason="local fixture transport interruption")
+        await expect(resume).to_be_disabled()
+        await expect(header_kill).to_be_enabled()
+        forward = True
+        await expect(current).to_be_visible(timeout=20000)
+        await expect(resume).to_be_enabled()
+        await expect(start).to_be_disabled()
+        print("PASS real loopback disconnect, Stop, failed and successful Kill, process replacement and fresh-only Start/Resume", flush=True)
+
+        await route("simulation/paper")
+        await expect(result).to_be_visible()
+        await main.get_by_role("button", name="Refresh discovery").click()
+        await expect(check).to_be_enabled()
+        await selector.select_option(doge)
+        await price.fill("0.1234")
+        await expect(result.get_by_text("Simulated PAPER result for xyz:GOLD", exact=False)).to_be_visible()
+        await expect(run).to_be_disabled()
+        await check.click()
+        await expect(run).to_be_enabled()
+        assert writes.count(run_path) == 1
+        await run.click()
+        await expect(result.get_by_text("Simulated PAPER result for DOGE", exact=False)).to_be_visible()
+        assert writes.count(run_path) == 2
+        assert "/api/v1/strategy/start" not in writes and "/api/v1/risk/resume" not in writes
+        assert not errors, errors
+        print("PASS explicit refresh, qualified selection and fresh admission replace the result only after a deliberate second run", flush=True)
+
+        await header.get_by_role("button", name="Pro", exact=True).click()
+        held, deliver = asyncio.Event(), asyncio.Event()
+
+        async def hold_result(route):
+            response = await route.fetch()
+            assert response.ok
+            held.set()
+            await deliver.wait()
+            try:
+                await route.fulfill(response=response)
+            except Error:
+                pass  # The browser canceled the old response's request.
+
+        await page.route("**/generalized-paper/run", hold_result)
+        await run.click()
+        try:
+            await asyncio.wait_for(held.wait(), 8)
+            await main.get_by_role("combobox", name="PAPER research mode").select_option("asset")
+            await selector.select_option(gold)
+        finally:
+            deliver.set()
+            await page.unroute_all(behavior="wait")
+        await expect(result).to_have_count(0)
+        await expect(run).to_be_disabled()
+        assert writes.count(run_path) == 3 and not errors, errors
+        print("PASS a genuine delayed run response cannot attach to a newer proposal or qualified market", flush=True)
+        await browser.close()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--python", required=True)
@@ -952,6 +1154,7 @@ def main():
     checks = parser.add_mutually_exclusive_group()
     checks.add_argument("--advisory-only", action="store_true")
     checks.add_argument("--asset-only", action="store_true")
+    checks.add_argument("--audit4-ha", action="store_true")
     parser.add_argument("--axe", type=Path)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -959,29 +1162,47 @@ def main():
            "ENABLE_HYPERLIQUID_TESTNET_ORDERS": "false", "LIVE_OBSERVATIONS_ENABLED": "false",
            "LIVE_STREAMS_ENABLED": "false", "REDIS_ENABLED": "false"}
     commands = (
-        (ROOT / "backend", [args.python, "-m", "uvicorn", "browser-phase182:fixture_app", "--factory",
+        (ROOT / "backend", [args.python, "-m", "uvicorn",
+                           "browser-phase182:audit4_fixture_app" if args.audit4_ha else "browser-phase182:fixture_app", "--factory",
                            "--app-dir", str(ROOT / "frontend/tests"), "--host", "127.0.0.1", "--port", "8000"]),
         (ROOT / "frontend", ["node", "node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--strictPort"]),
     )
 
     @contextmanager
     def serve_fixtures(log_prefix=""):
-        processes = []
-        try:
-            for (directory, command), name in zip(commands, ("backend", "vite"), strict=True):
-                with (args.output / f"{log_prefix}{name}.log").open("w") as log:
-                    processes.append(subprocess.Popen(command, cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT))
-            yield
-        finally:
-            for process in reversed(processes):
-                if process.poll() is None:
-                    process.terminate()
-                    try:
-                        process.wait(timeout=10)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        process.wait()
+        from contextlib import ExitStack
 
+        def stop(process):
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+
+        with ExitStack() as logs:
+            processes = {}
+            destinations = {}
+            for (directory, command), name in zip(commands, ("backend", "vite"), strict=True):
+                destinations[name] = logs.enter_context((args.output / f"{log_prefix}{name}.log").open("w"))
+                processes[name] = subprocess.Popen(command, cwd=directory, env=env, stdout=destinations[name],
+                                                   stderr=subprocess.STDOUT)
+                logs.callback(lambda name=name: stop(processes[name]))
+
+            def set_backend(running):
+                stop(processes["backend"])
+                if running:
+                    directory, command = commands[0]
+                    processes["backend"] = subprocess.Popen(command, cwd=directory, env=env, stdout=destinations["backend"],
+                                                            stderr=subprocess.STDOUT)
+
+            yield set_backend
+
+    if args.audit4_ha:
+        with serve_fixtures() as set_backend:
+            asyncio.run(browser_audit4_check(args.chromium, set_backend))
+        return
     if not args.asset_only:
         with serve_fixtures():
             if not args.advisory_only:

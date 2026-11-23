@@ -1,10 +1,10 @@
 import { useTerminalStore } from "../stores/terminal";
-import { envelopeAgeMs, terminalEnvelopeFailure } from "../utils/terminalIntegrity";
+import { envelopeAgeMs } from "../utils/terminalIntegrity";
 import { Panel, Metrics } from "./TerminalPrimitives";
-export function TerminalDiagnostics({ nowMs }: { nowMs: number }) {
+export function TerminalDiagnostics({ nowMs, historical }: { nowMs: number; historical: boolean }) {
   const s = useTerminalStore(), t = s.terminal;
   const age = t ? envelopeAgeMs(t.emitted_at, nowMs) : null;
-  const current = s.wsState === "connected" && age !== null && t !== null && !terminalEnvelopeFailure(t.emitted_at, nowMs);
+  const current = !historical;
   const short = (id: string | undefined) => id ? id.slice(0, 8) : "—";
   return <Panel className="terminalObservation" title="Terminal observation" meta={current ? "CURRENT · OBSERVATIONAL" : "HISTORICAL / WAITING"}>
     <Metrics items={[

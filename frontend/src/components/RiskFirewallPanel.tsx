@@ -1,5 +1,3 @@
-import { useTerminalStore } from "../stores/terminal";
-import { terminalEnvelopeFailure } from "../utils/terminalIntegrity";
 import type { TerminalState } from "../types";
 import { currentSourcePrices } from "../utils/freshness";
 import { number as f, bps } from "../utils/format";
@@ -88,9 +86,8 @@ export function ReferenceSourcesPanel({ t }: { t: TerminalState }) {
   );
 }
 
-export function RiskFirewallPanel({ t }: { t: TerminalState }) {
-  const connected = useTerminalStore(s => s.wsState === "connected");
-  const current = currentSourcePrices(t, connected && !terminalEnvelopeFailure(t.emitted_at, Date.now()));
+export function RiskFirewallPanel({ t, historical }: { t: TerminalState; historical: boolean }) {
+  const current = currentSourcePrices(t, !historical);
   const d = t.risk_firewall?.decision,
     a = t.risk_authorization,
     c = t.reference_consensus;
@@ -100,7 +97,7 @@ export function RiskFirewallPanel({ t }: { t: TerminalState }) {
     <section className="panel firewallPanel">
       <div className="panelHead">
         <b>Risk Firewall</b>
-        <span>{t.risk_firewall?.state ?? "—"}</span>
+        <span>{historical ? "LAST · " : ""}{t.risk_firewall?.state ?? "—"}</span>
       </div>
       <div className="riskFirewallGrid">
         <div>

@@ -2,12 +2,13 @@ import type { TerminalState } from '../types'
 const f=(x:unknown,d=2)=>x==null?'—':Number(x).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d})
 const signed=(x:unknown,d=2)=>x==null?'—':(Number(x)>=0?'+':'')+f(x,d)
 
-export function PerpContextPanel({t}:{t:TerminalState}){
+export function PerpContextPanel({t, historical}:{t:TerminalState; historical:boolean}){
   const p=t.perp_context
   if(!p)return <section className="panel perpPanel"><div className="panelHead"><b>Perpetual Market Context</b><span>Waiting for context</span></div><div className="perpEmpty">No normalized perp context is available.</div></section>
   const pos=p.position
+  const status=historical?'STALE · LAST SNAPSHOT':p.stale?'STALE':'FRESH'
   return <section className="panel perpPanel">
-    <div className="panelHead"><b>Perpetual Market Context</b><span>{p.source}{p.simulated?' · SIMULATED':''} · v{p.version} · {p.stale?'STALE · retained diagnostics':'FRESH'}</span></div>
+    <div className="panelHead"><b>Perpetual Market Context</b><span>{p.source}{p.simulated?' · SIMULATED':''} · v{p.version} · {status}</span></div>
     <div className="perpGrid">
       <div><span>Mark Price</span><b>${f(p.mark_price)}</b></div>
       <div><span>Oracle Price</span><b>${f(p.oracle_price)}</b></div>
@@ -22,7 +23,7 @@ export function PerpContextPanel({t}:{t:TerminalState}){
       <div><span>Mark / Oracle</span><b>{signed(p.mark_oracle_basis_bps,2)} bps</b></div>
       <div><span>Mark / Mid</span><b>{signed(p.mark_mid_basis_bps,2)} bps</b></div>
       <div><span>Oracle / Mid</span><b>{signed(p.oracle_mid_basis_bps,2)} bps</b></div>
-      <div><span>Context Status</span><b>{p.stale?'STALE':'FRESH'}</b></div>
+      <div><span>Context Status</span><b>{status}</b></div>
     </div>
     <div className="perpPositionHead"><b>Perp Position Context</b><span>{pos?.source??t.strategy.config.execution_mode}</span></div>
     <div className="perpGrid">

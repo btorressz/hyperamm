@@ -1,30 +1,34 @@
 import { YahooObservationPanel } from "../components/YahooObservationPanel";
 import { ControlActions } from "../components/QuickStrategyControl";
 import { Panel, Metrics } from "../components/TerminalPrimitives";
-import { percentage, fingerprint } from "../utils/format";
+import { percentage, fingerprint, timestamp } from "../utils/format";
 import type { TerminalState } from "../types";
 import {
   ReferenceSourcesPanel,
   RiskFirewallPanel,
 } from "../components/RiskFirewallPanel";
-export function Risk({ t }: { t: TerminalState }) {
+export function Risk({ t, historical }: { t: TerminalState; historical: boolean }) {
   return (
     <>
       <section className="panel pagePanel">
         <div className="panelHead">
           <b>Risk Management</b>
-          <span>Phase 8 deterministic authority</span>
+          <span>{historical ? "STALE · LAST SNAPSHOT" : "Phase 8 deterministic authority"}</span>
         </div>
+        {historical && <p className="muted">
+          Risk and authorization evidence was captured at <time dateTime={t.emitted_at}>{timestamp(t.emitted_at)}</time>.
+          {" "}Waiting for a fresh terminal snapshot from the current session.
+        </p>}
         <div className="riskHero">
           <div>
-            <small>Manual kill switch</small>
+            <small>{historical ? "Last manual kill status" : "Manual kill switch"}</small>
             <strong
               className={t.risk.kill_switch_active ? "dangerText" : "bidText"}
             >
               {t.risk.kill_switch_active ? "ACTIVE" : "READY"}
             </strong>
           </div>
-          <ControlActions t={t} />
+          <ControlActions t={t} historical={historical} />
         </div>
         <div className="riskList">
           <p>
@@ -34,7 +38,7 @@ export function Risk({ t }: { t: TerminalState }) {
             Automatic firewall state <b>{t.risk_firewall.state}</b>
           </p>
           <p>
-            Final authorization{" "}
+            {historical ? "Last final authorization" : "Final authorization"}{" "}
             <b>{t.risk_authorization.authorized ? "AUTHORIZED" : "BLOCKED"}</b>
           </p>
           <p>
@@ -50,7 +54,7 @@ export function Risk({ t }: { t: TerminalState }) {
           only through configured hysteresis and healthy confirmations.
         </p>
       </section>
-      <Panel title="Capital & authorization" meta="Phase 11.1 consistency">
+      <Panel title="Capital & authorization" meta={historical ? "LAST SNAPSHOT" : "Phase 11.1 consistency"}>
         <Metrics
           items={[
             ["Capital utilization", percentage(t.vault.capital_utilization)],
@@ -87,7 +91,7 @@ export function Risk({ t }: { t: TerminalState }) {
       </Panel>
       <div className="grid midGrid">
         <ReferenceSourcesPanel t={t} />
-        <RiskFirewallPanel t={t} />
+        <RiskFirewallPanel t={t} historical={historical} />
       </div>
       <YahooObservationPanel />
     </>

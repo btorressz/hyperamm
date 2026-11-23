@@ -1,6 +1,6 @@
 import type { MarketState, Level } from "../types";
 import { finite, price, quantity, bps, percentage } from "../utils/format";
-export function OrderBook({ m }: { m: MarketState }) {
+export function OrderBook({ m, historical }: { m: MarketState; historical: boolean }) {
   const asks = (m.book?.asks ?? []).slice(0, 7),
     bids = (m.book?.bids ?? []).slice(0, 7),
     bid = finite(m.best_bid),
@@ -38,7 +38,7 @@ export function OrderBook({ m }: { m: MarketState }) {
         <b>L2 order book</b>
         <span>
           {m.simulated ? "DEMO / SIMULATED" : "Hyperliquid LIVE"} ·{" "}
-          {m.stale ? "STALE" : "FRESH"}
+          {historical ? "STALE · LAST SNAPSHOT" : m.stale ? "STALE" : "FRESH"}
         </span>
       </div>
       <div className="bookHeader">

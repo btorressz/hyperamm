@@ -7,11 +7,14 @@ const compiled=name=>require(path.join(process.env.TERMINAL_TEST_BUILD,name));
 const {terminalPages,pageFromHash,pageHref,subscribeNavigation,normalizePageHash,workspaceHref,workspaceFromHash,navigationGroups,experienceModes}=compiled('utils/navigation.js');
 const {Sidebar}=compiled('components/Sidebar.js');
 const {Header}=compiled('components/Header.js');
+const {terminalObservationIsCurrent}=compiled('utils/freshness.js');
 const {Panel,Empty,Loading,StatusBanner}=compiled('components/TerminalPrimitives.js');
 const {useDisplayStore}=compiled('stores/display.js');
 const valid=require('./fixtures/terminal-valid.json');
 const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props));
 const sidebar=(props={})=>render(Sidebar,{page:'Risk',t:valid,ws:'connected',mobile:false,open:false,onClose:()=>{},...props});
+const header=(t, ws)=>render(Header,{t,ws,historical:!terminalObservationIsCurrent(t,ws),
+ backendHealthFailed:false,navigationOpen:false,onOpenNavigation:()=>{}});
 
 test('all thirteen pages round-trip through distinct bookmarkable URLs',()=>{
  assert.equal(terminalPages.length,13);
@@ -68,22 +71,23 @@ test('error banners announce errors and ordinary notices use status semantics',(
 });
 test('header never promotes disconnected prices or strategy status to current',()=>{
  const t=structuredClone(valid);t.emitted_at=new Date().toISOString();t.market.mid_price='12345.67';t.strategy.running=true;
- const html=render(Header,{t,ws:'disconnected',navigationOpen:false,onOpenNavigation:()=>{}});
+ const html=header(t,'disconnected');
  assert.doesNotMatch(html,/12,345\.67/);assert.match(html,/LAST · RUNNING/);assert.match(html,/Last snapshot status/);assert.match(html,/Immediately activate manual kill switch/);
 });
 test('expired envelope with connected transport remains historical in header',()=>{
  const t=structuredClone(valid);t.emitted_at='2001-01-01T00:00:00Z';t.market.mid_price='12345.67';
- const html=render(Header,{t,ws:'connected',navigationOpen:false,onOpenNavigation:()=>{}});
+ const html=header(t,'connected');
  assert.doesNotMatch(html,/12,345\.67/);assert.match(html,/LAST · RISK/);
 });
 test('unavailable header does not invent stopped strategy evidence',()=>{
- const html=render(Header,{t:null,ws:'connecting',navigationOpen:false,onOpenNavigation:()=>{}});
- assert.match(html,/STRATEGY —/);assert.match(html,/disabled=""/);
+ const html=header(null,'connecting');
+ assert.match(html,/STRATEGY —/);assert.doesNotMatch(html,/disabled=""/);
 });
 test('kill latch remains disabled only once active, with immediate action label',()=>{
- const t=structuredClone(valid);t.risk.kill_switch_active=true;
- const html=render(Header,{t,ws:'connected',navigationOpen:false,onOpenNavigation:()=>{}});
+ const t=structuredClone(valid);t.emitted_at=new Date().toISOString();t.risk.kill_switch_active=true;
+ const html=header(t,'connected');
  assert.match(html,/KILL ACTIVE/);assert.match(html,/aria-label="Immediately activate manual kill switch" disabled=""/);
+ assert.doesNotMatch(header(t,'disconnected'),/aria-label="Immediately activate manual kill switch" disabled=""/);
 });
 
 test('every presentation mode links to all legacy routes and has distinct workspace links', () => {

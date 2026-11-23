@@ -1,4 +1,9 @@
 import type { TerminalState } from "../types";
+import { terminalEnvelopeFailure } from "./terminalIntegrity";
+
+export function terminalObservationIsCurrent(t: TerminalState | null, ws: string, nowMs = Date.now()) {
+  return ws === "connected" && t !== null && !terminalEnvelopeFailure(t.emitted_at, nowMs);
+}
 
 // Consume backend emission-time source freshness, never browser connection time.
 export function currentSourcePrices(t: TerminalState | null, observationCurrent = true) {

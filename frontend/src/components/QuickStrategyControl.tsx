@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import type { TerminalState } from "../types";
+import { useTerminalStore } from "../stores/terminal";
+import { terminalObservationIsCurrent } from "../utils/freshness";
 import { Panel, Metrics } from "./TerminalPrimitives";
 import { quantity } from "../utils/format";
 export function ControlActions({
   t,
+  historical,
   compact = false,
 }: {
   t: TerminalState;
+  historical: boolean;
   compact?: boolean;
 }) {
   const [busy, setBusy] = useState(false),
@@ -23,18 +27,25 @@ export function ControlActions({
       setBusy(false);
     }
   };
+  const current = () => {
+    const { terminal, wsState } = useTerminalStore.getState();
+    return terminalObservationIsCurrent(terminal, wsState) ? terminal : null;
+  };
   return (
     <>
       <div className={`actions ${compact ? "compactActions" : ""}`}>
         <button
           className="goodBtn"
-          disabled={busy || t.strategy.running || t.risk.kill_switch_active}
-          onClick={() => action(api.start)}
+          disabled={historical || busy || t.strategy.running || t.risk.kill_switch_active}
+          onClick={() => {
+            const snapshot = current();
+            if (snapshot && !snapshot.strategy.running && !snapshot.risk.kill_switch_active) void action(api.start);
+          }}
         >
           Start
         </button>
         <button
-          disabled={busy || !t.strategy.running}
+          disabled={busy || (!historical && !t.strategy.running)}
           onClick={() => action(api.stop)}
         >
           Stop
@@ -42,15 +53,16 @@ export function ControlActions({
         <button
           className="dangerBtn"
           aria-label="Immediately activate manual kill switch"
-          disabled={t.risk.kill_switch_active}
+          disabled={!historical && t.risk.kill_switch_active}
           onClick={() => action(api.kill)}
         >
           Kill
         </button>
         <button
-          disabled={busy || !t.risk.kill_switch_active}
+          disabled={historical || busy || !t.risk.kill_switch_active}
           onClick={() => {
-            if (window.confirm("Resume through backend risk checks?"))
+            if (current()?.risk.kill_switch_active && window.confirm("Resume through backend risk checks?") &&
+                current()?.risk.kill_switch_active)
               void action(api.resume);
           }}
         >
@@ -65,12 +77,12 @@ export function ControlActions({
     </>
   );
 }
-export function QuickStrategyControl({ t }: { t: TerminalState }) {
+export function QuickStrategyControl({ t, historical }: { t: TerminalState; historical: boolean }) {
   const c = t.strategy.config;
   return (
     <Panel
       title="Strategy control"
-      meta={t.strategy.running ? "RUNNING" : "STOPPED"}
+      meta={`${historical ? "LAST SNAPSHOT · " : ""}${t.strategy.running ? "RUNNING" : "STOPPED"}`}
     >
       <Metrics
         items={[
@@ -90,7 +102,7 @@ export function QuickStrategyControl({ t }: { t: TerminalState }) {
           ["Inventory target", quantity(c.target_inventory_base)],
         ]}
       />
-      <ControlActions t={t} compact />
+      <ControlActions t={t} historical={historical} compact />
       <p className="muted panelNote">Advanced configuration in AMM Settings.</p>
     </Panel>
   );
