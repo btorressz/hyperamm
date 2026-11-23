@@ -38,6 +38,7 @@
 | 18.7E | CONDITIONAL | Chromium matrix, workflow, responsive and automated accessibility evidence. Independent engines, native platforms and manual assistive technology remain open. [D–E report](PHASE18_7DE_ACCEPTANCE.md) |
 | 18.7F | PASS · BOUNDED LOCAL CANDIDATE | Release installation, financial and operational verification, public-provider and browser evidence, runbook and individual rollout gates. [Final acceptance](PHASE18_7_FINAL_ACCEPTANCE.md) |
 | 18.7 | LOCAL CANDIDATE REVIEW | Independent final review and separate external gates for access, sustained operation, cross-platform lifecycle, signed TESTNET and durable recovery. [Acceptance matrix](PHASE18_7_ACCEPTANCE_MATRIX.md) |
+| Audit 4.0H-A | LOCAL REVIEW | Bounded PAPER preflight, completed evidence retention and terminal freshness across disconnects. [Acceptance and open findings](AUDIT4_HA_ACCEPTANCE.md) |
 
 ## Phase 6 extension points
 

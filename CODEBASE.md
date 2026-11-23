@@ -102,6 +102,8 @@ The 13 canonical destinations are Dashboard, Markets, Strategy, AMM Settings, Ex
 
 ### Current acceptance, reproducibility and outstanding gates
 
+- **Audit 4.0H-A.** Generalized PAPER preflight runs on bounded resources owned by the existing executor. Completed browser results retain their captured sources. Operational freshness follows the validated terminal envelope and transport. [Local acceptance](docs/AUDIT4_HA_ACCEPTANCE.md)
+
 - **Phase 18.6A–E:** merged PR #99; search, source-qualified handoff, guided Starter, Pro/Institutional navigation, all nine agent access and legacy 13-route preservation.
 - **Phase 18.6H:** merged PR #100; official public market summaries, verified Mainnet Core BTC and HIP-3 `xyz:XYZ100` at a point in time, segmented modes, overview enhancements and source-expiry UX. These are **recorded PR acceptance outcomes**, not independently rerun during this documentation update.
 - **Recorded Phase 18.6H validation:** **3,944** full backend tests and **949** frontend tests passed; **249** focused backend tests included 30 market-summary cases; eight Phase 18.6H browser workflows, 35 viewport measurements, 14 scoped axe scans and six legacy browser suites passed. Legacy compatibility compared **56** fixed-clock standard and asset-aware PAPER admission/result pairs byte-for-byte against PR #99. See [hardening acceptance](docs/PHASE18_6_HARDENING_ACCEPTANCE.md) and [browser evidence](docs/acceptance/phase186h/browser-results.json).
