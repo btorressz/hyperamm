@@ -17,9 +17,9 @@ export function Strategy({
   return (
     <div className="stack">
       <div className="grid twoColumns">
-        <QuickStrategyControl t={t} />
+        <QuickStrategyControl t={t} historical={historical} />
         <Panel
-          title="Current virtual pool & authorization"
+          title={historical ? "Last virtual pool & authorization snapshot" : "Current virtual pool & authorization"}
           meta={t.strategy.quote_health}
         >
           <Metrics
@@ -46,10 +46,10 @@ export function Strategy({
       </div>
       <LiquidityPipeline t={t} />
       <div className="grid twoColumns">
-        <InventoryPanel t={t} />
+        <InventoryPanel t={t} historical={historical} />
         <MarketAdaptationPanel t={t} />
       </div>
-      <PerpContextPanel t={t} />
+      <PerpContextPanel t={t} historical={historical} />
       {[
         ["Pre-agent strategy", t.strategy_quotes, "STRATEGY"],
         ["Post-agent", t.agent_quotes, "AGENT"],

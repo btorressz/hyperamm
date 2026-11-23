@@ -5,7 +5,6 @@ import { useResearchVaultStore } from "../stores/researchVault";
 import { marketCatalogDeadline, marketUniverseKey, matchesMarketResearchHandoff } from "../utils/marketUniverse";
 import { pageHref, workspaceHref } from "../utils/navigation";
 import { ObservedMarketSummary } from "../components/markets/ObservedMarketSummary";
-import { useTerminalStore } from "../stores/terminal";
 import type { TerminalState } from "../types";
 import { TerminalKpis } from "../components/TerminalKpis";
 import { PriceLiquidityChart } from "../components/PriceLiquidityChart";
@@ -27,7 +26,6 @@ export function Dashboard({
 }) {
   const pro = useDisplayStore(state => state.experienceMode) === "Pro";
   const a = t.agents;
-  const current = useTerminalStore((s) => s.wsState === "connected");
   return (
     <>
       <div className="operatorTitle">
@@ -40,19 +38,19 @@ export function Dashboard({
           {t.strategy.config.execution_mode === "PAPER"
             ? "PAPER / SIMULATED"
             : "GUARDED TESTNET"}{" "}
-          · {current ? "current session" : "historical snapshot"}
+          · {historical ? "historical snapshot" : "current session"}
         </span>
       </div>
       {pro && <ProResearchOverview t={t} historical={historical} />}
       <div className="dashboardTop">
-        <PriceLiquidityChart t={t} />
-        <OrderBook m={t.market} />
-        <QuickStrategyControl t={t} />
+        <PriceLiquidityChart t={t} historical={historical} />
+        <OrderBook m={t.market} historical={historical} />
+        <QuickStrategyControl t={t} historical={historical} />
       </div>
       <TerminalKpis t={t} />
       <div className="dashboardSecondary">
         <LiquidityDistributionChart t={t} />
-        <StrategyAttribution t={t} />
+        <StrategyAttribution t={t} historical={historical} />
         <InventorySkewChart t={t} />
       </div>
       <div className="dashboardBottom">
@@ -73,7 +71,7 @@ export function Dashboard({
           />
         </Panel>
         <RecentExecution t={t} historical={historical} />
-        <SystemHealth t={t} compact />
+        <SystemHealth t={t} historical={historical} compact />
       </div>
     </>
   );

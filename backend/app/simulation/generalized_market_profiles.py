@@ -483,14 +483,13 @@ def advisory_rejection(policy, metadata, catalog_fingerprint, risk_fingerprint, 
     return None
 
 
-def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
-           network: Network, evaluated_at: datetime, max_age_seconds: int,
-           metadata_current: bool = True, expected: PaperFingerprintBinding | None = None,
-           catalog_fingerprint: str | None = None, catalog_valid_until: datetime | None = None,
-           risk_source: MarketFinancialObservation | None = None,
-           advisory_evidence: tuple[AdvisorySnapshot, datetime] | None = None):
-    """Use a server-owned observation and clock. Client input contains assumptions only."""
-    from . import version
+def prepare_assessment(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
+                       network: Network, evaluated_at: datetime, max_age_seconds: int,
+                       metadata_current: bool = True, expected: PaperFingerprintBinding | None = None,
+                       catalog_fingerprint: str | None = None, catalog_valid_until: datetime | None = None,
+                       risk_source: MarketFinancialObservation | None = None,
+                       advisory_evidence: tuple[AdvisorySnapshot, datetime] | None = None):
+    """Validate captured inputs before spending capacity compiling a scenario."""
 
     proposal = PaperProposal.model_validate(proposal)
     identity = proposal.identity
@@ -498,7 +497,7 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
     risk_evidence = {}
 
     def reject(reason):
-        return decision(identity, evaluated_at, reason, profile=profile, **risk_evidence), None
+        return decision(identity, evaluated_at, reason, profile=profile, **risk_evidence)
 
     if identity.network != network:
         return reject("NETWORK_MISMATCH")
@@ -581,37 +580,90 @@ def assess(proposal: PaperProposal, metadata: MarketUniverseMetadata | None, *,
             valid_price = False
         if not valid_price:
             return reject("PRICE_UNREPRESENTABLE")
-        try:
-            prepared = _build_scenario(proposal, profile)
-            binding = PaperFingerprintBinding(
-                metadata_fingerprint=profile.metadata_fingerprint, profile_fingerprint=profile.profile_fingerprint,
-                catalog_fingerprint=catalog_fingerprint, research_risk_fingerprint=risk_fingerprint,
-                asset_policy_fingerprint=policy_fingerprint,
-                configuration_fingerprint=stable_fingerprint({
-                    "profile_fingerprint": profile.profile_fingerprint, "proposal": proposal,
-                    "catalog_fingerprint": catalog_fingerprint,
-                    "engine_version": version.SIMULATION_ENGINE_VERSION, "dataset": prepared.dataset.fingerprint,
-                    "strategy": prepared.strategy, "agents": prepared.agents, "risk": prepared.risk,
-                    "simulation": prepared.simulation,
-                    **({"research_risk_fingerprint": risk_fingerprint} if risk_fingerprint is not None else {}),
-                    **({"asset_policy_fingerprint": policy_fingerprint} if policy_fingerprint is not None else {}),
-                }),
-            )
-            if expected is not None and expected != binding:
-                return reject("CONFIGURATION_FINGERPRINT_MISMATCH")
-            if policy is None:
-                _preflight(prepared, profile, risk_model)
-            else:
-                _preflight(prepared, profile, risk_model, minimum_order_notional=proposal.minimum_order_notional)
-        except ResearchRiskError as exc:
-            return reject(exc.reason)
-        except GeneralizedPrecisionError as exc:
-            return reject(exc.reason)
-        except (ArithmeticError, ValueError):
-            return reject("SCENARIO_INFEASIBLE")
-    return decision(identity, evaluated_at, "ADMITTED", profile=profile, binding=binding,
-                    valid_until=valid_until, risk_model=risk_model,
-                    risk_source_status=risk_evidence.get("risk_source_status")), prepared
+    return PaperAssessment(proposal, profile, evaluated_at, valid_until, expected,
+                           catalog_fingerprint, risk_model, risk_fingerprint, policy_fingerprint, risk_evidence)
+
+
+@dataclass(frozen=True)
+class PaperAssessment:
+    proposal: PaperProposal
+    profile: GeneralizedMarketProfile
+    evaluated_at: datetime
+    valid_until: datetime
+    expected: PaperFingerprintBinding | None
+    catalog_fingerprint: str | None
+    risk_model: ResearchRiskModel | None
+    risk_fingerprint: str | None
+    policy_fingerprint: str | None
+    risk_evidence: dict
+
+    def compile(self, catalog_guard, advisory_evidence, clock):
+        rejection = paper_freshness_rejection(
+            self, max(self.evaluated_at, clock()), catalog_guard, advisory_evidence,
+        )
+        if rejection is not None:
+            return rejection, None
+        return self.finish()
+
+    def finish(self, preflighted: PreparedScenario | None = None):
+        from . import version
+
+        def reject(reason):
+            return decision(self.proposal.identity, self.evaluated_at, reason,
+                            profile=self.profile, **self.risk_evidence), None
+
+        proposal, profile = self.proposal, self.profile
+        with localcontext(DECIMAL_CONTEXT):
+            try:
+                prepared = preflighted if preflighted is not None else _build_scenario(proposal, profile)
+                binding = PaperFingerprintBinding(
+                    metadata_fingerprint=profile.metadata_fingerprint, profile_fingerprint=profile.profile_fingerprint,
+                    catalog_fingerprint=self.catalog_fingerprint, research_risk_fingerprint=self.risk_fingerprint,
+                    asset_policy_fingerprint=self.policy_fingerprint,
+                    configuration_fingerprint=stable_fingerprint({
+                        "profile_fingerprint": profile.profile_fingerprint, "proposal": proposal,
+                        "catalog_fingerprint": self.catalog_fingerprint,
+                        "engine_version": version.SIMULATION_ENGINE_VERSION, "dataset": prepared.dataset.fingerprint,
+                        "strategy": prepared.strategy, "agents": prepared.agents, "risk": prepared.risk,
+                        "simulation": prepared.simulation,
+                        **({"research_risk_fingerprint": self.risk_fingerprint} if self.risk_fingerprint is not None else {}),
+                        **({"asset_policy_fingerprint": self.policy_fingerprint} if self.policy_fingerprint is not None else {}),
+                    }),
+                )
+                if self.expected is not None and self.expected != binding:
+                    return reject("CONFIGURATION_FINGERPRINT_MISMATCH")
+                if preflighted is None:
+                    if proposal.asset_amm_policy is None:
+                        _preflight(prepared, profile, self.risk_model)
+                    else:
+                        _preflight(prepared, profile, self.risk_model,
+                                   minimum_order_notional=proposal.minimum_order_notional)
+            except ResearchRiskError as exc:
+                return reject(exc.reason)
+            except GeneralizedPrecisionError as exc:
+                return reject(exc.reason)
+            except (ArithmeticError, ValueError):
+                return reject("SCENARIO_INFEASIBLE")
+        return decision(self.proposal.identity, self.evaluated_at, "ADMITTED", profile=profile, binding=binding,
+                        valid_until=self.valid_until, risk_model=self.risk_model,
+                        risk_source_status=self.risk_evidence.get("risk_source_status")), prepared
+
+
+def assess(proposal, metadata, *, preflighted=None, **evidence):
+    """Use a server-owned observation and clock. Client input contains assumptions only."""
+    assessment = prepare_assessment(proposal, metadata, **evidence)
+    if isinstance(assessment, PaperAdmission):
+        return assessment, None
+    return assessment.finish(preflighted)
+
+
+def paper_freshness_rejection(admission, now, catalog_guard, advisory_evidence):
+    if now < admission.valid_until and (catalog_guard is None or catalog_guard()):
+        return None
+    reason = "RISK_SOURCE_STALE" if admission.risk_model and admission.risk_model.source else "METADATA_STALE"
+    if advisory_evidence is not None and now >= advisory_evidence[1]:
+        reason = "ADVISORY_STALE"
+    return decision(admission.profile.metadata.identity, now, reason, profile=admission.profile)
 
 
 class PaperRejected(ValueError):
@@ -693,25 +745,22 @@ def _result_fingerprint(binding, proposal, result, research_risk):
 
 
 async def execute_paper(engine, *, proposal, metadata, network, max_age_seconds, expected,
-                        catalog_valid_until=None, catalog_guard=None, risk_source=None, advisory_evidence=None):
+                        catalog_valid_until=None, catalog_guard=None, risk_source=None, advisory_evidence=None, preflighted=None):
     expected = PaperFingerprintBinding.model_validate(expected)
     if expected.catalog_fingerprint is not None and (catalog_guard is None or catalog_valid_until is None):
         raise ValueError("catalog-bound PAPER worker requires captured server generation")
     admission, prepared = assess(proposal, metadata, network=network, evaluated_at=datetime.now(timezone.utc),
                                  max_age_seconds=max_age_seconds, expected=expected,
                                  catalog_fingerprint=expected.catalog_fingerprint, catalog_valid_until=catalog_valid_until,
-                                 risk_source=risk_source, advisory_evidence=advisory_evidence)
+                                 risk_source=risk_source, advisory_evidence=advisory_evidence, preflighted=preflighted)
     if prepared is None:
         raise PaperRejected(admission)
     started_at = datetime.now(timezone.utc)
-    if started_at >= admission.valid_until or (catalog_guard is not None and not catalog_guard()):
-        reason = "RISK_SOURCE_STALE" if admission.risk_model and admission.risk_model.source else "METADATA_STALE"
-        if (advisory_evidence is not None and proposal.asset_amm_policy is not None
-                and proposal.asset_amm_policy.advisory_snapshot_fingerprint is not None
-                and started_at >= advisory_evidence[1]):
-            reason = "ADVISORY_STALE"
-        raise PaperRejected(decision(proposal.identity, started_at,
-                                     reason, profile=admission.profile))
+    policy = proposal.asset_amm_policy
+    bound_advisory = advisory_evidence if policy and policy.advisory_snapshot_fingerprint else None
+    rejection = paper_freshness_rejection(admission, started_at, catalog_guard, bound_advisory)
+    if rejection is not None:
+        raise PaperRejected(rejection)
     risk_run = PaperRiskRun(admission.risk_model) if admission.risk_model is not None else None
     with localcontext(DECIMAL_CONTEXT):
         result = await engine.run(

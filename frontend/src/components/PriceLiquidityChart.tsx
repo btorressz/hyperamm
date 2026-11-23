@@ -24,7 +24,7 @@ const lines = [
   ["best_bid", "Authorized BID", "#3bd49b"],
   ["best_ask", "Authorized ASK", "#f36d7b"],
 ] as const;
-export function PriceLiquidityChart({ t }: { t: TerminalState }) {
+export function PriceLiquidityChart({ t, historical }: { t: TerminalState; historical: boolean }) {
   const defaultRange = useDisplayStore((s) => s.defaultRange),
     [range, setRange] = useState<HistoryRange>(defaultRange),
     [visible, setVisible] = useState<string[]>([
@@ -149,7 +149,7 @@ export function PriceLiquidityChart({ t }: { t: TerminalState }) {
           ))}
         </div>
         <span className="muted">
-          Current session · {history.data?.retained_points ?? "—"} observations
+          {historical ? "Historical session" : "Current session"} · {history.data?.retained_points ?? "—"} observations
         </span>
       </div>
       <div ref={ref} />

@@ -1,4 +1,3 @@
-import { terminalEnvelopeFailure } from "../utils/terminalIntegrity";
 import { useState } from "react";
 import { ExperienceModeSwitch } from "./ExperienceModeSwitch";
 import { Badge } from "./Badge";
@@ -9,11 +8,15 @@ import { currentSourcePrices } from "../utils/freshness";
 export function Header({
   t,
   ws,
+  historical,
+  backendHealthFailed,
   navigationOpen,
   onOpenNavigation,
 }: {
   t: TerminalState | null;
   ws: string;
+  historical: boolean;
+  backendHealthFailed: boolean;
   navigationOpen: boolean;
   onOpenNavigation: () => void;
 }) {
@@ -26,10 +29,8 @@ export function Header({
       setError(String(e));
     }
   };
-  const observationCurrent =
-    ws === "connected" &&
-    !!t &&
-    !terminalEnvelopeFailure(t.emitted_at, Date.now());
+  const observationCurrent = !historical;
+  const killActive = observationCurrent && t?.risk.kill_switch_active;
   const current = currentSourcePrices(t, observationCurrent);
   const p =
     !observationCurrent || t?.perp_context?.stale ? null : t?.perp_context;
@@ -113,10 +114,11 @@ export function Header({
         <button
           className="dangerBtn headerKill"
           aria-label="Immediately activate manual kill switch"
-          disabled={!t || t.risk.kill_switch_active}
+          disabled={killActive}
+          title={backendHealthFailed ? "Backend reachability unconfirmed" : undefined}
           onClick={kill}
         >
-          {t?.risk.kill_switch_active ? "KILL ACTIVE" : "KILL SWITCH"}
+          {killActive ? "KILL ACTIVE" : "KILL SWITCH"}
         </button>
       </div>
       {error && (

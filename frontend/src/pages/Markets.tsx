@@ -18,7 +18,7 @@ import {
   bps,
   timestamp,
 } from "../utils/format";
-export function Markets({ t, workspace }: { t: TerminalState | null; workspace?: Workspace }) {
+export function Markets({ t, historical, workspace }: { t: TerminalState | null; historical: boolean; workspace?: Workspace }) {
   const defaultView = workspace === 'marketComparison' ? 'comparison' : 'explorer';
   const [view, setView] = useState<'explorer' | 'operational' | 'live' | 'comparison'>(defaultView);
   useEffect(() => setView(defaultView), [defaultView]);
@@ -30,23 +30,24 @@ export function Markets({ t, workspace }: { t: TerminalState | null; workspace?:
       <button aria-pressed={view==='live'} onClick={()=>setView('live')}>Live Market Intelligence</button>
       <button aria-pressed={view==='comparison'} onClick={()=>setView('comparison')}>Market vs Research</button>
     </div>
-    {view==='explorer'?<MarketExplorer/>:view==='comparison'?<MarketResearchWorkspace/>:view==='live'?<LiveMarketsView/>:t?<OperationalMarketsView t={t}/>:<Loading title="Operational market unavailable">Waiting for a valid operational terminal snapshot. Live Market Intelligence remains accessible.</Loading>}
+    {view==='explorer'?<MarketExplorer/>:view==='comparison'?<MarketResearchWorkspace/>:view==='live'?<LiveMarketsView/>:t?<OperationalMarketsView t={t} historical={historical}/>:<Loading title="Operational market unavailable">Waiting for a valid operational terminal snapshot. Live Market Intelligence remains accessible.</Loading>}
   </div>;
 }
-function OperationalMarketsView({ t }: { t: TerminalState }) {
-  const current = currentSourcePrices(t);
-  const p = t.perp_context?.stale ? null : t.perp_context,
+function OperationalMarketsView({ t, historical }: { t: TerminalState; historical: boolean }) {
+  const current = currentSourcePrices(t, !historical);
+  const p = historical || t.perp_context?.stale ? null : t.perp_context,
     m = t.market;
   return (
     <div className="stack">
       <h1>Market microstructure</h1>
       <div className="grid marketColumns">
-        <PriceLiquidityChart t={t} />
-        <OrderBook m={m} />
+        <PriceLiquidityChart t={t} historical={historical} />
+        <OrderBook m={m} historical={historical} />
       </div>
       <Panel
         title="Venue & perpetual context"
-        meta={`${m.mode} · ${m.connection_state} · market ${m.stale ? "STALE" : "FRESH"} · perp ${!t.perp_context ? "UNAVAILABLE" : t.perp_context.stale ? "STALE" : "FRESH"}`}
+        meta={historical ? `${m.mode} · STALE · LAST SNAPSHOT` :
+          `${m.mode} · ${m.connection_state} · market ${m.stale ? "STALE" : "FRESH"} · perp ${!t.perp_context ? "UNAVAILABLE" : t.perp_context.stale ? "STALE" : "FRESH"}`}
       >
         <Metrics
           items={[

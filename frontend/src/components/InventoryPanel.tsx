@@ -1,6 +1,6 @@
 import type { TerminalState } from '../types'
 const f=(x:unknown,d=2)=>x==null?'—':Number(x).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d})
-export function InventoryPanel({t}:{t:TerminalState}){
+export function InventoryPanel({t, historical}:{t:TerminalState; historical:boolean}){
   const i=t.inventory,c=t.strategy.config
   if(!i)return <section className="panel inventoryPanel"><div className="panelHead"><b>Inventory & Skew</b><span>Waiting for normalized state</span></div><div className="inventoryEmpty">Inventory state has not been computed yet.</div></section>
   const hard=Number(c.hard_inventory_limit_base),pos=Number(i.deviation_base),pct=hard>0?Math.max(0,Math.min(100,(pos+hard)/(2*hard)*100)):50
@@ -8,7 +8,7 @@ export function InventoryPanel({t}:{t:TerminalState}){
   return <section className="panel inventoryPanel">
     <div className="panelHead"><b>Inventory & Skew</b><span>{i.source} · v{i.version}</span></div>
     <div className="inventoryGrid">
-      <div><span>Current Position</span><b>{Number(i.position_base)>=0?'+':''}{f(i.position_base,4)} {i.market}</b></div>
+      <div><span>{historical?'Last Position':'Current Position'}</span><b>{Number(i.position_base)>=0?'+':''}{f(i.position_base,4)} {i.market}</b></div>
       <div><span>Target Position</span><b>{f(i.target_base,4)} {i.market}</b></div>
       <div><span>Inventory Deviation</span><b>{Number(i.deviation_base)>=0?'+':''}{f(i.deviation_base,4)}</b></div>
       <div><span>Inventory Ratio</span><b>{f(Number(i.inventory_ratio)*100,1)}%</b></div>
@@ -18,6 +18,6 @@ export function InventoryPanel({t}:{t:TerminalState}){
       <div><span>Bid / Ask Size</span><b>{f(i.bid_size_multiplier,2)}x / {f(i.ask_size_multiplier,2)}x</b></div>
     </div>
     <div className="inventoryGauge"><div className="gaugeLabels"><span>SHORT −{f(hard,2)}</span><span>TARGET</span><span>LONG +{f(hard,2)}</span></div><div className="gaugeTrack"><i style={{left:String(pct)+'%'}}/></div></div>
-    <div className="inventoryState"><span className="statePill">{side} / {i.hard_limit_state}</span><small>{i.stale?'STALE':'FRESH'} · soft ±{f(c.soft_inventory_limit_base,2)}</small></div>
+    <div className="inventoryState"><span className="statePill">{side} / {i.hard_limit_state}</span><small>{historical?'STALE · LAST SNAPSHOT':i.stale?'STALE':'FRESH'} · soft ±{f(c.soft_inventory_limit_base,2)}</small></div>
   </section>
 }

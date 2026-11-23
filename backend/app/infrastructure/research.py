@@ -34,11 +34,17 @@ class CoordinatedSimulationExecutor:
         self._tasks = set()
         self._closed = False
 
+    async def preflight(self, compile_scenario):
+        if self._closed:
+            raise ResearchBusyError("Phase 10 research worker is shutting down")
+        return await self.local.preflight(compile_scenario)
+
     async def execute(self, operation, **inputs):
         if operation not in RESEARCH_OPERATIONS:
             raise ValueError("unknown research operation")
         if self._closed:
             raise ResearchBusyError("Phase 10 research worker is shutting down")
+        preflighted = inputs.pop("preflighted", None) if operation == "run_generalized_paper" else None
         inputs = deepcopy(inputs)
         process_id, session_id = self.identity()
         # The worker's generation check is process-local. Its immutable
@@ -47,6 +53,9 @@ class CoordinatedSimulationExecutor:
                               if operation == "run_generalized_paper" else inputs)
         request_digest = digest({"operation": operation, "inputs": fingerprint_inputs,
                                  "engine_version": SIMULATION_ENGINE_VERSION})
+        # The existing configuration fingerprint already binds the compiled scenario.
+        if preflighted is not None:
+            inputs["preflighted"] = preflighted
         try:
             lease = await self.infrastructure.acquire("research", 1)
         except InfrastructureUnavailable:
