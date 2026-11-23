@@ -4,7 +4,15 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
-## Unreleased — Phase 18.7D–E acceptance
+## Unreleased — Phase 18.7F release acceptance
+
+- Reproduce the 56 controlled PAPER pairs and the published native financial digest. Preserve the exact PR #100 aggregate hash attestation gap.
+- Verify the loopback release candidate, official Mainnet observations, native read-only reconnect, physical Redis and the Linux Chromium workflow with individual external rollout gates.
+- Add one opt-in sustained read-only acceptance probe, a release runbook and compact evidence. Move the test extra to a patched compatible pytest/pytest-asyncio range. [Final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
+
+## 2026-11-21 — Phase 18.7D–E acceptance
+
+Merged in [PR #103](https://github.com/btorressz/hyperamm/pull/103) at `dd9e1488e027061a42cffd77e0761f8461de7226`.
 
 - Reconcile qualified PAPER execution through quotes, fills, fees, funding, ledger and marked equity across both AMMs and all three risk paths. Cover every native BTC/ETH/SOL portfolio selection and mixed results across advisory and operational authority.
 - Extend the fixture browser suite for the 13 routes in all three modes, results across navigation, responsive layouts, keyboard access, provider and worker failures, Replay and portfolio provenance.
