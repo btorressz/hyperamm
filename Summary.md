@@ -4,28 +4,44 @@
 
 ---
 
-## Current project status — Phase 18.7F release candidate
+## Current project status — Phase 18 and Audit 4.0H-A–D (November 24, 2026)
 
-**HyperAMM includes merged implementations through Phase 18.7D–E.** The Phase 18.7F candidate records **PASS** for bounded local DEMO/PAPER and individual rollout decisions for provider, browser, Redis, signed TESTNET and durable recovery. [Final acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
+**HyperAMM has merged Phase 18.7F and Audit 4.0H-A through H-D (PRs #106–#109).** Phase 18.7F passed bounded **single-operator, loopback DEMO/PAPER research** acceptance, not unrestricted signed venue execution or production readiness. Independent [Audit 4.0](AUDIT_REPORT_4.0.md) found 11 issues (two HIGH, eight MEDIUM, one LOW); all 11 received targeted remediation in H-A–D, with **local/fixture acceptance** documented in the individual reports. The original audit remains a historical finding record. [Phase 18.7F acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) · [Release runbook](docs/PHASE18_RELEASE_RUNBOOK.md)
 
 | Scope | Merged implementation | Acceptance boundary |
 | --- | --- | --- |
-| Phases 1–12 | Virtual AMM, quote reconciliation, inventory/perpetual adaptation, risk firewall, supervisory agents, accounting, simulation, 12-page React terminal | Historical fixture/local acceptance, not production |
-| Phases 13–14.6 | Institutional operator UX, Research Vault, independent BTC/ETH/SOL PAPER market selection | No browser-controlled operational market switching |
-| Phases 15.1–15.5B | Read-only BTC/ETH/SOL official SDK REST/WebSocket observation, source/freshness/health diagnostics, comparison and hardening | Actual public read-only delivery and separate deterministic resilience. See current provider and native platform gates. |
-| Phases 16.1A–16.1B | Strict historical provenance and source/gap contracts, bounded JSON import, private owner-only POSIX vault | Native-recording and permission claims are user assertions, not verified licenses |
-| Phase 16.2 | Deterministic receipt-ordered historical replay, segment resets, explicit missing-economics rejection | No inferred complete market history |
-| Phase 16.3 | Opt-in hypothetical crossing latency, slippage, retained-depth/participation and partial fills | No proof of actual exchange fills, queue priority or network latency |
-| Phases 16.4–16.4.1 | Historical Replay Studio with bounded provenance, independent segments and acceptance hardening | Native/frontend/Chromium evidence recorded after the original feature merge |
-| Phases 16.5A–16.5C.2 | Same-job scenario capture, descriptive quantitative receipts, bounded comparison API and React Studio | Merged; independent final hardening and gate statuses in the Phase 16.5D report |
-| Phases 16.6 and 17 | Local hardening and BTC/ETH/SOL shared-capital PAPER portfolio, accounting and stress | [Phase 17.6 acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md). Durable recovery remains separately gated. |
-| Phases 18.0–18.7 | Core/HIP-3 discovery and observed summaries, Generalized and asset-aware PAPER, research risk, observational advisories, Starter/Pro/Institutional and 13 routes | Public context keeps its own provenance. Native portfolio stays BTC/ETH/SOL. [Current acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md) |
+| Phases 1–12 | Two virtual AMM models, CLOB quote compilation, inventory/volatility/perpetual adaptation, RiskFirewall, FinalQuoteAuthorization, six supervisory agents, accounting, strategy simulation and original 12-page operator terminal | Historical local/fixture acceptance; not verified live execution or financial returns |
+| Phases 13–14.6 | Refined operator UX, Research Vault and independent native BTC/ETH/SOL PAPER selection | Research selection never grants operational venue authority |
+| Phases 15.1–15.5B | Independent official public SDK REST/WebSocket BTC/ETH/SOL observation, stream freshness and provider health | Read-only; sustained provider, browser and operating-system acceptance remains separate |
+| Phases 16.1–16.6 | Admitted historical evidence vault, bounded Replay, modeled crossing/slippage/latency/partial fills and research comparisons | Hypothetical execution and unverified historical data licenses, not actual exchange fill proof |
+| Phase 17 | BTC/ETH/SOL shared-capital **PAPER portfolio research**, subset accounting and stress | No simultaneous live multi-market portfolio execution or durable financial restart recovery; [17.6 acceptance](docs/PHASE176_FINAL_ACCEPTANCE.md) |
+| Phases 18.0–18.7F | Qualified Core/HIP-3 perpetual discovery, public marks/funding and volume/OI summaries, Generalized and asset-aware single-market PAPER, collateral/risk research, three observational advisories, Market Explorer and Starter/Pro/Institutional (13 routes) | Discovery and read-only observations do not expand signed operational markets. Native portfolio remains BTC/ETH/SOL. |
+| Audit 4.0H-A–D | Focused remediation for A4-001 through A4-011 | Locally accepted per H-A/H-B/H-C/H-D reports, without actual signed TESTNET or production certification |
 
-**Architecture separation:** Operational market feeds → AMM/strategy → agents → RiskFirewall → FinalQuoteAuthorization → PAPER/guarded TESTNET is authoritative. Phase 15 independent native observations are **read-only**. Phase 16 uses only explicitly admitted **local research evidence** and the existing one-slot `SimulationExecutor` for hypothetical PAPER analysis; it never submits exchange orders, grants signing authority or changes operational strategy. Operational terminal history remains bounded and in-memory, while Phase 16's *separate* historical vault holds selected validated local datasets.
+### Phase 18 markets, live public observations and PAPER truth
 
-**Source and test truth:** Native-recorded labels, timestamps, rights and SHA-256 identifiers do not establish authenticated exchange history, licensed use, continuous coverage or real execution. Historical Phase 15/16 test counts and external limitations remain in their original reports. Current counts and separate external gates appear in [Phase 18.7F acceptance](docs/PHASE18_7_FINAL_ACCEPTANCE.md).
+Market Explorer uses qualified network/DEX/market identity to discover Core and HIP-3 perpetual metadata and obtain **official read-only Hyperliquid Info** marks, hourly funding, previous-day references, reported notional volume and base-unit open interest. These are **local receipt-time snapshots**, with explicit source/age, availability, expiry and provider quote-unit limitations; they are not executable quotes or verified universal USD denominations. A **November 23, 2026 point-in-time** Audit 4.0 Mainnet sample returned **570 records, 354 listed perpetuals and 11 namespaces (Core plus 10 named DEXs)**. The audit verified examples Core BTC, ETH, SOL, DOGE and HIP-3 `xyz:GOLD`, `xyz:XYZ100`, `xyz:AAOI` and `io:AAPL`. These are not continuously verified live counts or a promise of pricing availability for all 354 instruments.
 
-See [README.md](README.md), [CODEBASE.md](CODEBASE.md), [CHANGELOG.md](CHANGELOG.md), [15.5B acceptance](docs/PHASE155B_ACCEPTANCE.md), and [16.4 acceptance](docs/PHASE164_ACCEPTANCE.md). The original detailed Phase 1–12 discussion below is retained as a historical engineering narrative, not the current feature cutoff.
+Generalized and asset-aware **single-market PAPER** research uses exchange **metadata** to validate selected instrument identity, precision, risk and feasibility while its scenario prices and fills are **explicitly synthetic**. This is not automatic real-price execution. The three additional Phase 18 advisory agents—Market Eligibility, Funding/Basis and Quote Economics—are **observational/read-only**, separate from the six supervisory agents. Native live observation and the Phase 17 shared-capital portfolio remain scoped to BTC/ETH/SOL. The observed full Testnet discovery inventory exceeded the retained **64-namespace guard**, so a partial catalog cannot be called complete.
+
+### Audit 4.0 remediation crosswalk
+
+| Milestone | Finding IDs | Verified local changes |
+| --- | --- | --- |
+| [H-A · PR #106](https://github.com/btorressz/hyperamm/pull/106) | A4-005, A4-007, A4-010 | Bounded off-loop PAPER preflight; completed results retained as historical evidence after catalog expiry; stale terminal Markets/Risk labeling and fresh-only Start/Resume with independent emergency Kill. [Report](docs/AUDIT4_HA_ACCEPTANCE.md) |
+| [H-B · PR #107](https://github.com/btorressz/hyperamm/pull/107) | A4-001, A4-002, A4-011 | Fail-closed TESTNET provenance checks, quarantine of unexplained account orders and private SDK cleanup. **Unsigned fixtures only; signed TESTNET remains blocked.** [Report](docs/AUDIT4_HB_ACCEPTANCE.md) |
+| [H-C · PR #108](https://github.com/btorressz/hyperamm/pull/108) | A4-003, A4-004, A4-008 | Per-market native observation recovery, shared weighted public Hyperliquid REST admission, bounded operational callback ingress. Default **900 weight/rolling minute** process ceiling below provider's documented 1,200 weight/IP/minute; unrelated IP traffic is outside this control. [Report](docs/AUDIT4_HC_ACCEPTANCE.md) |
+| [H-D · PR #109](https://github.com/btorressz/hyperamm/pull/109) | A4-006, A4-009 | Shared validated hourly funding range (inclusive ±0.005), quote/collateral compatibility gates and correct Funding/Basis confidence; selected Explorer Details now shows qualified mark and hourly funding even when the market is filtered or off-page. [Report](docs/AUDIT4_HD_ACCEPTANCE.md) |
+
+### Latest reported acceptance and remaining gates
+
+The merged **[H-D acceptance report](docs/AUDIT4_HD_ACCEPTANCE.md)** records **4,122 backend tests and 952 frontend tests passed**, plus Chromium acceptance across Phase 18.7, selected Details, advisory, native and H-A flows. All 38 controlled standard and 18 controlled asset-aware PAPER comparison pairs remained byte-identical, and the published combined native BTC/ETH/SOL portfolio digest reproduced. **Those are PR #109's reported test results, not tests executed for this documentation-only update.** The original two PR #100 aggregate SHA attestations remain separately unreproduced.
+
+The authoritative operational chain remains operational market evidence → AMM/strategy → six supervisory agents → RiskFirewall → FinalQuoteAuthorization → PAPER/guarded optional TESTNET. Phase 18 read-only public prices, advisories and research cannot sign or grant execution authority. Source hardening intentionally leaves **signed TESTNET blocked**, pending genuine qualified TESTNET operational data, durable order ownership and separately authorized real venue submission/cancel/fill reconciliation. **No mainnet execution or remote multi-user production service is supported.**
+
+Additional open acceptance includes a sustained official-provider soak under the shared weight budget; native macOS/Windows/mobile, independent Firefox/WebKit and manual VoiceOver/NVDA testing; durable restart recovery; historical-data authenticity/licensing; and select environment/dependency/deployment gates. A signed Testnet acceptance milestone would require separately authorized credentials and explicit operator permission, never default CI.
+
+**Source truth:** Native-recorded labels, local receipt times, hashes and user assertions do not prove continuously authenticated market history, data licenses, actual venue fills or financial returns. See [README](README.md), [CODEBASE](CODEBASE.md), [roadmap](docs/ROADMAP.md), [changelog](CHANGELOG.md) and [Audit 4.0](AUDIT_REPORT_4.0.md). The detailed Phase 1–16 material below is preserved as dated engineering history; its then-current statuses and future roadmap bullets are superseded by this section.
 
 ## 🚀 Overview
 
@@ -41,7 +57,7 @@ The project explores how AMM-style liquidity models can be adapted to operate ov
 
 Rather than deploying a traditional on-chain AMM directly, HyperAMM internally models liquidity using AMM mathematics and then compiles that desired liquidity into executable CLOB bid/ask levels.
 
-The system evolved through twelve major phases from basic Hyperliquid market data and PAPER execution into a broader trading-infrastructure stack containing:
+The initial twelve foundation phases introduced the capabilities below. Phases 13–18 subsequently expanded the platform with historical Replay, native portfolio research, Core/HIP-3 discovery, public price observations and asset-aware PAPER:
 
 - virtual constant-product AMM modeling
 - concentrated liquidity
@@ -58,7 +74,7 @@ The system evolved through twelve major phases from basic Hyperliquid market dat
 
 The system remains intentionally focused on:
 
-**PAPER execution + guarded TESTNET research**
+**Bounded DEMO/PAPER research; optional TESTNET remains fail-closed pending separate signed venue acceptance**
 
 and does **not** claim production-mainnet readiness.
 
@@ -2144,7 +2160,7 @@ Each major architecture phase has dedicated domain separation rather than placin
 
 ---
 
-# 📌 Current Roadmap Status
+# 📌 Historical Phase 1–12 roadmap status (October 2026 snapshot)
 
 ```text
 Phase 1
@@ -2318,7 +2334,7 @@ The goal was to explore how AMM-style liquidity models could be translated into 
 
 ---
 
-# ✅ Final Implementation Status
+# ✅ Historical Phase 1–12 implementation milestone
 
 The complete planned Phase 1–12 implementation roadmap is now present.
 
@@ -2352,7 +2368,7 @@ Simulation / Optimization
 Full Operator Terminal
 ```
 
-The project should currently be described as:
+At the original Phase 12 milestone, the project was described as:
 
 **A comprehensive research-grade market-making infrastructure stack for Hyperliquid with PAPER execution, guarded TESTNET integration, deterministic risk/accounting authority, offline simulation/optimization, and a full operator terminal.**
 
@@ -2364,7 +2380,7 @@ It should not yet be described as:
 
 # Historical HyperAMM update — October 14, 2026 (superseded by November 5)
 
-> **Historical snapshot:** Earlier Phase 1–12 descriptions are retained for engineering context. This October 14 section describes the state then; the November 5 status above and Phase 16 section below supersede old current-status and planned-work claims.
+> **Historical snapshot:** The October 14 and November 5 sections preserve earlier engineering states and plans; the November 24 Phase 18/Audit 4.0 status at the top supersedes their then-current claims.
 
 ## What HyperAMM can do now
 
@@ -2556,7 +2572,9 @@ These are historical per-PR results, not a fresh independent test run:
 
 The three pre-existing full-backend failures concern static scans of unchanged `docs/PHASE155B_ACCEPTANCE.md`; one optional ML/scikit-learn test skipped. **The full backend suite was not green.** Phase 16.4 still requires actual Python/Node tests, TypeScript/Vite, browser replay/segment/error cases and operational strategy/risk/signer isolation. See [16.4 acceptance](docs/PHASE164_ACCEPTANCE.md).
 
-## What HyperAMM does not yet claim
+## What HyperAMM did not claim in the November 5 snapshot
+
+These are historical statements; Phase 17 portfolio PAPER research has since shipped, but it still is not live multi-market execution.
 
 - **No production-mainnet execution.** Guarded TESTNET code and PAPER tests are not proof of completed signed venue acceptance.
 - **No unrestricted public or multi-user deployment.** The current application is designed for local, single-operator research. Loopback and CORS checks are not user authentication.
@@ -2619,7 +2637,9 @@ To use the optional studio, an operator pre-provisions a trusted owner-only loca
 
 **Acceptance:** Phase 16.4 [PR #60](https://github.com/btorressz/hyperamm/pull/60) is merged, but native backend/frontend tests, TypeScript/build and Chromium were **not executed in its implementation environment**. Do not report this milestone as independently accepted. See [Phase 16.4 acceptance plan](docs/PHASE164_ACCEPTANCE.md).
 
-### Remaining research roadmap
+### Remaining research roadmap (historical November 5 plan)
+
+These were future plans at the time; Phases 16.5–17 have since shipped. Refer to the current status above.
 
 - Phase 16.5 — Scenario versus historical replay comparison and explainability (**planned**).
 - Phase 16.6 — Regression, security and cross-platform/live-permission acceptance (**planned**).
