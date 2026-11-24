@@ -96,7 +96,7 @@ For the Testnet capacity check, run another isolated loopback process with `MARK
 
 ## Operator-controlled signed TESTNET gate
 
-**SIGNED TESTNET — NOT RUN** for Phase 18.7F. A separate, explicitly authorized acceptance session must complete all of the following for the supported native Testnet scope.
+**Signed TESTNET is BLOCKED after Audit 4.0H-B.** The signed exercise is **NOT RUN**. Use PAPER with the built-in operational sources. The Testnet Explorer catalog remains a read-only discovery option. Before a separately authorized signed session, land a qualified native Testnet operational source and durable recovery evidence for order ownership, uncertain intents and terminal fills. The eventual acceptance session must complete the following for the approved native Testnet scope. [Audit 4.0H-B acceptance](AUDIT4_HB_ACCEPTANCE.md)
 
 - Confirm operator authorization, dedicated Testnet-only credentials and endpoint, a supported native market, bounded order count and exposure, a time window and explicit abort criteria. Keep credentials in the operator's approved secret store and outside reports.
 - Capture concrete authorized ladder membership, risk and capital checks and final wire-equivalent authorization before a controlled submission. Record acknowledgments and reconcile CREATE, KEEP, REPLACE, CANCEL, duplicate/orphan states, partial fills and rejected changes independently against venue evidence.

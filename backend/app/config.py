@@ -6,11 +6,22 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def operational_testnet_rejection(mode: str) -> str:
+    """Describe the built-in operational sources. None can attest Testnet provenance."""
+    if mode == "DEMO":
+        source = "operational DEMO uses synthetic market data"
+    elif mode == "LIVE":
+        source = "operational LIVE uses Hyperliquid Mainnet market data"
+    else:
+        source = "operational market source is unsupported"
+    return f"TESTNET execution blocked because {source}. This mode requires a qualified Testnet Core source."
+
+
 class Settings(BaseSettings):
     historical_replay_root: str | None = Field(default=None, repr=False, exclude=True)
     # Trusted local operator input. Never included in agent/public snapshots.
     predictive_model_artifact_path: str | None = Field(default=None, repr=False, exclude=True)
-    model_config = SettingsConfigDict(env_file="../.env", extra="ignore", case_sensitive=False)
+    model_config = SettingsConfigDict(env_file="../.env", extra="ignore", case_sensitive=False, hide_input_in_errors=True)
 
     app_name: str = "HyperAMM"
     api_prefix: str = "/api/v1"
@@ -96,6 +107,12 @@ class Settings(BaseSettings):
         if isinstance(value, str) and value.isascii() and value.isdigit() and len(value) <= 4:
             return int(value)
         return value
+
+    @model_validator(mode="after")
+    def execution_source(self):
+        if self.execution_mode.upper() == "TESTNET":
+            raise ValueError(operational_testnet_rejection(self.market_data_mode.upper()))
+        return self
 
     @model_validator(mode="after")
     def redis_options(self):

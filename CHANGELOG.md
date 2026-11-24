@@ -4,6 +4,12 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Audit 4.0H-B TESTNET hardening
+
+- Reject all current operational TESTNET configurations and concrete submissions pending a qualified Testnet Core source.
+- Reconcile account-wide open orders even with empty local history. Quarantine unknown exposure and limit cancellation to retained strategy identities.
+- Retain private SDK ownership across partial initialization, cancellation and shutdown. [Unsigned acceptance](docs/AUDIT4_HB_ACCEPTANCE.md)
+
 ## Unreleased — Audit 4.0H-A local hardening
 
 - Bound Generalized PAPER preflight off the server loop and recheck the source before using the prepared scenario.

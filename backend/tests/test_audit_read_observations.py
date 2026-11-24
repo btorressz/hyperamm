@@ -6,6 +6,8 @@ import pytest
 from fastapi import FastAPI
 from app.api import accounting, agents, health, markets, orders, positions, risk, strategy, terminal
 from app.config import Settings
+from app.accounting import AccountingService
+from app.strategy.models import ExecutionMode
 from app.runtime import HyperAmmRuntime
 from app.market_data.mock import MockMarketDataAdapter
 
@@ -34,7 +36,13 @@ def authoritative(rt):
 @pytest.mark.parametrize('mode', ['PAPER', 'TESTNET'])
 @pytest.mark.parametrize('initialized', [False, True])
 async def test_repeated_gets_do_not_advance_authority(mode, initialized):
-    rt = HyperAmmRuntime(Settings(_env_file=None, execution_mode=mode))
+    rt = HyperAmmRuntime(Settings(_env_file=None))
+    if mode == "TESTNET":
+        # Read-only projection of an unsupported operational configuration.
+        rt.config.execution_mode = ExecutionMode.TESTNET
+        rt.execution = rt.orders.execution = rt.testnet
+        rt.accounting_service = AccountingService(rt.config.market, mode=mode, config=rt.accounting_config)
+        rt.vault_snapshot = rt.accounting_service.snapshot()
     if initialized:
         await rt.market._accept(MockMarketDataAdapter().snapshot_for(2))
         if mode == 'PAPER':

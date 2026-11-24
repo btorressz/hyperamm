@@ -1,5 +1,5 @@
-from app.diagnostics import sanitize_public_payload
-from fastapi import APIRouter, Depends
+from app.diagnostics import sanitize_public_payload, sanitize_public_text
+from fastapi import APIRouter, Depends, HTTPException
 from app.dependencies import runtime
 router=APIRouter(tags=["risk"])
 
@@ -7,6 +7,12 @@ router=APIRouter(tags=["risk"])
 async def risk(rt=Depends(runtime)):
     payload=rt.risk.model_dump(mode="json")
     payload["firewall"]=rt.risk_firewall_payload()
+    if rt.execution is rt.testnet:
+        payload["venue_reconciliation"] = {
+            "state": rt.testnet.reconciliation_readiness,
+            "unmanaged_order_count": rt.testnet.unmanaged_order_count,
+            "error": rt.testnet.reconciliation_error,
+        }
     return sanitize_public_payload(payload)
 
 @router.get("/references")
@@ -36,4 +42,7 @@ async def kill(rt=Depends(runtime)):
 
 @router.post("/risk/resume")
 async def resume(rt=Depends(runtime)):
-    return sanitize_public_payload((await rt.resume()).model_dump(mode="json"))
+    try:
+        return sanitize_public_payload((await rt.resume()).model_dump(mode="json"))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=sanitize_public_text(exc)) from exc

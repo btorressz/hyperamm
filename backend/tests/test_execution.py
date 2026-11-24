@@ -49,47 +49,108 @@ def test_testnet_response_rejection_and_resting_normalization():
 from app.execution.order_manager import OrderManager
 
 
+FIXTURE_ACCOUNT = "0x" + "2" * 40
+FIXTURE_TESTNET = "https://api.hyperliquid-testnet.xyz"
+
+
+def venue_row(oid=123, coin="ETH", remaining="1", original="1", price="2999", side="B", **extra):
+    return {"oid": oid, "coin": coin, "sz": remaining, "origSz": original, "limitPx": price,
+            "side": side, **extra}
+
+
 class VenueFixture:
-    """SDK-shaped synchronous fixture; no wallet credentials or network."""
+    """SDK-shaped synchronous fixture with no wallet or network."""
+    base_url = FIXTURE_TESTNET
+    account_address = FIXTURE_ACCOUNT
+
     def __init__(self):
-        self.opened=[]; self.results={}; self.callbacks={}
-        self.asset_to_sz_decimals={0:4}
-        self.cancel_response={'status':'ok','response':{'data':{'statuses':['success']}}}
-        self.order_response={'status':'ok','response':{'data':{'statuses':[{'resting':{'oid':123}}]}}}
-        self.transmissions=0
-        self.arguments=[]
-    def name_to_asset(self,market): return 0
-    def open_orders(self,address): return self.opened
-    def query_order_by_oid(self,address,oid): return self.results.get(str(oid),{'status':'unknownOid'})
-    def query_order_by_cloid(self,address,cloid): return self.results.get('cloid',{'status':'unknownOid'})
-    def subscribe(self,subscription,callback):
-        self.callbacks[subscription['type']]=callback
+        self.opened = []
+        self.other_dexs = {}
+        self.results = {}
+        self.callbacks = {}
+        self.asset_to_sz_decimals = {0: 4}
+        self.cancel_response = {"status": "ok", "response": {"data": {"statuses": ["success"]}}}
+        self.order_response = {"status": "ok", "response": {"data": {"statuses": [{"resting": {"oid": 123}}]}}}
+        self.transmissions = 0
+        self.arguments = []
+        self.inventory_calls = []
+        self.cancellations = []
+        self.info = self
+
+    def name_to_asset(self, market):
+        return 0
+
+    def perp_dexs(self):
+        return [None, *({"name": dex} for dex in self.other_dexs)]
+
+    def frontend_open_orders(self, address, dex):
+        assert address == self.account_address
+        self.inventory_calls.append((address, dex))
+        return self.other_dexs[dex] if dex else self.opened
+
+    def query_order_by_oid(self, address, oid):
+        assert address == self.account_address
+        return self.results.get(str(oid), {"status": "unknownOid"})
+
+    def query_order_by_cloid(self, address, cloid):
+        assert address == self.account_address
+        return self.results.get(cloid.to_raw(), {"status": "unknownOid"})
+
+    def user_state(self, address):
+        assert address == self.account_address
+        return {"assetPositions": [], "marginSummary": {"accountValue": "100000", "totalMarginUsed": "0"}}
+
+    def subscribe(self, subscription, callback):
+        self.callbacks[subscription["type"]] = callback
         return len(self.callbacks)
-    def disconnect_websocket(self): self.callbacks.clear()
-    def order(self,*args):
-        self.transmissions+=1
+
+    def unsubscribe(self, subscription, _handle):
+        del self.callbacks[subscription["type"]]
+        return True
+
+    def order(self, *args):
+        self.transmissions += 1
         self.arguments.append(args)
-        if isinstance(self.order_response,Exception): raise self.order_response
+        if isinstance(self.order_response, Exception):
+            raise self.order_response
+        statuses = self.order_response.get("response", {}).get("data", {}).get("statuses", [])
+        if statuses and "resting" in statuses[0]:
+            coin, buy, size, price, *_, cloid = args
+            oid = statuses[0]["resting"]["oid"]
+            if any(row["oid"] == oid for row in self.opened):
+                oid = max(row["oid"] for row in self.opened) + 1
+            self.opened.append(venue_row(oid, coin, str(size), str(size), str(price),
+                                         "B" if buy else "A", cloid=cloid.to_raw()))
+            return {"status": "ok", "response": {"data": {"statuses": [{"resting": {"oid": oid}}]}}}
         return self.order_response
-    def cancel_by_cloid(self,*args): return self.cancel_response
+
+    def cancel_by_cloid(self, *args):
+        self.cancellations.append(args)
+        return self.cancel_response
 
 
-def venue_adapter():
-    venue=VenueFixture()
-    adapter=HyperliquidTestnetExecutionAdapter(enabled=True,private_key='fixture-only',account_address='fixture-account',
-        base_url='https://api.hyperliquid-testnet.xyz',venue_info=venue,exchange=venue)
-    venue.info=venue
+def venue_adapter(*, stub_source_gate=True):
+    venue = VenueFixture()
+    adapter = HyperliquidTestnetExecutionAdapter(enabled=True, private_key=None, account_address=FIXTURE_ACCOUNT,
+        base_url=FIXTURE_TESTNET, venue_info=venue, exchange=venue)
+    if stub_source_gate:
+        # Existing wire and financial tests exercise downstream checks in
+        # isolation. The application has no qualified operational source.
+        adapter._require_submission_provenance = lambda: None
+
     async def fixture_authority(request):
-        assert (request.market,request.side,request.price,request.size) == ('ETH','BID',D('2999'),D('1'))
-    adapter.authority=fixture_authority
-    order=o(cid='tracked'); order.venue_order_id='123'
-    adapter._orders['tracked']=order
-    return adapter,venue,order
+        assert (request.market, request.side, request.price, request.size) == ("ETH", "BID", D("2999"), D("1"))
+
+    adapter.authority = fixture_authority
+    order = o(cid="tracked")
+    order.venue_order_id = "123"
+    adapter._orders["tracked"] = order
+    return adapter, venue, order
 
 
-def venue_update(status,remaining='0',oid=123):
-    return {'status':'order','order':{'status':status,'statusTimestamp':1700000000000,
-        'order':{'oid':oid,'coin':'ETH','sz':remaining,'origSz':'1'}}}
+def venue_update(status, remaining="0", oid=123, **economics):
+    return {"status": "order", "order": {"status": status, "statusTimestamp": 1700000000000,
+        "order": venue_row(oid, remaining=remaining, **economics)}}
 
 
 @pytest.mark.asyncio
@@ -172,6 +233,7 @@ def test_native_fractional_constraint_and_zero_bid_rejection():
 @pytest.mark.parametrize('asset', [-1, 10000, 109999, 110000, 120000, True, '0'])
 async def test_unsupported_market_precision_rejected_before_authority_or_submission(asset):
     adapter,venue,_=venue_adapter()
+    venue.opened = [venue_row()]
     venue.name_to_asset=lambda market:asset
     venue.asset_to_sz_decimals[asset]=4
     from unittest.mock import AsyncMock
@@ -198,6 +260,7 @@ async def test_testnet_requires_concrete_authority_but_cancellation_does_not():
 @pytest.mark.parametrize('change',[{'price':D('2999.96')},{'size':D('.12349')}])
 async def test_adapter_refuses_post_authorization_normalization(change):
     adapter,venue,_=venue_adapter()
+    venue.opened = [venue_row()]
     req=OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))
     with pytest.raises(ValueError,match='not already venue-normalized'):
         await adapter.submit_orders([req.model_copy(update=change)])
@@ -207,6 +270,7 @@ async def test_adapter_refuses_post_authorization_normalization(change):
 @pytest.mark.asyncio
 async def test_sdk_round_trip_drift_fails_before_unknown_registration():
     adapter,venue,_=venue_adapter()
+    venue.opened = [venue_row()]
     req=OrderRequest(client_order_id='huge',market='ETH',side='BID',
                      price=D('9007199254740993'),size=D('1'))
     async def authorized(request): assert request == req
@@ -219,6 +283,7 @@ async def test_sdk_round_trip_drift_fails_before_unknown_registration():
 @pytest.mark.asyncio
 async def test_mutation_during_authority_fails_closed():
     adapter,venue,_=venue_adapter()
+    venue.opened = [venue_row()]
     req=OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))
     async def mutate(request): request.price=D('3000')
     adapter.authority=mutate
@@ -230,8 +295,11 @@ async def test_mutation_during_authority_fails_closed():
 @pytest.mark.asyncio
 async def test_partial_fill_unknown_orders_and_idempotence():
     adapter,venue,order=venue_adapter()
-    venue.opened=[{'oid':123,'coin':'ETH','sz':'.6'}, {'oid':999,'coin':'BTC','sz':'50'}]
-    await adapter.reconcile_venue()
+    venue.opened = [venue_row(remaining=".6"), venue_row(999, "BTC", "50", "50")]
+    with pytest.raises(RuntimeError, match="unknown active orders"):
+        await adapter.reconcile_venue()
+    assert adapter.unmanaged_order_count == 1
+    venue.opened.pop()
     assert order.status==OrderStatus.PARTIALLY_FILLED and order.filled_size==D('.4')
     assert await adapter.get_open_orders()==[order]
     before=order.model_copy(deep=True)
@@ -265,7 +333,7 @@ async def test_websocket_notifications_wake_authoritative_runtime_reconciliation
     rt=HyperAmmRuntime(Settings())
     rt.testnet=adapter; rt.execution=adapter; rt.orders.execution=adapter
     rt.config.execution_mode=ExecutionMode.TESTNET
-    venue.opened=[{'oid':123,'coin':'ETH','sz':'1'}]
+    venue.opened = [venue_row()]
     await adapter.reconcile_venue()
     task=asyncio.create_task(rt._venue_loop())
     try:
@@ -284,7 +352,7 @@ async def test_websocket_notifications_wake_authoritative_runtime_reconciliation
 @pytest.mark.asyncio
 async def test_cancel_rejection_preserves_active_exposure():
     adapter,venue,order=venue_adapter()
-    venue.opened=[{'oid':123,'coin':'ETH','sz':'1'}]
+    venue.opened = [venue_row()]
     venue.cancel_response={'status':'ok','response':{'data':{'statuses':[{'error':'failed'}]}}}
     with pytest.raises(RuntimeError,match='confirm cancellation'): await adapter.cancel_all()
     assert order.status==OrderStatus.OPEN
@@ -302,6 +370,7 @@ async def test_cancel_fill_race_uses_venue_evidence():
 @pytest.mark.asyncio
 async def test_submission_timeout_retains_cancellable_unknown_order():
     adapter,venue,order=venue_adapter(); venue.order_response=TimeoutError('response lost')
+    venue.opened = [venue_row()]
     request=OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))
     with pytest.raises(TimeoutError): await adapter.submit_orders([request])
     assert adapter._orders['new'].status==OrderStatus.UNKNOWN
@@ -313,6 +382,7 @@ async def test_submission_timeout_retains_cancellable_unknown_order():
 @pytest.mark.asyncio
 async def test_final_authority_check_after_sdk_setup_blocks_transmission():
     adapter,venue,order=venue_adapter()
+    venue.opened = [venue_row()]
     async def denied(request): raise PermissionError('kill switch is active')
     adapter.authority=denied
     with pytest.raises(PermissionError):
@@ -341,6 +411,7 @@ async def test_cancel_ack_is_followed_by_fill_quantity_verification():
 @pytest.mark.asyncio
 async def test_malformed_submission_response_retains_unknown_exposure():
     adapter,venue,order=venue_adapter()
+    venue.opened = [venue_row()]
     venue.order_response={'status':'ok','response':{}}
     req=OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))
     with pytest.raises(RuntimeError,match='UNKNOWN'): await adapter.submit_orders([req])
@@ -350,6 +421,7 @@ async def test_malformed_submission_response_retains_unknown_exposure():
 @pytest.mark.asyncio
 async def test_immediate_fill_records_full_filled_size():
     adapter,venue,order=venue_adapter()
+    venue.opened = [venue_row()]
     venue.order_response={'status':'ok','response':{'data':{'statuses':[{'filled':{'oid':321,'totalSz':'1'}}]}}}
     req=OrderRequest(client_order_id='new',market='ETH',side='BID',price=D('2999'),size=D('1'))
     placed=(await adapter.submit_orders([req]))[0]
@@ -364,6 +436,7 @@ async def test_cancelled_sdk_waiter_cannot_outlive_kill_barrier():
     from app.risk.kill_switch import KillSwitch
     from app.risk.models import RiskStatus
     adapter,venue,order=venue_adapter()
+    venue.opened = [venue_row()]
     lock=asyncio.Lock(); entered=threading.Event(); release=threading.Event()
     def slow_order(*args):
         entered.set()
@@ -520,14 +593,14 @@ async def test_closed_history_limit_never_evicts_active_unknown_or_verification(
 @pytest.mark.asyncio
 async def test_testnet_duplicate_unknown_cannot_transmit_and_surplus_is_cancelled():
     adapter, venue, keeper = venue_adapter()
-    venue.opened=[{'oid':123, 'coin':'ETH', 'sz':'1', 'origSz':'1'}]
+    venue.opened = [venue_row()]
     duplicate=o(cid='surplus'); duplicate.venue_order_id='456'
     duplicate.status=OrderStatus.UNKNOWN
     adapter._orders[duplicate.client_order_id]=duplicate
     with pytest.raises(RuntimeError, match='unknown'):
         await OrderManager(adapter).reconcile('ETH', [q(level=1)], D('1'), D('.01'))
     assert adapter._orders['surplus'] is duplicate and venue.transmissions == 0
-    with pytest.raises(RuntimeError, match='unresolved'):
+    with pytest.raises(RuntimeError, match='unknown|unresolved'):
         await adapter.submit_orders([OrderRequest(client_order_id='forbidden', market='ETH', side='BID', price=D('2999'), size=D('1'))])
     await adapter.cancel_all()
     assert keeper.status == duplicate.status == OrderStatus.CANCELLED

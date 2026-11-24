@@ -859,7 +859,18 @@ async def test_config_context_rebind_preserves_session_isolation(change, lifecyc
     changes = {"execution": {"execution_mode": ExecutionMode.TESTNET},
                "feed": {"market_data_mode": MarketDataMode.LIVE},
                "market": {"market": "BTC"}}
-    await rt.update_config(rt.config.model_copy(update=changes[change]))
+    proposed = rt.config.model_copy(update=changes[change])
+    if change == "execution":
+        from app.strategy.quote_engine import StrategyFeasibilityError
+        authorization = rt.authorization
+        with pytest.raises(StrategyFeasibilityError, match="qualified Testnet Core source"):
+            await rt.update_config(proposed)
+        assert rt.paper is original_paper and rt.execution is rt.orders.execution is original_paper
+        assert rt.accounting_service is original_accounting
+        assert rt.agent_telemetry is original_telemetry and rt.agent_supervisor is original_supervisor
+        assert rt.authorization is authorization
+        return
+    await rt.update_config(proposed)
     assert rt.paper is not original_paper and rt.paper.fills.all() == []
     assert rt.accounting_service is not original_accounting
     assert rt.accounting_service.ledger.version == 0
@@ -873,11 +884,6 @@ async def test_config_context_rebind_preserves_session_isolation(change, lifecyc
     # Retired PAPER fills cannot contaminate the new accounting session.
     original_paper.on_fill(None)
     assert rt.accounting_service.ledger.version == 0
-    if change == "execution":
-        assert rt.accounting_service.snapshot().equity_quote is None
-        await rt.update_config(rt.config.model_copy(update={"execution_mode": ExecutionMode.PAPER}))
-        assert rt.paper.fills.all() == [] and rt.accounting_service.position.position_base == 0
-        assert rt.accounting_service.mode == "PAPER"
 
 
 @pytest.mark.asyncio
