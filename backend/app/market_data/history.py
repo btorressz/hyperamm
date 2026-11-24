@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+import json
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
+from threading import Lock
 
 from app.market_data.models import MarketSnapshot
 
@@ -119,3 +122,113 @@ class MarketPriceHistory:
 
     def __len__(self) -> int:
         return len(self._items)
+
+
+MAX_WIRE_BYTES = 64 * 1024
+
+
+def bounded_callback_wire(raw):
+    """Bound traversal before serialization, including deeply nested/huge SDK values."""
+    pending, nodes, text_size = [(raw, 0)], 0, 0
+    while pending:
+        value, depth = pending.pop()
+        nodes += 1
+        if nodes > 8192 or depth > 16:
+            raise ValueError('callback structure exceeds bound')
+        if isinstance(value, str):
+            text_size += len(value)
+            if text_size > MAX_WIRE_BYTES:
+                raise ValueError('callback text exceeds bound')
+        elif type(value) in (dict, list):
+            if len(value) > 8192 or len(pending) + len(value) * 2 > 16384:
+                raise ValueError('callback container exceeds bound')
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    if not isinstance(key, str):
+                        raise ValueError('callback keys must be strings')
+                    pending.extend(((key, depth + 1), (child, depth + 1)))
+            else:
+                pending.extend((child, depth + 1) for child in value)
+        elif type(value) is int and value.bit_length() > 256:
+            raise ValueError('callback integer exceeds bound')
+        elif value is not None and type(value) not in (bool, int, float):
+            raise ValueError('unsupported callback value')
+    wire = json.dumps(raw, separators=(',', ':'), allow_nan=False)
+    if len(wire.encode('utf-8')) > MAX_WIRE_BYTES:
+        raise ValueError('oversized callback')
+    return wire
+
+
+class BoundedIngress:
+    """Bound retained wire data per market and coalesce pending loop wakeups."""
+
+    def __init__(self, loop, capacity, clock, markets=None):
+        if markets is None:
+            from app.simulation.market_profiles import MARKETS
+
+            markets = MARKETS
+        self.loop, self.capacity, self.clock = loop, capacity, clock
+        self.lock = Lock()
+        self.queues = {market: deque() for market in markets}
+        self.dropped = dict.fromkeys(self.queues, 0)
+        self.event = asyncio.Event()
+        self.scheduled = self.closed = self._wake_pending = False
+        self._loss_count = self._peak = self._wakeups = 0
+
+    def offer(self, market, kind, generation, raw):
+        with self.lock:
+            if self.closed:
+                return
+            full = len(self.queues[market]) >= self.capacity
+        received = self.clock()
+        try:
+            wire = bounded_callback_wire(raw) if not full and type(raw) is dict else None
+        except (ValueError, TypeError, RecursionError):
+            wire = None
+        with self.lock:
+            if self.closed:
+                return
+            queue = self.queues[market]
+            if wire is None or len(queue) >= self.capacity:
+                self.dropped[market] += 1
+                self._loss_count += 1
+            else:
+                queue.append((kind, generation, wire, received))
+                self._peak = max(self._peak, len(queue))
+            if not self.scheduled:
+                self.scheduled = self._wake_pending = True
+                self._wakeups += 1
+                self.loop.call_soon_threadsafe(self._wake)
+
+    def _wake(self):
+        with self.lock:
+            self._wake_pending = False
+            if not self.closed and (any(self.queues.values()) or any(self.dropped.values())):
+                self.event.set()
+            else:
+                self.scheduled = False
+
+    def take(self):
+        with self.lock:
+            values = {market: tuple(queue) for market, queue in self.queues.items()}
+            losses = self.dropped.copy()
+            for queue in self.queues.values():
+                queue.clear()
+            self.dropped = dict.fromkeys(self.queues, 0)
+            self.event.clear()
+            self.scheduled = self._wake_pending
+        return values, losses
+
+    def has_loss(self, market):
+        with self.lock:
+            return self.dropped[market] > 0
+
+    def metrics(self):
+        with self.lock:
+            return self._peak, self._wakeups, self._loss_count
+
+    def close(self):
+        with self.lock:
+            self.closed = True
+            for queue in self.queues.values():
+                queue.clear()

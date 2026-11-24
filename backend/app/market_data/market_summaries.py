@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import nullcontext
 from collections import OrderedDict, defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -23,6 +24,7 @@ from .market_universe_discovery import (
     _failure_code, normalize_metadata,
 )
 from .models import utcnow
+from .provider_budget import ProviderWaiters
 
 MAX_SELECTION = 13  # Explorer page + previously selected Details card.
 MAX_ACTIVE = 3
@@ -194,13 +196,15 @@ def _normalize(raw, *, records, collateral_index, observed_at):
 class MarketSummaryObservations:
     """Bounded namespace cache with single-flight acquisitions on the app loop."""
 
-    def __init__(self, network: Network, *, client=None, clock=utcnow, timer=monotonic):
+    def __init__(self, network: Network, *, client=None, budget=None, clock=utcnow, timer=monotonic):
         self.network = network
-        self._client = client if client is not None else OfficialMetadataClient(network)
+        self._client = client if client is not None or budget is not None else OfficialMetadataClient(network)
+        self._budget = budget
         self.clock = clock
         self._timer = timer
         self._cache = OrderedDict()
         self._tasks = {}
+        self._waiters = {}
         self._starts = deque()
         self._backoff_until = 0.
         self._closed = False
@@ -215,6 +219,8 @@ class MarketSummaryObservations:
             ttl = MIN_REFRESH_SECONDS if refresh or capture.error else CACHE_SECONDS
             if now - stored < ttl:
                 self._cache.move_to_end(key)
+                if self._budget is not None:
+                    self._budget.cache_hit("summary")
                 return capture
         task = self._tasks.get(key)
         if task is None:
@@ -229,20 +235,27 @@ class MarketSummaryObservations:
                     return capture
                 return Capture(error="CAPACITY")
             self._starts.append(now)
+            if self._budget is not None:
+                self._waiters[key] = ProviderWaiters(self._budget)
             task = self._tasks[key] = asyncio.create_task(
-                self._refresh(key, records, collateral_index), name="market-summary-context",
+                self._refresh(key, records, collateral_index, monotonic() + REQUEST_SECONDS), name="market-summary-context",
             )
         # A disconnected waiter releases its wait. Concurrent readers share the
         # bounded SDK call, whose session closes even if every waiter disconnects.
         try:
-            return await asyncio.wait_for(asyncio.shield(task), REQUEST_SECONDS)
+            waiters = self._waiters.get(key)
+            with waiters.waiting() if waiters else nullcontext():
+                return await asyncio.wait_for(asyncio.shield(task), REQUEST_SECONDS)
         except TimeoutError:
             return Capture(error="TIMEOUT")
 
-    async def _refresh(self, key, records, collateral_index):
+    async def _refresh(self, key, records, collateral_index, deadline):
+        waiters = self._waiters.get(key)
+
         def collect():
-            deadline = monotonic() + REQUEST_SECONDS
-            raw = self._client("metaAndAssetCtxs", key[1], deadline)
+            client = self._client if self._client is not None else OfficialMetadataClient(
+                self.network, budget=self._budget, owner="summary", cancel=waiters.cancelled)
+            raw = client("metaAndAssetCtxs", key[1], deadline)
             if monotonic() >= deadline:
                 raise DiscoveryFailure("TIMEOUT")
             return _normalize(raw, records=records, collateral_index=collateral_index,
@@ -255,7 +268,7 @@ class MarketSummaryObservations:
                 capture = Capture(error="INVALID_DATA" if isinstance(exc, ValueError) else _failure_code(exc))
             if capture.error == "RATE_LIMITED":
                 self._backoff_until = self._timer() + RATE_LIMIT_BACKOFF
-            if not self._closed:
+            if not self._closed and capture.error != "CLOSED":
                 self._cache[key] = (self._timer(), capture)
                 self._cache.move_to_end(key)
                 if len(self._cache) > CACHE_CAPACITY:
@@ -263,6 +276,7 @@ class MarketSummaryObservations:
             return capture
         finally:
             self._tasks.pop(key, None)
+            self._waiters.pop(key, None)
 
     async def summarize(self, body, catalog, discovery, generation):
         if body.network != self.network or catalog.network != self.network:
@@ -333,6 +347,8 @@ class MarketSummaryObservations:
 
     async def close(self):
         self._closed = True
+        for waiters in self._waiters.values():
+            waiters.retire()
         self._cache.clear()
         if self._tasks:
             await asyncio.gather(*(asyncio.shield(task) for task in tuple(self._tasks.values())))

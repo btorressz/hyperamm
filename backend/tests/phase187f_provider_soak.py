@@ -28,6 +28,7 @@ from app.market_data.market_universe_discovery import (
     DiscoveryFailure, MarketUniverseDiscovery, MarketUniverseResponse, OfficialMetadataClient, _failure_code,
 )
 from app.market_data.market_summaries import MarketSummaryObservations, MarketSummaryResponse
+from app.market_data.provider_budget import HyperliquidBudget, WEIGHTS
 
 CORE = ("BTC", "ETH", "SOL", "DOGE")
 CADENCE = 20
@@ -35,16 +36,18 @@ WEIGHT_LIMIT = 900
 
 
 class MeteredClient(OfficialMetadataClient):
-    def __init__(self, network, calls):
-        super().__init__(network)
+    def __init__(self, network, calls, budget, *, owner="discovery"):
+        super().__init__(network, budget=budget, owner=owner)
         self.network, self.calls = network, calls
         self.inventory_count = None
 
-    def __call__(self, operation, dex, deadline):
-        start = monotonic()
-        row = {"network": self.network, "operation": operation, "dex": dex}
+    def _send(self, session, path, payload, deadline, remaining):
+        started = monotonic()
+        operation = payload["type"]
+        row = {"network": self.network, "operation": operation, "dex": payload.get("dex", ""),
+               "started_at_utc": datetime.now(timezone.utc).isoformat()}
         try:
-            data = super().__call__(operation, dex, deadline)
+            data = super()._send(session, path, payload, deadline, remaining)
             if operation == "perpDexs" and isinstance(data, list):
                 self.inventory_count = len(data)
             row["result"] = "OK"
@@ -53,8 +56,7 @@ class MeteredClient(OfficialMetadataClient):
             row["result"] = _failure_code(exc)
             raise
         finally:
-            # OK implies the SDK session returned from its finally/close block.
-            self.calls.append((start, row, round(monotonic() - start, 3)))
+            self.calls.append((started, row, round(monotonic() - started, 3)))
 
 
 def resources(discovery, summaries):
@@ -84,9 +86,10 @@ def select_keys(catalog):
 async def run(seconds):
     start = monotonic()
     calls, cycles, samples = [], [], []
-    client = MeteredClient("MAINNET", calls)
+    budget = HyperliquidBudget(WEIGHT_LIMIT)
+    client = MeteredClient("MAINNET", calls, budget)
     discovery = MarketUniverseDiscovery(enabled=True, network="MAINNET", client=client)
-    summaries = MarketSummaryObservations("MAINNET", client=client)
+    summaries = MarketSummaryObservations("MAINNET", client=MeteredClient("MAINNET", calls, budget, owner="summary"))
     app = FastAPI()
     app.include_router(router, prefix="/api/v1")
     app.state.market_universe_discovery = discovery
@@ -148,7 +151,7 @@ async def run(seconds):
         report["after_owner_shutdown"] = resources(discovery, summaries)
         report["retired_on_close"] = previous is None or discovery.paper_generation(previous) is None
 
-    testnet = MeteredClient("TESTNET", calls)
+    testnet = MeteredClient("TESTNET", calls, budget)
     test_discovery = MarketUniverseDiscovery(enabled=True, network="TESTNET", client=testnet)
     try:
         result = await test_discovery.catalog()
@@ -198,15 +201,18 @@ class InfoMeasurements:
         operation = payload['type']
         if operation not in {'perpDexs', 'meta', 'spotMeta', 'metaAndAssetCtxs', 'l2Book', 'fundingHistory'}:
             raise DiscoveryFailure('UNSUPPORTED_METADATA')
-        # For the 24-hour history request, conservatively reserve two extra units.
-        weight = {'l2Book': 2, 'fundingHistory': 22}.get(operation, 20)
+        # The transport probe observes admitted sends, including the provider's
+        # greatest documented reservation for time-range responses.
+        weight = WEIGHTS[operation]
         with self.lock:
             start = monotonic()
             rolling_weight = weight + sum(row['weight'] for row in self.calls if start - row['start'] < 60)
-            if self.capped or rolling_weight > WEIGHT_LIMIT:
+            if rolling_weight > WEIGHT_LIMIT:
+                # Keep a separate hard stop on instrumented official traffic.
                 self.capped = True
                 raise DiscoveryFailure('CLOSED')
-            row = dict(owner=owner, operation=operation, weight=weight, start=start)
+            row = dict(owner=owner, operation=operation, weight=weight, start=start,
+                       started_at_utc=datetime.now(timezone.utc).isoformat())
             self.calls.append(row)
             self.peak_weight = max(self.peak_weight, rolling_weight)
             self.active[owner] += 1
@@ -216,7 +222,7 @@ class InfoMeasurements:
             with self.lock:
                 row['status'] = 'SUCCESS'
                 if operation == 'fundingHistory' and isinstance(result, list):
-                    row['weight'] = 20 + len(result) // 20
+                    row['weight'] = 20 + (len(result) + 19) // 20
             return result
         except Exception as exc:
             with self.lock:
@@ -314,29 +320,35 @@ async def soak(args, report, started):
     from app import main as release_app
 
     measured = InfoMeasurements()
-    official_post, sdk_post = OfficialMetadataClient._post, API.post
+    official_send, sdk_post = OfficialMetadataClient._send, API.post
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop.set)
 
-    def official(self, session, path, payload, deadline):
-        if type(self) is OfficialMetadataClient:
-            owner = 'summaries' if payload['type'] == 'metaAndAssetCtxs' else 'discovery'
-        else:
-            owner = 'advisory'
-        return measured.measure(owner, payload, lambda: official_post(self, session, path, payload, deadline))
+    def official(self, session, path, payload, deadline, remaining):
+        return measured.measure(self.owner, payload,
+                                lambda: official_send(self, session, path, payload, deadline, remaining))
 
     def sdk(self, path, payload=None):
         if path != '/info' or payload is None:
             raise DiscoveryFailure('UNSUPPORTED_METADATA')
-        return measured.measure('native_sdk', payload, lambda: sdk_post(self, path, payload))
+        owner = getattr(self, '_soak_owner', 'native_rest')
+        if callable(owner):
+            owner = owner()
+        return measured.measure(owner, payload, lambda: sdk_post(self, path, payload))
+
+    bind_sdk = HyperliquidBudget.bind_sdk
+
+    def instrument_binding(self, info, owner, timeout, **kwargs):
+        info._soak_owner = owner
+        return bind_sdk(self, info, owner, timeout, **kwargs)
 
     connections = []
 
     class ObservedSDK(SDKObservationClient):
-        def __init__(self, *args):
-            super().__init__(*args)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
             connections.append(self)
 
     release_app.settings = Settings(_env_file=None, market_data_mode='DEMO', execution_mode='PAPER',
@@ -349,7 +361,8 @@ async def soak(args, report, started):
     generations = set()
     report['resource_samples'].append(mixed_resources(started))
     with (patch.object(release_app, 'LiveMarketStreamService', partial(LiveMarketStreamService, client_factory=ObservedSDK)),
-          patch.object(OfficialMetadataClient, '_post', official), patch.object(API, 'post', sdk)):
+          patch.object(OfficialMetadataClient, '_send', official), patch.object(API, 'post', sdk),
+          patch.object(HyperliquidBudget, 'bind_sdk', instrument_binding)):
         app = release_app.app
         async with app.router.lifespan_context(app):
             state = app.state
@@ -364,10 +377,16 @@ async def soak(args, report, started):
                     if not report['native_rest']:
                         native = await state.live_market_observer.overview()
                         report['native_rest'] = {row.market: row.observation_status for row in native.markets}
-                    current = all(streams.states[coin].seen == {'l2Book', 'activeAssetCtx'}
-                                  and streams.snapshot(coin).status.l2_freshness == 'FRESH'
-                                  and streams.snapshot(coin).status.perp_freshness == 'FRESH' for coin in CORE[:3])
-                    cycle.update(native_current=current, native_generation=streams._generation)
+                    statuses = {coin: streams.snapshot(coin) for coin in CORE[:3]}
+                    current = all(snapshot.observation_status == 'AVAILABLE' for snapshot in statuses.values())
+                    cycle.update(native_current=current, native_generation=streams._generation,
+                                 native={coin: {'l2_age_seconds': snapshot.status.l2_age_seconds,
+                                                'context_age_seconds': snapshot.status.perp_age_seconds,
+                                                'metadata_age_seconds': snapshot.status.metadata_age_seconds,
+                                                'availability': snapshot.observation_status,
+                                                'error': snapshot.status.last_error_code,
+                                                'gap_count': streams.history.query(coin).gap_count}
+                                         for coin, snapshot in statuses.items()})
                     if current:
                         report['native_current_polls'] += 1
                         if report['controlled_disconnect_generation'] is None:
@@ -383,6 +402,10 @@ async def soak(args, report, started):
                                       summary_cache=len(state.market_summary_observations._cache))
                         report['resource_samples'].append(sample)
                         report['request_metrics'] = measured.totals()
+                        snapshot = state.hyperliquid_budget.metrics()
+                        sample['provider_rolling_weight'] = snapshot['rolling_weight']
+                        sample['provider_active'] = snapshot['active']
+                        sample['provider_waiting'] = snapshot['waiting']
                         write(args.output, report)
                     next_poll = max(next_poll + CADENCE, monotonic())
                     try:
@@ -402,7 +425,10 @@ async def soak(args, report, started):
             'summary_captures_remaining': len(state.market_summary_observations._cache),
             'summary_tasks_remaining': len(state.market_summary_observations._tasks),
         }
-    report.update(distinct_catalog_generations=len(generations), request_metrics=measured.totals(), interrupted=stop.is_set())
+    budget = state.hyperliquid_budget.metrics()
+    budget['counts'] = {'.'.join(key): value for key, value in budget['counts'].items()}
+    report.update(distinct_catalog_generations=len(generations), request_metrics=measured.totals(),
+                  requests=measured.calls, budget=budget, interrupted=stop.is_set())
     if any(value for key, value in report['cleanup'].items() if key.endswith('_remaining')):
         report['classification'] = 'FAIL'
     elif (not stop.is_set() and not measured.capped and report['workload_seconds'] >= args.seconds

@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from app.config import operational_testnet_rejection
-from .models import MarketDataMode, MarketSnapshot
+from .models import MarketConnectionState, MarketDataMode, MarketSnapshot
 from .mock import MockMarketDataAdapter
 from .hyperliquid import HyperliquidMarketDataAdapter
 from .history import material_identity
@@ -14,7 +14,7 @@ log=logging.getLogger(__name__)
 
 
 class MarketDataService:
-    def __init__(self, market: str, mode: MarketDataMode, stale_after_seconds: float = 5.0, demo_interval: float = 1.0):
+    def __init__(self, market: str, mode: MarketDataMode, stale_after_seconds: float = 5.0, demo_interval: float = 1.0, *, provider_budget=None):
         self.market = market
         self.mode = mode
         self.stale_after_seconds = stale_after_seconds
@@ -22,7 +22,8 @@ class MarketDataService:
         self._lock = asyncio.Lock()
         self._lifecycle_lock = asyncio.Lock()
         self._task: asyncio.Task | None = None
-        self._adapter = MockMarketDataAdapter(market, interval=demo_interval) if mode == MarketDataMode.DEMO else HyperliquidMarketDataAdapter(market, stale_after_seconds=stale_after_seconds)
+        self._adapter = MockMarketDataAdapter(market, interval=demo_interval) if mode == MarketDataMode.DEMO else HyperliquidMarketDataAdapter(
+            market, stale_after_seconds=stale_after_seconds, budget=provider_budget)
         self._listeners: list = []
         self._perp_listeners: list = []
         self._source_sequence = -1
@@ -98,6 +99,9 @@ class MarketDataService:
     async def snapshot(self) -> MarketSnapshot:
         async with self._lock:
             snap = self._snapshot.model_copy(deep=True)
+        if snap.connection_state == MarketConnectionState.CONNECTED and getattr(self._adapter, "ingress_gap", False):
+            gap = MarketSnapshot.unavailable(self.market, self.mode, "Hyperliquid callback gap")
+            return gap.model_copy(update={"connection_state": MarketConnectionState.DEGRADED})
         if snap.latest_valid_update:
             age = (datetime.now(timezone.utc) - snap.latest_valid_update).total_seconds()
             snap.stale = snap.stale or age < 0 or age > self.stale_after_seconds

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import nullcontext
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -14,6 +15,7 @@ from app.market_data.hyperliquid_metadata import validate_native_metadata
 from app.market_data.live_models import (LiveBookLevel, LiveBookObservation, LiveFreshness,
     LiveMarketMetadata, LiveMarketOverview, LiveMarketSnapshot, LiveObservationError,
     LiveObservationStatus, LivePerpObservation, financial_decimal)
+from app.market_data.provider_budget import ProviderAdmissionError, ProviderWaiters
 from app.market_data.perp_context import normalize_meta_and_asset_ctxs
 from app.simulation.market_profiles import MARKETS, validate_price
 
@@ -41,6 +43,8 @@ def error(component, code):
 def classify(exc):
     # Never include SDK exception strings, wire bodies, request headers or URLs.
     from requests.exceptions import RequestException, Timeout
+    if isinstance(exc, ProviderAdmissionError):
+        return exc.code
     if isinstance(exc, Timeout):
         return "TIMEOUT"
     status = getattr(exc, "status_code", None)
@@ -57,11 +61,13 @@ def classify(exc):
     return "INVALID_DATA"
 
 
-def open_read_only_info(metadata, timeout):
+def open_read_only_info(metadata, timeout, *, budget=None, owner="native_rest", deadline=None, cancel=None):
     from hyperliquid.info import Info
     from hyperliquid.utils.constants import MAINNET_API_URL
     info = Info.__new__(Info)
     try:
+        if budget is not None:
+            budget.bind_sdk(info, owner, timeout, deadline=deadline, cancel=cancel)
         # The bootstrap is metadata-only. A second client uses actual validated
         # universe metadata, allowing the SDK itself to populate symbol mappings.
         Info.__init__(info, MAINNET_API_URL, skip_ws=True, timeout=timeout,
@@ -157,7 +163,7 @@ def context_observation_values(normalized):
 
 
 class LiveMarketObservationService:
-    def __init__(self, settings: Settings, *, info_factory=open_read_only_info,
+    def __init__(self, settings: Settings, *, info_factory=None, budget=None,
                  clock=lambda: datetime.now(timezone.utc), timer=monotonic):
         # Capture only the public observation options; no credential-bearing settings retained.
         self.enabled = settings.live_observations_enabled
@@ -172,6 +178,8 @@ class LiveMarketObservationService:
         self.request_deadline = self.timeout * 6 + 5
         self.shutdown_deadline = self.request_deadline + 5
         self._factory, self._clock, self._timer = info_factory, clock, timer
+        self._budget = budget
+        self._waiters = {}
         self._pool = ThreadPoolExecutor(max_workers=self.capacity, thread_name_prefix="live-observer")
         self._tasks, self._cache, self._expires, self._last_success, self._book_watermarks = {}, {}, {}, {}, {}
         self._closed = False
@@ -186,12 +194,18 @@ class LiveMarketObservationService:
             generated_at=self._clock(), last_successful_observed_at=self._last_success.get(market),
             errors=(error("service", code),))
 
-    def _observe_sync(self, market):
+    def _observe_sync(self, market, deadline, waiters):
         metadata = LiveMarketMetadata(market=market, metadata_status="UNAVAILABLE", source="NONE")
         errors, book, context = [], None, None
         info = bootstrap = None
+        def open_info(raw):
+            if self._factory is not None:
+                return self._factory(raw, self.timeout)
+            return open_read_only_info(raw, self.timeout, budget=self._budget, deadline=deadline,
+                                       cancel=waiters.cancelled if waiters else None)
+
         try:
-            bootstrap = self._factory({"universe": []}, self.timeout)
+            bootstrap = open_info({"universe": []})
             raw_meta = bootstrap.meta(dex="")
             received = self._clock()
             selected = next(item for item in validate_native_metadata(raw_meta, received) if item.market == market)
@@ -204,7 +218,7 @@ class LiveMarketObservationService:
                 # Close the bootstrap before constructing the mapped client.
                 bootstrap.session.close()
                 bootstrap = None
-                info = self._factory(raw_meta, self.timeout)
+                info = open_info(raw_meta)
                 if (info.name_to_coin.get(market) != market or
                     info.coin_to_asset.get(market) != metadata.asset_index or
                     info.asset_to_sz_decimals.get(metadata.asset_index) != metadata.sz_decimals):
@@ -278,9 +292,13 @@ class LiveMarketObservationService:
                 perp_observation_age_seconds=ca, metadata=ms, order_book=bs, perp_context=cs,
                 acquisition_gap_seconds=gap, acquisition_coherent=coherent))
 
-    async def _refresh(self, market):
+    async def _refresh(self, market, deadline):
         try:
-            snapshot = await asyncio.get_running_loop().run_in_executor(self._pool, self._observe_sync, market)
+            waiters = self._waiters.get(market)
+            snapshot = await asyncio.get_running_loop().run_in_executor(
+                self._pool, self._observe_sync, market, deadline, waiters)
+            if waiters is not None and waiters.cancelled.is_set():
+                return self._empty(market, "CLOSED")
             previous = self._book_watermarks.get(market)
             book = snapshot.order_book
             if book is not None:
@@ -305,6 +323,7 @@ class LiveMarketObservationService:
             return snapshot
         finally:
             self._tasks.pop(market, None)
+            self._waiters.pop(market, None)
 
     async def snapshot(self, market):
         if not isinstance(market, str) or market not in MARKETS:
@@ -317,6 +336,8 @@ class LiveMarketObservationService:
             return self._empty(market, "CLEANUP_ERROR")
         cached = self._cache.get(market)
         if cached is not None and self._timer() < self._expires[market]:
+            if self._budget is not None:
+                self._budget.cache_hit("native_rest")
             return self._present(cached[0], max(0, self._timer()-cached[1]))
         task = self._tasks.get(market)
         if task is None:
@@ -324,13 +345,19 @@ class LiveMarketObservationService:
             # No executor queue: at most capacity owned operations are submitted.
             if len(self._tasks) >= self.capacity:
                 return self._empty(market, "CAPACITY")
-            task = asyncio.create_task(self._refresh(market), name=f"live-observe-{market}")
+            if self._budget is not None:
+                self._waiters[market] = ProviderWaiters(self._budget)
+            task = asyncio.create_task(self._refresh(market, monotonic() + self.request_deadline), name=f"live-observe-{market}")
             self._tasks[market] = task
         try:
-            snapshot = await asyncio.wait_for(asyncio.shield(task), timeout=self.request_deadline)
+            waiters = self._waiters.get(market)
+            with waiters.waiting() if waiters else nullcontext():
+                snapshot = await asyncio.wait_for(asyncio.shield(task), timeout=self.request_deadline)
         except TimeoutError:
             # A response deadline does not terminate synchronous work or release capacity.
             return self._empty(market, "TIMEOUT")
+        if market not in self._cache:
+            return self._empty(market, "CLOSED")
         return self._present(snapshot, max(0, self._timer()-self._cache[market][1]))
 
     async def overview(self):
@@ -366,6 +393,8 @@ class LiveMarketObservationService:
 
     async def close(self):
         self._closed = True
+        for waiters in self._waiters.values():
+            waiters.retire()
         if self._close_task is None:
             self._close_task = asyncio.create_task(self._drain(), name="live-observer-shutdown")
         # Retain shutdown ownership if any reader/shutdown caller is cancelled.

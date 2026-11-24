@@ -81,7 +81,7 @@ def test_required_redis_fails_before_engine_services_start(monkeypatch):
     wire_infrastructure(monkeypatch, connected=False, required=True)
     rt = HyperAmmRuntime(main.settings)
     rt.start_services = AsyncMock()
-    monkeypatch.setattr(main, "HyperAmmRuntime", lambda settings: rt)
+    monkeypatch.setattr(main, "HyperAmmRuntime", lambda settings, *, provider_budget: rt)
     with pytest.raises(RuntimeError, match="Required Redis infrastructure"):
         with TestClient(main.app):
             pass

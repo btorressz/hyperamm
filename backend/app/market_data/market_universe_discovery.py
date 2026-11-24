@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import nullcontext
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
@@ -17,6 +18,7 @@ from requests import Request
 from urllib3.exceptions import HTTPError, TimeoutError as HTTPTimeout
 
 from app.market_data.live_observations import classify
+from .provider_budget import ProviderWaiters
 from app.market_data.market_risk_metadata import (
     MarketFinancialObservation, normalize_financial_metadata, normalize_spot_tokens,
 )
@@ -140,13 +142,14 @@ class OfficialMetadataClient:
 
     _operations = frozenset({"perpDexs", "meta", "spotMeta", "metaAndAssetCtxs"})
 
-    def __init__(self, network: Network, *, endpoint: str | None = None):
+    def __init__(self, network: Network, *, endpoint: str | None = None, budget=None, owner="discovery", cancel=None):
         from hyperliquid.utils.constants import MAINNET_API_URL, TESTNET_API_URL
 
         official = {"MAINNET": MAINNET_API_URL, "TESTNET": TESTNET_API_URL}.get(network)
         if official is None or (endpoint is not None and endpoint != official):
             raise DiscoveryFailure("NETWORK_MISMATCH")
         self.endpoint = official
+        self.budget, self.owner, self.cancel = budget, owner, cancel
 
     def __call__(self, method: Literal["perpDexs", "meta", "spotMeta", "metaAndAssetCtxs"], dex: str, deadline: float):
         return self._public_request(deadline, lambda info: self._metadata(info, method, dex))
@@ -187,7 +190,13 @@ class OfficialMetadataClient:
     def _post(self, session, path, payload, deadline):
         if path != "/info" or payload.get("type") not in self._operations:
             raise DiscoveryFailure("UNSUPPORTED_METADATA")
-        remaining = deadline - monotonic()
+        if self.budget is not None:
+            return self.budget.request(self.owner, payload["type"], deadline,
+                                       lambda remaining: self._send(session, path, payload, deadline, remaining),
+                                       cancel=self.cancel)
+        return self._send(session, path, payload, deadline, deadline - monotonic())
+
+    def _send(self, session, path, payload, deadline, remaining):
         if remaining <= 0:
             raise DiscoveryFailure("TIMEOUT")
         url = self.endpoint + path
@@ -201,6 +210,8 @@ class OfficialMetadataClient:
             verify=environment["verify"], proxies=environment["proxies"],
         ) as response:
             status = response.status_code
+            if status == 429 and self.budget is not None:
+                self.budget.rate_limited(response.headers.get("Retry-After"))
             if status != 200:
                 raise DiscoveryFailure({403: "FORBIDDEN", 429: "RATE_LIMITED"}.get(status, "UPSTREAM_ERROR"))
             if response.headers.get("Content-Encoding", "identity").lower() != "identity":
@@ -351,7 +362,7 @@ class Snapshot:
 
 class MarketUniverseDiscovery:
     def __init__(self, *, enabled: bool, network: Network,
-                 client: Callable | None = None, cache_seconds: int = CACHE_SECONDS,
+                 client: Callable | None = None, budget=None, cache_seconds: int = CACHE_SECONDS,
                  refresh_timeout: float = REFRESH_TIMEOUT,
                  clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc)):
         if network not in ("MAINNET", "TESTNET"):
@@ -361,7 +372,8 @@ class MarketUniverseDiscovery:
         if not 0 < refresh_timeout <= REFRESH_TIMEOUT:
             raise ValueError("invalid discovery refresh deadline")
         self.enabled, self.network = enabled, network
-        self._client = client
+        self._client, self._budget = client, budget
+        self._waiters = None
         self._cache_seconds, self._refresh_timeout, self._clock = cache_seconds, refresh_timeout, clock
         self._pool = ThreadPoolExecutor(max_workers=MAX_CONCURRENCY, thread_name_prefix="market-universe")
         self._task: asyncio.Task | None = None
@@ -388,7 +400,8 @@ class MarketUniverseDiscovery:
             return evidence
 
         try:
-            client = self._client if self._client is not None else OfficialMetadataClient(self.network)
+            client = self._client if self._client is not None else OfficialMetadataClient(
+                self.network, budget=self._budget, cancel=self._waiters.cancelled if self._waiters else None)
             raw, observed_at = await get("perpDexs")
             dexes = normalize_inventory(raw, self.network)
         except Exception as exc:
@@ -462,6 +475,9 @@ class MarketUniverseDiscovery:
             result, snapshot = await self._collect(self._deadline)
         except Exception as exc:
             result, snapshot = Refresh("UNAVAILABLE", error=_failure_code(exc)), None
+        if self._closed or (self._waiters is not None and self._waiters.cancelled.is_set()):
+            self._refresh_result = Refresh("UNAVAILABLE", error="CLOSED")
+            return
         now = monotonic()
         if now >= self._deadline:
             result = Refresh("UNAVAILABLE", result.inventory, result.namespaces, "TIMEOUT")
@@ -510,13 +526,17 @@ class MarketUniverseDiscovery:
             if self._snapshot is not None:
                 self._snapshot.retired.set()
             self._deadline = now + self._refresh_timeout
+            self._waiters = ProviderWaiters(self._budget) if self._budget is not None else None
             self._task = asyncio.create_task(self._refresh(now), name="market-universe-refresh")
         if self._task is not None and not self._task.done():
             try:
-                await asyncio.wait_for(asyncio.shield(self._task), max(0, self._deadline - monotonic()))
+                with self._waiters.waiting() if self._waiters else nullcontext():
+                    await asyncio.wait_for(asyncio.shield(self._task), max(0, self._deadline - monotonic()))
             except TimeoutError:
                 if not self._closed:
                     return self._view(Refresh("UNAVAILABLE", error="TIMEOUT"), self._snapshot)
+        elif self._budget is not None and self._snapshot is not None:
+            self._budget.cache_hit("discovery")
         if self._closed:
             return self._view(Refresh("UNAVAILABLE", error="CLOSED"), None)
         return self._view(self._refresh_result, self._snapshot)
@@ -546,6 +566,8 @@ class MarketUniverseDiscovery:
 
     async def close(self):
         self._closed = True
+        if self._waiters is not None:
+            self._waiters.retire()
         if self._snapshot is not None:
             self._snapshot.retired.set()
         if self._close_task is None:

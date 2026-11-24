@@ -105,9 +105,9 @@ def test_real_fastapi_ws_lifespan_and_restart(monkeypatch,enabled):
     clock=Clock();sdk=FakeClients(clock);created=[]
     settings=Settings(_env_file=None,live_observations_enabled=enabled,live_streams_enabled=enabled)
     monkeypatch.setattr(main,'settings',settings)
-    def factory(settings):
+    def factory(settings, *, budget):
         from app.market_data.live_streams import LiveMarketStreamService
-        value=LiveMarketStreamService(settings,client_factory=sdk.factory,clock=clock);created.append(value);return value
+        value=LiveMarketStreamService(settings,client_factory=sdk.factory,clock=clock,budget=budget);created.append(value);return value
     monkeypatch.setattr(main,'LiveMarketStreamService',factory)
     for _ in range(2):
         with TestClient(main.app) as client:

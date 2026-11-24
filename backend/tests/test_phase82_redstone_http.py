@@ -395,8 +395,8 @@ def test_reference_fingerprint_explicitly_binds_transport_even_at_fixed_provider
 def test_fastapi_serializes_single_effective_http_evidence_without_live_credentials(monkeypatch):
     from fastapi.testclient import TestClient
     import app.main as main
-    def runtime(settings):
-        rt=HyperAmmRuntime(settings)
+    def runtime(settings, *, provider_budget):
+        rt=HyperAmmRuntime(settings, provider_budget=provider_budget)
         rt.reference_service=ReferenceService(Settings(
             _env_file=None,redstone_enabled=True,redstone_public_http_symbol="ETH",
             redstone_api_key="",redstone_live_ws_url="",
