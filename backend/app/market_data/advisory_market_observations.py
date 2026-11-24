@@ -13,7 +13,6 @@ from typing import Literal
 from app.accounting.config import bounded_exact_decimal
 from app.agents.advisory_evidence import captured_source
 from app.risk.market_risk_engine import RISK_CONTEXT
-from app.simulation.models import stable_fingerprint
 
 from .market_universe_contracts import MarketUniverseMetadata, Network, _utc, evaluate_discovery
 from .market_universe_discovery import (
@@ -26,8 +25,11 @@ from .market_universe_discovery import (
 )
 from .models import utcnow
 from .provider_budget import ProviderWaiters
+from .public_perp_financials import (
+    HYPERLIQUID_INTERVAL_SECONDS, collateral_matches, context_binding, context_row_error,
+    has_quote_unit_claim, hourly_funding_rate, public_price,
+)
 
-HYPERLIQUID_INTERVAL_SECONDS = 3600
 HISTORY_HOURS = 24
 MAX_BOOK_AGE = timedelta(seconds=10)
 MAX_SOURCE_SKEW = timedelta(seconds=10)
@@ -106,15 +108,18 @@ class OfficialPerpObservation:
     points: tuple[_Point, ...]
     limitations: tuple[str, ...]
     failure_code: FailureCode | None
+    catalog_fingerprint: str | None
 
     @classmethod
-    def _from_acquisition(cls, metadata, status, points=(), limitations=(), *, failure_code=None):
+    def _from_acquisition(cls, metadata, status, points=(), limitations=(), *, failure_code=None,
+                          catalog_fingerprint=None):
         capture = object.__new__(cls)
         object.__setattr__(capture, "metadata", metadata)
         object.__setattr__(capture, "status", status)
         object.__setattr__(capture, "points", tuple(points))
         object.__setattr__(capture, "limitations", tuple(limitations))
         object.__setattr__(capture, "failure_code", failure_code)
+        object.__setattr__(capture, "catalog_fingerprint", catalog_fingerprint)
         return capture
 
     def source_evidence(self):
@@ -142,26 +147,39 @@ def _epoch_ms(timestamp):
     return (delta.days * 86400 + delta.seconds) * 1000 + delta.microseconds // 1000
 
 
-def _current(raw, metadata, captured_at):
+class _UnsupportedQuoteUnit(ValueError):
+    pass
+
+
+def _current(raw, metadata, captured_at, financial, namespace_records):
     identity = metadata.identity
     if not isinstance(raw, list) or len(raw) != 2 or not isinstance(raw[1], list):
         raise DiscoveryFailure("INVALID_DATA")
     records = normalize_metadata(raw[0], network=identity.network, dex=identity.dex, observed_at=captured_at)
     if len(records) != len(raw[1]):
         raise DiscoveryFailure("INVALID_DATA")
+    if namespace_records is not None and tuple(map(context_binding, records)) != tuple(
+            map(context_binding, namespace_records)):
+        raise DiscoveryFailure("NAMESPACE_CONFLICT")
     match = next((record for record in records if record.identity == identity), None)
     if match is None:
         raise DiscoveryFailure("MISSING_METADATA")
-    if (not match.listed or match.universe_index != metadata.universe_index
-            or match.sz_decimals != metadata.sz_decimals):
+    if context_binding(match) != context_binding(metadata):
         raise DiscoveryFailure("NAMESPACE_CONFLICT")
+    if financial is not None and financial.metadata != metadata:
+        raise DiscoveryFailure("NAMESPACE_CONFLICT")
+    index = financial.collateral_token_index if financial is not None else None
+    if not collateral_matches(raw[0], index):
+        raise _UnsupportedQuoteUnit("Public collateral token conflicts with discovery metadata.")
+    if has_quote_unit_claim(raw[0]):
+        raise _UnsupportedQuoteUnit("Public context contains an unsupported quote-unit claim.")
     row = raw[1][match.universe_index]
-    if not isinstance(row, dict) or row.get("coin", identity.exchange_coin) != identity.exchange_coin:
-        raise DiscoveryFailure("NAMESPACE_CONFLICT")
-    if row.get("network", identity.network) != identity.network:
-        raise DiscoveryFailure("NETWORK_MISMATCH")
-    if row.get("dex", identity.dex) != identity.dex:
-        raise DiscoveryFailure("NAMESPACE_CONFLICT")
+    if row is None:
+        return [], ["Public context row is missing."]
+    if error := context_row_error(row, match):
+        raise DiscoveryFailure(error)
+    if has_quote_unit_claim(row):
+        raise _UnsupportedQuoteUnit("Public context contains an unsupported quote-unit claim.")
     fields = (
         ("funding", "FUNDING", "RATE_PER_HOUR"),
         ("markPx", "MARK_PRICE", "PRICE_QUOTE_PER_BASE"),
@@ -175,10 +193,12 @@ def _current(raw, metadata, captured_at):
             issues.append(f"{category} unavailable in public response.")
             continue
         try:
-            value = _exact(row[field], positive=field in {"markPx", "oraclePx"},
-                           nonnegative=field == "openInterest")
-            if field == "funding" and abs(value) > 1:
-                raise ValueError("funding outside observation bounds")
+            if field == "funding":
+                value = hourly_funding_rate(row[field])
+            elif field in {"markPx", "oraclePx"}:
+                value = public_price(row[field])
+            else:
+                value = _exact(row[field], nonnegative=True)
         except ValueError:
             issues.append(f"{category} is invalid in public response.")
             continue
@@ -202,7 +222,9 @@ def _book(raw, identity, captured_at, current_at):
     if (not isinstance(levels, list) or len(levels) != 2
             or any(not isinstance(side, list) or not side or not isinstance(side[0], dict) for side in levels)):
         raise ValueError("both book sides are required")
-    bid, ask = (_exact(side[0].get("px"), positive=True) for side in levels)
+    if has_quote_unit_claim(raw) or any(has_quote_unit_claim(side[0]) for side in levels):
+        raise _UnsupportedQuoteUnit("Public book contains an unsupported quote-unit claim.")
+    bid, ask = (public_price(side[0].get("px")) for side in levels)
     for side in levels:
         _exact(side[0].get("sz"), positive=True)
     if bid >= ask:
@@ -228,9 +250,9 @@ def _history(raw, identity, captured_at, start, end):
         at = _time_ms(row.get("time"))
         if not start <= _epoch_ms(at) <= end or at > captured_at:
             raise ValueError("funding history outside requested time range")
-        rate = _exact(row.get("fundingRate"))
-        if abs(rate) > 1:
-            raise ValueError("funding outside observation bounds")
+        # This endpoint returns realized one-hour rates, under the same
+        # venue cap as the current hourly rate. The PAPER schedule is separate.
+        rate = hourly_funding_rate(row.get("fundingRate"))
         premium = _exact(row["premium"]) if row.get("premium") is not None else None
         row = FundingHistoryPoint(at, rate, premium)
         hour = _epoch_ms(at) // 3_600_000
@@ -261,13 +283,19 @@ class AdvisoryMarketObservations:
         self._backoff_until = 0.0
         self._closed = False
 
-    async def observe(self, metadata: MarketUniverseMetadata) -> OfficialPerpObservation:
+    async def observe(self, metadata: MarketUniverseMetadata, *, financial=None,
+                      namespace_records=None, catalog_fingerprint=None) -> OfficialPerpObservation:
         metadata = MarketUniverseMetadata.model_validate(metadata)
-        failure = OfficialPerpObservation._from_acquisition
+
+        def failure(status, **fields):
+            return OfficialPerpObservation._from_acquisition(
+                metadata, status, catalog_fingerprint=catalog_fingerprint, **fields,
+            )
+
         if metadata.identity.network != self._network:
             raise DiscoveryFailure("NETWORK_MISMATCH")
         if self._closed:
-            return failure(metadata, "ERROR", limitations=("Observation adapter is closed.",))
+            return failure("ERROR", limitations=("Observation adapter is closed.",))
         now = _utc(self._clock())
         discovery = evaluate_discovery(metadata, evaluated_at=now, max_age_seconds=self._metadata_age)
         if not discovery.discovery_eligible:
@@ -275,37 +303,46 @@ class AdvisoryMarketObservations:
                 "NOT_LISTED": "UNSUPPORTED", "STALE_METADATA": "STALE",
                 "FUTURE_TIMESTAMP": "ERROR", "METADATA_ERROR": "ERROR",
             }.get(discovery.reason, "INSUFFICIENT_DATA")
-            return failure(metadata, status, limitations=(discovery.reason,))
-        key = stable_fingerprint(metadata)
+            return failure(status, limitations=(discovery.reason,))
+        key = (catalog_fingerprint, metadata.fingerprint(), financial.fingerprint() if financial is not None else None)
         cached = self._cache.get(key)
-        if cached is not None and now < cached[0]:
+        if cached is not None and now < cached[0] and all(point.captured_at <= now for point in cached[1].points):
             self._cache.move_to_end(key)
             if self._budget is not None:
                 self._budget.cache_hit("advisory")
             return cached[1]
         if monotonic() < self._backoff_until:
-            return failure(metadata, "ERROR", limitations=("Public provider rate-limit backoff is active.",),
+            return failure("ERROR", limitations=("Public provider rate-limit backoff is active.",),
                            failure_code="RATE_LIMITED")
         task = self._tasks.get(key)
         if task is None:
             if len(self._tasks) >= MAX_CONCURRENT_MARKETS:
-                return failure(metadata, "ERROR", limitations=("Public observation capacity is busy.",))
+                return failure("ERROR", limitations=("Public observation capacity is busy.",))
             if self._budget is not None:
                 self._waiters[key] = ProviderWaiters(self._budget)
             deadline = monotonic() + REQUEST_BUDGET_SECONDS
-            task = self._tasks[key] = asyncio.create_task(self._refresh(key, metadata, deadline))
+            task = self._tasks[key] = asyncio.create_task(
+                self._refresh(key, metadata, financial, namespace_records, deadline),
+            )
         # Cancellation of one caller does not cancel a shared bounded acquisition.
         try:
             waiters = self._waiters.get(key)
             with waiters.waiting() if waiters else nullcontext():
-                return await asyncio.wait_for(asyncio.shield(task), REQUEST_BUDGET_SECONDS)
+                capture = await asyncio.wait_for(asyncio.shield(task), REQUEST_BUDGET_SECONDS)
+            now = _utc(self._clock())
+            if any(point.captured_at > now for point in capture.points):
+                return failure("ERROR", limitations=("Public observation receipt is future-dated.",),
+                               failure_code="INVALID_DATA")
+            return capture
         except TimeoutError:
-            return failure(metadata, "ERROR", limitations=("Public observation timed out.",), failure_code="TIMEOUT")
+            return failure("ERROR", limitations=("Public observation timed out.",), failure_code="TIMEOUT")
 
-    async def _refresh(self, key, metadata, deadline):
+    async def _refresh(self, key, metadata, financial, namespace_records, deadline):
         try:
             waiters = self._waiters.get(key)
-            capture, limited = await asyncio.to_thread(self._collect, metadata, deadline, waiters)
+            capture, limited = await asyncio.to_thread(
+                self._collect, metadata, financial, namespace_records, key[0], deadline, waiters,
+            )
             if limited:
                 self._backoff_until = monotonic() + RATE_LIMIT_BACKOFF
             if not self._closed and capture.status == "AVAILABLE":
@@ -319,11 +356,15 @@ class AdvisoryMarketObservations:
             self._tasks.pop(key, None)
             self._waiters.pop(key, None)
 
-    def _collect(self, metadata, deadline, waiters):
+    def _collect(self, metadata, financial, namespace_records, catalog_fingerprint, deadline, waiters):
         client = self._client if self._client is not None else _OfficialPublicClient(
             self._network, budget=self._budget, owner="advisory", cancel=waiters.cancelled)
         identity = metadata.identity
-        acquired = OfficialPerpObservation._from_acquisition
+
+        def acquired(status, points=(), limitations=(), **fields):
+            return OfficialPerpObservation._from_acquisition(
+                metadata, status, points, limitations, catalog_fingerprint=catalog_fingerprint, **fields,
+            )
 
         def request(operation, **kwargs):
             response = client.request(operation, identity, deadline, **kwargs)
@@ -333,15 +374,25 @@ class AdvisoryMarketObservations:
 
         try:
             raw, current_at = request("metaAndAssetCtxs")
-            points, issues = _current(raw, metadata, current_at)
+            points, issues = _current(raw, metadata, current_at, financial, namespace_records)
+        except _UnsupportedQuoteUnit as exc:
+            return acquired("UNSUPPORTED", limitations=(str(exc),), failure_code="UNSUPPORTED_METADATA"), False
         except Exception as exc:
             code = "INVALID_DATA" if isinstance(exc, (ValueError, KeyError)) else _failure_code(exc)
             status = {"MISSING_METADATA": "INSUFFICIENT_DATA", "UNSUPPORTED_METADATA": "UNSUPPORTED"}.get(code, "ERROR")
-            return acquired(metadata, status, limitations=(f"Public current context: {code}",),
+            return acquired(status, limitations=(f"Public current context: {code}",),
                             failure_code=code), code == "RATE_LIMITED"
 
         if not {"FUNDING", "MARK_PRICE", "ORACLE_PRICE"} <= {point.category for point in points}:
-            return acquired(metadata, "INSUFFICIENT_DATA", points, issues), False
+            return acquired("INSUFFICIENT_DATA", points, issues), False
+
+        # The documented mark, oracle and in-market book relationship gives
+        # relative like-for-like prices for the qualified contract. Resolve the
+        # market's collateral token as a consistency check, never as its price unit.
+        if (financial is None or financial.collateral_status != "SOURCE_OBSERVED"
+                or financial.collateral.observed_at > current_at):
+            issues.insert(0, "Public price-unit compatibility requires current collateral metadata.")
+            return acquired("INSUFFICIENT_DATA", points, issues), False
 
         current_ms = _epoch_ms(current_at)
         start = current_ms - HISTORY_HOURS * 3_600_000
@@ -359,14 +410,15 @@ class AdvisoryMarketObservations:
                     points.append(point)
             except Exception as exc:
                 code = "INVALID_DATA" if isinstance(exc, ValueError) else _failure_code(exc)
-                issues.append(f"{operation} unavailable: {code}")
+                issues.append(str(exc) if isinstance(exc, _UnsupportedQuoteUnit)
+                              else f"{operation} unavailable: {code}")
                 if code in {"NAMESPACE_CONFLICT", "NETWORK_MISMATCH"}:
-                    return acquired(metadata, "ERROR", limitations=issues, failure_code=code), False
+                    return acquired("ERROR", limitations=issues, failure_code=code), False
                 if code == "RATE_LIMITED":
-                    return acquired(metadata, "AVAILABLE", points, issues, failure_code=code), True
+                    return acquired("AVAILABLE", points, issues, failure_code=code), True
                 if code == "TIMEOUT":
                     break
-        return acquired(metadata, "AVAILABLE", points, issues), False
+        return acquired("AVAILABLE", points, issues), False
 
     async def close(self):
         self._closed = True

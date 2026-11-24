@@ -1,6 +1,6 @@
 # HyperAMM — Codebase & Repository Guide
 
-> **Developer orientation — Phase 18.7F candidate based on merged PR #103.** Start with the *Current implementation map* below. The November 11 Phases 15–16 source map and the older Phase 1–15 and October audit notes describe those earlier releases. The [Phase 18.7 acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md) tracks the remaining gates.
+> **Developer orientation — Phase 18.7F and Audit 4.0H-D.** Start with the *Current implementation map* below. The November 11 Phases 15–16 source map and the older Phase 1–15 and October audit notes describe those earlier releases. The [Phase 18.7 acceptance matrix](docs/PHASE18_7_ACCEPTANCE_MATRIX.md) tracks the remaining gates.
 
 **Purpose.** This is a code navigation and dependency guide: what the directories/files do, which code calls which domain, what information crosses each boundary, how to run or test it, and where changes belong. For project history see [README](README.md), [Summary](Summary.md), [Architecture](docs/ARCHITECTURE.md) and [Roadmap](docs/ROADMAP.md).
 
@@ -101,6 +101,8 @@ The existing `/api/v1/portfolio-research/preview`, `/run`, `/analyze`, `/stress`
 The 13 canonical destinations are Dashboard, Markets, Strategy, AMM Settings, Execution, Risk, Supervisory Agents, Vault, Analytics, Simulation & Optimization, Portfolio Research, Logs and Settings. Old deep links must remain reachable in every presentation mode. Charts, research panels, stream status, advanced configuration, historical replay and risk authority are **reused**, not replaced.
 
 ### Current acceptance, reproducibility and outstanding gates
+
+- **Audit 4.0H-D.** Explorer and Funding/Basis share exact public hourly validation. Funding/Basis checks collateral consistency and source-bound relative price compatibility before basis. Selected Explorer Details shows mark and hourly funding from the current qualified receipt even when the selected card is off-page. [H-D acceptance](docs/AUDIT4_HD_ACCEPTANCE.md)
 
 - **Audit 4.0H-C.** Native recovery preserves healthy market streams in their validated generation. All lifespan-owned public Hyperliquid REST operations share weighted admission. Operational LIVE callback gaps revoke market readiness until a fresh snapshot is accepted. [Provider and runtime acceptance](docs/AUDIT4_HC_ACCEPTANCE.md)
 

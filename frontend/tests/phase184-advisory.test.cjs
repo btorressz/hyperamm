@@ -68,6 +68,14 @@ test('Phase 18.4 validates a versioned quote-free observed snapshot with two sou
   assert.deepEqual(await validate(wire), wire);
 });
 
+for (const [rate, direction, state] of [['0.005', 'LONGS_PAY', 'FUNDING_POSITIVE'], ['-0.005', 'SHORTS_PAY', 'FUNDING_NEGATIVE']]) {
+  test(`Phase 18.4 accepts the exact public funding boundary ${rate}`, async () => {
+    const wire = fundingFixture();
+    Object.assign(wire.snapshot.funding_basis, { funding_rate: rate, funding_direction: direction, state });
+    assert.deepEqual(await validate(seal(wire)), wire);
+  });
+}
+
 for (const [name, change, reseal = true] of [
   ['authority escalation', value => { value.snapshot.funding_basis.can_override_risk = true; }],
   ['unknown analysis version', value => { value.snapshot.funding_basis.analysis_version = 'phase184x'; }],
@@ -79,6 +87,9 @@ for (const [name, change, reseal = true] of [
   ['receipt impersonating event time', value => { value.snapshot.context.sources[0].observed_at = observed_at; }],
   ['synthetic promotion', value => { value.snapshot.context.sources[0].provenance = 'SCENARIO_SYNTHETIC'; }],
   ['wrong evidence unit', value => { value.snapshot.context.sources[0].unit = 'PAPER_QUOTE_PER_BASE'; }],
+  ['excess public hourly funding with a valid fingerprint', value => {
+    value.snapshot.funding_basis.funding_rate = '-0.005000000001';
+  }],
   ['wrong funding interval', value => { value.snapshot.funding_basis.funding_interval_seconds = 1; }],
   ['wrong funding sign', value => { value.snapshot.funding_basis.funding_direction = 'LONGS_PAY'; }],
   ['number instead of Decimal string', value => { value.snapshot.funding_basis.mark_price = 100; }],

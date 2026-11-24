@@ -311,7 +311,16 @@ async def poll_market(client, state, report, cycle, generations):
                 cached = MarketSummaryResponse.model_validate_json(repeat.content)
                 report['cache_reuse'] = receipts == tuple(row.observed_at for row in cached.results)
     if not report['advisory']:
-        capture = await state.advisory_coordinator._observations.observe(records[-1])
+        market = records[-1]
+        capture = await state.advisory_coordinator._observations.observe(
+            market,
+            financial=state.market_universe_discovery.financial_observation(catalog.catalog_fingerprint, market.identity),
+            namespace_records=tuple(sorted(
+                (record for record in catalog.catalog.records if record.identity.dex == market.identity.dex),
+                key=lambda record: record.universe_index,
+            )),
+            catalog_fingerprint=catalog.catalog_fingerprint,
+        )
         report['advisory'] = {'coin': records[-1].identity.exchange_coin, 'status': capture.status,
                               'categories': sorted(point.category for point in capture.points)}
 

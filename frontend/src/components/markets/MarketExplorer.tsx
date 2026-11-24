@@ -101,7 +101,7 @@ export function MarketExplorer() {
     })),
   } : null, fresh);
   const detailSummary = observations.rows.get(selected);
-  const detailCurrent = observations.current(detailSummary);
+  const detailCurrent = discovery.isFetching ? undefined : observations.current(detailSummary);
   const displayed = sort === 'alphabetical' ? visible : [...visible].sort((a, b) => {
     const first = observations.current(observations.rows.get(a.key))?.[sort];
     const second = observations.current(observations.rows.get(b.key))?.[sort];
@@ -176,19 +176,21 @@ export function MarketExplorer() {
         <h3>{detail.record.source_coin} details</h3>
         <dl className="researchDetails">
           <div><dt>Canonical market</dt><dd><code>{detail.key}</code></dd></div>
+          <div><dt>Mark price</dt><dd title={detailCurrent?.mark_price ?? undefined}>{observedNumber(detailCurrent?.mark_price)}</dd></div>
+          <div><dt>Funding / hour</dt><dd>{observedNumber(detailCurrent?.funding_rate, '%')}</dd></div>
+          <div><dt>Funding interval</dt><dd>1 hour</dd></div>
           <div><dt>Observed metadata</dt><dd><time dateTime={detail.record.observed_at}>{detail.record.observed_at}</time></dd></div>
           <div><dt>Metadata source</dt><dd>{metadataSources[detail.record.metadata_source] ?? 'Unavailable'}</dd></div>
           <div><dt>Catalog fingerprint</dt><dd><code>{catalog?.catalog_fingerprint}</code></dd></div>
           <div><dt>Size precision</dt><dd>{detail.record.sz_decimals} decimals</dd></div>
           <div><dt>Metadata status</dt><dd>{fresh ? detail.record.metadata_status : 'STALE'}</dd></div>
           <div><dt>Metadata fingerprint</dt><dd><code>{detail.decision.metadata_fingerprint}</code></dd></div>
-          <div><dt>Observation status</dt><dd>{sourceStatus(detailSummary, !!detailCurrent, observations.isFetching, fresh, observations.error)}</dd></div>
+          <div><dt>Observation status</dt><dd>{sourceStatus(detailSummary, !!detailCurrent, discovery.isFetching || observations.isFetching, fresh, observations.error)}</dd></div>
           <div><dt>Observation source</dt><dd>Hyperliquid public Info · metaAndAssetCtxs</dd></div>
           {detailSummary?.observed_at && <div><dt>Server receipt time</dt><dd><time dateTime={detailSummary.observed_at}>{detailSummary.observed_at}</time></dd></div>}
           <div><dt>Provider event time</dt><dd>Unavailable</dd></div>
-          <div><dt>Price units</dt><dd>Provider quote per base · denomination unverified</dd></div>
+          <div><dt>Price units</dt><dd>Provider quote per base · denomination not independently verified</dd></div>
           <div><dt>Volume units</dt><dd>Provider notional quote · denomination unverified</dd></div>
-          <div><dt>Funding interval</dt><dd>1 hour</dd></div>
           <div><dt>Oracle price</dt><dd>{observedNumber(detailCurrent?.oracle_price)}</dd></div>
           <div><dt>Previous-day reference</dt><dd>{observedNumber(detailCurrent?.previous_day_price)}</dd></div>
           <div><dt>Mark / oracle basis</dt><dd>Unavailable · compatible denominations unverified</dd></div>

@@ -72,7 +72,9 @@ function Issues({ snapshot }: { snapshot: AdvisoryResponse }) {
 function Evidence({ result, snapshot }: { result: AdvisoryRecommendation; snapshot: AdvisoryResponse }) {
   const sources = snapshot.snapshot.context.sources.filter(source => result.source_fingerprints.includes(source.source_fingerprint));
   return <>
-    <p role="status">Status {label(result.status)} · Confidence {accountingValue(result.confidence, true)} · {label(result.provenance)}</p>
+    <p role="status">Status {label(result.status)} · {result.agent === 'FUNDING_BASIS'
+      ? `Policy confidence ${accountingValue(result.confidence)}`
+      : `Confidence ${accountingValue(result.confidence, true)}`} · {label(result.provenance)}</p>
     <ul>{result.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
     {result.missing_requirements && result.missing_requirements.length > 0 &&
       <p>Missing requirements · {result.missing_requirements.map(label).join(', ')}</p>}

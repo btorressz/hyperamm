@@ -12,7 +12,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def fixture_app(cache_seconds=60):
+def fixture_app(cache_seconds=60, *, audit4_hd=False):
     from app.main import app
     from app.agents.advisory_coordinator import AdvisoryCoordinator
     from app.market_data.advisory_market_observations import _epoch_ms
@@ -23,7 +23,7 @@ def fixture_app(cache_seconds=60):
 
     def provider(method, dex, deadline):
         if method == "perpDexs":
-            return [None, {"name": "xyz"}, {"name": "missing"}]
+            return [None, {"name": "xyz"}, {"name": "missing"}, *([{"name": "io"}] if audit4_hd else [])]
         if method == "spotMeta":
             return {"tokens": [{"index": 0, "name": "USDC", "isCanonical": True,
                                 "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054"},
@@ -32,10 +32,15 @@ def fixture_app(cache_seconds=60):
             return {"name": name, "szDecimals": size, "marginMode": mode, "marginTableId": 10, "maxLeverage": 10}
         if dex == "missing":
             return {"universe": [row("missing:GOLD", 3)]}
+        if dex == "io" and audit4_hd:
+            return {"universe": [row("io:AAPL", 3)], "collateralToken": 1}
         if dex == "xyz":
             return {"universe": [row("xyz:GOLD", 3, "noCross"), row("xyz:UNKNOWN", 3, "unsupported")], "collateralToken": 1}
-        return {"universe": [row("DOGE", 2), row("BTC", 3),
-                             {"name": "OLD", "szDecimals": 2, "isDelisted": True}], "collateralToken": 0}
+        core = [row("DOGE", 2), row("BTC", 3), {"name": "OLD", "szDecimals": 2, "isDelisted": True}]
+        if audit4_hd:
+            core += [row("MISSINGMARK", 3), row("MISSINGFUNDING", 3), row("INVALIDFUNDING", 3)]
+            core += [row(f"ZZ{index:02d}", 3) for index in range(17)]
+        return {"universe": core, "collateralToken": 0}
 
     def public(operation, identity, deadline, **_kwargs):
         coin = identity.exchange_coin
@@ -57,12 +62,14 @@ def fixture_app(cache_seconds=60):
         metadata = provider("meta", dex, deadline)
         if dex == "missing":
             return [metadata, [None]]
-        prices = {"DOGE": "0.1234", "BTC": "65012.5", "xyz:GOLD": "2405.25", "xyz:UNKNOWN": "0.0000012"}
+        prices = {"DOGE": "0.1234", "BTC": "65012.5", "xyz:GOLD": "2405.25", "xyz:UNKNOWN": "0.0000012",
+                  "io:AAPL": "219.123456789123456789", "MISSINGFUNDING": "201", "INVALIDFUNDING": "202"}
+        rates = {"BTC": "-0.0001", "io:AAPL": "0.000125", "MISSINGMARK": "0", "INVALIDFUNDING": "0.006"}
         return [metadata, [{
             "coin": row["name"], "markPx": prices.get(row["name"]),
             "oraclePx": "2402.5" if row["name"] == "xyz:GOLD" else None,
             "prevDayPx": "2400" if row["name"] == "xyz:GOLD" else None,
-            "funding": "-0.0001" if row["name"] == "BTC" else None,
+            "funding": rates.get(row["name"]),
             "dayNtlVlm": "1200000" if row["name"] == "BTC" else None,
             "openInterest": "130.5" if row["name"] == "BTC" else None,
         } for row in metadata["universe"]]]
@@ -103,6 +110,10 @@ def phase187_fixture_app():
 
     mode["terminal"] = True
     return fixture_app()
+
+
+def audit4_hd_fixture_app():
+    return fixture_app(cache_seconds=30, audit4_hd=True)
 
 
 def audit4_fixture_app():
@@ -574,7 +585,7 @@ async def browser_advisory_check(chromium, axe):
             await page.unroute("**/market-universe/advisory", delay)
             await inspect.click()
             await expect(observed.get_by_text("public provider is rate limited", exact=False)).to_be_visible()
-            await expect(observed.get_by_role("status")).to_contain_text("Confidence 0%")
+            await expect(observed.get_by_role("status")).to_contain_text("Policy confidence 0")
             print("PASS advisory DEX change retires delayed data and reports provider backoff", flush=True)
 
             await market.select_option(hip)
@@ -1013,11 +1024,23 @@ async def browser_audit4_check(chromium, set_backend):
         await price.fill("3500")
         await check.click()
         await expect(run).to_be_enabled()
-        async with page.expect_response(lambda response: response.url.endswith(run_path)) as accepted:
-            await run.click()
-        receipt = await accepted.value
-        assert receipt.ok
-        evidence = await receipt.json()
+        evidence = None
+        receipt_url = "**" + run_path
+
+        async def capture_receipt(route):
+            nonlocal evidence
+            receipt = await route.fetch()
+            assert receipt.ok
+            evidence = await receipt.json()
+            await route.fulfill(response=receipt)
+
+        await page.route(receipt_url, capture_receipt)
+        try:
+            async with page.expect_response(lambda response: response.url.endswith(run_path)) as accepted:
+                await run.click()
+            assert (await accepted.value).ok
+        finally:
+            await page.unroute(receipt_url, capture_receipt)
         assert evidence["execution_mode"] == "PAPER" and evidence["result"]["metrics"]["frame_count"] == 40
         await expect(result.get_by_text("Simulated PAPER result for xyz:GOLD", exact=False)).to_be_visible()
         assert writes.count(run_path) == 1

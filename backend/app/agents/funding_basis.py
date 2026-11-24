@@ -5,12 +5,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_EVEN, localcontext
 
-from app.market_data.advisory_market_observations import (
-    HYPERLIQUID_INTERVAL_SECONDS,
-    OfficialPerpObservation,
-)
+from app.market_data.advisory_market_observations import OfficialPerpObservation
 from app.market_data.market_universe_contracts import _utc
 from app.market_data.perp_context import _basis
+from app.market_data.public_perp_financials import HYPERLIQUID_INTERVAL_SECONDS
 from app.risk.market_risk_engine import RISK_CONTEXT
 from app.simulation.generalized_market_profiles import DECIMAL_CONTEXT, GeneralizedPaperResult
 
@@ -85,13 +83,18 @@ class FundingBasisAgent:
             return unavailable("INSUFFICIENT_DATA", "Capture an official observation or a PAPER scenario.",
                                REQUIRED_CATEGORIES)
         if isinstance(observation, OfficialPerpObservation):
-            if observation.metadata != evaluation.context.metadata:
-                raise AdvisoryBindingError("official funding observation does not match captured metadata")
+            if (observation.metadata != evaluation.context.metadata
+                    or observation.catalog_fingerprint != evaluation.context.catalog_fingerprint):
+                raise AdvisoryBindingError("official funding observation does not match captured metadata or catalog")
             if observation.status != "AVAILABLE":
                 missing = tuple(category for category in REQUIRED_CATEGORIES if observation.point(category) is None)
                 if observation.status == "INSUFFICIENT_DATA":
                     if not evaluation.bind(observation.source_evidence()):
                         return unavailable("STALE", "Public funding evidence has expired.", missing)
+                    if not missing:
+                        missing = ("PRICE_UNIT_COMPATIBILITY",)
+                elif observation.status == "UNSUPPORTED" and observation.failure_code == "UNSUPPORTED_METADATA":
+                    missing += ("PRICE_UNIT_COMPATIBILITY",)
                 prices = {
                     field: point.value
                     for category, field in (("MARK_PRICE", "mark_price"), ("ORACLE_PRICE", "oracle_price"))
@@ -103,7 +106,10 @@ class FundingBasisAgent:
             if (not set(REQUIRED_CATEGORIES) <= points.keys()
                     or {points[key].operation for key in REQUIRED_CATEGORIES} != {"metaAndAssetCtxs"}
                     or len({points[key].captured_at for key in REQUIRED_CATEGORIES}) != 1
-                    or points["FUNDING"].details != (HYPERLIQUID_INTERVAL_SECONDS,)):
+                    or points["FUNDING"].details != (HYPERLIQUID_INTERVAL_SECONDS,)
+                    or points["FUNDING"].unit != "RATE_PER_HOUR"
+                    or points["MARK_PRICE"].unit != "PRICE_QUOTE_PER_BASE"
+                    or points["ORACLE_PRICE"].unit != "PRICE_QUOTE_PER_BASE"):
                 raise AdvisoryBindingError("unaligned official funding and price evidence")
             rate, mark, oracle = (points[key].value for key in REQUIRED_CATEGORIES)
             interval = HYPERLIQUID_INTERVAL_SECONDS
@@ -112,7 +118,7 @@ class FundingBasisAgent:
             oi = points["OPEN_INTEREST"].value if "OPEN_INTEREST" in points else None
             history = points["FUNDING_HISTORY"].value if "FUNDING_HISTORY" in points else ()
             confidence = Decimal("0.90")
-            reasons = ["Current hourly funding uses public mark and oracle from the same response.",
+            reasons = ["Current hourly funding uses compatible public mark and oracle from the same response.",
                        "Current context has a receipt time only. Rates can change before settlement."]
             reasons.extend(observation.limitations)
             sources = observation.source_evidence()
