@@ -102,6 +102,8 @@ The 13 canonical destinations are Dashboard, Markets, Strategy, AMM Settings, Ex
 
 ### Current acceptance, reproducibility and outstanding gates
 
+- **Audit 4.0H-C.** Native recovery preserves healthy market streams in their validated generation. All lifespan-owned public Hyperliquid REST operations share weighted admission. Operational LIVE callback gaps revoke market readiness until a fresh snapshot is accepted. [Provider and runtime acceptance](docs/AUDIT4_HC_ACCEPTANCE.md)
+
 - **Audit 4.0H-B.** Operational DEMO is synthetic and operational LIVE observes Hyperliquid Mainnet. Both configurations are blocked for TESTNET. The private adapter validates bounded account inventory, quarantines unmanaged orders and retains owned SDK resources through shutdown. [Unsigned acceptance](docs/AUDIT4_HB_ACCEPTANCE.md)
 
 - **Audit 4.0H-A.** Generalized PAPER preflight runs on bounded resources owned by the existing executor. Completed browser results retain their captured sources. Operational freshness follows the validated terminal envelope and transport. [Local acceptance](docs/AUDIT4_HA_ACCEPTANCE.md)

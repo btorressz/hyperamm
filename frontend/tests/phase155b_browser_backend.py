@@ -23,9 +23,9 @@ class OfflineCatalog:
     async def resolve(self,m):return next(x for x in (await self.catalog()).markets if x.market==m)
     async def close(self):pass
 main.HyperliquidMetadataCatalog=lambda **_:OfflineCatalog()
-main.LiveMarketStreamService=lambda _:LiveMarketStreamService(Settings(_env_file=None,
+main.LiveMarketStreamService=lambda _, *, budget:LiveMarketStreamService(Settings(_env_file=None,
     live_observations_enabled=True,live_streams_enabled=True,live_stream_reconnect_initial_seconds=.5,
-    live_stream_reconnect_max_seconds=1),client_factory=sdk.factory,clock=clock)
+    live_stream_reconnect_max_seconds=1),client_factory=sdk.factory,clock=clock,budget=budget)
 app=main.app;original=app.router.lifespan_context
 
 @asynccontextmanager

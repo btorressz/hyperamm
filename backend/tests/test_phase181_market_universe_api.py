@@ -135,9 +135,10 @@ def test_application_lifespan_owns_discovery(monkeypatch, enabled):
     provider = Provider()
     instances = []
 
-    def create(**options):
+    def create(*, budget, **options):
         assert options == {"enabled": enabled, "network": "TESTNET"}
-        instance = MarketUniverseDiscovery(**options, client=provider)
+        assert budget is main.app.state.hyperliquid_budget
+        instance = MarketUniverseDiscovery(**options, client=provider, budget=budget)
         instances.append(instance)
         return instance
 

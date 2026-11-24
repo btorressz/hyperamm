@@ -486,8 +486,8 @@ async def test_lifespan_is_lazy_and_owns_shutdown(monkeypatch,enabled):
     sdk=FakeSDK();created=[]
     settings=Settings(_env_file=None,live_observations_enabled=enabled)
     monkeypatch.setattr(main,'settings',settings)
-    def factory(settings):
-        instance=LiveMarketObservationService(settings,info_factory=sdk.factory,clock=lambda:NOW)
+    def factory(settings, *, budget):
+        instance=LiveMarketObservationService(settings,info_factory=sdk.factory,clock=lambda:NOW,budget=budget)
         created.append(instance);return instance
     monkeypatch.setattr(main,'LiveMarketObservationService',factory)
     async with main.lifespan(app):

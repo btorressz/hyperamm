@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     execution_mode: str = "PAPER"
     market_stale_after_seconds: float = 5.0
     demo_update_interval_seconds: float = 1.0
+    hyperliquid_rest_weight_per_minute: int = Field(default=900, ge=60, le=1150, strict=True)
     market_universe_enabled: bool = False
     market_universe_network: Literal["MAINNET", "TESTNET"] = "MAINNET"
     live_observations_enabled: bool = False
@@ -98,7 +99,7 @@ class Settings(BaseSettings):
     redis_operation_timeout_seconds: float = Field(default=1, gt=0, le=5)
     redis_research_enabled: bool = False
 
-    @field_validator("live_observation_max_concurrent_requests", "live_observation_book_levels",
+    @field_validator("hyperliquid_rest_weight_per_minute", "live_observation_max_concurrent_requests", "live_observation_book_levels",
                      "live_stream_max_subscribers", "live_stream_queue_capacity",
                      "live_stream_history_max_points", mode="before")
     @classmethod

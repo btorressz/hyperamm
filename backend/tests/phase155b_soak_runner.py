@@ -34,7 +34,8 @@ async def run_soak(seconds=3, max_cycles=10):
                     raw=book(m);raw['time']=int(clock().timestamp()*1000);sdk.books[m]=raw
                     sdk.emit(m,'l2Book')
                     max_queue=max(max_queue,len(service._inbox.queues[m]))
-            await until(lambda:all(service.states[m].dropped>=previous[m]+3 for m in MARKETS))
+            await until(lambda:all(service.states[m].dropped>=previous[m]+3
+                                   and service.states[m].barrier and service.states[m].book for m in MARKETS))
             for m in MARKETS:
                 sdk.emit(m,'activeAssetCtx');sdk.emit(m,'l2Book')
             await until(lambda:all(s.context is not None for s in service.states.values()))

@@ -13,6 +13,7 @@ from app.runtime import HyperAmmRuntime
 from app.simulation.executor import SimulationExecutor
 from app.market_data.hyperliquid_metadata import HyperliquidMetadataCatalog
 from app.agents.advisory_coordinator import RECEIPT_HEADER, AdvisoryCoordinator
+from app.market_data.provider_budget import HyperliquidBudget
 from app.market_data.market_summaries import MarketSummaryObservations
 from app.market_data.market_universe_discovery import MarketUniverseDiscovery
 from app.market_data.live_observations import LiveMarketObservationService
@@ -40,18 +41,20 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     validate_local_deployment()
-    app.state.runtime = HyperAmmRuntime(settings)
+    budget = app.state.hyperliquid_budget = HyperliquidBudget(settings.hyperliquid_rest_weight_per_minute)
+    app.state.runtime = HyperAmmRuntime(settings, provider_budget=budget)
     app.state.simulation_executor = SimulationExecutor()
     # Trusted, pre-provisioned owner-only evidence root; no implicit admission.
     app.state.historical_replay_root = settings.historical_replay_root
-    app.state.live_market_observer = LiveMarketObservationService(settings)
-    app.state.live_market_streams = LiveMarketStreamService(settings)
+    app.state.live_market_observer = LiveMarketObservationService(settings, budget=budget)
+    app.state.live_market_streams = LiveMarketStreamService(settings, budget=budget)
     app.state.research_market_catalog = HyperliquidMetadataCatalog(
+        budget=budget,
         allow_demo=settings.market_data_mode == MarketDataMode.DEMO and settings.execution_mode == ExecutionMode.PAPER)
     app.state.market_universe_discovery = MarketUniverseDiscovery(
-        enabled=settings.market_universe_enabled, network=settings.market_universe_network)
-    app.state.market_summary_observations = MarketSummaryObservations(settings.market_universe_network)
-    app.state.advisory_coordinator = AdvisoryCoordinator(app.state.market_universe_discovery)
+        enabled=settings.market_universe_enabled, network=settings.market_universe_network, budget=budget)
+    app.state.market_summary_observations = MarketSummaryObservations(settings.market_universe_network, budget=budget)
+    app.state.advisory_coordinator = AdvisoryCoordinator(app.state.market_universe_discovery, budget=budget)
     app.state.terminal_relay = None
     app.state.redis_infrastructure = None
     infrastructure = None
@@ -72,6 +75,7 @@ async def lifespan(app: FastAPI):
         await app.state.live_market_streams.start()
         yield
     finally:
+        budget.close()
         try:
             await app.state.simulation_executor.shutdown()
         finally:

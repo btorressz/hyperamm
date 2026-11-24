@@ -101,9 +101,9 @@ class _Receipt:
 
 
 class AdvisoryCoordinator:
-    def __init__(self, discovery: MarketUniverseDiscovery, *, clock=utcnow):
+    def __init__(self, discovery: MarketUniverseDiscovery, *, clock=utcnow, budget=None):
         self._discovery = discovery
-        self._observations = AdvisoryMarketObservations(network=discovery.network, clock=clock)
+        self._observations = AdvisoryMarketObservations(network=discovery.network, clock=clock, budget=budget)
         self._clock = clock
         self._receipts: OrderedDict[str, _Receipt] = OrderedDict()
         self._snapshots: OrderedDict[str, tuple[AdvisorySnapshot, datetime]] = OrderedDict()

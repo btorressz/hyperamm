@@ -39,9 +39,10 @@ log = logging.getLogger(__name__)
 
 
 class HyperAmmRuntime:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, *, provider_budget=None):
         mode = MarketDataMode(settings.market_data_mode.upper())
         self.settings = settings
+        self._provider_budget = provider_budget
         self.config = StrategyConfig(
             market=settings.market,
             market_data_mode=mode,
@@ -49,7 +50,8 @@ class HyperAmmRuntime:
         )
         self.strategy = StrategyState(config=self.config)
         self.market = MarketDataService(
-            settings.market, mode, settings.market_stale_after_seconds, settings.demo_update_interval_seconds
+            settings.market, mode, settings.market_stale_after_seconds, settings.demo_update_interval_seconds,
+            provider_budget=self._provider_budget,
         )
         self.paper = PaperExecutionAdapter()
         self.testnet = HyperliquidTestnetExecutionAdapter(
@@ -940,7 +942,7 @@ class HyperAmmRuntime:
                 if mode_changed:
                     market = MarketDataService(new_config.market, new_config.market_data_mode,
                                                self.settings.market_stale_after_seconds,
-                                               self.settings.demo_update_interval_seconds)
+                                               self.settings.demo_update_interval_seconds, provider_budget=self._provider_budget)
                     staged.append(market)
                     self._bind_market(market)
                     perp = PerpContextService(new_config.market, new_config.perp_context_stale_after_seconds)

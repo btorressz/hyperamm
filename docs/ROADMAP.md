@@ -40,6 +40,7 @@
 | 18.7 | LOCAL CANDIDATE REVIEW | Independent final review and separate external gates for access, sustained operation, cross-platform lifecycle, signed TESTNET and durable recovery. [Acceptance matrix](PHASE18_7_ACCEPTANCE_MATRIX.md) |
 | Audit 4.0H-A | LOCAL REVIEW | Bounded PAPER preflight, completed evidence retention and terminal freshness across disconnects. [Acceptance and open findings](AUDIT4_HA_ACCEPTANCE.md) |
 | Audit 4.0H-B | LOCAL REVIEW · SIGNED TESTNET BLOCKED | Operational source rejection, account inventory quarantine and owned private SDK teardown. H-C covers A4-003/004/008. H-D covers A4-006/009. [Acceptance](AUDIT4_HB_ACCEPTANCE.md) |
+| Audit 4.0H-C | LOCAL REVIEW · OFFICIAL SOAK OPEN | A4-003 native stream recovery, A4-004 weighted public provider budget and A4-008 operational callback ingress. A4-006 and A4-009 move to H-D. [Acceptance](AUDIT4_HC_ACCEPTANCE.md) |
 
 ## Phase 6 extension points
 

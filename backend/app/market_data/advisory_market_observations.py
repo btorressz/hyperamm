@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import nullcontext
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -24,6 +25,7 @@ from .market_universe_discovery import (
     normalize_metadata,
 )
 from .models import utcnow
+from .provider_budget import ProviderWaiters
 
 HYPERLIQUID_INTERVAL_SECONDS = 3600
 HISTORY_HOURS = 24
@@ -245,14 +247,16 @@ def _history(raw, identity, captured_at, start, end):
 class AdvisoryMarketObservations:
     """One event-loop owner for bounded single-flight public observations."""
 
-    def __init__(self, *, network: Network, clock=utcnow, max_metadata_age_seconds: int = 60):
+    def __init__(self, *, network: Network, clock=utcnow, budget=None, max_metadata_age_seconds: int = 60):
         if type(max_metadata_age_seconds) is not int or not 1 <= max_metadata_age_seconds <= 86400:
             raise ValueError("invalid advisory metadata freshness budget")
         self._network = network
-        self._client = _OfficialPublicClient(network)
+        self._client = _OfficialPublicClient(network) if budget is None else None
+        self._budget = budget
         self._clock = clock
         self._metadata_age = max_metadata_age_seconds
         self._tasks = {}
+        self._waiters = {}
         self._cache = OrderedDict()
         self._backoff_until = 0.0
         self._closed = False
@@ -276,6 +280,8 @@ class AdvisoryMarketObservations:
         cached = self._cache.get(key)
         if cached is not None and now < cached[0]:
             self._cache.move_to_end(key)
+            if self._budget is not None:
+                self._budget.cache_hit("advisory")
             return cached[1]
         if monotonic() < self._backoff_until:
             return failure(metadata, "ERROR", limitations=("Public provider rate-limit backoff is active.",),
@@ -284,16 +290,22 @@ class AdvisoryMarketObservations:
         if task is None:
             if len(self._tasks) >= MAX_CONCURRENT_MARKETS:
                 return failure(metadata, "ERROR", limitations=("Public observation capacity is busy.",))
-            task = self._tasks[key] = asyncio.create_task(self._refresh(key, metadata))
+            if self._budget is not None:
+                self._waiters[key] = ProviderWaiters(self._budget)
+            deadline = monotonic() + REQUEST_BUDGET_SECONDS
+            task = self._tasks[key] = asyncio.create_task(self._refresh(key, metadata, deadline))
         # Cancellation of one caller does not cancel a shared bounded acquisition.
         try:
-            return await asyncio.wait_for(asyncio.shield(task), REQUEST_BUDGET_SECONDS)
+            waiters = self._waiters.get(key)
+            with waiters.waiting() if waiters else nullcontext():
+                return await asyncio.wait_for(asyncio.shield(task), REQUEST_BUDGET_SECONDS)
         except TimeoutError:
             return failure(metadata, "ERROR", limitations=("Public observation timed out.",), failure_code="TIMEOUT")
 
-    async def _refresh(self, key, metadata):
+    async def _refresh(self, key, metadata, deadline):
         try:
-            capture, limited = await asyncio.to_thread(self._collect, metadata)
+            waiters = self._waiters.get(key)
+            capture, limited = await asyncio.to_thread(self._collect, metadata, deadline, waiters)
             if limited:
                 self._backoff_until = monotonic() + RATE_LIMIT_BACKOFF
             if not self._closed and capture.status == "AVAILABLE":
@@ -305,14 +317,16 @@ class AdvisoryMarketObservations:
             return capture
         finally:
             self._tasks.pop(key, None)
+            self._waiters.pop(key, None)
 
-    def _collect(self, metadata):
-        deadline = monotonic() + REQUEST_BUDGET_SECONDS
+    def _collect(self, metadata, deadline, waiters):
+        client = self._client if self._client is not None else _OfficialPublicClient(
+            self._network, budget=self._budget, owner="advisory", cancel=waiters.cancelled)
         identity = metadata.identity
         acquired = OfficialPerpObservation._from_acquisition
 
         def request(operation, **kwargs):
-            response = self._client.request(operation, identity, deadline, **kwargs)
+            response = client.request(operation, identity, deadline, **kwargs)
             if monotonic() >= deadline:
                 raise DiscoveryFailure("TIMEOUT")
             return response, _utc(self._clock())
@@ -356,6 +370,8 @@ class AdvisoryMarketObservations:
 
     async def close(self):
         self._closed = True
+        for waiters in self._waiters.values():
+            waiters.retire()
         self._cache.clear()
         if self._tasks:
             await asyncio.gather(*(asyncio.shield(task) for task in tuple(self._tasks.values())))
