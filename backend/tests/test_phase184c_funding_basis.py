@@ -12,10 +12,12 @@ from app.agents.advisory_contracts import AdvisorySnapshot
 from app.agents.advisory_evidence import AdvisoryBindingError, capture_context, captured_paper_scenario
 from app.agents.funding_basis import FundingBasisAgent, PaperFundingObservation
 from app.market_data.advisory_market_observations import AdvisoryMarketObservations, _OfficialPublicClient, _epoch_ms
+from app.market_data.market_risk_metadata import normalize_financial_metadata, normalize_spot_tokens
 from app.market_data.market_universe_discovery import DiscoveryFailure
 from test_phase182_generalized_paper import evidence, proposal_for
 from test_phase183d_paper_risk_integration import offline_boundaries, run_local  # noqa: F401
 from test_phase184a_advisory_contracts import NOW, market, source
+from test_phase183b_market_risk_metadata import spot_wire
 
 D = Decimal
 
@@ -26,7 +28,8 @@ def provider_wire(metadata, *, changes=None, book_changes=None, history=None):
     ts = _epoch_ms(NOW)
     return {
         "metaAndAssetCtxs": [
-            {"universe": [{"name": coin, "szDecimals": metadata.sz_decimals}, *(
+            {"collateralToken": 268 if identity.dex else 0,
+             "universe": [{"name": coin, "szDecimals": metadata.sz_decimals}, *(
                 [{"name": f"{identity.dex}:OTHER", "szDecimals": 4}] if identity.dex else
                 [{"name": "OTHER", "szDecimals": 4}]
             )]},
@@ -41,6 +44,13 @@ def provider_wire(metadata, *, changes=None, book_changes=None, history=None):
             {"coin": coin, "time": ts - 3_600_100, "fundingRate": "-0.0001"},
         ],
     }
+
+
+async def observe(adapter, metadata):
+    raw, _ = provider_wire(metadata)["metaAndAssetCtxs"]
+    tokens = normalize_spot_tokens(spot_wire(), network=metadata.identity.network, observed_at=NOW)
+    financial, = normalize_financial_metadata(raw, (metadata,), tokens)
+    return await adapter.observe(metadata, financial=financial)
 
 
 def install_provider(monkeypatch, fixtures, *, closed=None):
@@ -84,10 +94,10 @@ async def test_sdk_public_acquisition_market_and_clocks(monkeypatch, network, de
     calls = install_provider(monkeypatch, provider_wire(metadata), closed=closed)
     adapter = AdvisoryMarketObservations(network=network, clock=lambda: NOW)
     try:
-        observed = await adapter.observe(metadata)
+        observed = await observe(adapter, metadata)
         captured = ctx(metadata, observed)
         result = FundingBasisAgent().evaluate(captured, observed, as_of=NOW)
-        assert observed is await adapter.observe(metadata)
+        assert observed is await observe(adapter, metadata)
         assert [payload for _, payload in calls] == [
             {"type": "metaAndAssetCtxs", "dex": dex},
             {"type": "l2Book", "coin": metadata.source_coin},
@@ -115,7 +125,7 @@ async def test_sdk_public_acquisition_market_and_clocks(monkeypatch, network, de
 
 
 @pytest.mark.parametrize(("change", "status", "state"), [
-    ({"funding": "-0.1"}, "READY", "FUNDING_NEGATIVE"),
+    ({"funding": "-0.005"}, "READY", "FUNDING_NEGATIVE"),
     ({"funding": "0"}, "READY", "NEUTRAL"),
     ({"markPx": "10000"}, "READY", "BASIS_STRESSED"),
     ({"markPx": "1000000"}, "UNSUPPORTED", "UNKNOWN"),
@@ -132,7 +142,7 @@ async def test_missing_invalid_and_directional_market_context(monkeypatch, chang
     install_provider(monkeypatch, provider_wire(metadata, changes=change))
     adapter = AdvisoryMarketObservations(network="MAINNET", clock=lambda: NOW)
     try:
-        observed = await adapter.observe(metadata)
+        observed = await observe(adapter, metadata)
         captured = ctx(metadata, observed)
         result = FundingBasisAgent().evaluate(captured, observed, as_of=NOW)
         assert (result.status, result.state) == (status, state)
@@ -145,13 +155,14 @@ async def test_missing_invalid_and_directional_market_context(monkeypatch, chang
     {"time": _epoch_ms(NOW) + 1}, {"time": _epoch_ms(NOW) - 10001},
     {"levels": [[{"px": "100.13", "sz": "1"}], [{"px": "100.12", "sz": "1"}]]},
     {"levels": [[], []]},
+    {"quoteUnit": "UNTRUSTED"},
 ])
 async def test_invalid_or_misaligned_mid_is_unavailable_without_substitution(monkeypatch, book_changes):
     metadata = market()
     install_provider(monkeypatch, provider_wire(metadata, book_changes=book_changes))
     adapter = AdvisoryMarketObservations(network="MAINNET", clock=lambda: NOW)
     try:
-        observed = await adapter.observe(metadata)
+        observed = await observe(adapter, metadata)
         result = FundingBasisAgent().evaluate(ctx(metadata, observed), observed, as_of=NOW)
         assert result.status == "READY"
         assert result.mark_mid_basis_bps is None and result.oracle_mid_basis_bps is None
@@ -169,7 +180,7 @@ async def test_history_normalizes_order_and_identical_duplicates_discards_confli
         install_provider(monkeypatch, {**wire, "fundingHistory": rows})
         adapter = AdvisoryMarketObservations(network="MAINNET", clock=lambda: NOW)
         try:
-            observed = await adapter.observe(metadata)
+            observed = await observe(adapter, metadata)
             result = FundingBasisAgent().evaluate(ctx(metadata, observed), observed, as_of=NOW)
             if original is None:
                 original = result
@@ -190,11 +201,11 @@ async def test_provider_failures_are_bounded_and_sessions_close(monkeypatch, err
     calls = install_provider(monkeypatch, {"metaAndAssetCtxs": DiscoveryFailure(error)}, closed=closed)
     adapter = AdvisoryMarketObservations(network="MAINNET", clock=lambda: NOW)
     try:
-        observed = await adapter.observe(metadata)
+        observed = await observe(adapter, metadata)
         assert observed.status == "ERROR" and len(closed) == 1
         assert FundingBasisAgent().evaluate(ctx(metadata, observed), observed, as_of=NOW).state == "UNKNOWN"
         if error == "RATE_LIMITED":
-            assert "backoff" in (await adapter.observe(metadata)).limitations[0]
+            assert "backoff" in (await observe(adapter, metadata)).limitations[0]
             assert len(calls) == 1
         with pytest.raises(DiscoveryFailure, match="NETWORK_MISMATCH"):
             await adapter.observe(market(network="TESTNET"))
@@ -215,9 +226,9 @@ async def test_single_flight_waiter_cancellation_cleans_up(monkeypatch):
     calls = install_provider(monkeypatch, {**wire, "metaAndAssetCtxs": wait})
     adapter = AdvisoryMarketObservations(network="MAINNET", clock=lambda: NOW)
     try:
-        requester = asyncio.create_task(adapter.observe(metadata))
+        requester = asyncio.create_task(observe(adapter, metadata))
         assert await asyncio.to_thread(started.wait, 3)
-        other = asyncio.create_task(adapter.observe(metadata))
+        other = asyncio.create_task(observe(adapter, metadata))
         requester.cancel()
         with pytest.raises(asyncio.CancelledError):
             await requester
@@ -234,7 +245,7 @@ async def test_expiry_detached_labels_and_observed_interval_tampering(monkeypatc
     install_provider(monkeypatch, provider_wire(metadata))
     adapter = AdvisoryMarketObservations(network="MAINNET", clock=lambda: NOW)
     try:
-        observed = await adapter.observe(metadata)
+        observed = await observe(adapter, metadata)
     finally:
         await adapter.close()
     agent = FundingBasisAgent()
@@ -281,3 +292,23 @@ async def test_synthetic_funding_uses_existing_paper_frame_and_schedule(scenario
                 "configuration_fingerprint": "c" * 64,
             })}),
         })), as_of=now)
+
+
+async def test_hypothetical_paper_rate_above_public_cap_keeps_its_schedule(monkeypatch, offline_boundaries):
+    from app.simulation import scenarios
+
+    rate = D("0.006")
+    monkeypatch.setattr(scenarios, "_funding", lambda *_: rate)
+    metadata = evidence(dex="xyz", precision=3)
+    proposal = proposal_for(metadata, price="3000", scenario="POSITIVE_FUNDING_STRESS",
+                            economics={"model": "HYPOTHETICAL_LINEAR", "funding_interval_seconds": 3})
+    paper = await run_local(proposal, metadata)
+    now = datetime.now(timezone.utc)
+    observation = PaperFundingObservation(paper, now, now + timedelta(seconds=20))
+    captured = ctx(metadata, observation, evaluated_at=now, valid_until=observation.valid_until,
+                   paper_binding_fingerprint=paper.admission.binding.configuration_fingerprint)
+    result = FundingBasisAgent().evaluate(captured, observation, as_of=now)
+    assert result.status == "READY" and result.confidence == D("0.60")
+    assert result.funding_rate == rate and result.funding_interval_seconds == 3
+    assert result.funding_convention == "PAPER_SCHEDULED_INTERVAL"
+    assert result.mark_oracle_basis_bps is not None

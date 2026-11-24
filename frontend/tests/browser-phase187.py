@@ -1,6 +1,10 @@
 """Financial evidence and accessibility acceptance over the existing browser fixture."""
 import argparse
 import asyncio
+from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+import json
+import re
 from importlib import import_module
 
 from playwright.async_api import expect
@@ -171,11 +175,23 @@ async def acceptance(page, report, choose_mode, capture, passed):
     await open_route("portfolio-research")
     await page.get_by_label("Frames per market", exact=True).fill("12")
     await content.get_by_role("button", name="Validate / Preview", exact=True).click()
-    async with page.expect_response(lambda r: r.url.endswith("/portfolio-research/terminal")) as portfolio_response:
-        await content.get_by_role("button", name="Analyze portfolio", exact=True).click()
-    response = await portfolio_response.value
-    assert response.status == 200, await response.text()
-    portfolio = await response.json()
+    portfolio = None
+    portfolio_url = "**/portfolio-research/terminal"
+
+    async def portfolio_result(route):
+        nonlocal portfolio
+        response = await route.fetch()
+        assert response.status == 200, await response.text()
+        portfolio = await response.json()
+        await route.fulfill(response=response)
+
+    await page.route(portfolio_url, portfolio_result)
+    try:
+        async with page.expect_response(lambda r: r.url.endswith("/portfolio-research/terminal")) as portfolio_response:
+            await content.get_by_role("button", name="Analyze portfolio", exact=True).click()
+        assert (await portfolio_response.value).status == 200
+    finally:
+        await page.unroute(portfolio_url, portfolio_result)
     assert portfolio["authority"] == "NONE"
     assert [row["market"] for row in portfolio["baseline"]["markets"]] == ["BTC", "ETH", "SOL"]
     sections = content.get_by_role("navigation", name="Portfolio workspace sections")
@@ -268,11 +284,244 @@ async def acceptance(page, report, choose_mode, capture, passed):
     await open_route("risk")
 
 
+async def audit4_hd_details(page, report, choose_mode, capture, passed):
+    await choose_mode("Pro")
+    markets = page.get_by_role("region", name="Discovered markets")
+    search = markets.get_by_role("searchbox", name="Market or DEX")
+    details = markets.get_by_role("region", name="Selected market details")
+    summary_url = "**/market-universe/market-summaries"
+    refresh_observations = page.get_by_role("button", name="Refresh observations")
+    core = "HYPERLIQUID:MAINNET:CORE_PERP::BTC"
+    hip = "HYPERLIQUID:MAINNET:HIP3_PERP:io:AAPL"
+    batches = []
+    metrics = ("mark_price", "oracle_price", "previous_day_price", "funding_rate", "day_notional_volume",
+               "open_interest_base", "mark_change_vs_previous_day_percent")
+
+    def record(request):
+        if request.url.endswith("/market-universe/market-summaries"):
+            batches.append(request.post_data_json)
+
+    page.on("request", record)
+
+    def card(symbol):
+        return markets.get_by_role("article").filter(has=page.get_by_role("heading", name=symbol, exact=True))
+
+    def value(term, region=details):
+        return region.locator("dl > div").filter(has=page.get_by_text(term, exact=True)).locator("dd")
+
+    def is_summary(request):
+        return request.url.endswith("/market-universe/market-summaries")
+
+    async def select(symbol):
+        await card(symbol).get_by_role("button", name=f"Details for {symbol}").click()
+        await expect(details.get_by_role("heading", name=f"{symbol} details")).to_be_visible()
+
+    async def assert_values(mark, rate, status="Current"):
+        await expect(value("Observation status")).to_have_text(status)
+        await expect(value("Mark price")).to_have_text(mark)
+        await expect(value("Funding / hour")).to_have_text(rate)
+
+    btc = card("BTC")
+    await expect(value("Mark price", btc)).to_have_text("65,012.5")
+    button = btc.get_by_role("button", name="Details for BTC")
+    await button.focus()
+    await page.keyboard.press("Enter")
+    await expect(button).to_be_focused()
+    await expect(button).to_have_attribute("aria-pressed", "true")
+    await assert_values("65,012.5", "-0.01%")
+    await expect(value("Funding interval")).to_have_text("1 hour")
+    await expect(value("Provider event time")).to_have_text("Unavailable")
+    await expect(value("Price units")).to_contain_text("denomination not independently verified")
+    await expect(value("Server receipt time").locator("time")).to_have_attribute("datetime", re.compile(r"^\d{4}-"))
+    await expect(btc.get_by_role("button", name="Open Research for BTC")).to_be_enabled()
+    passed("Keyboard-selected Core Details and card agree on mark, hourly percent and the source clock")
+
+    aapl = card("io:AAPL")
+    await expect(value("Funding / hour", aapl)).to_have_text("0.0125%")
+    display_mark = await value("Mark price", aapl).inner_text()
+    await select("io:AAPL")
+    async with page.expect_request(lambda req: is_summary(req) and hip in req.post_data_json["market_keys"]) as filtered:
+        await search.fill("DOGE")
+    assert len((await filtered.value).post_data_json["market_keys"]) == 2
+    await expect(aapl).to_have_count(0)
+    await assert_values(display_mark, "0.0125%")
+    await expect(value("Mark price")).to_have_attribute("title", "219.123456789123456789")
+    await expect(value("Canonical market")).to_have_text(hip)
+    await expect(value("Observation source")).to_have_text("Hyperliquid public Info · metaAndAssetCtxs")
+    await search.fill("")
+    await expect(aapl).to_be_visible()
+    async with page.expect_request(lambda req: is_summary(req) and hip in req.post_data_json["market_keys"]) as paged:
+        await markets.get_by_role("button", name="Next").click()
+    page_keys = (await paged.value).post_data_json["market_keys"]
+    assert hip in page_keys and len(page_keys) == 13
+    await expect(aapl).to_have_count(0)
+    await markets.get_by_role("combobox", name="Sort by").select_option("funding_rate")
+    await assert_values(display_mark, "0.0125%")
+    await search.fill("DOGE")
+    await assert_values(display_mark, "0.0125%")
+    async with page.expect_response(lambda res: is_summary(res.request) and res.request.post_data_json["refresh"]) as refresh:
+        await refresh_observations.click()
+    wire = await (await refresh.value).json()
+    assert wire["read_only"] and not wire["execution_eligible"] and wire["authority"] == "NONE"
+    await assert_values(display_mark, "0.0125%")
+    discovery_requested, release_discovery = asyncio.Event(), asyncio.Event()
+
+    async def checking_catalog(route):
+        discovery_requested.set()
+        await release_discovery.wait()
+        await route.continue_()
+
+    await page.route("**/market-universe", checking_catalog)
+    try:
+        await page.get_by_role("button", name="Refresh discovery").click()
+        await asyncio.wait_for(discovery_requested.wait(), 10)
+        await assert_values("Unavailable", "Unavailable", "Updating")
+    finally:
+        release_discovery.set()
+    await assert_values(display_mark, "0.0125%")
+    await page.unroute("**/market-universe", checking_catalog)
+    await capture("audit4-hd-selected-off-page", ".marketExplorer", anchor=details)
+    assert all(1 <= len(batch["market_keys"]) <= 13 for batch in batches)
+    passed("AAPL stays qualified across search, pagination, page-local sort, refresh and all Explorer layouts")
+
+    def timestamp(value):
+        return value.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+    async def replace_summary(route, *, error=None, expiry=False, network=None, catalog=None):
+        response = await route.fetch()
+        wire = await response.json()
+        if network is not None:
+            wire["network"] = network
+        if catalog is not None:
+            wire["catalog_fingerprint"] = catalog
+        for row in wire["results"]:
+            if row["identity"]["dex"] != "io" or row["status"] != "CURRENT":
+                continue
+            if error:
+                row.update(dict.fromkeys(metrics))
+                row.update(status="ERROR", error=error, observed_at=None, valid_until=None,
+                           observation_fingerprint=None)
+            if expiry:
+                row["valid_until"] = min(row["valid_until"], timestamp(datetime.now(timezone.utc) + timedelta(seconds=1.5)))
+                payload = {k: v for k, v in row.items() if k != "observation_fingerprint"}
+                payload["catalog_fingerprint"] = wire["catalog_fingerprint"]
+                row["observation_fingerprint"] = sha256(
+                    json.dumps(payload, sort_keys=True, separators=(",", ":")).encode(),
+                ).hexdigest()
+        await route.fulfill(response=response, json=wire)
+
+    for options, status in (
+        ({"error": "RATE_LIMITED"}, "Provider rate limit"),
+        ({"error": "TIMEOUT"}, "Provider timeout"),
+        ({"network": "TESTNET"}, "Invalid market observations. Refresh discovery and try again."),
+        ({"catalog": "f" * 64}, "Invalid market observations. Refresh discovery and try again."),
+        ({"expiry": True}, "Stale"),
+    ):
+        async def alter(route):
+            await replace_summary(route, **options)
+        await page.route(summary_url, alter)
+        await refresh_observations.click()
+        if options.get("expiry"):
+            await assert_values(display_mark, "0.0125%")
+        await assert_values("Unavailable", "Unavailable", status)
+        await page.unroute(summary_url, alter)
+    passed("Off-page Details retire values on 429, timeout, wrong network, wrong catalog and receipt expiry")
+
+    arrived, release, done = asyncio.Event(), asyncio.Event(), asyncio.Event()
+
+    async def hold_previous(route):
+        if set(route.request.post_data_json["market_keys"]) != {hip, core}:
+            await route.continue_()
+            return
+        response = await route.fetch()
+        arrived.set()
+        try:
+            await release.wait()
+            await route.fulfill(response=response)
+        except Exception as exc:
+            if "aborted" not in str(exc).lower() and "canceled" not in str(exc).lower():
+                raise
+        finally:
+            done.set()
+
+    await page.route(summary_url, hold_previous)
+    await search.fill("BTC")
+    try:
+        await asyncio.wait_for(arrived.wait(), 10)
+        await select("BTC")
+        await assert_values("65,012.5", "-0.01%")
+    finally:
+        release.set()
+    await asyncio.wait_for(done.wait(), 10)
+    await page.unroute(summary_url, hold_previous)
+    await assert_values("65,012.5", "-0.01%")
+    await expect(value("Canonical market")).to_have_text(core)
+    passed("Late HIP-3 data cannot replace a newly selected Core market")
+
+    for symbol, mark, rate, status in (
+        ("MISSINGMARK", "Unavailable", "0%", "Current"),
+        ("MISSINGFUNDING", "201", "Unavailable", "Current"),
+        ("INVALIDFUNDING", "202", "Unavailable", "Current"),
+        ("OLD", "Unavailable", "Unavailable", "Unsupported"),
+    ):
+        await search.fill(symbol)
+        await select(symbol)
+        await assert_values(mark, rate, status)
+    await expect(card("OLD").get_by_role("button", name="Open Research for OLD")).to_be_disabled()
+    passed("Delisted and partial Details preserve genuine zero and omit missing or out-of-bound funding")
+
+    await search.fill("io:AAPL")
+    await select("io:AAPL")
+    await assert_values(display_mark, "0.0125%")
+    generation = await value("Catalog fingerprint").inner_text()
+    generation_requested = asyncio.Event()
+    resume_discovery = asyncio.Event()
+
+    async def hold_discovery(route):
+        generation_requested.set()
+        await resume_discovery.wait()
+        await route.continue_()
+
+    await page.route("**/market-universe", hold_discovery)
+    try:
+        await asyncio.wait_for(generation_requested.wait(), 35)
+        await assert_values("Unavailable", "Unavailable", "Stale catalog")
+        await expect(aapl.get_by_role("button", name="Open Research for io:AAPL")).to_be_disabled()
+    finally:
+        resume_discovery.set()
+    await expect(value("Catalog fingerprint")).not_to_have_text(generation)
+    await page.unroute("**/market-universe", hold_discovery)
+    await assert_values(display_mark, "0.0125%")
+    await expect(aapl.get_by_role("button", name="Open Research for io:AAPL")).to_be_enabled()
+    passed("Catalog expiry retires Details values and Research handoff until a new discovery generation arrives")
+
+    base = await page.evaluate("({width: innerWidth, dpr: devicePixelRatio})")
+    settings = await page.context.new_page()
+    await settings.goto("chrome://settings/appearance")
+    await settings.get_by_role("combobox", name="Page zoom").select_option("2")
+    await settings.close()
+    await page.bring_to_front()
+    await page.wait_for_function("dpr => devicePixelRatio === dpr * 2", arg=base["dpr"])
+    report["zoom_200"] = await page.evaluate(
+        "({width: innerWidth, document: document.documentElement.scrollWidth, dpr: devicePixelRatio})",
+    )
+    assert abs(report["zoom_200"]["width"] * 2 - base["width"]) <= 2
+    assert report["zoom_200"]["document"] <= report["zoom_200"]["width"] + 1
+    await assert_values(display_mark, "0.0125%")
+    report["summary_batches"] = batches
+    report["max_summary_keys"] = max(len(batch["market_keys"]) for batch in batches)
+    passed("Selected Details keeps both metrics at actual 200% Chromium zoom without horizontal overflow")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     explorer.add_arguments(parser)
     parser.add_argument("--engine", choices=("chromium", "firefox", "webkit"), default="chromium")
+    parser.add_argument("--audit4-hd", action="store_true")
     args = parser.parse_args()
+    if args.audit4_hd:
+        explorer.run_suite(args, audit4_hd_details, backend_app="browser-phase182:audit4_hd_fixture_app")
+        return
     explorer.run_suite(args, acceptance, backend_app="browser-phase182:phase187_fixture_app", extra_writes=(
         "/historical-replay/run", "/portfolio-research/preview", "/portfolio-research/terminal",
     ))

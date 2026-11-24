@@ -16,7 +16,6 @@ from app.accounting.config import bounded_exact_decimal
 from app.risk.market_risk_engine import RISK_CONTEXT
 from app.simulation.models import stable_fingerprint
 
-from .advisory_market_observations import HYPERLIQUID_INTERVAL_SECONDS
 from .live_models import Evidence
 from .market_universe_contracts import MarketInstrumentIdentity, Network, UtcDatetime, _utc
 from .market_universe_discovery import (
@@ -25,6 +24,10 @@ from .market_universe_discovery import (
 )
 from .models import utcnow
 from .provider_budget import ProviderWaiters
+from .public_perp_financials import (
+    HYPERLIQUID_INTERVAL_SECONDS, collateral_matches, context_binding, context_row_error,
+    has_quote_unit_claim, hourly_funding_rate, public_price,
+)
 
 MAX_SELECTION = 13  # Explorer page + previously selected Details card.
 MAX_ACTIVE = 3
@@ -35,7 +38,6 @@ REQUEST_SECONDS = 6
 CACHE_SECONDS = 15
 MIN_REFRESH_SECONDS = 5
 MAX_AGE = timedelta(seconds=30)
-FUNDING_CAP = Decimal("0.005")
 Fingerprint = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 Status = Literal["CURRENT", "STALE", "UNAVAILABLE", "UNSUPPORTED", "ERROR"]
 SummaryFailure = FailureCode | Literal["CAPACITY", "CATALOG_CHANGED", "QUOTE_UNIT_MISMATCH"]
@@ -118,10 +120,14 @@ def _values(row):
             issues.append(f"{field}:MISSING")
             continue
         try:
-            value = bounded_exact_decimal(row[field])
-            if (rule == "positive" and value <= 0 or rule == "nonnegative" and value < 0
-                    or rule == "funding" and value.copy_abs() > FUNDING_CAP):
-                raise ValueError("invalid context value")
+            if rule == "funding":
+                value = hourly_funding_rate(row[field])
+            elif rule == "positive":
+                value = public_price(row[field])
+            else:
+                value = bounded_exact_decimal(row[field])
+                if value < 0:
+                    raise ValueError("invalid context value")
         except ValueError:
             issues.append(f"{field}:INVALID")
         else:
@@ -152,10 +158,6 @@ class Capture:
     error: SummaryFailure | None = None
 
 
-def _binding(record):
-    return (record.identity, record.source_coin, record.universe_index, record.sz_decimals, record.listed)
-
-
 def _normalize(raw, *, records, collateral_index, observed_at):
     identity = records[0].identity
     if not isinstance(raw, list) or len(raw) != 2 or not isinstance(raw[1], list):
@@ -166,26 +168,20 @@ def _normalize(raw, *, records, collateral_index, observed_at):
         if exc.code == "MISSING_METADATA":
             return Capture(error="CATALOG_CHANGED")
         raise
-    if tuple(map(_binding, actual)) != tuple(map(_binding, records)):
+    if tuple(map(context_binding, actual)) != tuple(map(context_binding, records)):
         return Capture(error="CATALOG_CHANGED")
     if len(actual) != len(raw[1]):
         # A shortened positional array cannot prove which context is missing.
         raise DiscoveryFailure("INVALID_DATA")
-    quote_index = raw[0].get("collateralToken")
-    if (quote_index is not None and type(quote_index) is not int) or quote_index != collateral_index:
+    if not collateral_matches(raw[0], collateral_index) or has_quote_unit_claim(raw[0]):
         return Capture(error="QUOTE_UNIT_MISMATCH")
     rows = []
     for record, row in zip(actual, raw[1], strict=True):
-        key = record.identity
         if row is None:
             rows.append(ContextRow({}, ("CONTEXT_MISSING",)))
-        elif not isinstance(row, dict):
-            rows.append(ContextRow({}, (), "INVALID_DATA"))
-        elif row.get("network", key.network) != key.network:
-            rows.append(ContextRow({}, (), "NETWORK_MISMATCH"))
-        elif row.get("coin", key.exchange_coin) != key.exchange_coin or row.get("dex", key.dex) != key.dex:
-            rows.append(ContextRow({}, (), "NAMESPACE_CONFLICT"))
-        elif any(field in row for field in ("quoteUnit", "markQuoteUnit", "prevDayQuoteUnit")):
+        elif error := context_row_error(row, record):
+            rows.append(ContextRow({}, (), error))
+        elif has_quote_unit_claim(row):
             # Unsupported denomination claims cannot establish comparable prices.
             rows.append(ContextRow({}, (), "QUOTE_UNIT_MISMATCH"))
         else:

@@ -4,6 +4,11 @@ All notable merged changes to **HyperAMM** are documented here, in reverse chron
 
 The original changelog includes the first 60 merged PRs and historical milestone entries; this document has since been updated with subsequent development through **PR #83, merged 2026-11-14 UTC**. Dates are **GitHub merge/commit dates in UTC**, which can differ by a day from U.S. Pacific local dates. Historical `Unreleased` milestone headings below have not all been relabeled as formal releases. Items under **Added**, **Changed**, **Fixed**, **Security**, **Tests**, and **Docs** describe work at that point in history; later entries may supersede earlier behavior.
 
+## Unreleased — Audit 4.0H-D observed funding and market details
+
+- Apply the Explorer's inclusive ±0.005 hourly public funding bound to Funding/Basis and require qualified relative price units before calculating basis.
+- Show current mark and hourly funding in selected Market Explorer Details, including when the card is filtered or paginated away. [H-D acceptance](docs/AUDIT4_HD_ACCEPTANCE.md)
+
 ## Unreleased — Audit 4.0H-C public provider hardening
 
 - Repair stale native BTC, ETH and SOL components within their owned SDK generation while independently healthy siblings stay available.

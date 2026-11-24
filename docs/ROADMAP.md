@@ -41,6 +41,7 @@
 | Audit 4.0H-A | LOCAL REVIEW | Bounded PAPER preflight, completed evidence retention and terminal freshness across disconnects. [Acceptance and open findings](AUDIT4_HA_ACCEPTANCE.md) |
 | Audit 4.0H-B | LOCAL REVIEW · SIGNED TESTNET BLOCKED | Operational source rejection, account inventory quarantine and owned private SDK teardown. H-C covers A4-003/004/008. H-D covers A4-006/009. [Acceptance](AUDIT4_HB_ACCEPTANCE.md) |
 | Audit 4.0H-C | LOCAL REVIEW · OFFICIAL SOAK OPEN | A4-003 native stream recovery, A4-004 weighted public provider budget and A4-008 operational callback ingress. A4-006 and A4-009 move to H-D. [Acceptance](AUDIT4_HC_ACCEPTANCE.md) |
+| Audit 4.0H-D | LOCAL REVIEW | A4-006 qualified public funding and basis validation, and A4-009 selected Explorer Details across filters, pages and expiry. [Acceptance](AUDIT4_HD_ACCEPTANCE.md) |
 
 ## Phase 6 extension points
 

@@ -63,9 +63,9 @@ class SummaryProvider(Provider):
 
 
 class Route:
-    async def start(self, clock, network):
+    async def start(self, clock, network, provider=None):
         self.clock = clock
-        self.provider = SummaryProvider()
+        self.provider = provider if provider is not None else SummaryProvider()
         self.discovery = MarketUniverseDiscovery(enabled=True, network=network, clock=lambda: clock.now,
                                                  client=self.provider)
         self.owner = summaries.MarketSummaryObservations(

@@ -5,6 +5,7 @@ import type { AdvisoryPaperBinding, AdvisoryRequest, AdvisoryResponse, AdvisoryS
 import type { MarketUniverseIdentity } from '../types/marketUniverse';
 import { checkedMarketUniverseIdentity, marketUniverseKey, marketUniverseTimestamp } from './marketUniverse';
 import { checkResearchAuthority } from './marketRisk';
+import { publicHourlyFundingCap } from './marketSummaries';
 import { exactDecimal } from './orderView';
 import { researchFingerprint } from './researchFingerprint';
 
@@ -70,6 +71,7 @@ function scaled(value: unknown): bigint {
 }
 
 const one = 10n ** 60n;
+const publicHourlyCap = scaled(publicHourlyFundingCap);
 const bpsLimit = 1_000_000n * one;
 
 function unit(value: unknown, network: string, paperOnly = false) {
@@ -178,7 +180,8 @@ function checkFunding(value: ReturnType<typeof recommendation>, mode: string) {
     if (amount < min || amount > max || !cited.some(source => source.category === category)) invalid();
     return amount;
   }
-  const rate = field('funding_rate', 'FUNDING', -one, one);
+  const fundingCap = mode === 'OBSERVED' ? publicHourlyCap : one;
+  const rate = field('funding_rate', 'FUNDING', -fundingCap, fundingCap);
   const mark = field('mark_price', 'MARK_PRICE', 1n);
   const oracle = field('oracle_price', 'ORACLE_PRICE', 1n);
   const midpoint = field('midpoint_price', 'MID_PRICE', 1n);
@@ -186,7 +189,7 @@ function checkFunding(value: ReturnType<typeof recommendation>, mode: string) {
   const midBasis = field('mark_mid_basis_bps', 'MID_PRICE', -bpsLimit, bpsLimit);
   const oracleMid = field('oracle_mid_basis_bps', 'MID_PRICE', -bpsLimit, bpsLimit);
   field('open_interest_base', 'OPEN_INTEREST', 0n);
-  const mean = field('recent_history_mean_rate', 'FUNDING_HISTORY', -one, one);
+  const mean = field('recent_history_mean_rate', 'FUNDING_HISTORY', -publicHourlyCap, publicHourlyCap);
   if (midpoint === null && (midBasis !== null || oracleMid !== null)) invalid();
   if (result.status === 'READY') {
     if (rate === null || mark === null || oracle === null || basis === null ||

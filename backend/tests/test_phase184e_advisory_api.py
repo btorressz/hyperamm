@@ -41,7 +41,11 @@ async def advisory_api(risk_api, monkeypatch):
         at = _epoch_ms(clock[0])
         if operation == "metaAndAssetCtxs":
             row = {"coin": coin, "markPx": "100.13", "oraclePx": "100", "funding": "0.0002", "openInterest": "100"}
-            return [{"universe": [{"name": coin, "szDecimals": 3}]}, [row]]
+            financial = discovery.financial_observation(catalog.catalog_fingerprint, identity)
+            metadata = {"universe": [{"name": coin, "szDecimals": 3}]}
+            if financial is not None and financial.collateral_token_index is not None:
+                metadata["collateralToken"] = financial.collateral_token_index
+            return [metadata, [row]]
         if operation == "l2Book":
             return {"coin": coin, "time": at - 20,
                     "levels": [[{"px": "100.10", "sz": "1"}], [{"px": "100.14", "sz": "1"}]]}

@@ -93,6 +93,14 @@ async def run(args, profile, report, extension=None, extra_writes=()):
                     report["axe"].append({"workspace": name, "width": width, **scope})
             await page.set_viewport_size({"width": 1440, "height": 1000})
 
+        if getattr(args, "audit4_hd", False):
+            await extension(page, report, choose_mode, capture, passed)
+            assert not report["page_errors"], report["page_errors"]
+            assert all(url.endswith("/market-universe/market-summaries") for url in writes), writes
+            assert not any(row["violations"] for row in report["axe"]), report["axe"]
+            await context.close()
+            return
+
         await expect(markets.get_by_text("6 of 6 discovered markets")).to_be_visible()
         await expect(markets.get_by_role("heading", name="BTC", exact=True)).to_be_visible()
         await expect(markets.get_by_role("heading", name="xyz:GOLD", exact=True)).to_be_visible()

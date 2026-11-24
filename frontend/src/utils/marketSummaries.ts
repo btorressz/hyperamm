@@ -4,6 +4,7 @@ import { checkedMarketUniverseIdentity, marketUniverseKey, marketUniverseTimesta
 import { researchFingerprint } from './researchFingerprint';
 
 export const marketSummariesByteLimit = 32_768;
+export const publicHourlyFundingCap = '0.005';
 export const marketSummaryRefreshMs = 20_000;
 export const marketSummaryLifetimeMs = 30_000;
 const source = 'HYPERLIQUID_INFO_META_AND_ASSET_CTXS';
@@ -82,7 +83,7 @@ const includes = (values: readonly string[], value: unknown) =>
 const metricValue = (value: unknown, rule: typeof metrics[keyof typeof metrics]) => {
   if (typeof value !== 'string' || value.length > 93 || !/^-?\d+(?:\.\d{1,60})?$/.test(value) ||
       /[^0-9.\-]/.test(value)) return false;
-  const maximum = rule === 'funding' ? '0.005' : '1' + '0'.repeat(30);
+  const maximum = rule === 'funding' ? publicHourlyFundingCap : '1' + '0'.repeat(30);
   const absolute = value.replace(/^-/, '');
   const sign = compareDecimal(value, '0');
   return compareDecimal(absolute, maximum) <= 0 && (rule !== 'positive' || sign > 0) &&

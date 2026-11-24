@@ -177,7 +177,17 @@ class AdvisoryCoordinator:
         advisory_evidence = (self.resolve_snapshot(policy.advisory_snapshot_fingerprint)
                              if policy is not None and policy.advisory_snapshot_fingerprint is not None else None)
         funding_mode = request.funding_mode or ("OBSERVED" if request.operation == "FUNDING_BASIS" else None)
-        public = await self._observations.observe(metadata) if funding_mode == "OBSERVED" else None
+        public = None
+        if funding_mode == "OBSERVED":
+            financial = self._discovery.financial_observation(request.catalog_fingerprint, identity)
+            namespace_records = tuple(sorted(
+                (record for record in catalog.catalog.records if record.identity.dex == identity.dex),
+                key=lambda record: record.universe_index,
+            ))
+            public = await self._observations.observe(
+                metadata, financial=financial, namespace_records=namespace_records,
+                catalog_fingerprint=request.catalog_fingerprint,
+            )
 
         # Drop expired sources through the evaluators if a source expired during
         # CPU work. The owning event loop checks the catalog again at publication.
