@@ -156,19 +156,18 @@ async def test_testnet_equity_change_at_same_position_version_blocks_transmissio
     rt.accounting_service = AccountingService("ETH", mode="TESTNET", config=rt.accounting_config)
     rt.execution = rt.testnet
     rt.orders.execution = rt.testnet
+    from test_execution import venue_adapter
+    rt.testnet, _, _ = venue_adapter()
+    rt.testnet._orders.clear()
+    rt.execution = rt.orders.execution = rt.testnet
+    monkeypatch.setattr(rt, "_require_operational_execution", lambda: None)
     rt.testnet._positions = {"ETH": D("0")}
     rt.testnet._position_updated_at = snap.latest_valid_update
     rt.testnet._perp_position = PerpPositionContext(market="ETH", signed_position_base=D("0"),
                      source="TESTNET", updated_at=snap.latest_valid_update, version=0)
     rt.testnet._account_value = D("100000")
     rt.testnet._total_margin_used = D("0")
-    from types import SimpleNamespace
-    info=SimpleNamespace(name_to_asset=lambda market:0, asset_to_sz_decimals={0:4})
-    monkeypatch.setattr(rt.testnet, "_exchange_client", lambda:SimpleNamespace(info=info))
-    monkeypatch.setattr(rt.testnet, "_require_enabled", lambda: None)
-    async def reconcile(): pass
     async def refresh(market): return D("0")
-    monkeypatch.setattr(rt.testnet, "reconcile_venue", reconcile)
     monkeypatch.setattr(rt.testnet, "refresh_position", refresh)
     await rt.refresh_once()
     assert rt.authorization.authorized
@@ -210,14 +209,13 @@ async def test_paper_testnet_and_market_transitions_rebind_under_execution_lock(
     assert rt.accounting_service.ledger.version > 0
     paper_genesis = rt.accounting_service.ledger.genesis_fingerprint
     config = rt.config.model_copy(update={"execution_mode": ExecutionMode.TESTNET})
-    await rt.update_config(config)
-    assert rt.accounting_service.mode == "TESTNET"
-    assert rt.accounting_service.ledger.version == 0
-    assert rt.accounting_service.snapshot().equity_quote is None
-    assert rt.accounting_service.ledger.genesis_fingerprint != paper_genesis
-    await rt.update_config(config.model_copy(update={"execution_mode": ExecutionMode.PAPER}))
-    assert rt.paper.fills.all() == []
-    assert rt.accounting_service.position.position_base == 0
+    from app.strategy.quote_engine import StrategyFeasibilityError
+    with pytest.raises(StrategyFeasibilityError, match="qualified Testnet Core source"):
+        await rt.update_config(config)
+    assert rt.accounting_service.mode == "PAPER"
+    assert rt.accounting_service.ledger.version > 0
+    assert rt.accounting_service.ledger.genesis_fingerprint == paper_genesis
+    assert len(rt.paper.fills.all()) == 1
     # Avoid starting services during this focused configuration test.
     from app.market_data.service import MarketDataService
     from app.references.service import ReferenceService

@@ -5,7 +5,7 @@ import logging
 from decimal import Decimal
 from datetime import datetime, timezone
 
-from app.config import Settings
+from app.config import Settings, operational_testnet_rejection
 from app.market_data.models import MarketDataMode, utcnow
 from app.market_data.service import MarketDataService
 from app.market_data.history import MarketPriceHistory
@@ -59,6 +59,7 @@ class HyperAmmRuntime:
             base_url=settings.hyperliquid_testnet_url,
         )
         self.execution = self.paper if self.config.execution_mode == ExecutionMode.PAPER else self.testnet
+        self._require_operational_execution()
         # Lock order is lifecycle_lock -> execution_lock. Transport awaits never
         # hold execution_lock: feed callbacks and emergency cancellation need it.
         self.lifecycle_lock = asyncio.Lock()
@@ -145,6 +146,10 @@ class HyperAmmRuntime:
                 self._on_paper_fill(fill)
 
         paper.on_fill = on_fill
+
+    def _require_operational_execution(self):
+        if self.config.execution_mode == ExecutionMode.TESTNET or self.execution is self.testnet:
+            raise PermissionError(self.market.testnet_provenance_rejection(self.config.market))
 
     def _require_lifecycle(self):
         if self.lifecycle_state != "READY":
@@ -256,6 +261,7 @@ class HyperAmmRuntime:
 
     async def _execution_authority(self, request: OrderRequest | None = None):
         self._require_lifecycle()
+        self._require_operational_execution()
         if self.config.execution_mode == ExecutionMode.PAPER:
             self.accounting_service.observe_execution_fills(self.paper.fills.all(), retired_count=self.paper.fills.retired_count,
                                                          duplicate_fills=self.paper.fills.duplicate_pending(self.accounting_service))
@@ -344,6 +350,7 @@ class HyperAmmRuntime:
         else:
             self._validate_final_testnet(self.quotes, current_market, inventory, current_perp, current_refs,
                                          await self.execution.get_open_orders(), vault)
+        self._require_operational_execution()
 
     async def _invalidate_locked(self, reason, health="DEGRADED"):
         self.quotes = []
@@ -377,6 +384,10 @@ class HyperAmmRuntime:
             self.risk.kill_switch_active = True
             self.risk.last_reason = self.strategy.last_error
             raise
+        if self.execution is self.testnet and self.testnet.has_unknown_exposure():
+            self.strategy.last_error = f"{reason}. TESTNET account exposure remains unresolved"
+            if self.risk.kill_switch_active:
+                self.risk.last_reason = self.strategy.last_error
         if (self.config.execution_mode == ExecutionMode.PAPER and self.accounting_service.config.enabled
                 and not self.accounting_service.error and self.accounting_service.position.mark_price is not None):
             try:
@@ -462,6 +473,7 @@ class HyperAmmRuntime:
                 raise
 
     async def _start_services(self):
+        self._require_operational_execution()
         self._closing = False
         await self.market.start()
         await self.reference_service.start()
@@ -477,17 +489,21 @@ class HyperAmmRuntime:
             await asyncio.sleep(1)
 
     async def _venue_loop(self):
+        next_refresh = 0.0
+        loop = asyncio.get_running_loop()
         while not self._closing:
             try:
                 await asyncio.wait_for(self.testnet.venue_changed.wait(), timeout=5)
             except TimeoutError:
                 pass
+            await asyncio.sleep(max(0, next_refresh - loop.time()))
             self.testnet.venue_changed.clear()
             if self._closing:
                 break
             async with self.execution_lock:
                 if self.lifecycle_state != "READY" or self.execution is not self.testnet or not self.testnet.enabled:
                     continue
+                next_refresh = loop.time() + 1
                 try:
                     await self.testnet.reconcile_venue()
                     changed=self.agent_telemetry.observe_orders(await self.testnet.get_open_orders())
@@ -515,12 +531,15 @@ class HyperAmmRuntime:
         self.terminal_transport.begin_close()
         if self.terminal_distribution is not None:
             self.terminal_distribution.local.begin_close()
-        await self.stop_strategy()
+        errors = []
+        try:
+            await self.stop_strategy()
+        except Exception as exc:
+            errors.append(exc)
         async with self.execution_lock:
             self.lifecycle_state = "STOPPED"
             self.reference_service.wakeup = None
             services = [self.market, self.reference_service, *self._failed_services]
-        errors = []
         for service in services:
             try:
                 await service.stop()
@@ -530,7 +549,11 @@ class HyperAmmRuntime:
         self.testnet.venue_changed.set()
         if self._venue_task:
             await self._venue_task
-        await self.testnet.close()
+            self._venue_task = None
+        try:
+            await self.testnet.close()
+        except Exception as exc:
+            errors.append(exc)
         await self.terminal_transport.close()
         if self.terminal_distribution is not None:
             await self.terminal_distribution.local.close()
@@ -573,6 +596,7 @@ class HyperAmmRuntime:
                 await self._invalidate_locked(self.risk.last_reason or "kill switch is active", "HALTED")
                 return
             try:
+                self._require_operational_execution()
                 snap = await self.market.snapshot()
                 self.market_history.add_snapshot(snap)
                 market_fair = calculate_fair_value(snap)
@@ -676,6 +700,7 @@ class HyperAmmRuntime:
                 if self.config.execution_mode == ExecutionMode.PAPER:
                     self.accounting_service.reserve(authorized, existing_orders)
                 self.vault_snapshot = self.accounting_service.snapshot()
+                self._require_operational_execution()
                 authorization = authorize(authorized, refs, risk_decision, agent_decision, self.vault_snapshot)
 
                 self.inventory = inventory
@@ -803,6 +828,7 @@ class HyperAmmRuntime:
             self._require_lifecycle()
             if self.risk.kill_switch_active:
                 raise PermissionError("kill switch is active")
+            self._require_operational_execution()
             if self.config.execution_mode == ExecutionMode.TESTNET:
                 self.testnet._require_enabled()
                 await self.testnet.reconcile_venue()
@@ -845,6 +871,7 @@ class HyperAmmRuntime:
 
     async def resume(self):
         async with self.execution_lock:
+            self._require_operational_execution()
             await self.execution.cancel_all()
             self.kill.resume()
             self.strategy.running = False
@@ -864,6 +891,8 @@ class HyperAmmRuntime:
             # Feasibility must precede invalidation, cancellation or staging.
             # model_copy callers receive the same static checks as HTTP input.
             validated = StrategyConfig.model_validate(new_config.model_dump())
+            if validated.execution_mode == ExecutionMode.TESTNET:
+                raise StrategyFeasibilityError(operational_testnet_rejection(validated.market_data_mode))
             if any(type(getattr(new_config, name)) is not type(getattr(validated, name))
                    for name in StrategyConfig.model_fields):
                 new_config = validated
@@ -1166,14 +1195,15 @@ class HyperAmmRuntime:
                                  "filled_notional": str(self.paper.fills.filled_notional)},
             "venue_reconciliation": {
                 "last_reconciled_at": self.testnet.last_reconciled_at.isoformat()
-                if self.testnet.last_reconciled_at
+                if self.testnet.last_reconciled_at and not self.testnet.has_unknown_exposure()
                 else None,
-                "error": self.testnet.reconciliation_error,
+                "error": (self.testnet.reconciliation_error or "TESTNET account exposure unresolved")
+                if self.execution is self.testnet and self.testnet.has_unknown_exposure() else None,
             },
             "reconciliation": [a.model_dump(mode="json") for a in self.last_actions],
         }
         snapshot = self.terminal_service.observe(data, diagnostics={
-            "testnet_enabled": self.testnet.enabled,
+            "testnet_enabled": False,
             "reference_firewall_enabled": self.risk_config.enabled,
         }, freshness_thresholds={
             "market": self.market.stale_after_seconds,

@@ -34,6 +34,9 @@ class OrderManager:
         uncertain = any(o.status == "UNKNOWN" for o in existing)
         cancelled_ids = set()
         for index, action in enumerate(actions):
+            if action.action in {ReconcileActionType.CREATE, ReconcileActionType.REPLACE} and (
+                    hasattr(self.execution, "has_unknown_exposure") and self.execution.has_unknown_exposure()):
+                raise RuntimeError("unresolved venue account exposure prevents CREATE/REPLACE")
             if action.action in {ReconcileActionType.CANCEL, ReconcileActionType.REPLACE}:
                 await self.execution.cancel_orders([action.existing.client_order_id])
                 cancelled_ids.add(action.existing.client_order_id)

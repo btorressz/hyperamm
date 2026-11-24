@@ -10,17 +10,7 @@ If initialization/subscription fails, the service reports an unavailable/degrade
 
 ## Testnet execution
 
-`HyperliquidTestnetExecutionAdapter` uses the SDK `Exchange` client only after all guards pass. Limit liquidity is submitted using `Exchange.order(...)` with `Alo` (add-liquidity-only/post-only) and a deterministic 16-byte `Cloid`. Cancellation uses `cancel_by_cloid`.
-
-Signed order transmission requires all of:
-
-```text
-EXECUTION_MODE=TESTNET
-ENABLE_HYPERLIQUID_TESTNET_ORDERS=true
-HYPERLIQUID_PRIVATE_KEY=<testnet signing key>
-```
-
-The default is PAPER and the guard is checked before a signing client is created. No mainnet execution adapter exists. Withdrawals, transfers and bridging are not implemented.
+Signed TESTNET is blocked pending a qualified operational Testnet Core source and durable recovery evidence. Use `EXECUTION_MODE=PAPER` with DEMO or public Mainnet LIVE data. The TESTNET adapter retains native post-only `Alo` normalization for downstream unsigned fixtures and uses exact retained client order identity for owned cancellation. [Audit 4.0H-B acceptance](AUDIT4_HB_ACCEPTANCE.md)
 
 ## Security assumptions
 
@@ -31,6 +21,8 @@ Signing material exists only in backend environment variables. React never recei
 Phases 5–8 now implement inventory-aware quoting, volatility/book-imbalance adaptation, Hyperliquid-native perpetual context, multi-source reference integrity, and the deterministic institutional risk firewall. Phases 9–12 supervisory agents, offline optimization, research vault accounting and the 12-page terminal are implemented / in review. Mainnet execution remains out of scope. Local fixture acceptance does not establish real provider or signed TESTNET acceptance; see [Audit 1.0](../AUDIT_REPORT_1.0.md) for current authority/provider/operational limitations.
 
 ## Phase 4.1 venue reconciliation
+
+This section records the historical Phase 4.1 behavior. Audit 4.0H-B reads account-wide inventory, including after restart, and quarantines unexplained open orders. [Current reconciliation contract](AUDIT4_HB_ACCEPTANCE.md#a4-002-venue-scope-uncertainty-and-restart)
 
 Implementation was checked against installed SDK **0.24.0** and current official
 [`examples/basic_ws.py`](https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/2fdb18f9517675ea03695a0962bd19eece9c83f0/examples/basic_ws.py)

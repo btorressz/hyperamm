@@ -125,6 +125,9 @@ async def normalized_testnet_runtime(monkeypatch):
     adapter,venue,_=venue_adapter()
     adapter._orders.clear()
     rt=HyperAmmRuntime(Settings(_env_file=None))
+    # Isolate the existing economics and final authority checks from the
+    # operational source gate, which has dedicated rejection coverage.
+    monkeypatch.setattr(rt, "_require_operational_execution", lambda: None)
     rt.config=rt.config.model_copy(update={'execution_mode':ExecutionMode.TESTNET,'tick_size':D('.01'),
                                          'size_precision':5})
     rt.testnet=adapter; rt.execution=adapter; rt.orders.execution=adapter
@@ -226,19 +229,18 @@ async def test_manager_normalized_create_reaches_sdk_exactly_once(monkeypatch):
 @pytest.mark.asyncio
 @pytest.mark.parametrize('reject',[False,True])
 async def test_exact_normalized_replace_and_truthful_cancellation(monkeypatch,reject):
-    from test_execution import o, venue_update
+    from test_execution import o, venue_row, venue_update
     from app.execution.models import OrderStatus
     rt,adapter,venue,_=await normalized_testnet_runtime(monkeypatch)
     old=o(price='2900',size='.1234',cid='old'); old.venue_order_id='123'
     adapter._orders['old']=old
-    venue.opened=[{'oid':123,'coin':'ETH','sz':'.1234','origSz':'.1234'}]
+    venue.opened = [venue_row(remaining='.1234', original='.1234', price='2900')]
     desired=[rt.quotes[0]]
     # Successful wire cancellation must also resolve its independent venue
     # verification before a replacement is admitted.
     def confirmed_cancel(*args):
         venue.opened=[]
-        result=venue_update('canceled', remaining='.1234')
-        result['order']['order']['origSz']='.1234'
+        result = venue_update('canceled', remaining='.1234', original='.1234', price='2900')
         venue.results['123']=result
         return venue.cancel_response
     venue.cancel_by_cloid=confirmed_cancel

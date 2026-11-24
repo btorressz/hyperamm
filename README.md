@@ -3,7 +3,7 @@
 
 **HyperAMM converts virtual AMM liquidity curves into tick/size-normalized Hyperliquid CLOB quotes.** Its Python/FastAPI engine combines constant-product and concentrated-liquidity modeling with inventory skew, perpetual context, market adaptation, deterministic supervisory agents, a risk firewall and final execution authorization. Its React/TypeScript terminal separates operational controls from read-only market intelligence and offline PAPER research.
 
-> **Open source · active development · local/single-operator architecture.** This repository is an engineering and research project, **not** a production-ready trading service, investment product, custody system or verified profitable strategy. PAPER/DEMO is the default; TESTNET signing is separately guarded. No mainnet trading, withdrawal, transfer or bridging path is implemented.
+> **Open source · active development · local/single-operator architecture.** This repository is an engineering and research project, **not** a production-ready trading service, investment product, custody system or verified profitable strategy. PAPER/DEMO is the default. Signed TESTNET is blocked after Audit 4.0H-B. No mainnet trading, withdrawal, transfer or bridging path is implemented.
 
 ## Current project status — Phase 18.7F release candidate
 
@@ -154,20 +154,11 @@ LIVE_STREAMS_ENABLED=true
 
 `LIVE_STREAMS_ENABLED` requires `LIVE_OBSERVATIONS_ENABLED`. The Markets page shows native order books, mark/oracle/funding/OI, source and receipt times, provider health, reconnects and explicit gaps. These observation endpoints cannot sign orders or change the active operational market. Phase 18.7F records current public delivery, reconnect and resource measurements. Native macOS acceptance remains open. [Provider gates](docs/PHASE18_7_FINAL_ACCEPTANCE.md#f2--public-provider-and-resource-acceptance)
 
-## PAPER and optional TESTNET execution
+## PAPER and guarded TESTNET execution
 
 Normal operational PAPER orders and built-in deterministic scenario simulation use the existing crossing-only hypothetical fill model. The **Phase 16.3 historical replay** additionally supports opt-in receipt-clock order/cancel latency, slippage, observed-depth participation and partial-fill sensitivities. They are hypothetical modeling controls, **not** evidence of real exchange execution, queue priority or market latency.
 
-TESTNET signing is **disabled by default**. Only if explicitly intended, configure backend-only credentials and enable the guarded TESTNET path:
-
-```dotenv
-EXECUTION_MODE=TESTNET
-ENABLE_HYPERLIQUID_TESTNET_ORDERS=true
-HYPERLIQUID_ACCOUNT_ADDRESS=0x...
-HYPERLIQUID_PRIVATE_KEY=...
-```
-
-The existing TESTNET adapter uses guarded Hyperliquid post-only `Alo` limit orders and authoritative risk checks. Never put a private key in frontend code or commit it. No production mainnet order, custody, withdrawal, transfer or bridging path is implemented.
+**Signed TESTNET is blocked.** Operational DEMO uses synthetic evidence and operational LIVE uses Hyperliquid Mainnet data. Keep `EXECUTION_MODE=PAPER` for both. The TESTNET adapter retains its native post-only normalization and can reconcile account inventory and retained order ownership in unsigned fixtures. A qualified operational Testnet source and durable account recovery are required before signed acceptance. [Audit 4.0H-B acceptance](docs/AUDIT4_HB_ACCEPTANCE.md)
 
 ## Selected API surface
 

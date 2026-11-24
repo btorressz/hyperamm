@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timezone
+from app.config import operational_testnet_rejection
 from .models import MarketDataMode, MarketSnapshot
 from .mock import MockMarketDataAdapter
 from .hyperliquid import HyperliquidMarketDataAdapter
@@ -28,6 +29,16 @@ class MarketDataService:
         self._source_timestamp = None
         self._material_sequence = 0
         self._material_identity = None
+
+    def testnet_provenance_rejection(self, market: str) -> str:
+        """Identify the operational source from its owner, never snapshot fields."""
+        if market != self.market or market != getattr(self._adapter, "market", None):
+            return "TESTNET execution blocked because the operational market identity differs"
+        if type(self._adapter) is MockMarketDataAdapter and self.mode == MarketDataMode.DEMO:
+            return operational_testnet_rejection(MarketDataMode.DEMO)
+        if type(self._adapter) is HyperliquidMarketDataAdapter and self.mode == MarketDataMode.LIVE:
+            return operational_testnet_rejection(MarketDataMode.LIVE)
+        return operational_testnet_rejection("UNSUPPORTED")
 
     async def _accept(self, snapshot: MarketSnapshot):
         async with self._lock:

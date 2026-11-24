@@ -22,13 +22,15 @@ def test_frontend_valid_fixtures_match_backend_contract():
 def test_runtime_agent_telemetry_matches_generated_schema_and_fixtures():
     from app.config import Settings
     from app.runtime import HyperAmmRuntime
+    from app.strategy.models import ExecutionMode
 
     schema = json.loads((ROOT/'frontend/src/contracts/terminal.schema.json').read_text())
     agents = schema['$defs']['AgentSystemSnapshot']
     telemetry = schema['$defs'][agents['properties']['telemetry']['$ref'].split('/')[-1]]
     assert telemetry['additionalProperties'] is False
     for mode, name in (('PAPER', 'terminal-valid.json'), ('TESTNET', 'terminal-unavailable.json')):
-        rt = HyperAmmRuntime(Settings(_env_file=None, execution_mode=mode))
+        rt = HyperAmmRuntime(Settings(_env_file=None))
+        rt.config.execution_mode = ExecutionMode(mode)
         actual = rt.agents_payload()['telemetry']
         assert set(actual) == set(telemetry['properties']) == set(telemetry['required'])
         fixture = json.loads((ROOT/'frontend/tests/fixtures'/name).read_text())

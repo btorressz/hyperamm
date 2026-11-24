@@ -102,6 +102,8 @@ The 13 canonical destinations are Dashboard, Markets, Strategy, AMM Settings, Ex
 
 ### Current acceptance, reproducibility and outstanding gates
 
+- **Audit 4.0H-B.** Operational DEMO is synthetic and operational LIVE observes Hyperliquid Mainnet. Both configurations are blocked for TESTNET. The private adapter validates bounded account inventory, quarantines unmanaged orders and retains owned SDK resources through shutdown. [Unsigned acceptance](docs/AUDIT4_HB_ACCEPTANCE.md)
+
 - **Audit 4.0H-A.** Generalized PAPER preflight runs on bounded resources owned by the existing executor. Completed browser results retain their captured sources. Operational freshness follows the validated terminal envelope and transport. [Local acceptance](docs/AUDIT4_HA_ACCEPTANCE.md)
 
 - **Phase 18.6A–E:** merged PR #99; search, source-qualified handoff, guided Starter, Pro/Institutional navigation, all nine agent access and legacy 13-route preservation.
@@ -442,7 +444,7 @@ Reconciles authorized quote levels to orders, maintains PAPER fill state and gua
 |---|---|
 | [`base.py`](backend/app/execution/base.py) | Common execution-adapter interface. |
 | [`fills.py`](backend/app/execution/fills.py) | Bounded/simple fill storage helper. |
-| [`hyperliquid.py`](backend/app/execution/hyperliquid.py) | Guarded Hyperliquid TESTNET adapter, signing, venue reconciliation, position/account-state normalization and uncertain-order handling. |
+| [`hyperliquid.py`](backend/app/execution/hyperliquid.py) | Guarded TESTNET adapter, account inventory reconciliation, owned SDK cleanup and position/account normalization. |
 | [`models.py`](backend/app/execution/models.py) | Normalized order request, strategy order and fill contracts. |
 | [`order_manager.py`](backend/app/execution/order_manager.py) | Serializes reconciliation, performs venue reconciliation when available, rechecks authority before CREATE/REPLACE, and issues cancel/submit calls. |
 | [`paper.py`](backend/app/execution/paper.py) | In-memory deterministic PAPER order/fill adapter used by runtime and simulation. |
@@ -739,7 +741,7 @@ Browser: `http://127.0.0.1:5173`; REST/OpenAPI: `http://127.0.0.1:8000/docs`. Co
 
 **Dependencies:** [`pyproject.toml`](backend/pyproject.toml) defines core packages and `test`, `redis`, `ml`, `yahoo` optional extras. The declared direct NumPy dependency is currently retained as project policy, not the live Decimal math engine. `frontend/package-lock.json` pins npm resolution.
 
-**Sample modes:** [`.env.example`](.env.example) uses `MARKET_DATA_MODE=DEMO` and `EXECUTION_MODE=PAPER`. When switching to LIVE, it means public market observations, **not** mainnet execution. Signed TESTNET requires explicit mode, opt-in flag and backend-only account/key. Keep secrets out of frontend, Git logs, screenshots and committed fixtures.
+**Sample modes.** The sample environment uses `MARKET_DATA_MODE=DEMO` and `EXECUTION_MODE=PAPER`. Operational LIVE uses public Mainnet observations. Both sources require PAPER execution. [Sample environment](.env.example) · [Audit 4.0H-B acceptance](docs/AUDIT4_HB_ACCEPTANCE.md)
 
 **Providers:** RedStone (primary external oracle, live with one-provider HTTP fallback), native Hyperliquid oraclePx, Kraken (independent exchange), CoinGecko (tertiary aggregate). Hyperliquid mid/mark supply separate venue/perp evidence. Yahoo is a research observation only and cannot enter quote authority. Provider health, source timestamps and quorum constraints are not browser freshness decisions.
 
